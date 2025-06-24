@@ -1,0 +1,2 @@
+# daishin_kaihatu_project
+大信開発の水道検針アプリ用のリポジトリです
