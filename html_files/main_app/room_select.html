@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>部屋選択 - 水道メーター読み取りアプリ</title>
+    
+    <!-- PWA メタタグ -->
+    <meta name="description" content="水道メーターの読み取りを管理するアプリケーション">
+    <meta name="theme-color" content="#007bff">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="メーター読み取り">
+    
+    <!-- Favicon and Icons -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iNCIgZmlsbD0iIzAwN2JmZiIvPgo8c3ZnIHg9IjgiIHk9IjgiIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJ3aGl0ZSI+CjxwYXRoIGQ9Ik0xMiAyQzYuNDggMiAyIDYuNDggMiAxMnM0LjQ4IDEwIDEwIDEwIDEwLTQuNDggMTAtMTBTMTcuNTIgMiAxMiAyem0tMiAxNWwtNS01IDEuNDEtMS40MUwxMCAxNC4xN2w3LjU5LTcuNTlMMTkgOGwtOSA5eiIvPgo8L3N2Zz4KPC9zdmc+">
+    <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTgwIiBoZWlnaHQ9IjE4MCIgdmlld0JveD0iMCAwIDE4MCAxODAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxODAiIGhlaWdodD0iMTgwIiByeD0iMjAiIGZpbGw9IiMwMDdiZmYiLz4KPHN2ZyB4PSI0NSIgeT0iNDUiIHdpZHRoPSI5MCIgaGVpZ2h0PSI5MCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJ3aGl0ZSI+CjxwYXRoIGQ9Ik0xMiAyQzYuNDggMiAyIDYuNDggMiAxMnM0LjQ4IDEwIDEwIDEwIDEwLTQuNDggMTAtMTBTMTcuNTIgMiAxMiAyem0tMiAxNWwtNS01IDEuNDEtMS40MUwxMCAxNC4xN2w3LjU5LTcuNTlMMTkgOGwtOSA5eiIvPgo8L3N2Zz4KPC9zdmc+">
+    
+    <!-- External CSS -->
+    <link rel="stylesheet" href="../../css_styles/room_select.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+</head>
+<body>
+    <!-- Material UI AppBar -->
+    <header class="MuiAppBar-root MuiAppBar-colorPrimary MuiAppBar-positionStatic mui-elevation-4" role="banner">
+      <nav class="MuiToolbar-root MuiToolbar-regular" aria-label="部屋選択ナビゲーション">
+        <button class="MuiIconButton-root MuiIconButton-colorInherit" onclick="goBack()" aria-label="戻る">
+          <span class="material-icons MuiSvgIcon-root">arrow_back</span>
+        </button>
+        <span class="MuiTypography-root MuiTypography-h6 app-title" aria-label="画面タイトル">部屋選択</span>
+      </nav>
+    </header>
+
+    <main class="MuiContainer-root MuiContainer-maxWidthLg" style="padding-top:32px;" role="main" aria-label="部屋選択メイン">
+      <!-- 物件名カード -->
+      <section class="MuiCard-root MuiPaper-root MuiPaper-elevation1 property-card" aria-label="物件情報" tabindex="0" role="region">
+        <div class="MuiCardHeader-root property-header">
+          <span class="material-icons MuiSvgIcon-root property-icon" aria-hidden="true">home</span>
+          <span class="MuiTypography-root MuiTypography-h5" id="propertyName">物件名読み込み中...</span>
+        </div>
+      </section>
+
+      <!-- エラーアラート -->
+      <div class="MuiAlert-root MuiAlert-standardError" id="errorMessage" style="display:none;" role="alert" aria-live="assertive">
+        <span class="MuiAlert-icon"><span class="material-icons MuiSvgIcon-root" aria-hidden="true">error</span></span>
+        <span class="MuiAlert-message" id="errorText"></span>
+      </div>
+
+      <!-- ローディング -->
+      <div class="loading-container" id="loading" aria-live="polite" aria-busy="true">
+        <span class="MuiCircularProgress-root" aria-label="読み込み中"></span>
+        <span class="MuiTypography-root MuiTypography-body1">部屋データを読み込み中...</span>
+      </div>
+
+      <!-- 部屋グリッド -->
+      <section class="room-grid" id="roomGrid" style="display:none;" aria-label="部屋一覧" role="list"></section>
+
+      <!-- 完了ボタン -->
+      <div class="complete-button-container">
+        <button class="MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeLarge complete-button" id="completeInspectionBtn" onclick="completeInspection()" style="display:none;" aria-label="この物件の検針を完了する" tabindex="0" role="button">
+          <span class="material-icons MuiSvgIcon-root" aria-hidden="true">check_circle</span>
+          <span class="MuiButton-label">この物件の検針を完了する</span>
+        </button>
+      </div>
+    </main>
+
+<script>
+        // Ripple effect for buttons and cards
+        function addRippleEffect(element) {
+            element.addEventListener('click', function(e) {
+                const circle = document.createElement('span');
+                circle.className = 'ripple';
+                const rect = element.getBoundingClientRect();
+                const size = Math.max(rect.width, rect.height);
+                circle.style.width = circle.style.height = size + 'px';
+                circle.style.left = (e.clientX - rect.left - size / 2) + 'px';
+                circle.style.top = (e.clientY - rect.top - size / 2) + 'px';
+                element.appendChild(circle);
+                setTimeout(() => {
+                    if (circle.parentNode) {
+                        circle.parentNode.removeChild(circle);
+                    }
+                }, 600);
+            });
+        }
+
+        // GAS Web App URL取得（property_select.htmlから継承）
+        const gasWebAppUrl = sessionStorage.getItem('gasWebAppUrl');
+        
+        // URL検証
+        if (!gasWebAppUrl) {
+            showError('Web App URLが設定されていません。物件選択画面から再度アクセスしてください。');
+            document.getElementById('loading').innerHTML = '<div class="loading-spinner"></div><p class="loading-text">Web App URLが設定されていません</p>';
+            setTimeout(() => window.location.href = '/property_select', 3000);
+        } else {
+            // URLパラメータから物件IDを取得
+            const urlParams = new URLSearchParams(window.location.search);
+            const propertyId = urlParams.get('propertyId');
+            
+            console.log('[room_select] URLパラメータ確認:', {
+                propertyId: propertyId,
+                fullUrl: window.location.href,
+                searchParams: window.location.search
+            });
+            
+            if (!propertyId) {
+                console.error('[room_select] 物件IDが指定されていません');
+                if (confirm('物件IDが指定されていません。物件選択画面に戻りますか？')) {
+                    window.location.href = '/property_select';
+                } else {
+                    document.getElementById('loading').innerHTML = '<div class="loading-spinner"></div><p class="loading-text">物件IDが指定されていません</p>';
+                    setTimeout(() => window.location.href = '/property_select', 3000);
+                }
+            } else {
+                console.log('[room_select] 物件ID確認完了:', propertyId);
+                // 正常な場合のみloadRoomDataを実行
+                console.log('[room_select] window.onloadにloadRoomData設定');
+                window.onload = function() {
+                    console.log('[room_select] window.onload発火 - loadRoomData実行開始');
+                    loadRoomData();
+                };
+                
+                // 既にページが読み込み済みの場合は即座に実行
+                if (document.readyState === 'complete') {
+                    console.log('[room_select] ページ読み込み完了済み - loadRoomData即座実行');
+                    loadRoomData();
+                }
+            }
+        }
+
+        // エラーメッセージ表示 - React Error #418対策
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            const errorText = document.getElementById('errorText');
+            errorText.textContent = String(message || 'エラーが発生しました');
+            errorDiv.style.display = 'flex';
+        }
+
+        // ローディング中のキーボード操作を完全にブロックする関数
+        function blockAllKeyEvents(e) {
+            // ESC、Tab、Enter、Space、Arrow keys等を無効化
+            const blockedKeys = ['Escape', 'Tab', 'Enter', ' ', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
+            if (blockedKeys.includes(e.key) || e.keyCode === 27 || e.keyCode === 9) {
+                e.preventDefault();
+                e.stopPropagation();
+                return false;
+            }
+        }
+
+        // ローディング開始時の操作ブロック設定
+        function enableLoadingBlock() {
+            document.body.style.overflow = 'hidden';
+            document.body.style.pointerEvents = 'none';
+            document.addEventListener('keydown', blockAllKeyEvents, true);
+            document.addEventListener('keyup', blockAllKeyEvents, true);
+            document.addEventListener('keypress', blockAllKeyEvents, true);
+            
+            // ローディング要素は操作可能にする
+            const loadingElement = document.getElementById('loading');
+            if (loadingElement) {
+                loadingElement.style.pointerEvents = 'all';
+            }
+        }
+
+        // ローディング終了時の操作ブロック解除
+        function disableLoadingBlock() {
+            document.body.style.overflow = '';
+            document.body.style.pointerEvents = '';
+            document.removeEventListener('keydown', blockAllKeyEvents, true);
+            document.removeEventListener('keyup', blockAllKeyEvents, true);
+            document.removeEventListener('keypress', blockAllKeyEvents, true);
+        }
+
+        async function loadRoomData() {
+            console.log('[room_select] loadRoomData関数開始');
+            let rooms = [];
+            try {
+                console.log('[room_select] enableLoadingBlock開始');
+                enableLoadingBlock();
+                
+                const gasWebAppUrl = sessionStorage.getItem('gasWebAppUrl');
+                const urlParams = new URLSearchParams(window.location.search);
+                const propertyId = urlParams.get('propertyId');
+                
+                console.log('[room_select] パラメータ確認:', {
+                    gasWebAppUrl: gasWebAppUrl ? '設定済み' : '未設定',
+                    propertyId: propertyId
+                });
+                
+                if (!gasWebAppUrl || !propertyId) {
+                    throw new Error('必要なパラメータが不足しています');
+                }
+                
+                const fetchUrl = `${gasWebAppUrl}?action=getRooms&propertyId=${encodeURIComponent(propertyId)}`;
+                console.log('[room_select] API呼び出し開始:', fetchUrl);
+                
+                const response = await fetch(fetchUrl);
+                console.log('[room_select] APIレスポンス受信:', response.status, response.ok);
+                
+                if (!response.ok) {
+                    throw new Error(`API呼び出しに失敗しました: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('[room_select] APIデータ解析完了:', data);
+                
+                if (!data.success) {
+                    throw new Error(data.error || 'データの取得に失敗しました');
+                }
+                
+                let propertyName = '物件名不明';
+                if (data.data) {
+                    propertyName = data.data.propertyName
+                        || (data.data.property && data.data.property.name)
+                        || data.data.property_name
+                        || data.data.name
+                        || '物件名不明';
+                }
+                console.log('[room_select] 物件名設定:', propertyName);
+                document.getElementById('propertyName').textContent = propertyName;
+                
+                rooms = (data.data && Array.isArray(data.data.rooms)) ? data.data.rooms : [];
+                console.log('[room_select] 部屋データ抽出:', rooms.length, '件');
+                
+                if (!Array.isArray(rooms)) {
+                    throw new Error('部屋データの取得に失敗しました（roomsが配列ではありません）');
+                }
+                
+                console.log('[room_select] displayRooms呼び出し開始');
+                displayRooms(rooms);
+                console.log('[room_select] updateCompleteButton呼び出し開始');
+                updateCompleteButton(rooms);
+                
+            } catch (error) {
+                console.error('[room_select] エラー発生:', error);
+                showError(error.message);
+            } finally {
+                console.log('[room_select] finally処理開始 - ローディング解除');
+                // 必ずローディング解除
+                const loadingElement = document.getElementById('loading');
+                if (loadingElement) {
+                    loadingElement.style.display = 'none';
+                    loadingElement.style.visibility = 'hidden';
+                    loadingElement.style.opacity = '0';
+                    loadingElement.style.pointerEvents = 'none';
+                    loadingElement.style.zIndex = '-1';
+                    console.log('[room_select] loading要素完全非表示完了');
+                } else {
+                    console.error('[room_select] loading要素が見つかりません');
+                }
+                disableLoadingBlock();
+                console.log('[room_select] disableLoadingBlock完了');
+            }
+        }
+
+        // ページ表示時にローディングを必ず非表示にする
+        function hideLoadingOnPageShow() {
+            const loadingElement = document.getElementById('loading');
+            if (loadingElement) {
+                loadingElement.style.display = 'none';
+                loadingElement.style.visibility = 'hidden';
+                loadingElement.style.opacity = '0';
+                loadingElement.style.pointerEvents = 'none';
+                loadingElement.style.zIndex = '-1';
+            }
+            document.body.style.overflow = '';
+            document.body.style.pointerEvents = '';
+        }
+
+        window.addEventListener('pageshow', function(event) {
+            hideLoadingOnPageShow();
+        });
+
+        function displayRooms(rooms) {
+            console.log('[room_select] displayRooms開始:', rooms.length, '件');
+            const roomGrid = document.getElementById('roomGrid');
+            const loading = document.getElementById('loading');
+            
+            if (!roomGrid) {
+                console.error('[room_select] roomGrid要素が見つかりません');
+                return;
+            }
+            
+            roomGrid.innerHTML = '';
+            
+            if (rooms.length === 0) {
+                console.log('[room_select] 部屋データが0件のため、メッセージ表示');
+                roomGrid.innerHTML = '<div class="no-rooms-message">部屋データがありません</div>';
+                roomGrid.style.display = 'block';
+                // 部屋データが0件の場合もローディング完全非表示
+                if (loading) {
+                    loading.style.display = 'none';
+                    loading.style.visibility = 'hidden';
+                    loading.style.opacity = '0';
+                    loading.style.pointerEvents = 'none';
+                    loading.style.zIndex = '-1';
+                    console.log('[room_select] 0件時のloading完全非表示完了');
+                }
+                return;
+            }
+            
+            const urlParams = new URLSearchParams(window.location.search);
+            const propertyId = urlParams.get('propertyId');
+            
+            console.log('[room_select] 部屋カード作成開始');
+            rooms.forEach((room, index) => {
+                console.log(`[room_select] 部屋[${index}]処理:`, room.name || room['部屋名'] || room.id);
+                // Material UI Card構造
+                const card = document.createElement('div');
+                card.className = 'MuiCard-root MuiPaper-root MuiPaper-elevation1 MuiCardActionArea-root room-card' +
+                  (room.readingStatus === 'completed' || room.isCompleted ? ' status-completed' : ' status-pending');
+                card.setAttribute('tabindex', '0');
+                card.setAttribute('role', 'button');
+                card.setAttribute('aria-label', `${String(room.name || room['部屋名'] || room.id || '不明')} ${room.readingStatus === 'completed' ? '検針済み' : '未検針'}`);
+                // 1行表示 - React Error #418対策（値の安全化）
+                card.innerHTML = `
+                  <div class="MuiCardContent-root room-info-row">
+                    <span class="material-icons MuiSvgIcon-root status-icon" aria-hidden="true" style="color:${room.readingStatus === 'completed' ? '#2e7d32' : '#ed6c02'};">
+                      ${room.readingStatus === 'completed' ? 'check_circle' : 'warning'}
+                    </span>
+                    <span class="MuiTypography-root MuiTypography-h6 room-name">${String(room.name || room['部屋名'] || room.id || '不明')}</span>
+                    <span class="MuiTypography-root MuiTypography-body2 room-status">${room.readingStatus === 'completed' && room.readingDateFormatted ? `検針済み：${String(room.readingDateFormatted)}` : '未検針'}</span>
+                  </div>
+                `;
+                card.onclick = () => {
+                  const meterReadingUrl = `/meter_reading?propertyId=${encodeURIComponent(propertyId)}&roomId=${encodeURIComponent(String(room.id || ''))}`;
+                  window.location.href = meterReadingUrl;
+                };
+                addRippleEffect(card);
+                roomGrid.appendChild(card);
+            });
+            
+            console.log('[room_select] 部屋カード作成完了、ローディング非表示とグリッド表示');
+            if (loading) {
+                loading.style.display = 'none';
+                loading.style.visibility = 'hidden';
+                loading.style.opacity = '0';
+                loading.style.pointerEvents = 'none';
+                console.log('[room_select] loading完全非表示設定完了');
+            }
+            roomGrid.style.display = 'grid';
+            console.log('[room_select] displayRooms完了');
+        }
+
+        function updateCompleteButton(rooms) {
+            const completeBtn = document.getElementById('completeInspectionBtn');
+            
+            // 部屋データが1件以上あれば常にボタンを表示
+            if (rooms.length > 0) {
+                completeBtn.style.display = 'flex';
+                completeBtn.innerHTML = `
+                    <span class="material-icons MuiSvgIcon-root">check_circle</span>
+                    <span class="MuiButton-label">この物件の検針を完了する</span>
+                `;
+                console.log('[room_select] 検針完了ボタンを表示');
+            } else {
+                completeBtn.style.display = 'none';
+                console.log('[room_select] 部屋がないため検針完了ボタンを非表示');
+            }
+        }
+
+        async function completeInspection() {
+            console.log('[room_select] 検針完了ボタンクリック');
+            
+            const urlParams = new URLSearchParams(window.location.search);
+            const propertyId = urlParams.get('propertyId');
+            
+            if (!propertyId) {
+                alert('物件IDが取得できませんでした');
+                return;
+            }
+            
+            if (!gasWebAppUrl) {
+                alert('Web App URLが設定されていません');
+                return;
+            }
+            
+            try {
+                // 現在の日付をYYYY-MM-DD形式で取得
+                const today = new Date();
+                const completionDate = today.getFullYear() + '-' + 
+                    String(today.getMonth() + 1).padStart(2, '0') + '-' + 
+                    String(today.getDate()).padStart(2, '0');
+                
+                console.log(`[completeInspection] 検針完了処理開始 - 物件ID: ${propertyId}, 完了日: ${completionDate}`);
+                
+                // GAS API呼び出し
+                const response = await fetch(`${gasWebAppUrl}?action=completeInspection&propertyId=${propertyId}&completionDate=${completionDate}`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                console.log('[completeInspection] API応答:', result);
+                
+                if (result.success) {
+                    alert(`検針完了日を ${completionDate} で保存しました！`);
+                    // ページをリロードして最新状態を反映
+                    window.location.reload();
+                } else {
+                    throw new Error(result.error || '検針完了処理に失敗しました');
+                }
+                
+            } catch (error) {
+                console.error('[completeInspection] エラー:', error);
+                alert(`検針完了処理でエラーが発生しました: ${error.message}`);
+            }
+        }
+
+        function goBack() {
+            console.log('[room_select] 戻るボタンクリック');
+            window.location.href = '/property_select';
+        }
+    </script>
+</body>
+</html>

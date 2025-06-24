@@ -1,0 +1,12 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Deploy and Test Warning Flag Feature",
+			"type": "shell",
+			"command": "echo 'Testing Warning Flag and Standard Deviation Feature' && echo '1. Deploy gas_scripts to Google Apps Script' && echo '2. Test meter_reading.html with property P000001, room R000001' && echo '3. Check console logs for warning flag calculations' && echo '4. Verify inspection_data sheet updates'",
+			"group": "test",
+			"isBackground": false
+		}
+	]
+}

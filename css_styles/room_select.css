@@ -1,0 +1,678 @@
+/* Material UI Component Styles - Room Selection */
+:root {
+    /* Material UI Color Palette */
+    --mui-palette-primary-main: #1976d2;
+    --mui-palette-primary-dark: #1565c0;
+    --mui-palette-primary-light: #42a5f5;
+    --mui-palette-secondary-main: #dc004e;
+    --mui-palette-error-main: #d32f2f;
+    --mui-palette-success-main: #2e7d32;
+    --mui-palette-warning-main: #ed6c02;
+    --mui-palette-info-main: #0288d1;
+    --mui-palette-grey-50: #fafafa;
+    --mui-palette-grey-100: #f5f5f5;
+    --mui-palette-grey-200: #eeeeee;
+    --mui-palette-grey-300: #e0e0e0;
+    --mui-palette-grey-400: #bdbdbd;
+    --mui-palette-grey-500: #9e9e9e;
+    --mui-palette-grey-600: #757575;
+    --mui-palette-grey-700: #616161;
+    --mui-palette-grey-800: #424242;
+    --mui-palette-grey-900: #212121;
+    
+    /* Material UI Shadows */
+    --mui-shadows-1: 0px 2px 1px -1px rgba(0,0,0,0.2), 0px 1px 1px 0px rgba(0,0,0,0.14), 0px 1px 3px 0px rgba(0,0,0,0.12);
+    --mui-shadows-2: 0px 3px 1px -2px rgba(0,0,0,0.2), 0px 2px 2px 0px rgba(0,0,0,0.14), 0px 1px 5px 0px rgba(0,0,0,0.12);
+    --mui-shadows-3: 0px 3px 3px -2px rgba(0,0,0,0.2), 0px 3px 4px 0px rgba(0,0,0,0.14), 0px 1px 8px 0px rgba(0,0,0,0.12);
+    --mui-shadows-4: 0px 2px 4px -1px rgba(0,0,0,0.2), 0px 4px 5px 0px rgba(0,0,0,0.14), 0px 1px 10px 0px rgba(0,0,0,0.12);
+    
+    /* Material UI Transitions */
+    --mui-transitions-easing-sharp: cubic-bezier(0.4, 0, 0.6, 1);
+    --mui-transitions-easing-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+    --mui-transitions-duration-shortest: 150ms;
+    --mui-transitions-duration-shorter: 200ms;
+    --mui-transitions-duration-short: 250ms;
+    --mui-transitions-duration-standard: 300ms;
+}
+
+/* === Global Styles === */
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: "Roboto", "Helvetica", "Arial", sans-serif;
+    background-color: var(--mui-palette-grey-50);
+    color: var(--mui-palette-grey-900);
+    font-size: 1rem;
+    line-height: 1.5;
+    letter-spacing: 0.00938em;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* === Material UI App Bar === */
+.MuiAppBar-root {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    box-sizing: border-box;
+    flex-shrink: 0;
+    position: static;
+    background-color: var(--mui-palette-primary-main);
+    color: #fff;
+    transition: box-shadow var(--mui-transitions-duration-short) var(--mui-transitions-easing-ease-in-out);
+    box-shadow: var(--mui-shadows-4);
+    min-height: 64px;
+    border-radius: 0 0 12px 12px;
+}
+
+.MuiAppBar-colorPrimary {
+    background-color: var(--mui-palette-primary-main);
+    color: #fff;
+}
+
+.MuiAppBar-positionStatic {
+    position: static;
+    transform: translateZ(0);
+}
+
+/* === Material UI Toolbar === */
+.MuiToolbar-root {
+    position: relative;
+    display: flex;
+    align-items: center;
+    padding-left: 16px;
+    padding-right: 16px;
+    min-height: 64px;
+    justify-content: center;
+    gap: 8px;
+}
+
+.MuiToolbar-regular {
+    min-height: 64px;
+}
+
+@media (min-width: 600px) {
+    .MuiToolbar-regular {
+        min-height: 64px;
+    }
+}
+
+/* === Material UI Icon Button === */
+.MuiIconButton-root {
+    text-align: center;
+    flex: 0 0 auto;
+    font-size: 1.5rem;
+    padding: 12px;
+    border-radius: 50%;
+    overflow: visible;
+    color: inherit;
+    transition: background-color var(--mui-transitions-duration-shortest) var(--mui-transitions-easing-ease-in-out);
+    background-color: transparent;
+    border: 0;
+    cursor: pointer;
+    margin: 0;
+    display: inline-flex;
+    outline: 0;
+    position: absolute;
+    left: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    align-items: center;
+    user-select: none;
+    vertical-align: middle;
+    justify-content: center;
+    text-decoration: none;
+    z-index: 10;
+}
+
+.MuiIconButton-root:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+}
+
+.MuiIconButton-colorInherit {
+    color: inherit;
+}
+
+/* === Material UI Typography === */
+.MuiTypography-root {
+    margin: 0;
+    font-family: "Roboto", "Helvetica", "Arial", sans-serif;
+}
+
+.MuiTypography-h6 {
+    font-weight: 500;
+    font-size: 1.25rem;
+    line-height: 1.6;
+    letter-spacing: 0.0075em;
+}
+
+.MuiTypography-h5 {
+    font-weight: 400;
+    font-size: 1.5rem;
+    line-height: 1.334;
+    letter-spacing: 0em;
+}
+
+.MuiTypography-body1 {
+    font-weight: 400;
+    font-size: 1rem;
+    line-height: 1.5;
+    letter-spacing: 0.00938em;
+}
+
+.MuiTypography-body2 {
+    font-weight: 400;
+    font-size: 0.875rem;
+    line-height: 1.43;
+    letter-spacing: 0.01071em;
+}
+
+.app-title {
+    position: absolute;
+    left: 0;
+    right: 0;
+    margin: auto;
+    text-align: center;
+    font-size: 1.5rem;
+    font-weight: 500;
+    letter-spacing: 0.0075em;
+    color: #fff;
+    pointer-events: none;
+}
+
+/* === Material UI Container === */
+.MuiContainer-root {
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 16px;
+    padding-right: 16px;
+    box-sizing: border-box;
+    display: block;
+}
+
+.MuiContainer-maxWidthLg {
+    max-width: 1200px;
+}
+
+@media (min-width: 600px) {
+    .MuiContainer-root {
+        padding-left: 24px;
+        padding-right: 24px;
+    }
+}
+
+/* === Material UI Paper & Card === */
+.MuiPaper-root {
+    color: var(--mui-palette-grey-900);
+    transition: box-shadow var(--mui-transitions-duration-standard) var(--mui-transitions-easing-ease-in-out);
+    background-color: #fff;
+    border-radius: 4px;
+}
+
+.MuiPaper-elevation1 {
+    box-shadow: var(--mui-shadows-1);
+}
+
+.MuiCard-root {
+    overflow: hidden;
+}
+
+/* === Material UI Card Content === */
+.MuiCardContent-root {
+    padding: 16px;
+}
+
+.MuiCardContent-root:last-child {
+    padding-bottom: 16px;
+}
+
+/* === Material UI Card Action Area === */
+.MuiCardActionArea-root {
+    cursor: pointer;
+    display: block;
+    text-align: inherit;
+    border-radius: inherit;
+    width: 100%;
+    background-color: transparent;
+    border: 0;
+    outline: 0;
+    margin: 0;
+    padding: 0;
+    color: inherit;
+    text-decoration: none;
+    transition: background-color var(--mui-transitions-duration-shortest) var(--mui-transitions-easing-ease-in-out);
+    position: relative;
+    overflow: hidden;
+}
+
+.MuiCardActionArea-root:hover {
+    background-color: rgba(0, 0, 0, 0.04);
+}
+
+/* === Material UI Button === */
+.MuiButton-root {
+    color: var(--mui-palette-primary-main);
+    padding: 6px 16px;
+    font-size: 0.875rem;
+    min-width: 64px;
+    box-sizing: border-box;
+    transition: background-color var(--mui-transitions-duration-short) var(--mui-transitions-easing-ease-in-out), box-shadow var(--mui-transitions-duration-short) var(--mui-transitions-easing-ease-in-out), border-color var(--mui-transitions-duration-short) var(--mui-transitions-easing-ease-in-out), color var(--mui-transitions-duration-short) var(--mui-transitions-easing-ease-in-out);
+    font-family: "Roboto", "Helvetica", "Arial", sans-serif;
+    font-weight: 500;
+    line-height: 1.75;
+    border-radius: 4px;
+    letter-spacing: 0.02857em;
+    text-transform: uppercase;
+    border: 0;
+    cursor: pointer;
+    margin: 0;
+    display: inline-flex;
+    outline: 0;
+    position: relative;
+    align-items: center;
+    user-select: none;
+    vertical-align: middle;
+    justify-content: center;
+    text-decoration: none;
+    background-color: transparent;
+}
+
+.MuiButton-contained {
+    color: #fff;
+    background-color: var(--mui-palette-primary-main);
+    box-shadow: var(--mui-shadows-2);
+}
+
+.MuiButton-contained:hover {
+    background-color: var(--mui-palette-primary-dark);
+    box-shadow: var(--mui-shadows-4);
+}
+
+.MuiButton-containedPrimary {
+    color: #fff;
+    background-color: var(--mui-palette-primary-main);
+}
+
+.MuiButton-containedPrimary:hover {
+    background-color: var(--mui-palette-primary-dark);
+}
+
+.MuiButton-label {
+    width: 100%;
+    display: inherit;
+    align-items: inherit;
+    justify-content: inherit;
+}
+
+/* === Material UI Alert === */
+.MuiAlert-root {
+    display: flex;
+    padding: 6px 16px;
+    font-size: 0.875rem;
+    font-family: "Roboto", "Helvetica", "Arial", sans-serif;
+    font-weight: 400;
+    line-height: 1.43;
+    border-radius: 4px;
+    letter-spacing: 0.01071em;
+    margin-bottom: 16px;
+}
+
+.MuiAlert-standardError {
+    color: #611a15;
+    background-color: #fdeded;
+    border: 1px solid #e57373;
+}
+
+.MuiAlert-icon {
+    margin-right: 12px;
+    padding: 7px 0;
+    display: flex;
+    font-size: 22px;
+    opacity: 0.9;
+}
+
+.MuiAlert-message {
+    padding: 8px 0;
+    min-width: 0;
+    overflow: auto;
+}
+
+/* === Material UI Loading Container (ユーザーディスプレイ中央表示&操作ブロック) === */
+.loading-container {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    flex-direction: column;
+    gap: var(--mui-spacing-2);
+    background-color: rgba(255, 255, 255, 0.95) !important;
+    z-index: 2147483647 !important; /* 最大値で最前面 */
+    pointer-events: all !important; /* 背面のクリック・操作を完全ブロック */
+    overflow: hidden !important;
+    /* GPU加速とユーザーディスプレイ中央配置を保証 */
+    transform: translate3d(0, 0, 0);
+    backface-visibility: hidden;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-sizing: border-box !important;
+}
+
+/* ローディング中はbodyにoverflow: hidden;を付与することを推奨（JSで制御可） */
+/*
+body.loading {
+    overflow: hidden !important;
+}
+*/
+
+/* === Material UI Circular Progress (Loading) === */
+.MuiCircularProgress-root {
+    display: inline-block;
+    width: 40px;
+    height: 40px;
+    border: 4px solid var(--mui-palette-grey-300);
+    border-radius: 50%;
+    border-top-color: var(--mui-palette-primary-main);
+    animation: mui-spin 1.4s linear infinite;
+}
+
+@keyframes mui-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* === Material UI SVG Icon === */
+.MuiSvgIcon-root {
+    user-select: none;
+    width: 1em;
+    height: 1em;
+    display: inline-block;
+    fill: currentColor;
+    flex-shrink: 0;
+    transition: fill var(--mui-transitions-duration-shorter) var(--mui-transitions-easing-ease-in-out);
+    font-size: 1.5rem;
+}
+/* === Custom Components === */
+
+/* Property Card Specific Styling */
+.property-card {
+    margin-bottom: 32px;
+    border-radius: 16px;
+    box-shadow: var(--mui-shadows-2);
+    background: #fff;
+    padding: 0;
+}
+
+.property-card .MuiCardContent-root {
+    text-align: center;
+    padding: 20px 16px;
+}
+
+.property-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 24px 20px 20px 20px;
+}
+
+.property-icon {
+    font-size: 2rem;
+    color: var(--mui-palette-primary-main);
+}
+
+.property-card .MuiTypography-h5 {
+    color: var(--mui-palette-primary-dark);
+    font-weight: 600;
+    font-size: 1.4rem;
+}
+
+/* Room Grid Layout */
+.room-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 24px;
+    margin-top: 8px;
+    margin-bottom: 32px;
+    padding: 0;
+}
+
+/* Room Card Specific Styling */
+.room-card {
+    border-radius: 16px;
+    box-shadow: var(--mui-shadows-1);
+    background: #fff;
+    transition: box-shadow 0.2s, transform 0.2s;
+    outline: none;
+    position: relative;
+    min-height: 64px;
+    cursor: pointer;
+    border: 1.5px solid transparent;
+}
+
+.room-card:focus {
+    border: 1.5px solid var(--mui-palette-primary-main);
+    box-shadow: 0 0 0 2px var(--mui-palette-primary-light);
+}
+
+.room-card:hover {
+    box-shadow: var(--mui-shadows-4);
+    transform: translateY(-2px) scale(1.01);
+}
+
+.room-card.status-completed {
+    border-left: 6px solid var(--mui-palette-success-main);
+    background: #f1f8e9;
+}
+
+.room-card.status-pending {
+    border-left: 6px solid var(--mui-palette-warning-main);
+    background: #fff8e1;
+}
+
+.room-info-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 18px 20px;
+}
+
+.status-icon {
+    font-size: 1.7rem;
+    flex-shrink: 0;
+    margin-right: 2px;
+}
+
+.room-card.status-completed .status-icon {
+    color: var(--mui-palette-success-main);
+}
+
+.room-card.status-pending .status-icon {
+    color: var(--mui-palette-warning-main);
+}
+
+.room-name {
+    flex-grow: 1;
+    font-weight: 500;
+    font-size: 1.15rem;
+    color: var(--mui-palette-grey-900);
+    letter-spacing: 0.01em;
+}
+
+.room-status {
+    font-size: 0.95rem;
+    color: var(--mui-palette-grey-600);
+    white-space: nowrap;
+}
+
+/* Complete Button Container */
+.complete-button-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 32px;
+    margin-bottom: 32px;
+}
+
+.complete-button {
+    gap: 10px;
+    padding: 18px 36px;
+    font-size: 1.15rem;
+    border-radius: 8px;
+    font-weight: 600;
+    box-shadow: var(--mui-shadows-2);
+    min-width: 320px;
+    letter-spacing: 0.04em;
+}
+
+/* Ripple Effect (Material UI風) */
+.ripple {
+    position: absolute;
+    border-radius: 50%;
+    background-color: rgba(25, 118, 210, 0.18);
+    transform: scale(0);
+    animation: ripple 0.5s linear;
+    pointer-events: none;
+    z-index: 2;
+}
+
+@keyframes ripple {
+    to {
+        transform: scale(3.5);
+        opacity: 0;
+    }
+}
+
+/* アクセシビリティ: フォーカス強調 */
+.room-card:focus-visible {
+    outline: 2px solid var(--mui-palette-primary-main);
+    outline-offset: 2px;
+}
+
+/* === Header back button positioning === */
+.app-header .MuiIconButton-root,
+.app-header [role="button"] {
+    position: absolute !important;
+    left: 8px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    z-index: 15 !important;
+}
+
+.app-header .app-title {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    text-align: center;
+    margin: 0 auto;
+    pointer-events: none;
+    z-index: 5;
+}
+
+/* === Responsive Design === */
+@media (max-width: 960px) {
+    .room-grid {
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 12px;
+    }
+}
+
+@media (max-width: 600px) {
+    body {
+        font-size: 18px;
+    }
+    
+    .app-title {
+        font-size: 1.25rem;
+        margin-right: 12px;
+    }
+    
+    .room-name {
+        font-size: 1rem;
+    }
+    
+    .property-card .MuiTypography-h5 {
+        font-size: 1.25rem;
+    }
+    
+    .room-grid {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+    
+    .MuiContainer-root {
+        padding-left: 8px;
+        padding-right: 8px;
+    }
+}
+
+/* === Large Font Accessibility Enhancement === */
+/* 老眼に配慮したフォントサイズ設定 */
+@media (min-width: 600px) {
+    body {
+        font-size: 1.125rem; /* 18px */
+    }
+    
+    .room-name {
+        font-size: 1.25rem; /* 20px */
+    }
+    
+    .room-status {
+        font-size: 1rem; /* 16px */
+    }
+    
+    .property-card .MuiTypography-h5 {
+        font-size: 1.75rem; /* 28px */
+    }
+    
+    .app-title {
+        font-size: 1.5rem; /* 24px */
+    }
+    
+    .complete-button {
+        font-size: 1.125rem; /* 18px */
+        padding: 14px 28px;
+    }
+}
+
+@media (max-width: 480px) {
+    body {
+        font-size: 16px;
+    }
+    
+    .app-title {
+        font-size: 1.3rem;
+    }
+    
+    .room-name {
+        font-size: 0.875rem;
+    }
+    
+    .property-card .MuiTypography-h5 {
+        font-size: 1.125rem;
+    }
+    
+    .room-status {
+        font-size: 0.75rem;
+    }
+    
+    .MuiIconButton-root {
+        padding: 8px;
+    }
+    
+    .complete-button {
+        min-width: 240px;
+        font-size: 0.875rem;
+    }
+}
+
+

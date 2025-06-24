@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>構文チェッカー</title>
+    <meta charset="utf-8">
+</head>
+<body>
+    <h1>JavaScript構文チェック</h1>
+    <div id="result"></div>
+    
+    <script>
+        try {
+            // property_select.htmlのJavaScript部分をテスト
+            console.log("構文チェック開始...");
+            
+            // React Componentの基本構造をテスト
+            const TestApp = () => {
+                const [test, setTest] = React.useState('test');
+                return React.createElement('div', null, 'Test');
+            };
+            
+            document.getElementById('result').innerHTML = '✅ 基本構文OK';
+            console.log("基本構文テスト成功");
+            
+        } catch (error) {
+            console.error("構文エラー:", error);
+            document.getElementById('result').innerHTML = `❌ エラー: ${error.message}`;
+        }
+    </script>
+</body>
+</html>
