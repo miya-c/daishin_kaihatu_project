@@ -881,7 +881,7 @@
 
           setNavigationMessage('');
           
-          const targetUrl = `/room_select?propertyId=${encodeURIComponent(property.id)}`;
+          const targetUrl = `./room_select.html?propertyId=${encodeURIComponent(property.id)}`;
           console.log(`[ReactApp] Redirecting to: ${targetUrl}`);
           // 短い遅延の後に画面遷移
           setTimeout(() => {
@@ -907,7 +907,7 @@
             // 空の状態で画面遷移を続行
             setNavigationMessage('');
             
-            const targetUrl = `/room_select?propertyId=${encodeURIComponent(property.id)}`;
+            const targetUrl = `./room_select.html?propertyId=${encodeURIComponent(property.id)}`;
             console.log(`[ReactApp] エラー時でも画面遷移: ${targetUrl}`);
             setTimeout(() => {
               window.location.href = targetUrl;
