@@ -627,3 +627,23 @@ function runUsageExample() {
     };
   }
 }
+
+/**
+ * HTMLファイルを読み込む関数
+ * @param {string} filename - 読み込むHTMLファイル名
+ * @returns {string} HTMLファイルの内容
+ */
+function include(filename) {
+  try {
+    // まずライブラリのinclude関数を試行
+    if (typeof cmlibrary !== 'undefined' && typeof cmlibrary.include === 'function') {
+      return cmlibrary.include(filename);
+    } else {
+      // ライブラリが利用できない場合は直接読み込み
+      return HtmlService.createHtmlOutputFromFile(filename).getContent();
+    }
+  } catch (error) {
+    console.error('include エラー:', error);
+    return `<!-- include エラー: ${error.message} -->`;
+  }
+}
