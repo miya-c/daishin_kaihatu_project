@@ -33,9 +33,9 @@
         });
       }
     }
-    // PWA起動時は物件一覧へリダイレクト（Vercel URL）
+    // PWA起動時は物件一覧へリダイレクト
     if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
-      window.location.href = 'https://daishin-kaihatu-project.vercel.app/property_select.html';
+      window.location.href = './property_select.html';
     }
   </script>
 </head>

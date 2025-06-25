@@ -1,4 +1,4 @@
-// Service Worker for PWA - Simplified for Vercel + GAS architecture
+// Service Worker for PWA - Optimized for Cloudflare Pages + GAS architecture
 const CACHE_NAME = 'meter-reading-app-v1';
 const CACHE_ASSETS = [
   '/html_files/main_app/property_select.html',
