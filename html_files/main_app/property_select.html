@@ -475,18 +475,18 @@
         };
       }, [isFetched]);
 
-      // 検針完了日フォーマット関数 - React Error #418 対策
+      // 検針完了日フォーマット関数 - React Error #418 対策（完全版）
       const formatCompletionDate = (dateStr) => {
-        // 確実に文字列を返すための安全化
+        // 確実に文字列またはnullを返すための安全化
         if (!dateStr || typeof dateStr !== 'string' || dateStr.trim() === '') {
-          return '';
+          return null; // 空文字列ではなくnullを返す
         }
         
         try {
           // YYYY-MM-DD形式の文字列をDate型に変換
           const date = new Date(dateStr);
           if (isNaN(date.getTime())) {
-            return '';
+            return null; // 無効な日付の場合はnullを返す
           }
           
           // 月日のみを取得（1桁の場合はゼロパディングなし）
@@ -495,7 +495,7 @@
           return `検針完了日：${month}月${day}日`;
         } catch (error) {
           console.error('[ReactApp] formatCompletionDate error:', error);
-          return '';
+          return null; // エラー時はnullを返す
         }
       };
 
@@ -1248,13 +1248,19 @@
                               border: '1px solid rgba(0,0,0,0.08)',
                               boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
                             }}>
-                              ID: {String(property.id || 'IDなし')}
+                              {(() => {
+                                // プロパティIDの安全な表示
+                                const propertyId = property.id || property['物件ID'] || '';
+                                const safeId = String(propertyId).trim();
+                                return `ID: ${safeId || 'IDなし'}`;
+                              })()}
                             </div>
                             
-                            {/* Completion Date Badge - React Error #418対策 */}
+                            {/* Completion Date Badge - React Error #418完全対策 */}
                             {(() => {
                               const completionText = formatCompletionDate(property.completionDate);
-                              return completionText ? (
+                              // nullまたは空文字列の場合は何も表示しない
+                              return (completionText && completionText.trim()) ? (
                                 <div className="MuiChip-root" style={{
                                   backgroundColor: '#e8f5e8',
                                   color: '#2e7d32',
@@ -1271,7 +1277,7 @@
                             })()}
                           </div>
                           
-                          {/* Property Name - React Error #418対策 */}
+                          {/* Property Name - React Error #418完全対策 */}
                           <div className="MuiTypography-root" style={{
                             fontSize: '1.125rem',
                             fontWeight: 500,
@@ -1280,7 +1286,12 @@
                             margin: 0,
                             letterSpacing: '0.00938em'
                           }}>
-                            {String(property.name || '名称なし')}
+                            {(() => {
+                              // 確実に表示可能な文字列を保証
+                              const propertyName = property.name || property['物件名'] || '';
+                              const safeName = String(propertyName).trim();
+                              return safeName || '名称未設定';
+                            })()}
                           </div>
                         </div>
                         
