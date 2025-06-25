@@ -1,0 +1,66 @@
+{
+  "buildCommand": null,
+  "devCommand": null,
+  "installCommand": null,
+  "outputDirectory": null,
+  "public": true,
+  "rewrites": [
+    {
+      "source": "/",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/property_select",
+      "destination": "/html_files/main_app/property_select.html"
+    },
+    {
+      "source": "/room_select",
+      "destination": "/html_files/main_app/room_select.html"
+    },
+    {
+      "source": "/meter_reading",
+      "destination": "/html_files/main_app/meter_reading.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/service-worker.js",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, must-revalidate"
+        },
+        {
+          "key": "Service-Worker-Allowed", 
+          "value": "/"
+        }
+      ]
+    },
+    {
+      "source": "/manifest.json",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/manifest+json"
+        }
+      ]
+    },
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-XSS-Protection",
+          "value": "1; mode=block"
+        }
+      ]
+    }
+  ]
+}
