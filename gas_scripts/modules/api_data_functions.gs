@@ -150,7 +150,17 @@ function getRooms(propertyId) {
             inspectionData.slice(1).forEach(row => {
               // 物件IDが一致する場合
               if (String(row[inspPropertyIdIndex]).trim() === String(propertyId).trim()) {
-                const roomId = String(row[inspRoomIdIndex]).trim();
+                const roomIdRaw = String(row[inspRoomIdIndex]).trim();
+                
+                // 部屋IDを正規化（R000001 → R001, R000002 → R002 など）
+                let roomId = roomIdRaw;
+                if (roomIdRaw.startsWith('R') && roomIdRaw.length > 4) {
+                  // R000001 → R001 に変換
+                  const numPart = roomIdRaw.substring(1); // 000001
+                  const normalizedNum = String(parseInt(numPart, 10)).padStart(3, '0'); // 001
+                  roomId = 'R' + normalizedNum; // R001
+                  Logger.log(`[getRooms] 部屋ID正規化: ${roomIdRaw} → ${roomId}`);
+                }
                 
                 // 検針完了データを確認（検針値が入力されている場合）
                 if (row[inspValueIndex] !== null && 
