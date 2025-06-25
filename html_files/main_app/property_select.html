@@ -340,16 +340,16 @@
   <script>
     // 動的 CSS キャッシュバスティング
     const timestamp = Date.now();
-    document.write(`<link rel="stylesheet" href="../../css_styles/property_select.css?t=${timestamp}">`);
-    document.write(`<link rel="stylesheet" href="../../css_styles/pwa-styles.css?t=${timestamp}">`);
+    document.write(`<link rel="stylesheet" href="/css_styles/property_select.css?t=${timestamp}">`);
+    document.write(`<link rel="stylesheet" href="/css_styles/pwa-styles.css?t=${timestamp}">`);
   </script>
   
   <!-- CSS プリロード (パフォーマンス向上) -->
   <script>
     // 動的 CSS プリロード
     const ts = Date.now();
-    document.write(`<link rel="preload" href="../../css_styles/property_select.css?t=${ts}" as="style">`);
-    document.write(`<link rel="preload" href="../../css_styles/pwa-styles.css?t=${ts}" as="style">`);
+    document.write(`<link rel="preload" href="/css_styles/property_select.css?t=${ts}" as="style">`);
+    document.write(`<link rel="preload" href="/css_styles/pwa-styles.css?t=${ts}" as="style">`);
   </script>
   
   <!-- ReactとReactDOMのCDN (Cache Busting Version) -->
@@ -384,7 +384,7 @@
 <body>
   <div id="root" class="styles-loading"></div>
 
-  <link rel="stylesheet" href="../../css_styles/property_select.css">
+  <link rel="stylesheet" href="/css_styles/property_select.css">
 
   <script type="text/babel">
     // 🦁 Brave Browser Cache Busting Version 20250614c
@@ -881,7 +881,7 @@
 
           setNavigationMessage('');
           
-          const targetUrl = `./room_select.html?propertyId=${encodeURIComponent(property.id)}`;
+          const targetUrl = `/room_select?propertyId=${encodeURIComponent(property.id)}`;
           console.log(`[ReactApp] Redirecting to: ${targetUrl}`);
           // 短い遅延の後に画面遷移
           setTimeout(() => {
@@ -907,7 +907,7 @@
             // 空の状態で画面遷移を続行
             setNavigationMessage('');
             
-            const targetUrl = `./room_select.html?propertyId=${encodeURIComponent(property.id)}`;
+            const targetUrl = `/room_select?propertyId=${encodeURIComponent(property.id)}`;
             console.log(`[ReactApp] エラー時でも画面遷移: ${targetUrl}`);
             setTimeout(() => {
               window.location.href = targetUrl;
