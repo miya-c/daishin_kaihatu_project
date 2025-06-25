@@ -458,14 +458,25 @@ function showSearchUsageGuide() {
  * Web Appとして公開されるdoGet関数
  * cmlibraryのweb_app_api.gsの関数を使用
  * @param {Object} e - イベントオブジェクト
- * @returns {HtmlOutput} HTMLレスポンス
+ * @returns {ContentService} JSONレスポンス
  */
 function doGet(e) {
   try {
+    console.log('doGet called with parameters:', e.parameter);
+    
+    // ライブラリのdoGet関数を呼び出し
     return cmlibrary.doGet(e);
+    
   } catch (error) {
     console.error('doGet エラー:', error);
-    return HtmlService.createHtmlOutput(`<p>エラーが発生しました: ${error.message}</p>`);
+    // エラー時はJSONレスポンスを返す
+    return ContentService
+      .createTextOutput(JSON.stringify({
+        success: false,
+        error: error.message,
+        timestamp: new Date().toISOString()
+      }))
+      .setMimeType(ContentService.MimeType.JSON);
   }
 }
 

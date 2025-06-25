@@ -4,22 +4,25 @@
   "installCommand": null,
   "outputDirectory": null,
   "public": true,
+  "functions": {},
+  "cleanUrls": true,
+  "trailingSlash": false,
   "rewrites": [
-    {
-      "source": "/",
-      "destination": "/index.html"
-    },
     {
       "source": "/property_select",
       "destination": "/html_files/main_app/property_select.html"
     },
     {
-      "source": "/room_select",
+      "source": "/room_select", 
       "destination": "/html_files/main_app/room_select.html"
     },
     {
       "source": "/meter_reading",
       "destination": "/html_files/main_app/meter_reading.html"
+    },
+    {
+      "source": "/((?!css_styles|csv|gas_scripts|html_files|manifest\\.json|service-worker\\.js|pwa-utils\\.js|.*\\.).*)",
+      "destination": "/index.html"
     }
   ],
   "headers": [

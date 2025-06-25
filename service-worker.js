@@ -1,6 +1,8 @@
 // Service Worker for PWA - Optimized for Cloudflare Pages + GAS architecture
 const CACHE_NAME = 'meter-reading-app-v1';
 const CACHE_ASSETS = [
+  '/',
+  '/index.html',
   '/html_files/main_app/property_select.html',
   '/html_files/main_app/room_select.html',
   '/html_files/main_app/meter_reading.html',
