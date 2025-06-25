@@ -204,6 +204,7 @@
                 
                 const data = await response.json();
                 console.log('[room_select] APIデータ解析完了:', data);
+                console.log('[room_select] APIレスポンス詳細:', JSON.stringify(data, null, 2));
                 
                 if (!data.success) {
                     throw new Error(data.error || 'データの取得に失敗しました');
@@ -301,14 +302,20 @@
             }
             
             const urlParams = new URLSearchParams(window.location.search);
-            const propertyId = urlParams.get('propertyId');
-            
-            console.log('[room_select] 部屋カード作成開始');
-            rooms.forEach((room, index) => {
-                console.log(`[room_select] 部屋[${index}]処理:`, room.name || room['部屋名'] || room.id);
-                
-                // 検針不要フラグの確認（新しいisNotNeededフィールドを使用）
-                const isSkipInspection = room.isNotNeeded === true;
+            const propertyId = urlParams.get('propertyId');                console.log('[room_select] 部屋カード作成開始');
+                rooms.forEach((room, index) => {
+                    console.log(`[room_select] 部屋[${index}]処理:`, room.name || room['部屋名'] || room.id);
+                    console.log(`[room_select] 部屋[${index}]データ詳細:`, {
+                        id: room.id,
+                        name: room.name,
+                        isNotNeeded: room.isNotNeeded,
+                        readingStatus: room.readingStatus,
+                        isCompleted: room.isCompleted
+                    });
+                    
+                    // 検針不要フラグの確認（新しいisNotNeededフィールドを使用）
+                    const isSkipInspection = room.isNotNeeded === true;
+                    console.log(`[room_select] 部屋[${index}] 検針不要フラグ判定:`, isSkipInspection);
                 
                 // Material UI Card構造
                 const card = document.createElement('div');
