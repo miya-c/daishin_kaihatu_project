@@ -33,8 +33,10 @@
         });
       }
     }
-    // PWA起動時は物件一覧へリダイレクト
-    if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
+    // PWA起動時は物件一覧へリダイレクト（ワンタイムチェック）
+    if ((window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) 
+        && !sessionStorage.getItem('pwa_redirected')) {
+      sessionStorage.setItem('pwa_redirected', 'true');
       window.location.href = './property_select.html';
     }
   </script>
