@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>物件管理アプリ</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="stylesheet" href="/css_styles/pwa-materialui.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+  <script>
+    let deferredPrompt;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      document.getElementById('install-btn').style.display = 'block';
+    });
+    function installPWA() {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then((choiceResult) => {
+          if (choiceResult.outcome === 'accepted') {
+            document.getElementById('install-btn').style.display = 'none';
+            const msg = document.createElement('div');
+            msg.innerHTML = 'インストールが完了しました。<br>ホーム画面からアプリを起動できます。';
+            msg.style.marginTop = '24px';
+            msg.style.color = '#1976d2';
+            msg.style.fontWeight = 'bold';
+            document.querySelector('.container').appendChild(msg);
+          }
+          deferredPrompt = null;
+        });
+      }
+    }
+    // PWA起動時は物件一覧へリダイレクト
+    if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
+      window.location.replace('/property_select');
+    }
+  </script>
+</head>
+<body>
+  <div class="container">
+    <h1>水道検針アプリ</h1>
+    <p>このアプリはPWAとしてインストールできます。</p>
+    <button id="install-btn" style="display:none;" onclick="installPWA()">PWAをインストール</button>
+  </div>
+  <script>
+    // サービスワーカー登録
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('/service-worker.js');
+      });
+    }
+  </script>
+</body>
+</html>
