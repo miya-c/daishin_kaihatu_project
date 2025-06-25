@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>水道検針アプリ</title>
-  <link rel="manifest" href="/manifest.json">
-  <link rel="stylesheet" href="/css_styles/pwa-materialui.css">
+  <link rel="manifest" href="./manifest.json">
+  <link rel="stylesheet" href="./css_styles/pwa-materialui.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
@@ -33,9 +33,9 @@
         });
       }
     }
-    // PWA起動時は物件一覧へリダイレクト
+    // PWA起動時は物件一覧へリダイレクト（パス修正）
     if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
-      window.location.replace('/property_select');
+      window.location.replace('./html_files/main_app/property_select.html');
     }
   </script>
 </head>
@@ -49,7 +49,13 @@
     // サービスワーカー登録
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
-        navigator.serviceWorker.register('/service-worker.js');
+        navigator.serviceWorker.register('./service-worker.js')
+          .then(function(registration) {
+            console.log('PWA: Service Worker 登録成功', registration);
+          })
+          .catch(function(error) {
+            console.log('PWA: Service Worker 登録失敗', error);
+          });
       });
     }
   </script>
