@@ -306,28 +306,77 @@
             console.log('[room_select] 部屋カード作成開始');
             rooms.forEach((room, index) => {
                 console.log(`[room_select] 部屋[${index}]処理:`, room.name || room['部屋名'] || room.id);
+                
+                // 検針不要フラグの確認
+                const isExcluded = room.isExcluded || room['検針不要'] || room.excluded || false;
+                const isCompleted = room.readingStatus === 'completed' || room.isCompleted;
+                
                 // Material UI Card構造
                 const card = document.createElement('div');
-                card.className = 'MuiCard-root MuiPaper-root MuiPaper-elevation1 MuiCardActionArea-root room-card' +
-                  (room.readingStatus === 'completed' || room.isCompleted ? ' status-completed' : ' status-pending');
-                card.setAttribute('tabindex', '0');
-                card.setAttribute('role', 'button');
-                card.setAttribute('aria-label', `${String(room.name || room['部屋名'] || room.id || '不明')} ${room.readingStatus === 'completed' ? '検針済み' : '未検針'}`);
+                let cardClasses = 'MuiCard-root MuiPaper-root MuiPaper-elevation1 MuiCardActionArea-root room-card';
+                
+                if (isExcluded) {
+                    // 検針不要の場合
+                    cardClasses += ' status-excluded';
+                } else if (isCompleted) {
+                    // 検針済みの場合
+                    cardClasses += ' status-completed';
+                } else {
+                    // 未検針の場合
+                    cardClasses += ' status-pending';
+                }
+                
+                card.className = cardClasses;
+                card.setAttribute('tabindex', isExcluded ? '-1' : '0');
+                card.setAttribute('role', isExcluded ? 'presentation' : 'button');
+                
+                const roomName = String(room.name || room['部屋名'] || room.id || '不明');
+                const statusText = isExcluded ? '検針不要' : 
+                                  isCompleted ? (room.readingDateFormatted ? `検針済み：${String(room.readingDateFormatted)}` : '検針済み') : 
+                                  '未検針';
+                
+                card.setAttribute('aria-label', `${roomName} ${statusText}`);
+                
+                // アイコンと色の設定
+                let iconName, iconColor;
+                if (isExcluded) {
+                    iconName = 'block';
+                    iconColor = '#9e9e9e';
+                } else if (isCompleted) {
+                    iconName = 'check_circle';
+                    iconColor = '#2e7d32';
+                } else {
+                    iconName = 'warning';
+                    iconColor = '#ed6c02';
+                }
+                
                 // 1行表示 - React Error #418対策（値の安全化）
                 card.innerHTML = `
                   <div class="MuiCardContent-root room-info-row">
-                    <span class="material-icons MuiSvgIcon-root status-icon" aria-hidden="true" style="color:${room.readingStatus === 'completed' ? '#2e7d32' : '#ed6c02'};">
-                      ${room.readingStatus === 'completed' ? 'check_circle' : 'warning'}
+                    <span class="material-icons MuiSvgIcon-root status-icon" aria-hidden="true" style="color:${iconColor};">
+                      ${iconName}
                     </span>
-                    <span class="MuiTypography-root MuiTypography-h6 room-name">${String(room.name || room['部屋名'] || room.id || '不明')}</span>
-                    <span class="MuiTypography-root MuiTypography-body2 room-status">${room.readingStatus === 'completed' && room.readingDateFormatted ? `検針済み：${String(room.readingDateFormatted)}` : '未検針'}</span>
+                    <span class="MuiTypography-root MuiTypography-h6 room-name">${roomName}</span>
+                    <span class="MuiTypography-root MuiTypography-body2 room-status">${statusText}</span>
                   </div>
                 `;
-                card.onclick = () => {
-                  const meterReadingUrl = `/meter_reading?propertyId=${encodeURIComponent(propertyId)}&roomId=${encodeURIComponent(String(room.id || ''))}`;
-                  window.location.href = meterReadingUrl;
-                };
-                addRippleEffect(card);
+                
+                // クリックイベントの設定
+                if (!isExcluded) {
+                    card.onclick = () => {
+                        const meterReadingUrl = `/meter_reading?propertyId=${encodeURIComponent(propertyId)}&roomId=${encodeURIComponent(String(room.id || ''))}`;
+                        window.location.href = meterReadingUrl;
+                    };
+                    addRippleEffect(card);
+                } else {
+                    // 検針不要の場合はクリック不可
+                    card.style.cursor = 'not-allowed';
+                    card.onclick = (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                    };
+                }
+                
                 roomGrid.appendChild(card);
             });
             
