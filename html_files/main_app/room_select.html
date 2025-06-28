@@ -301,6 +301,14 @@
                 return;
             }
             
+            // 部屋名順にソート（数値も含む自然順序でソート）
+            rooms.sort((a, b) => {
+                const nameA = String(a.name || a['部屋名'] || a.id || '').trim();
+                const nameB = String(b.name || b['部屋名'] || b.id || '').trim();
+                return nameA.localeCompare(nameB, 'ja', { numeric: true, sensitivity: 'base' });
+            });
+            console.log('[room_select] 部屋データを部屋名順にソート完了');
+            
             const urlParams = new URLSearchParams(window.location.search);
             const propertyId = urlParams.get('propertyId');                console.log('[room_select] 部屋カード作成開始');
                 rooms.forEach((room, index) => {

@@ -994,12 +994,19 @@
         );
       };
 
-      const filteredProperties = (properties || []).filter(property => {
-        const propertyIdString = String(property.id != null ? property.id : ''); 
-        const propertyNameString = String(property.name != null ? property.name : '');
-        return propertyIdString.toLowerCase().includes(searchTerm.toLowerCase()) ||
-               propertyNameString.toLowerCase().includes(searchTerm.toLowerCase());
-      });
+      const filteredProperties = (properties || [])
+        .filter(property => {
+          const propertyIdString = String(property.id != null ? property.id : ''); 
+          const propertyNameString = String(property.name != null ? property.name : '');
+          return propertyIdString.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                 propertyNameString.toLowerCase().includes(searchTerm.toLowerCase());
+        })
+        .sort((a, b) => {
+          // 物件ID順でソート（自然順序対応）
+          const idA = String(a.id || '').trim();
+          const idB = String(b.id || '').trim();
+          return idA.localeCompare(idB, 'ja', { numeric: true, sensitivity: 'base' });
+        });
 
       // 物件データ取得中の初期ローディング（Material UI準拠）
       if (loading && !isFetched) {
