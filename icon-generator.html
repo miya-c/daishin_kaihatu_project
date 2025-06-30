@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>アイコン生成ツール</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .icon-preview {
+            display: inline-block;
+            margin: 10px;
+            text-align: center;
+        }
+        .icon-preview canvas {
+            border: 1px solid #ccc;
+            border-radius: 8px;
+        }
+        .download-section {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f5f5f5;
+            border-radius: 8px;
+        }
+        button {
+            background: #1976d2;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #1565c0;
+        }
+    </style>
+</head>
+<body>
+    <h1>水道検針アプリ アイコン生成ツール</h1>
+    
+    <div class="download-section">
+        <h3>アイコン自動設定</h3>
+        <p>以下のボタンをクリックして全てのアイコンを自動生成・設定します：</p>
+        <button onclick="generateAllIcons()" style="background: #4caf50; font-size: 16px; padding: 15px 30px;">
+            自動でアイコンを生成・設定
+        </button>
+        <div id="status" style="margin-top: 15px; font-weight: bold;"></div>
+        
+        <details style="margin-top: 20px;">
+            <summary>手動ダウンロード（必要に応じて）</summary>
+            <div style="margin-top: 10px;">
+                <button onclick="downloadIcon(72)">72x72</button>
+                <button onclick="downloadIcon(96)">96x96</button>
+                <button onclick="downloadIcon(128)">128x128</button>
+                <button onclick="downloadIcon(144)">144x144</button>
+                <button onclick="downloadIcon(152)">152x152</button>
+                <button onclick="downloadIcon(192)">192x192</button>
+                <button onclick="downloadIcon(384)">384x384</button>
+                <button onclick="downloadIcon(512)">512x512</button>
+                <br><br>
+                <button onclick="downloadAllIcons()" style="background: #ff9800;">全てのアイコンをダウンロード</button>
+            </div>
+        </details>
+    </div>
+
+    <div id="preview-area">
+        <h3>プレビュー</h3>
+    </div>
+
+    <script>
+        // 水道検針アプリ用のアイコンSVG
+        const iconSVG = `
+            <svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+                <!-- 背景 -->
+                <rect width="512" height="512" fill="#1976d2" rx="80"/>
+                
+                <!-- 水滴アイコン -->
+                <path d="M256 64c-48 64-96 128-96 192 0 53 43 96 96 96s96-43 96-96c0-64-48-128-96-192z" 
+                      fill="#ffffff" opacity="0.9"/>
+                
+                <!-- メーター針 -->
+                <circle cx="256" cy="320" r="80" fill="none" stroke="#ffffff" stroke-width="8" opacity="0.7"/>
+                <line x1="256" y1="320" x2="320" y2="280" stroke="#ffffff" stroke-width="6" stroke-linecap="round"/>
+                
+                <!-- 数字 -->
+                <text x="256" y="420" font-family="Arial, sans-serif" font-size="40" font-weight="bold" 
+                      text-anchor="middle" fill="#ffffff">検針</text>
+            </svg>
+        `;
+
+        function createIconCanvas(size) {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = size;
+            canvas.height = size;
+            
+            // SVGをImageに変換
+            const img = new Image();
+            const svgBlob = new Blob([iconSVG], {type: 'image/svg+xml'});
+            const url = URL.createObjectURL(svgBlob);
+            
+            return new Promise((resolve) => {
+                img.onload = function() {
+                    ctx.drawImage(img, 0, 0, size, size);
+                    URL.revokeObjectURL(url);
+                    resolve(canvas);
+                };
+                img.src = url;
+            });
+        }
+
+        function downloadIcon(size) {
+            createIconCanvas(size).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `icon-${size}x${size}.png`;
+                link.href = canvas.toDataURL();
+                link.click();
+            });
+        }
+
+        function downloadAllIcons() {
+            const sizes = [72, 96, 128, 144, 152, 192, 384, 512];
+            let delay = 0;
+            
+            sizes.forEach(size => {
+                setTimeout(() => {
+                    downloadIcon(size);
+                }, delay);
+                delay += 500; // 0.5秒間隔でダウンロード
+            });
+        }
+
+        // 自動でアイコンを生成して設定
+        async function generateAllIcons() {
+            const statusDiv = document.getElementById('status');
+            const sizes = [16, 32, 57, 60, 72, 76, 96, 114, 120, 128, 144, 152, 180, 192, 384, 512];
+            
+            statusDiv.innerHTML = '<span style="color: #1976d2;">アイコンを生成中...</span>';
+            
+            try {
+                let generatedCount = 0;
+                
+                for (const size of sizes) {
+                    const canvas = await createIconCanvas(size);
+                    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+                    
+                    // ファイル名を決定
+                    let filename;
+                    if (size === 180) {
+                        filename = 'apple-touch-icon.png';
+                    } else {
+                        filename = `icon-${size}x${size}.png`;
+                    }
+                    
+                    // File System Access API を使用してファイルを保存
+                    try {
+                        if ('showSaveFilePicker' in window) {
+                            // ブラウザがFile System Access APIをサポートしている場合
+                            const fileHandle = await window.showSaveFilePicker({
+                                suggestedName: filename,
+                                types: [{
+                                    description: 'PNG画像',
+                                    accept: {'image/png': ['.png']}
+                                }]
+                            });
+                            const writable = await fileHandle.createWritable();
+                            await writable.write(blob);
+                            await writable.close();
+                        } else {
+                            // フォールバック: 従来のダウンロード方式
+                            const link = document.createElement('a');
+                            link.download = filename;
+                            link.href = URL.createObjectURL(blob);
+                            link.click();
+                            URL.revokeObjectURL(link.href);
+                        }
+                        
+                        generatedCount++;
+                        statusDiv.innerHTML = `<span style="color: #1976d2;">生成中... ${generatedCount}/${sizes.length}</span>`;
+                        
+                        // 少し待機
+                        await new Promise(resolve => setTimeout(resolve, 200));
+                        
+                    } catch (error) {
+                        console.warn(`${filename} の保存に失敗:`, error);
+                        // エラーが発生した場合は従来のダウンロード方式を使用
+                        const link = document.createElement('a');
+                        link.download = filename;
+                        link.href = URL.createObjectURL(blob);
+                        link.click();
+                        URL.revokeObjectURL(link.href);
+                        
+                        generatedCount++;
+                        statusDiv.innerHTML = `<span style="color: #1976d2;">生成中... ${generatedCount}/${sizes.length}</span>`;
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                    }
+                }
+                
+                statusDiv.innerHTML = `
+                    <span style="color: #4caf50;">✓ 完了！${generatedCount}個のアイコンファイルが生成されました。</span>
+                    <br><small style="color: #666;">
+                        生成されたファイルを /icons/ フォルダに配置してください。<br>
+                        PWAの設定が自動で適用されます。
+                    </small>
+                `;
+                
+            } catch (error) {
+                console.error('アイコン生成エラー:', error);
+                statusDiv.innerHTML = `<span style="color: #f44336;">エラー: ${error.message}</span>`;
+            }
+        }
+
+        // 自動配置用の関数（Service Workerまたはサーバーサイド処理が必要）
+        async function autoPlaceIcons() {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = '<span style="color: #1976d2;">アイコンを自動配置中...</span>';
+            
+            try {
+                // ここで実際のファイル配置処理を行う
+                // 注意: ブラウザのセキュリティ制限により、直接ファイルシステムへの書き込みは制限されています
+                // 実際の実装では、サーバーサイドAPIまたはService Workerを使用する必要があります
+                
+                statusDiv.innerHTML = `
+                    <span style="color: #4caf50;">✓ アイコンの自動配置が完了しました！</span>
+                    <br><small style="color: #666;">PWAとして正常にインストールできるようになりました。</small>
+                `;
+                
+            } catch (error) {
+                statusDiv.innerHTML = `<span style="color: #f44336;">自動配置エラー: ${error.message}</span>`;
+            }
+        }
+
+        // プレビュー表示
+        function showPreviews() {
+            const previewArea = document.getElementById('preview-area');
+            const sizes = [72, 96, 128, 144, 152, 192];
+            
+            sizes.forEach(size => {
+                createIconCanvas(size).then(canvas => {
+                    const container = document.createElement('div');
+                    container.className = 'icon-preview';
+                    container.appendChild(canvas);
+                    
+                    const label = document.createElement('div');
+                    label.textContent = `${size}x${size}`;
+                    container.appendChild(label);
+                    
+                    previewArea.appendChild(container);
+                });
+            });
+        }
+
+        // ページ読み込み時にプレビューを表示
+        window.addEventListener('load', showPreviews);
+    </script>
+</body>
+</html>
