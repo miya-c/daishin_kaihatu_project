@@ -191,10 +191,26 @@
 
     // Chrome/Edge用のbeforeinstallpromptイベント
     window.addEventListener('beforeinstallprompt', (e) => {
+      console.log('beforeinstallpromptイベントが発火しました');
       e.preventDefault();
       deferredPrompt = e;
       isInstallable = true;
-      showInstallButton();
+      
+      // 少し遅延してからボタンを表示
+      setTimeout(() => {
+        showInstallButton();
+      }, 500);
+    });
+
+    // アプリがインストールされた時のイベント
+    window.addEventListener('appinstalled', (e) => {
+      console.log('PWAがインストールされました');
+      const installBtn = document.getElementById('install-btn');
+      if (installBtn) {
+        installBtn.style.display = 'none';
+      }
+      showInstallSuccess();
+      deferredPrompt = null;
     });
 
     // PWAがすでにインストールされているかチェック
@@ -251,6 +267,9 @@
         const installBtn = document.getElementById('install-btn');
         if (installBtn) {
           installBtn.style.display = 'block';
+          installBtn.disabled = false;
+          installBtn.textContent = 'PWAをインストール';
+          console.log('インストールボタンを表示しました');
         }
       }
     }
@@ -262,24 +281,73 @@
       const isBrave = /Brave/.test(navigator.userAgent);
       const isEdge = /Edg/.test(navigator.userAgent);
       
+      console.log('インストール開始:', { deferredPrompt: !!deferredPrompt, isIOS, isSafari, isChrome, isBrave, isEdge });
+      
       if (isIOS && isSafari) {
         // iOS Safari用の手動インストール説明
         showIOSInstallInstructions();
       } else if (deferredPrompt) {
         // Chrome/Edge/Brave用の自動インストール（beforeinstallpromptが発火した場合）
-        deferredPrompt.prompt();
-        deferredPrompt.userChoice.then((choiceResult) => {
-          if (choiceResult.outcome === 'accepted') {
-            document.getElementById('install-btn').style.display = 'none';
-            showInstallSuccess();
+        console.log('deferredPrompt.prompt()を実行中...');
+        
+        // ボタンを無効化してダブルクリックを防止
+        const installBtn = document.getElementById('install-btn');
+        if (installBtn) {
+          installBtn.disabled = true;
+          installBtn.textContent = 'インストール中...';
+        }
+        
+        try {
+          deferredPrompt.prompt();
+          
+          deferredPrompt.userChoice.then((choiceResult) => {
+            console.log('ユーザーの選択:', choiceResult.outcome);
+            
+            if (choiceResult.outcome === 'accepted') {
+              console.log('インストールが承認されました');
+              if (installBtn) {
+                installBtn.style.display = 'none';
+              }
+              showInstallSuccess();
+            } else {
+              console.log('インストールが拒否されました');
+              // ボタンを元に戻す
+              if (installBtn) {
+                installBtn.disabled = false;
+                installBtn.textContent = 'PWAをインストール';
+              }
+            }
+            
+            deferredPrompt = null;
+          }).catch((error) => {
+            console.error('インストールエラー:', error);
+            // ボタンを元に戻す
+            if (installBtn) {
+              installBtn.disabled = false;
+              installBtn.textContent = 'PWAをインストール';
+            }
+            // エラーの場合は手動インストール手順を表示
+            showChromeInstallInstructions();
+          });
+          
+        } catch (error) {
+          console.error('prompt()実行エラー:', error);
+          // ボタンを元に戻す
+          if (installBtn) {
+            installBtn.disabled = false;
+            installBtn.textContent = 'PWAをインストール';
           }
-          deferredPrompt = null;
-        });
+          // エラーの場合は手動インストール手順を表示
+          showChromeInstallInstructions();
+        }
+        
       } else if (isChrome || isBrave || isEdge) {
         // Chrome系ブラウザでbeforeinstallpromptが発火しない場合
+        console.log('beforeinstallpromptが利用できないため手動インストール手順を表示');
         showChromeInstallInstructions();
       } else {
         // その他のブラウザ用の手動インストール説明
+        console.log('その他ブラウザ用の手動インストール手順を表示');
         showManualInstallInstructions();
       }
     }
@@ -337,12 +405,32 @@
           <p style="font-size: 0.9em; color: #666; margin-top: 8px;">
             <strong>ヒント:</strong> アドレスバーにインストールアイコンが表示されない場合は、<br>
             ページを再読み込みしてから少し待ってみてください。<br>
+            または、Ctrl+Shift+I でデベロッパーツールを開き、Console タブで<br>
+            エラーがないか確認してください。<br>
             <strong>アイコンは自動で設定されます。</strong>
           </p>
-          <button onclick="closeInstructions()" style="margin-top: 12px; padding: 8px 16px; background: #1976d2; color: white; border: none; border-radius: 4px;">閉じる</button>
+          <div style="margin-top: 12px;">
+            <button onclick="retryInstall()" style="padding: 8px 16px; background: #4caf50; color: white; border: none; border-radius: 4px; margin-right: 8px;">再試行</button>
+            <button onclick="closeInstructions()" style="padding: 8px 16px; background: #1976d2; color: white; border: none; border-radius: 4px;">閉じる</button>
+          </div>
         </div>
       `;
       document.querySelector('.container').appendChild(instructions);
+    }
+
+    // インストールの再試行
+    function retryInstall() {
+      console.log('インストールを再試行中...');
+      closeInstructions();
+      
+      // 少し待ってからもう一度試行
+      setTimeout(() => {
+        if (deferredPrompt) {
+          installPWA();
+        } else {
+          alert('自動インストールが利用できません。ブラウザのメニューから手動でインストールしてください。');
+        }
+      }, 1000);
     }
 
     function showInstallSuccess() {
