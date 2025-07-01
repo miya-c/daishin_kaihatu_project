@@ -7,24 +7,7 @@
   <link rel="manifest" href="/manifest.json">
   <link rel="stylesheet" href="/css_styles/pwa-materialui.css">
   
-  <!-- PWA用アイコン設定 -->
-  <link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-32x32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/icons/icon-16x16.png">
-  
-  <!-- Android用アイコン -->
-  <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192x192.png">
-  <link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512x512.png">
-  
-  <!-- iOS用アイコン -->
-  <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
-  <link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-152x152.png">
-  <link rel="apple-touch-icon" sizes="144x144" href="/icons/icon-144x144.png">
-  <link rel="apple-touch-icon" sizes="120x120" href="/icons/icon-120x120.png">
-  <link rel="apple-touch-icon" sizes="114x114" href="/icons/icon-114x114.png">
-  <link rel="apple-touch-icon" sizes="76x76" href="/icons/icon-76x76.png">
-  <link rel="apple-touch-icon" sizes="72x72" href="/icons/icon-72x72.png">
-  <link rel="apple-touch-icon" sizes="60x60" href="/icons/icon-60x60.png">
-  <link rel="apple-touch-icon" sizes="57x57" href="/icons/icon-57x57.png">
+  <!-- 動的アイコン生成により、静的リンクは不要 -->
   
   <!-- iOS用メタタグ -->
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -42,6 +25,16 @@
     let deferredPrompt;
     let isInstallable = false;
     
+    // ブラウザ情報をキャッシュ（一度だけ判定）
+    const browserInfo = {
+      isIOS: /iPad|iPhone|iPod/.test(navigator.userAgent),
+      isSafari: /^((?!chrome|android).)*safari/i.test(navigator.userAgent),
+      isChrome: /Chrome/.test(navigator.userAgent),
+      isBrave: /Brave/.test(navigator.userAgent),
+      isEdge: /Edg/.test(navigator.userAgent),
+      isPWAMode: () => window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true
+    };
+    
     // アイコンSVGテンプレート
     const iconSVG = `
       <svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
@@ -55,8 +48,8 @@
       </svg>
     `;
     
-    // アイコンを動的に生成してData URLとして設定
-    function generateAndSetIcons() {
+    // 統合されたアイコン生成・マニフェスト更新関数
+    function generateIconsAndManifest() {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       const img = new Image();
@@ -64,8 +57,8 @@
       const url = URL.createObjectURL(svgBlob);
       
       img.onload = function() {
-        // 各サイズのアイコンを生成
-        const sizes = [
+        // アイコン生成設定
+        const iconSizes = [
           {size: 16, rel: 'icon', type: 'image/png'},
           {size: 32, rel: 'icon', type: 'image/png'},
           {size: 57, rel: 'apple-touch-icon'},
@@ -81,29 +74,50 @@
           {size: 512, rel: 'icon', type: 'image/png'}
         ];
         
-        sizes.forEach(iconConfig => {
+        const manifestIcons = [];
+        
+        // アイコンを生成してHTMLヘッダーとマニフェスト用に準備
+        iconSizes.forEach(iconConfig => {
           canvas.width = iconConfig.size;
           canvas.height = iconConfig.size;
           ctx.drawImage(img, 0, 0, iconConfig.size, iconConfig.size);
-          
           const dataURL = canvas.toDataURL('image/png');
           
-          // 既存のアイコンリンクを削除
+          // HTMLヘッダー用のリンク要素作成
           const existingLinks = document.querySelectorAll(`link[rel="${iconConfig.rel}"][sizes="${iconConfig.size}x${iconConfig.size}"]`);
           existingLinks.forEach(link => link.remove());
           
-          // 新しいアイコンリンクを作成
           const link = document.createElement('link');
           link.rel = iconConfig.rel;
           link.sizes = `${iconConfig.size}x${iconConfig.size}`;
-          if (iconConfig.type) {
-            link.type = iconConfig.type;
-          }
+          if (iconConfig.type) link.type = iconConfig.type;
           link.href = dataURL;
           document.head.appendChild(link);
+          
+          // マニフェスト用アイコンデータ準備
+          if ([72, 96, 128, 144, 152, 192, 384, 512].includes(iconConfig.size)) {
+            if (iconConfig.size === 384) {
+              canvas.width = 384;
+              canvas.height = 384;
+              ctx.drawImage(img, 0, 0, 384, 384);
+              manifestIcons.push({
+                src: canvas.toDataURL('image/png'),
+                sizes: '384x384',
+                type: 'image/png',
+                purpose: 'maskable any'
+              });
+            } else {
+              manifestIcons.push({
+                src: dataURL,
+                sizes: `${iconConfig.size}x${iconConfig.size}`,
+                type: 'image/png',
+                purpose: 'maskable any'
+              });
+            }
+          }
         });
         
-        // faviconも設定
+        // ファビコン設定
         const favicon = document.createElement('link');
         favicon.rel = 'shortcut icon';
         favicon.type = 'image/png';
@@ -113,40 +127,7 @@
         favicon.href = canvas.toDataURL('image/png');
         document.head.appendChild(favicon);
         
-        URL.revokeObjectURL(url);
-        console.log('アイコンが自動生成・設定されました');
-      };
-      
-      img.src = url;
-    }
-    
-    // マニフェストファイルも動的に更新
-    function updateManifest() {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      const img = new Image();
-      const svgBlob = new Blob([iconSVG], {type: 'image/svg+xml'});
-      const url = URL.createObjectURL(svgBlob);
-      
-      img.onload = function() {
-        const icons = [];
-        const manifestSizes = [72, 96, 128, 144, 152, 192, 384, 512];
-        
-        manifestSizes.forEach(size => {
-          canvas.width = size;
-          canvas.height = size;
-          ctx.drawImage(img, 0, 0, size, size);
-          const dataURL = canvas.toDataURL('image/png');
-          
-          icons.push({
-            src: dataURL,
-            sizes: `${size}x${size}`,
-            type: 'image/png',
-            purpose: 'maskable any'
-          });
-        });
-        
-        // 動的マニフェストを作成
+        // 動的マニフェストを作成・設定
         const manifest = {
           name: '水道検針アプリ',
           short_name: '水道検針',
@@ -158,16 +139,14 @@
           orientation: 'portrait',
           scope: '/',
           lang: 'ja',
-          icons: icons,
+          icons: manifestIcons,
           categories: ['utilities', 'productivity'],
           prefer_related_applications: false
         };
         
-        // マニフェストをData URLとして設定
         const manifestBlob = new Blob([JSON.stringify(manifest)], {type: 'application/json'});
         const manifestURL = URL.createObjectURL(manifestBlob);
         
-        // 既存のマニフェストリンクを更新
         let manifestLink = document.querySelector('link[rel="manifest"]');
         if (!manifestLink) {
           manifestLink = document.createElement('link');
@@ -177,17 +156,52 @@
         manifestLink.href = manifestURL;
         
         URL.revokeObjectURL(url);
-        console.log('マニフェストが自動更新されました');
+        console.log('アイコンとマニフェストが統合生成されました');
       };
       
       img.src = url;
     }
     
-    // ページ読み込み時にアイコンを自動生成・設定
-    window.addEventListener('DOMContentLoaded', () => {
-      generateAndSetIcons();
-      updateManifest();
-    });
+    // 統合されたPWAモード・インストール状態チェック
+    function checkPWAModeAndInstallability() {
+      // PWAモードで起動されている場合はリダイレクト
+      if (browserInfo.isPWAMode()) {
+        window.location.href = '/property_select';
+        return { isPWAMode: true, shouldShowButton: false };
+      }
+      
+      // インストール可能性をチェック
+      const canInstall = 
+        (browserInfo.isIOS && browserInfo.isSafari) || // iOS Safari
+        isInstallable || // beforeinstallpromptが発火した場合
+        browserInfo.isChrome || browserInfo.isBrave || browserInfo.isEdge; // Chrome系
+      
+      return { isPWAMode: false, shouldShowButton: canInstall };
+    }
+    
+    // 統合された初期化処理
+    function initializePWA() {
+      // アイコンとマニフェストを生成
+      generateIconsAndManifest();
+      
+      // PWAモードチェックとボタン表示判定
+      const { isPWAMode, shouldShowButton } = checkPWAModeAndInstallability();
+      
+      if (!isPWAMode && shouldShowButton) {
+        setTimeout(() => {
+          const installBtn = document.getElementById('install-btn');
+          if (installBtn) {
+            installBtn.style.display = 'block';
+            installBtn.disabled = false;
+            installBtn.textContent = 'PWAをインストール';
+            console.log('インストールボタンを表示しました');
+          }
+        }, 1000);
+      }
+    }
+    
+    // ページ読み込み時に統合初期化実行
+    window.addEventListener('DOMContentLoaded', initializePWA);
 
     // Chrome/Edge用のbeforeinstallpromptイベント
     window.addEventListener('beforeinstallprompt', (e) => {
@@ -213,57 +227,22 @@
       deferredPrompt = null;
     });
 
-    // PWAがすでにインストールされているかチェック
+    // PWAがすでにインストールされているかチェック（統合）
     function isPWAInstalled() {
-      return window.matchMedia('(display-mode: standalone)').matches || 
-             window.navigator.standalone === true;
+      return browserInfo.isPWAMode();
     }
 
-    // PWAモードで起動されているかチェックしてリダイレクト
-    function checkPWAMode() {
-      if (isPWAInstalled()) {
-        window.location.href = '/property_select';
-        return true;
-      }
-      return false;
-    }
-
-    // インストール可能かチェック（Safari含む）
+    // インストール可能かチェック（簡略化版）
     function checkInstallability() {
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-      const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-      const isChrome = /Chrome/.test(navigator.userAgent);
-      const isBrave = /Brave/.test(navigator.userAgent);
-      const isEdge = /Edg/.test(navigator.userAgent);
-      const isStandalone = isPWAInstalled();
-      
-      // すでにインストール済みの場合は表示しない
-      if (isStandalone) {
-        return false;
-      }
-      
-      // iOS Safari の場合
-      if (isIOS && isSafari) {
-        return true;
-      }
-      
-      // Chrome/Edge/Brave等でbeforeinstallpromptが発火した場合
-      if (isInstallable) {
-        return true;
-      }
-      
-      // Chrome系ブラウザの場合は強制的に表示（beforeinstallpromptが発火しない場合もあるため）
-      if (isChrome || isBrave || isEdge) {
-        return true;
-      }
-      
-      // その他のブラウザでもマニフェストがあれば表示
-      return true;
+      return !isPWAInstalled() && (
+        (browserInfo.isIOS && browserInfo.isSafari) ||
+        isInstallable ||
+        browserInfo.isChrome || browserInfo.isBrave || browserInfo.isEdge
+      );
     }
 
     function showInstallButton() {
-      // PWAモードでない場合のみボタンを表示
-      if (!isPWAInstalled() && checkInstallability()) {
+      if (checkInstallability()) {
         const installBtn = document.getElementById('install-btn');
         if (installBtn) {
           installBtn.style.display = 'block';
@@ -275,16 +254,14 @@
     }
 
     function installPWA() {
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-      const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-      const isChrome = /Chrome/.test(navigator.userAgent);
-      const isBrave = /Brave/.test(navigator.userAgent);
-      const isEdge = /Edg/.test(navigator.userAgent);
+      console.log('インストール開始:', { 
+        deferredPrompt: !!deferredPrompt, 
+        isIOS: browserInfo.isIOS, 
+        isSafari: browserInfo.isSafari, 
+        isChrome: browserInfo.isChrome 
+      });
       
-      console.log('インストール開始:', { deferredPrompt: !!deferredPrompt, isIOS, isSafari, isChrome, isBrave, isEdge });
-      
-      if (isIOS && isSafari) {
-        // iOS Safari用の手動インストール説明
+      if (browserInfo.isIOS && browserInfo.isSafari) {
         showIOSInstallInstructions();
       } else if (deferredPrompt) {
         // Chrome/Edge/Brave用の自動インストール（beforeinstallpromptが発火した場合）
@@ -341,7 +318,7 @@
           showChromeInstallInstructions();
         }
         
-      } else if (isChrome || isBrave || isEdge) {
+      } else if (browserInfo.isChrome || browserInfo.isBrave || browserInfo.isEdge) {
         // Chrome系ブラウザでbeforeinstallpromptが発火しない場合
         console.log('beforeinstallpromptが利用できないため手動インストール手順を表示');
         showChromeInstallInstructions();
@@ -418,12 +395,11 @@
       document.querySelector('.container').appendChild(instructions);
     }
 
-    // インストールの再試行
+    // インストールの再試行（最適化版）
     function retryInstall() {
       console.log('インストールを再試行中...');
       closeInstructions();
       
-      // 少し待ってからもう一度試行
       setTimeout(() => {
         if (deferredPrompt) {
           installPWA();
@@ -449,25 +425,12 @@
       }
     }
 
-    // 最初にPWAモードチェック（即座に実行）
-    if (checkPWAMode()) {
-      // PWAモードの場合はここでリダイレクトされるので、以下のコードは実行されない
-    }
-
-    // ページ読み込み時の処理
-    window.addEventListener('load', () => {
-      // PWAモードでない場合のみボタン表示処理を実行
-      if (!isPWAInstalled()) {
-        setTimeout(showInstallButton, 1000); // 少し遅延させて確実にチェック
-      }
-    });
-
-    // ページが表示される際の追加チェック（visibilitychange使用）
+    // ページ表示時の追加チェック（最適化版）
     document.addEventListener('visibilitychange', () => {
       if (!document.hidden) {
-        // ページが再表示された時にPWAモードをチェック
         setTimeout(() => {
-          checkPWAMode();
+          const { isPWAMode } = checkPWAModeAndInstallability();
+          // PWAモードの場合はリダイレクト処理が実行される
         }, 100);
       }
     });
