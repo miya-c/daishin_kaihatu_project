@@ -22,6 +22,18 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
   <script>
+    // PWA起動時の即座リダイレクト（DOM読み込み前に実行）
+    (function() {
+      const isPWAMode = window.matchMedia('(display-mode: standalone)').matches || 
+                       window.navigator.standalone === true ||
+                       new URLSearchParams(window.location.search).get('pwa') === 'true';
+      
+      if (isPWAMode) {
+        window.location.replace('/property_select');
+        return; // リダイレクト後は処理を停止
+      }
+    })();
+    
     let deferredPrompt;
     let isInstallable = false;
     
@@ -132,7 +144,7 @@
           name: '水道検針アプリ',
           short_name: '水道検針',
           description: '水道メーター検針用PWAアプリ',
-          start_url: '/property_select',
+          start_url: '/?pwa=true',
           display: 'standalone',
           background_color: '#ffffff',
           theme_color: '#1976d2',
@@ -164,9 +176,13 @@
     
     // 統合されたPWAモード・インストール状態チェック
     function checkPWAModeAndInstallability() {
-      // PWAモードで起動されている場合はリダイレクト
-      if (browserInfo.isPWAMode()) {
-        window.location.href = '/property_select';
+      // URLパラメータでPWA起動を判定
+      const urlParams = new URLSearchParams(window.location.search);
+      const isPWAFromParam = urlParams.get('pwa') === 'true';
+      
+      // PWAモードで起動されている場合は即座にリダイレクト
+      if (browserInfo.isPWAMode() || isPWAFromParam) {
+        window.location.replace('/property_select');
         return { isPWAMode: true, shouldShowButton: false };
       }
       
@@ -429,8 +445,13 @@
     document.addEventListener('visibilitychange', () => {
       if (!document.hidden) {
         setTimeout(() => {
-          const { isPWAMode } = checkPWAModeAndInstallability();
-          // PWAモードの場合はリダイレクト処理が実行される
+          // URLパラメータも含めたPWAモードチェック
+          const urlParams = new URLSearchParams(window.location.search);
+          const isPWAFromParam = urlParams.get('pwa') === 'true';
+          
+          if (browserInfo.isPWAMode() || isPWAFromParam) {
+            window.location.replace('/property_select');
+          }
         }, 100);
       }
     });
