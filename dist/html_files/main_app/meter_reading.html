@@ -1,0 +1,2011 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <title>検針情報 - 水道メーター読み取りアプリ</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <!-- キャッシュコントロール メタタグ -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  
+  <!-- PWA メタタグ -->
+  <meta name="description" content="水道メーターの読み取りを管理するアプリケーション">
+  <meta name="theme-color" content="#007bff">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="メーター読み取り">
+  <meta name="msapplication-TileColor" content="#007bff">
+  
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="/assets/manifest-Dz1MFj89.json">
+  
+  <!-- Favicon and Icons -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iNCIgZmlsbD0iIzAwN2JmZiIvPgo8c3ZnIHg9IjgiIHk9IjgiIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJ3aGl0ZSI+CjxwYXRoIGQ9Ik0xMiAyQzYuNDggMiAyIDYuNDggMiAxMnM0LjQ4IDEwIDEwIDEwIDEwLTQuNDggMTAtMTBTMTcuNTIgMiAxMiAyem0tMiAxNWwtNS01IDEuNDEtMS40MUwxMCAxNC4xN2w3LjU5LTcuNTlMMTkgOGwtOSA5eiIvPgo8L3N2Zz4KPC9zdmc+">
+  <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTgwIiBoZWlnaHQ9IjE4MCIgdmlld0JveD0iMCAwIDE4MCAxODAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxODAiIGhlaWdodD0iMTgwIiByeD0iMjAiIGZpbGw9IiMwMDdiZmYiLz4KPHN2ZyB4PSI0NSIgeT0iNDUiIHdpZHRoPSI5MCIgaGVpZ2h0PSI5MCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJ3aGl0ZSI+CjxwYXRoIGQ9Ik0xMiAyQzYuNDggMiAyIDYuNDggMiAxMnM0LjQ4IDEwIDEwIDEwIDEwLTQuNDggMTAtMTBTMTcuNTIgMiAxMiAyem0tMiAxNWwtNS01IDEuNDEtMS40MUwxMCAxNC4xN2w3LjU5LTcuNTlMMTkgOGwtOSA5eiIvPgo8L3N2Zz4KPC9zdmc+">
+  
+  <!-- WOFF SDK removed for general browser compatibility -->
+  
+  <!-- クリティカルCSS (インライン) - 初回表示の改善 -->
+  <style>
+    /* Critical CSS for immediate styling */
+    * { box-sizing: border-box; }
+    body { 
+      margin: 0; padding: 0; 
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+      line-height: 1.6; background-color: #f5f5f5;
+      font-size: 16px; /* ベースフォントサイズを追加 */
+    }
+    #root {
+      min-height: 100vh;
+      background-color: #f5f5f5;
+    }
+    .loading-container { 
+      display: flex; align-items: center; justify-content: center; 
+      min-height: 100vh; background-color: #f5f5f5; 
+    }
+    .loading-spinner { 
+      width: 40px; height: 40px; border: 4px solid #e1e1e1; 
+      border-top: 4px solid #007bff; border-radius: 50%; 
+      animation: spin 1s linear infinite; 
+    }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .mantine-container { 
+      width: 100%; max-width: 1200px; margin: 0 auto; padding: 20px; /* 16px → 20px */
+    }
+    .mantine-stack {
+      display: flex; flex-direction: column; gap: 16px;
+    }
+    .mantine-button { 
+      display: inline-flex; align-items: center; justify-content: center; 
+      padding: 8px 16px; border: 1px solid #007bff; border-radius: 4px; 
+      background-color: #007bff; color: white; text-decoration: none; 
+      cursor: pointer; transition: background-color 0.2s;
+      font-size: 16px; font-weight: 500;
+    }
+    .mantine-button:hover { background-color: #0056b3; }
+    .mantine-card { 
+      background: white; border-radius: 8px; padding: 16px; 
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 16px; 
+    }
+    .mantine-title { 
+      margin: 0 0 20px 0; /* 16px → 20px */
+      font-size: 28px; /* 24px → 28px */
+      font-weight: 600; 
+      color: #333; 
+    }
+    .mantine-text-input { 
+      margin-bottom: 16px; 
+    }
+    .mantine-text-input input { 
+      width: 100%; 
+      padding: 12px 16px; /* 8px 12px → 12px 16px */
+      border: 1px solid #ddd; 
+      border-radius: 4px; 
+      font-size: 18px; /* 16px → 18px */
+    }
+    .mantine-group {
+      display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    }
+    .mantine-simple-grid {
+      display: grid; gap: 16px;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    }
+    /* テーブルスタイル */
+    .mantine-table {
+      width: 100%; border-collapse: collapse;
+      background: white; border-radius: 8px; overflow: hidden;
+    }
+    .mantine-table th, .mantine-table td {
+      padding: 16px; /* 12px → 16px */
+      text-align: left; 
+      border-bottom: 1px solid #e9ecef;
+      font-size: 16px; /* 新規追加 */
+    }
+    .mantine-table th {
+      background-color: #f8f9fa; 
+      font-weight: 600;
+      font-size: 16px; /* 新規追加 */
+    }
+    /* フォームスタイル */
+    .form-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+      margin-bottom: 16px;
+    }
+    
+    /* モバイル向けの大幅なフォントサイズ拡大 */
+    @media (max-width: 768px) {
+      .mantine-container { 
+        padding: 16px; 
+      }
+      .mantine-title { 
+        font-size: 24px; 
+      }
+      .mantine-text-input input { 
+        padding: 14px 18px; 
+        font-size: 18px; /* モバイルでも大きく */
+      }
+      .mantine-table th, .mantine-table td {
+        padding: 12px;
+        font-size: 15px; /* モバイル用サイズ */
+      }
+      .property-name {
+        font-size: 22px !important; /* プロパティ名を大きく */
+      }
+      .room-info {
+        font-size: 18px !important; /* 部屋情報を大きく */
+      }
+      .form-grid { 
+        grid-template-columns: 1fr; 
+      }
+    }
+    
+    /* 極小デバイス向け */
+    @media (max-width: 480px) {
+      .mantine-title { 
+        font-size: 22px; 
+      }
+      .mantine-text-input input { 
+        font-size: 17px; 
+        padding: 14px 16px; 
+      }
+      .mantine-table th, .mantine-table td {
+        padding: 10px;
+        font-size: 14px; /* 最小でも14px確保 */
+      }
+      .property-name {
+        font-size: 20px !important;
+      }
+      .room-info {
+        font-size: 16px !important;
+      }
+    }
+    
+    /* 部屋ナビゲーションのスタイル */
+    .room-navigation {
+      border-top: 1px solid #e9ecef;
+      border-bottom: 1px solid #e9ecef;
+    }
+    
+    .room-navigation button {
+      min-width: 80px;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    
+    .room-navigation button:disabled {
+      cursor: not-allowed;
+      opacity: 0.5 !important;
+    }
+    
+    .room-navigation button:not(:disabled):hover {
+      background-color: #0056b3 !important;
+      transform: translateY(-1px);
+    }
+    
+    /* モバイル向けの部屋ナビゲーション */
+    @media (max-width: 768px) {
+      .room-navigation {
+        padding: 10px 0;
+      }
+      
+      .room-navigation button {
+        font-size: 13px;
+        padding: 8px 10px;
+        min-width: 70px;
+      }
+    }
+    
+    /* 極小デバイス向けの部屋ナビゲーション */
+    @media (max-width: 480px) {
+      .room-navigation {
+        flex-direction: row !important;
+        gap: 8px;
+        align-items: center;
+      }
+      .room-navigation button {
+        width: auto;
+        max-width: none;
+        margin: 0;
+      }
+      .room-navigation span {
+        order: 0;
+        text-align: center;
+        margin-bottom: 0;
+      }
+    }
+    
+    /* スタイル読み込み状態の管理 */
+    .styles-loading { 
+      opacity: 0.3; 
+      transition: opacity 0.3s ease-in-out; 
+    }
+    .styles-loaded { 
+      opacity: 1; 
+    }
+  </style>
+  
+  <!-- 重要: CSS ファイルを最初に読み込む (レンダリングブロッキング) -->
+  <script>
+    // 動的 CSS キャッシュバスティング
+    const timestamp = Date.now();
+    document.write(`<link rel="stylesheet" href="../../css_styles/meter_reading.css?t=${timestamp}">`);
+    document.write(`<link rel="stylesheet" href="../../css_styles/pwa-styles.css?t=${timestamp}">`);
+  </script>
+  
+  <!-- CSS プリロード (パフォーマンス向上) -->
+  <script>
+    // 動的 CSS プリロード
+    const ts = Date.now();
+    document.write(`<link rel="preload" href="../../css_styles/meter_reading.css?t=${ts}" as="style">`);
+    document.write(`<link rel="preload" href="../../css_styles/pwa-styles.css?t=${ts}" as="style">`);
+  </script>
+  
+  <!-- ReactとReactDOMのCDN -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <!-- BabelのCDN (JSXをブラウザで変換するため) -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  
+  <!-- PWA Utilities -->
+  <script src="/pwa-utils.js"></script>
+  
+  <!-- 動的CSS読み込みヘルパー -->
+  <script>
+    // 開発用動的CSS読み込み機能
+    window.reloadCSS = function() {
+      const timestamp = Date.now();
+      const cssLinks = document.querySelectorAll('link[rel="stylesheet"]');
+      cssLinks.forEach(link => {
+        const href = link.href.split('?')[0]; // クエリパラメータを除去
+        link.href = `${href}?t=${timestamp}`;
+      });
+      console.log(`[CSS] スタイルシートをリロードしました: ${timestamp}`);
+    };
+    
+    // 開発用: CSSファイル監視（10秒間隔）
+    if (window.location.search.includes('devmode=true')) {
+      setInterval(window.reloadCSS, 10000);
+      console.log('[CSS] 開発モード: 10秒間隔でCSSを自動リロードします');
+    }
+  </script>
+</head>
+<body>
+  <div id="root" class="styles-loading"></div>
+  <script type="text/babel">
+    // ===================================
+    // 一般ブラウザ向け水道メーター読み取りアプリ
+    // WOFF SDK依存なし - Debug Mode Enhanced v20250614c
+    // CSS読み込み完了待機機能追加
+    // ===================================
+    
+    console.log('🚀 Meter Reading App v20250614c - Enhanced Debug Mode');
+    console.log('WOFF Status:', typeof woff !== 'undefined' ? '❌ ERROR: WOFF still loaded!' : '✅ WOFF successfully removed');
+    
+    // CSS読み込み完了を待機する関数（改良版）
+    function waitForStylesLoaded() {
+      return new Promise((resolve) => {
+        let attempts = 0;
+        const maxAttempts = 300; // 3秒まで待つ
+
+        const checkStyles = () => {
+          attempts++;
+          const meterStyles = document.querySelector('link[href*="meter_reading.css"]');
+          const pwaStyles = document.querySelector('link[href*="pwa-styles.css"]');
+          let cssLoaded = true;
+          try {
+            // sheetとcssRules両方を確認
+            cssLoaded = meterStyles.sheet && pwaStyles.sheet &&
+              meterStyles.sheet.cssRules.length > 0 && pwaStyles.sheet.cssRules.length > 0;
+          } catch (e) {
+            cssLoaded = false;
+          }
+
+          if (!cssLoaded && attempts < maxAttempts) {
+            setTimeout(checkStyles, 10);
+            return;
+          }
+
+          // スタイル適用テスト
+          const testElement = document.createElement('div');
+          testElement.className = 'mantine-container';
+          testElement.style.position = 'absolute';
+          testElement.style.visibility = 'hidden';
+          document.body.appendChild(testElement);
+
+          const styles = window.getComputedStyle(testElement);
+          const hasContainerStyles = (
+            styles.maxWidth !== 'none' ||
+            styles.padding !== '0px'
+          );
+          document.body.removeChild(testElement);
+
+          if (hasContainerStyles || attempts >= maxAttempts) {
+            const rootElement = document.getElementById('root');
+            if (rootElement) rootElement.className = 'styles-loaded';
+            resolve();
+          } else {
+            setTimeout(checkStyles, 10);
+          }
+        };
+        checkStyles();
+      });
+    }
+    
+    // JST基準での日付表示（最適化版）
+    const formatDateForDisplay = (rawDate) => {
+      console.log('[formatDateForDisplay] JST表示用: 入力値:', rawDate, '型:', typeof rawDate);
+      
+      if (!rawDate) {
+        console.log('[formatDateForDisplay] 空の日付を受信');
+        return null;
+      }
+      
+      try {
+        const date = new Date(rawDate);
+        if (isNaN(date.getTime())) {
+          console.log('[formatDateForDisplay] 無効な日付');
+          return null;
+        }
+        
+        // Intl.DateTimeFormatで日本語表示（標準API使用）
+        const formatted = new Intl.DateTimeFormat('ja-JP', {
+          timeZone: 'Asia/Tokyo',
+          month: 'long',
+          day: 'numeric'
+        }).format(date);
+        
+        console.log(`[formatDateForDisplay] JST表示: ${rawDate} → ${formatted}`);
+        return formatted;
+        
+      } catch (error) {
+        console.warn('[formatDateForDisplay] JST日付フォーマットエラー:', rawDate, error);
+        return null;
+      }
+    };
+    
+    const formatInspectionStatus = (rawDate) => {
+      const formattedDate = formatDateForDisplay(rawDate);
+      return formattedDate ? 
+        { status: '検針済み', displayDate: formattedDate } : 
+        { status: '未検針', displayDate: null };
+    };
+    
+    const calculateUsage = (currentReading, previousReading) => {
+      const current = parseFloat(currentReading);
+      const previous = parseFloat(previousReading);
+      
+      if (isNaN(current)) return '';
+      
+      if (!previousReading || previousReading === '' || previous === 0 || isNaN(previous)) {
+        return current.toString();
+      }
+      
+      const usage = current - previous;
+      return (usage >= 0 ? usage : 0).toString();
+    };
+
+    const calculateUsageDisplay = calculateUsage;
+    
+    // JST日付処理の最適化版（標準ライブラリ使用）
+    const getCurrentJSTDateString = () => {
+      const now = new Date();
+      
+      // Intl.DateTimeFormatを使用（ブラウザ標準API）
+      const jstDateString = new Intl.DateTimeFormat('ja-CA', {
+        timeZone: 'Asia/Tokyo',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      }).format(now);
+      
+      console.log(`[getCurrentJSTDateString] JST日付生成: ${jstDateString} (今日は2025-06-18)`);
+      return jstDateString;
+    };
+
+    // 日本時間での日付正規化関数（最適化版）
+    const normalizeToJSTDate = (dateValue) => {
+      if (!dateValue) return getCurrentJSTDateString();
+      
+      try {
+        // 既にYYYY-MM-DD形式の場合
+        if (typeof dateValue === 'string' && dateValue.match(/^\d{4}-\d{2}-\d{2}$/)) {
+          console.log(`[normalizeToJSTDate] 既に正規化済み: ${dateValue}`);
+          return dateValue;
+        }
+        
+        // 標準のIntl.DateTimeFormatを使用
+        const date = new Date(dateValue);
+        if (isNaN(date.getTime())) {
+          console.warn(`[normalizeToJSTDate] 無効な日付、今日の日付を使用: ${dateValue}`);
+          return getCurrentJSTDateString();
+        }
+        
+        // Intl.DateTimeFormatでJST変換
+        const jstDate = new Intl.DateTimeFormat('ja-CA', {
+          timeZone: 'Asia/Tokyo',
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit'
+        }).format(date);
+        
+        console.log(`[normalizeToJSTDate] JST正規化: ${dateValue} → ${jstDate}`);
+        return jstDate;
+        
+      } catch (error) {
+        console.warn('[normalizeToJSTDate] 日付変換エラー:', error);
+        return getCurrentJSTDateString();
+      }
+    };
+    
+    const formatReading = (value) => {
+      if (value === null || value === undefined || value === '') {
+        return '';
+      }
+      return String(value).trim();
+    };
+    
+    const formatUsage = (value) => {
+      if (value === null || value === undefined || value === '') {
+        return '';
+      }
+      const numValue = parseFloat(value);
+      if (isNaN(numValue)) {
+        return '';
+      }
+      return numValue.toString();
+    };
+    
+    const formatStatus = (value) => {
+      if (!value || value === '' || value === '未入力' || value === null || value === undefined) {
+        return '正常';
+      }
+      return String(value).trim();
+    };
+    
+    const getJSTDateString = () => {
+      const now = new Date();
+      const jstOffset = 9 * 60;
+      const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+      const jstTime = new Date(utc + (jstOffset * 60000));
+      
+      const year = jstTime.getFullYear();
+      const month = String(jstTime.getMonth() + 1).padStart(2, '0');
+      const day = String(jstTime.getDate()).padStart(2, '0');
+      
+      const jstDateString = `${year}-${month}-${day}`;
+      console.log(`[getJSTDateString] String型JST日付生成: ${jstDateString}`);
+      return jstDateString;
+    };
+    
+    const MeterReadingApp = () => {
+      const [loading, setLoading] = React.useState(true);
+      const [error, setError] = React.useState(null);
+      const [propertyId, setPropertyId] = React.useState('');
+      const [propertyName, setPropertyName] = React.useState('');
+      const [roomId, setRoomId] = React.useState('');
+      const [roomName, setRoomName] = React.useState('');
+      const [meterReadings, setMeterReadings] = React.useState([]);
+      const [debugInfo, setDebugInfo] = React.useState(null);
+
+      // 新規追加: 部屋リストと現在の部屋インデックス
+      const [allRooms, setAllRooms] = React.useState([]);
+      const [currentRoomIndex, setCurrentRoomIndex] = React.useState(-1);
+      const [navigationInProgress, setNavigationInProgress] = React.useState(false);
+
+      const [updating, setUpdating] = React.useState(false);
+      const [usageStates, setUsageStates] = React.useState({});
+      const [toastMessage, setToastMessage] = React.useState('');
+      const [showToast, setShowToast] = React.useState(false);
+      const [inputErrors, setInputErrors] = React.useState({});
+      const [isNavigating, setIsNavigating] = React.useState(false);
+      const [navigationMessage, setNavigationMessage] = React.useState('');
+
+      const [gasWebAppUrl, setGasWebAppUrl] = React.useState('');
+
+      React.useEffect(() => {
+        const initializeApp = async () => {
+          try {
+            console.log('[meter_reading] アプリを初期化します。');
+            // sessionStorageからgasWebAppUrlを取得
+            const urlFromSession = sessionStorage.getItem('gasWebAppUrl');
+            
+            if (!urlFromSession) {
+              console.error('[meter_reading] gasWebAppURLがsessionStorageにありません。');
+              setError('アプリのURLが設定されていません。物件選択画面から再度アクセスしてください。');
+              setLoading(false);
+              return;
+            }
+            
+            setGasWebAppUrl(urlFromSession);
+            console.log('[meter_reading] gasWebAppUrlを取得しました:', urlFromSession);
+
+            console.log('[meter_reading] 初期化完了しました。');
+
+            // URLパラメータからデータを読み込み開始
+            loadUrlParams();
+          } catch (error) {
+            console.error('[meter_reading] アプリの初期化に失敗しました:', error);
+            setError('アプリの起動に失敗しました。ページを再読み込みしてください。');
+            setLoading(false);
+          }
+        };
+
+        initializeApp();
+      }, []);
+
+      // プロパティIDが設定された時に部屋リストを読み込む
+      React.useEffect(() => {
+        if (propertyId && gasWebAppUrl) {
+        // デバッグログ削除
+          loadRoomsList(propertyId);
+        }
+      }, [propertyId, gasWebAppUrl]);
+
+      const loadUrlParams = async () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const propId = urlParams.get('propertyId');
+        const propName = urlParams.get('propertyName');
+        const rId = urlParams.get('roomId');
+        let rName = urlParams.get('roomName');
+
+        console.log('[meter_reading] 🔍 URLパラメータ詳細:');
+        console.log('[meter_reading] - propertyId:', `"${propId}"`, '型:', typeof propId, 'length:', propId ? propId.length : 'N/A');
+        console.log('[meter_reading] - propertyName:', `"${propName}"`, '型:', typeof propName);
+        console.log('[meter_reading] - roomId:', `"${rId}"`, '型:', typeof rId, 'length:', rId ? rId.length : 'N/A');
+        console.log('[meter_reading] - roomName:', `"${rName}"`, '型:', typeof rName);
+        console.log('[meter_reading] - 完全なURL:', window.location.href);
+        console.log('[meter_reading] - URLSearchParams:', window.location.search);
+
+        // 必須パラメータチェック
+        if (!propId || !rId) {
+          console.error('[meter_reading] 物件IDまたは部屋IDがURLパラメータにありません。');
+          setError('物件情報または部屋情報が不足しているため、検針データを取得できません。');
+          setLoading(false);
+          return;
+        }
+
+        // 先に状態を設定
+        setPropertyId(propId);
+        setPropertyName(propName || '');
+        setRoomId(rId);
+        setRoomName(rName || '');
+
+        // 統合版getMeterReadings APIから物件名・部屋名・検針データを一括取得
+        console.log('[meter_reading] 🚀 統合API呼び出し開始 - propertyId:', propId, 'roomId:', rId);
+        loadMeterReadings(propId, rId);
+      };
+
+      const loadMeterReadings = async (propId, rId) => {
+        try {
+          const currentGasUrl = gasWebAppUrl || sessionStorage.getItem('gasWebAppUrl');
+          if (!currentGasUrl) {
+            throw new Error('gasWebAppURLが設定されていません。物件選択画面から再度アクセスしてください。');
+          }
+          
+          const fetchUrl = `${currentGasUrl}?action=getMeterReadings&propertyId=${propId}&roomId=${rId}`;
+          console.log('[meter_reading] Fetching meter readings from URL:', fetchUrl);
+          
+          const response = await fetch(fetchUrl);
+          if (!response.ok) {
+            throw new Error('ネットワークの応答が正しくありませんでした。ステータス: ' + response.status);
+          }
+
+          const responseObject = await response.json();
+          console.log('[meter_reading] Received responseObject from server:', responseObject);
+          
+          // 詳細なレスポンス構造の確認
+          console.log('[meter_reading] 🔍 レスポンス詳細分析:');
+          console.log('[meter_reading] - success:', responseObject.success);
+          console.log('[meter_reading] - data type:', typeof responseObject.data);
+          console.log('[meter_reading] - data isArray:', Array.isArray(responseObject.data));
+          console.log('[meter_reading] - data content:', responseObject.data);
+          if (responseObject.data && typeof responseObject.data === 'object') {
+            console.log('[meter_reading] - data keys:', Object.keys(responseObject.data));
+          }
+          
+          // 統合版getMeterReadings APIの応答形式を確認
+          if (!responseObject.success) {
+            throw new Error(responseObject.error || '検針データの取得に失敗しました');
+          }
+
+          const data = responseObject.data;
+          if (!data) {
+            throw new Error('応答データが空です');
+          }
+
+          let propertyName, roomName, readings;
+
+          // 新しい統合版の応答形式をチェック {propertyName, roomName, readings}
+          if (data.hasOwnProperty('propertyName') && data.hasOwnProperty('roomName') && data.hasOwnProperty('readings')) {
+            console.log('[meter_reading] ✅ 統合版形式を検出');
+            propertyName = data.propertyName || 'N/A';
+            roomName = data.roomName || '部屋名不明';
+            readings = data.readings || [];
+          }
+          // 古い形式への一時的な後方互換性対応 - data が配列の場合
+          else if (Array.isArray(data)) {
+            console.log('[meter_reading] ⚠️ 旧形式（配列）を検出 - 後方互換性モード');
+            
+            // 検針データから物件名・部屋名を抽出
+            if (data.length > 0 && data[0]) {
+              const firstRecord = data[0];
+              propertyName = firstRecord['物件名'] || firstRecord.propertyName || 'N/A';
+              roomName = firstRecord['部屋名'] || firstRecord.roomName || '部屋名不明';
+              console.log('[meter_reading] 🔍 データから抽出した名称:');
+              console.log('[meter_reading] - 物件名:', propertyName);
+              console.log('[meter_reading] - 部屋名:', roomName);
+            } else {
+              propertyName = 'N/A';
+              roomName = '部屋名不明';
+            }
+            readings = data;
+          }
+          // その他の形式
+          else {
+            console.warn('[meter_reading] ⚠️ 予期しないレスポンス形式:', data);
+            throw new Error('検針データの形式が認識できません');
+          }
+
+          console.log('[meter_reading] ✅ 最終的な解析結果:');
+          console.log('[meter_reading] - 物件名:', propertyName);
+          console.log('[meter_reading] - 部屋名:', roomName);
+          console.log('[meter_reading] - 検針データ件数:', readings.length);
+          console.log('[meter_reading] - 検針データ:', readings);
+
+          // 物件名・部屋名を更新（APIから取得した正確な情報）
+          if (propertyName) setPropertyName(propertyName);
+          if (roomName) setRoomName(roomName);
+
+          // 検針データ処理
+          if (Array.isArray(readings) && readings.length > 0) {
+            console.log('[meter_reading] 第1件目のデータ構造:', readings[0]);
+            console.log('[meter_reading] 第1件目のキー一覧:', Object.keys(readings[0]));
+            
+            // データマッピング処理
+            const mappedReadings = readings.map((rawReading, index) => {
+              console.log(`[meter_reading] 生データ [${index}]:`, rawReading);
+              
+              // inspection_dataシートの列名を想定したマッピング
+              const mapped = {
+                // 基本情報
+                id: rawReading['記録ID'] || rawReading['recordId'] || rawReading['ID'] || `reading-${index}`,
+                date: rawReading['検針日時'] || rawReading['date'] || rawReading['記録日'] || '',
+                currentReading: rawReading['今回の指示数'] || rawReading['今回指示数'] || rawReading['今回指示数（水道）'] || rawReading['currentReading'] || rawReading['指示数'] || '',
+                previousReading: rawReading['前回指示数'] || rawReading['previousReading'] || rawReading['前回'] || '',
+                previousPreviousReading: rawReading['前々回指示数'] || rawReading['previousPreviousReading'] || rawReading['前々回'] || '',
+                threeTimesPrevious: rawReading['前々々回指示数'] || rawReading['threeTimesPrevious'] || rawReading['前々々回'] || '',
+                usage: rawReading['今回使用量'] || rawReading['usage'] || rawReading['使用量'] || '',
+                warningFlag: rawReading['警告フラグ'] || rawReading['warningFlag'] || '正常',
+                standardDeviation: rawReading['標準偏差値'] || rawReading['standardDeviation'] || '',
+                status: rawReading['警告フラグ'] || rawReading['status'] || rawReading['状態'] || '正常',
+                // 追加の可能性のあるフィールド
+                recordId: rawReading['記録ID'] || rawReading['recordId'] || rawReading['ID'] || '',
+                propertyId: rawReading['物件ID'] || rawReading['propertyId'] || '',
+                roomId: rawReading['部屋ID'] || rawReading['roomId'] || '',
+                propertyName: rawReading['物件名'] || rawReading['propertyName'] || '',
+                roomName: rawReading['部屋名'] || rawReading['roomName'] || '',
+                // 元データも保持
+                _original: rawReading
+              };
+              
+              // フロントエンドでも警告フラグを再計算（表示用）
+              if (mapped.currentReading && mapped.previousReading) {
+                const warningResult = calculateUsageWithWarning(
+                  mapped.currentReading,
+                  mapped.previousReading,
+                  mapped.previousPreviousReading,
+                  mapped.threeTimesPrevious
+                );
+                
+                // バックエンドの値を優先し、なければフロントエンドで計算した値を使用
+                if (!mapped.warningFlag || mapped.warningFlag === '' || mapped.warningFlag === '正常') {
+                  mapped.warningFlag = warningResult.warningFlag;
+                }
+                if (!mapped.standardDeviation || mapped.standardDeviation === '') {
+                  mapped.standardDeviation = warningResult.standardDeviation;
+                }
+              } else {
+                // 今回指示数が未入力の場合、履歴データから閾値を計算して表示
+                if (!mapped.currentReading || mapped.currentReading === '') {
+                  const thresholdResult = calculateWarningFlag(
+                    null, // 今回指示数は未入力
+                    mapped.previousReading,
+                    mapped.previousPreviousReading,
+                    mapped.threeTimesPrevious
+                  );
+                  
+                  // 閾値情報を警告フラグに設定
+                  if (!mapped.warningFlag || mapped.warningFlag === '' || mapped.warningFlag === '正常') {
+                    mapped.warningFlag = thresholdResult.warningFlag;
+                  }
+                  if (!mapped.standardDeviation || mapped.standardDeviation === '') {
+                    mapped.standardDeviation = thresholdResult.standardDeviation;
+                  }
+                }
+              }
+              
+              console.log(`[meter_reading] マッピング後 [${index}]:`, {
+                ...mapped,
+                warningFlagSource: rawReading['警告フラグ'] ? 'backend' : 'frontend',
+                standardDeviationSource: rawReading['標準偏差値'] ? 'backend' : 'frontend'
+              });
+              return mapped;
+            });
+            
+            console.log('[meter_reading] Setting mapped meterReadings state with:', mappedReadings);
+            setMeterReadings(mappedReadings);
+          } else {
+            console.log('[meter_reading] 検針データが空です');
+            setMeterReadings([]);
+          }
+          setLoading(false);
+        } catch (error) {
+          console.error('[meter_reading] fetchMeterReadings error:', error);
+          setError(`検針データの取得に失敗しました: ${error.message}`);
+          setLoading(false);
+        }
+      };
+
+      // 新規追加: 部屋リストを読み込む関数
+      const loadRoomsList = async () => {
+        try {
+          console.log('[meter_reading] 🏠 部屋リスト読み込み開始');
+          const urlParams = new URLSearchParams(window.location.search);
+          const propId = urlParams.get('propertyId');
+          
+          if (!propId) {
+            console.warn('[meter_reading] 物件IDがないため部屋リスト読み込みをスキップ');
+            return;
+          }
+
+          // sessionStorageから部屋リストを取得
+          const cachedRooms = sessionStorage.getItem('selectedRooms');
+          console.log('[meter_reading] キャッシュされた部屋データ:', cachedRooms ? '存在' : '無し');
+          
+          if (cachedRooms) {
+            try {
+              const roomsArray = JSON.parse(cachedRooms);
+              console.log('[meter_reading] 解析した部屋データ:', roomsArray.length, '件');
+              
+              if (Array.isArray(roomsArray) && roomsArray.length > 0) {
+                console.log('[meter_reading] 🔍 キャッシュデータサンプル（最初の3件）:');
+                roomsArray.slice(0, 3).forEach((room, index) => {
+                  console.log(`[meter_reading] キャッシュ部屋[${index}]:`, room);
+                  console.log(`[meter_reading] キャッシュ部屋[${index}] 検針要否チェック:`, {
+                    '検針要否': room['検針要否'],
+                    'meterReadingRequired': room['meterReadingRequired'],
+                    '検針不要': room['検針不要'],
+                    'keys': Object.keys(room)
+                  });
+                });
+                
+                // 検針が必要な部屋のみをフィルタリング（readingStatusベース）
+                const meterReadingRooms = roomsArray.filter(room => {
+                  // readingStatusが'not-needed'でない部屋を対象とする
+                  const needsMeterReading = room.readingStatus !== 'not-needed';
+                  
+                  return needsMeterReading;
+                });
+                
+                console.log('[meter_reading] ✅ 検針対象部屋をフィルタリング:', meterReadingRooms.length, '件');
+                console.log('[meter_reading] 検針対象部屋一覧:', meterReadingRooms.map(r => ({
+                  id: r['部屋ID'] || r['roomId'] || r['id'],
+                  name: r['部屋名'] || r['roomName'] || r['name'],
+                  needsReading: r['検針要否'] || r['meterReadingRequired']
+                })));
+                
+                setAllRooms(meterReadingRooms);
+                console.log('[meter_reading] 検針対象部屋数をstateに設定:', meterReadingRooms.length);
+                return;
+              }
+            } catch (parseError) {
+              console.warn('[meter_reading] キャッシュデータ解析エラー:', parseError);
+            }
+          }
+
+          // キャッシュがない場合はAPIから取得
+          console.log('[meter_reading] 📡 APIから部屋リストを取得開始');
+          const currentGasUrl = gasWebAppUrl || sessionStorage.getItem('gasWebAppUrl');
+          if (!currentGasUrl) {
+            console.warn('[meter_reading] gasWebAppURLが無いためAPI取得をスキップ');
+            return;
+          }
+
+          const fetchUrl = `${currentGasUrl}?action=getRooms&propertyId=${encodeURIComponent(propId)}`;
+          console.log('[meter_reading] API呼び出しURL:', fetchUrl);
+          
+          const response = await fetch(fetchUrl);
+          
+          if (response.ok) {
+            const result = await response.json();
+            console.log('[meter_reading] API応答:', result);
+            console.log('[meter_reading] API応答詳細分析:');
+            console.log('[meter_reading] - result.success:', result.success);
+            console.log('[meter_reading] - result.data type:', typeof result.data);
+            console.log('[meter_reading] - result.data isArray:', Array.isArray(result.data));
+            console.log('[meter_reading] - result.data keys:', result.data ? Object.keys(result.data) : 'N/A');
+            console.log('[meter_reading] - result.data:', result.data);
+            
+            let roomsArray;
+            
+            if (result && result.success === true && Array.isArray(result.data)) {
+              roomsArray = result.data;
+              console.log('[meter_reading] 統一形式でデータ取得:', roomsArray.length, '件');
+            } else if (result && result.success === true && result.data && typeof result.data === 'object') {
+              // dataがオブジェクトの場合、その中から配列を探す
+              console.log('[meter_reading] dataオブジェクト内の検索開始');
+              if (Array.isArray(result.data.rooms)) {
+                roomsArray = result.data.rooms;
+                console.log('[meter_reading] data.rooms配列でデータ取得:', roomsArray.length, '件');
+              } else if (Array.isArray(result.data.roomList)) {
+                roomsArray = result.data.roomList;
+                console.log('[meter_reading] data.roomList配列でデータ取得:', roomsArray.length, '件');
+              } else {
+                // dataオブジェクト自体が部屋データの可能性
+                const dataKeys = Object.keys(result.data);
+                console.log('[meter_reading] dataオブジェクトのキー:', dataKeys);
+                // キーが数値的（部屋IDなど）の場合、値の配列として扱う
+                if (dataKeys.length > 0) {
+                  roomsArray = Object.values(result.data);
+                  console.log('[meter_reading] dataオブジェクトの値を配列化:', roomsArray.length, '件');
+                }
+              }
+            } else if (Array.isArray(result)) {
+              roomsArray = result;
+              console.log('[meter_reading] 配列形式でデータ取得:', roomsArray.length, '件');
+            } else if (result && Array.isArray(result.rooms)) {
+              roomsArray = result.rooms;
+              console.log('[meter_reading] rooms配列形式でデータ取得:', roomsArray.length, '件');
+            }
+            
+            if (roomsArray && roomsArray.length > 0) {
+              console.log('[meter_reading] 🔍 部屋データサンプル（最初の3件）:');
+              roomsArray.slice(0, 3).forEach((room, index) => {
+                console.log(`[meter_reading] 部屋[${index}]:`, room);
+                console.log(`[meter_reading] 部屋[${index}] 検針要否チェック:`, {
+                  '検針要否': room['検針要否'],
+                  'meterReadingRequired': room['meterReadingRequired'],
+                  '検針不要': room['検針不要'],
+                  'keys': Object.keys(room)
+                });
+              });
+              
+              // 検針が必要な部屋のみをフィルタリング（readingStatusベース）
+              const meterReadingRooms = roomsArray.filter(room => {
+                // readingStatusが'not-needed'でない部屋を対象とする
+                const needsMeterReading = room.readingStatus !== 'not-needed';
+                
+                console.log(`[meter_reading] フィルタリング: 部屋ID=${room.id || room['部屋ID'] || room['roomId']}, readingStatus=${room.readingStatus}, 結果=${needsMeterReading}`);
+                return needsMeterReading;
+              });
+              
+              console.log('[meter_reading] ✅ API経由で検針対象部屋を取得:', meterReadingRooms.length, '件');
+              setAllRooms(meterReadingRooms);
+              sessionStorage.setItem('selectedRooms', JSON.stringify(roomsArray));
+            } else {
+              console.warn('[meter_reading] 部屋データが空または無効');
+            }
+          } else {
+            console.error('[meter_reading] API呼び出し失敗:', response.status, response.statusText);
+          }
+        } catch (error) {
+          console.error('[meter_reading] 部屋リスト読み込みエラー:', error);
+        }
+      };
+
+      // 新規追加: 現在の部屋インデックスを設定
+      React.useEffect(() => {
+        // デバッグログ削除
+        
+        if (allRooms.length > 0 && roomId) {
+          // デバッグログ削除
+          
+          const index = allRooms.findIndex(room => {
+            const roomIdInData = room.id || room['部屋ID'] || room['roomId'];
+            const match = String(roomIdInData) === String(roomId);
+            // デバッグログ削除
+            return match;
+          });
+          
+          // デバッグログ削除
+          
+          if (index >= 0) {
+            setCurrentRoomIndex(index);
+          } else {
+            setCurrentRoomIndex(-1);
+          }
+        } else {
+          // デバッグログ削除
+        }
+      }, [allRooms, roomId]);
+
+      // 新規追加: 前の部屋への移動
+      const navigateToPreviousRoom = async () => {
+        if (navigationInProgress || currentRoomIndex <= 0 || allRooms.length === 0) return;
+        
+        setNavigationInProgress(true);
+        setIsNavigating(true);
+        setNavigationMessage('前の部屋に移動しています...');
+        
+        try {
+          const previousRoom = allRooms[currentRoomIndex - 1];
+          const prevRoomId = previousRoom['部屋ID'] || previousRoom['roomId'] || previousRoom['id'];
+          const prevRoomName = previousRoom['部屋名'] || previousRoom['roomName'] || previousRoom['name'];
+          
+          await updateSessionStorageCache(propertyId, roomId);
+          
+          const newUrl = `meter_reading.html?propertyId=${encodeURIComponent(propertyId)}&propertyName=${encodeURIComponent(propertyName)}&roomId=${encodeURIComponent(prevRoomId)}&roomName=${encodeURIComponent(prevRoomName)}`;
+          console.log('[meter_reading] 前の部屋に移動:', newUrl);
+          
+          window.location.href = newUrl;
+        } catch (error) {
+          console.error('[meter_reading] 前の部屋への移動エラー:', error);
+          displayToast('前の部屋への移動に失敗しました');
+          setNavigationInProgress(false);
+          setIsNavigating(false);
+        }
+      };
+
+      // 新規追加: 次の部屋への移動
+      const navigateToNextRoom = async () => {
+        if (navigationInProgress || currentRoomIndex >= allRooms.length - 1 || allRooms.length === 0) return;
+        
+        setNavigationInProgress(true);
+        setIsNavigating(true);
+        setNavigationMessage('次の部屋に移動しています...');
+        
+        try {
+          const nextRoom = allRooms[currentRoomIndex + 1];
+          const nextRoomId = nextRoom['部屋ID'] || nextRoom['roomId'] || nextRoom['id'];
+          const nextRoomName = nextRoom['部屋名'] || nextRoom['roomName'] || nextRoom['name'];
+          
+          await updateSessionStorageCache(propertyId, roomId);
+          
+          const newUrl = `meter_reading.html?propertyId=${encodeURIComponent(propertyId)}&propertyName=${encodeURIComponent(propertyName)}&roomId=${encodeURIComponent(nextRoomId)}&roomName=${encodeURIComponent(nextRoomName)}`;
+          console.log('[meter_reading] 次の部屋に移動:', newUrl);
+          
+          window.location.href = newUrl;
+        } catch (error) {
+          console.error('[meter_reading] 次の部屋への移動エラー:', error);
+          displayToast('次の部屋への移動に失敗しました');
+          setNavigationInProgress(false);
+          setIsNavigating(false);
+        }
+      };
+
+      const handleBackButton = async () => {
+        try {
+          setIsNavigating(true);
+          setNavigationMessage('画面を切り替えています...');
+          
+          // キャッシュ更新（エラー時も継続）
+          try {
+            await updateSessionStorageCache(propertyId, roomId);
+          } catch (cacheError) {
+            console.warn('[meter_reading] キャッシュ更新エラー（継続）:', cacheError);
+          }
+          
+          window.scrollTo(0, 0);
+          
+          // 戻る遷移用の情報を保存
+          sessionStorage.setItem('forceRefreshRooms', 'true');
+          sessionStorage.setItem('updatedRoomId', roomId);
+          sessionStorage.setItem('lastUpdateTime', Date.now().toString());
+          
+          // ✅ 物件IDパラメータを含めて遷移
+          const backUrl = `/room_select?propertyId=${encodeURIComponent(propertyId)}`;
+          console.log('[meter_reading] 戻るURL:', backUrl);
+          
+          window.location.href = backUrl;
+          
+        } catch (error) {
+          console.error('[meter_reading] 戻るボタン処理エラー:', error);
+          
+          // ✅ エラー時でも物件IDパラメータを含めて遷移
+          const fallbackUrl = propertyId ? 
+            `/room_select?propertyId=${encodeURIComponent(propertyId)}` : 
+            '/property_select';
+          
+          console.log('[meter_reading] フォールバック遷移:', fallbackUrl);
+          window.location.href = fallbackUrl;
+        }
+      };
+
+      // LoadingOverlayコンポーネント
+      const LoadingOverlay = ({ message }) => (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          backgroundColor: 'rgba(255, 255, 255, 0.95)',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 50000,
+        }}>
+          <div style={{
+            width: '40px',
+            height: '40px',
+            border: '4px solid #f3f3f3',
+            borderTop: '4px solid #3498db',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite',
+          }} />
+          <p style={{
+            marginTop: '16px',
+            color: '#666',
+            fontSize: '14px',
+            textAlign: 'center',
+          }}>
+            {message}
+          </p>
+          <style>
+            {`
+              @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+              }
+            `}
+          </style>
+        </div>
+      );
+
+      const getPreviousReadingsText = (r) => {
+        let parts = [];
+        if (r.previousReading && r.previousReading !== 'N/A') {
+            let text = `前回: ${r.previousReading}`;
+            if (r.previousPreviousReading && r.previousPreviousReading !== 'N/A') {
+                const prev = parseFloat(r.previousReading);
+                const prevPrev = parseFloat(r.previousPreviousReading);
+                if (!isNaN(prev) && !isNaN(prevPrev)) {
+                    const diff = prev - prevPrev;
+                    text += ` [${diff >= 0 ? '+' : ''}${diff}]`;
+                }
+            }
+            parts.push(text);
+        }
+        if (r.previousPreviousReading && r.previousPreviousReading !== 'N/A') {
+            let text = `前々回: ${r.previousPreviousReading}`;
+            if (r.threeTimesPrevious && r.threeTimesPrevious !== 'N/A') {
+                const prevPrev = parseFloat(r.previousPreviousReading);
+                const prevPrevPrev = parseFloat(r.threeTimesPrevious);
+                if (!isNaN(prevPrev) && !isNaN(prevPrevPrev)) {
+                    const diff = prevPrev - prevPrevPrev;
+                    text += ` [${diff >= 0 ? '+' : ''}${diff}]`;
+                }
+            }
+            parts.push(text);
+        }
+        if (r.threeTimesPrevious && r.threeTimesPrevious !== 'N/A') {
+            parts.push(`前々々回: ${r.threeTimesPrevious}`);
+        }
+        return parts;
+      };
+
+      const displayToast = (message) => {
+        setToastMessage(message);
+        setShowToast(true);
+        setTimeout(() => {
+          setShowToast(false);
+          setToastMessage('');
+        }, 3000);
+      };
+
+      const updateSessionStorageCache = async (propertyId, roomId) => {
+        try {
+          console.log('[meter_reading] sessionStorageキャッシュ更新開始');
+          
+          const currentGasUrl = gasWebAppUrl || sessionStorage.getItem('gasWebAppUrl');
+          if (!currentGasUrl) {
+            console.warn('[meter_reading] gasWebAppURLが見つからないため、キャッシュ更新をスキップします');
+            return;
+          }
+
+          const fetchUrl = `${currentGasUrl}?action=getRooms&propertyId=${encodeURIComponent(propertyId)}`;
+          console.log('[meter_reading] 部屋一覧再取得URL:', fetchUrl);
+          
+          const response = await fetch(fetchUrl, { method: 'GET' });
+          
+          if (response.ok) {
+            const result = await response.json();
+            console.log('[meter_reading] 部屋一覧レスポンス:', result);
+            
+            let roomsArray;
+            if (result && result.success === true && Array.isArray(result.data)) {
+              roomsArray = result.data;
+              console.log('[meter_reading] ✅ 統一形式のデータを使用');
+            } else if (Array.isArray(result)) {
+              roomsArray = result;
+              console.log('[meter_reading] ⚠️ 直接配列形式を使用');
+            } else if (result && Array.isArray(result.rooms)) {
+              roomsArray = result.rooms;
+              console.log('[meter_reading] ⚠️ rooms配列形式を使用');
+            } else {
+              console.warn('[meter_reading] 予期しないレスポンス形式:', result);
+              return;
+            }
+            
+            if (roomsArray && roomsArray.length > 0) {
+              sessionStorage.setItem('selectedRooms', JSON.stringify(roomsArray));
+              console.log('[meter_reading] ✅ キャッシュ更新完了 - 部屋数:', roomsArray.length);
+            } else {
+              console.warn('[meter_reading] 部屋データが空です');
+            }
+          } else {
+            console.warn('[meter_reading] 部屋一覧の再取得に失敗しました:', response.status);
+          }
+        } catch (error) {
+          console.error('[meter_reading] キャッシュ更新エラー:', error);
+        }
+      };
+
+      const handleUpdateReadings = async () => {
+        if (!propertyId || !roomId) {
+          displayToast('物件IDまたは部屋IDが取得できませんでした。');
+          return;
+        }
+
+        const numberInputs = document.querySelectorAll('input[data-date]');
+        const updatedReadings = [];
+        let hasValidationErrors = false;
+        
+        numberInputs.forEach(input => {
+          const date = input.getAttribute('data-date');
+          const originalValue = input.getAttribute('data-original-value') || '';
+          const currentValue = input.value || '';
+          const previousValue = input.getAttribute('data-previous-reading') || ''; // previousValueを追加
+          
+          input.style.borderColor = '';
+          setInputErrors(prev => ({...prev, [date]: ''})); 
+
+          if (originalValue === '' && currentValue.trim() === '') {
+            input.style.borderColor = 'var(--mantine-color-red-6)';
+            setInputErrors(prev => ({...prev, [date]: '初回検針では指示数の入力が必須です。'}));
+            hasValidationErrors = true;
+            return;
+          }
+          
+          if (currentValue !== originalValue) {
+            const numericValue = parseFloat(currentValue);
+            if (currentValue && (isNaN(numericValue) || numericValue < 0)) {
+              input.style.borderColor = 'var(--mantine-color-red-6)';
+              setInputErrors(prev => ({...prev, [date]: '指示数は0以上の数値を入力してください。'}));
+              hasValidationErrors = true;
+              return;
+            }
+            
+            // JST日付を正規化
+            let inspectionDate;
+            if (date && date !== '') {
+              inspectionDate = normalizeToJSTDate(date);
+            } else {
+              // 新規検針の場合は今日のJST日付を使用
+              inspectionDate = getCurrentJSTDateString();
+            }
+            
+            console.log(`[meter_reading] JST日付設定: ${date} → ${inspectionDate}`);
+
+            // ✅ 修正: 指示数履歴を取得するための変数初期化
+            let previousReading = 0;
+            let previousPreviousReading = 0;
+            let threeTimesPreviousReading = 0;
+
+            // meterReadingsから該当データを検索して指示数履歴を取得
+            const currentReadingData = meterReadings.find(reading => reading.date === date);
+            if (currentReadingData) {
+              // ✅ 修正: 変数名を明確に定義
+              previousReading = parseFloat(currentReadingData.previousReading) || 0;
+              previousPreviousReading = parseFloat(currentReadingData.previousPreviousReading) || 0;
+              threeTimesPreviousReading = parseFloat(currentReadingData.threeTimesPrevious) || 0;
+              
+              console.log(`[meter_reading] 指示数履歴取得: 前回=${previousReading}, 前々回=${previousPreviousReading}, 前々々回=${threeTimesPreviousReading}`);
+            }
+
+            // 警告フラグを計算（指示数ベース）
+            const currentReadingValue = parseFloat(currentValue) || 0;
+            const warningResult = calculateWarningFlag(currentReadingValue, previousReading, previousPreviousReading, threeTimesPreviousReading);
+            
+            // ✅ 修正: 警告フラグのみ送信、標準偏差は送信しない
+            updatedReadings.push({
+              date: inspectionDate, // JST正規化された日付
+              currentReading: currentValue,
+              warningFlag: warningResult.warningFlag || '正常'
+              // standardDeviation: warningResult.standardDeviation || 0  ← 削除
+            });
+            
+            console.log(`[meter_reading] 更新データ追加: 日付=${inspectionDate}, 指示数=${currentValue}, 警告フラグ=${warningResult.warningFlag}`);
+          }
+        });
+
+        if (hasValidationErrors) {
+          displayToast('入力値に誤りがあります。各項目のエラーを確認してください。');
+          return;
+        }
+
+        if (updatedReadings.length === 0) {
+          displayToast('更新するデータがありません。');
+          return;
+        }
+
+        console.log('[meter_reading] 更新する指示数:', updatedReadings);
+        console.log('[meter_reading] 警告フラグ確認:', updatedReadings.map(r => ({
+          date: r.date,
+          currentReading: r.currentReading,
+          warningFlag: r.warningFlag,
+          hasWarningFlag: !!r.warningFlag
+          // hasStandardDeviation: !!r.standardDeviation  ← 削除
+        })));
+        setUpdating(true);
+        
+        try {
+          const currentGasUrl = gasWebAppUrl || sessionStorage.getItem('gasWebAppUrl');
+          
+          const params = new URLSearchParams({
+            action: 'updateMeterReadings',
+            propertyId,
+            roomId,
+            readings: JSON.stringify(updatedReadings)
+          });
+          
+          const requestUrl = `${currentGasUrl}?${params}`;
+          console.log('[meter_reading] 更新リクエスト送信 (GET方式):', requestUrl);
+          
+          const response = await fetch(requestUrl, {
+            method: 'GET'
+          });
+
+          if (!response.ok) {
+            throw new Error('ネットワークの応答が正しくありませんでした。ステータス: ' + response.status);
+          }
+          
+          const result = await response.json();
+          console.log('[meter_reading] 更新レスポンス:', result);
+          
+          if (result.success) {
+            displayToast('検針データが正常に更新されました');
+            setInputErrors({});
+            
+            await updateSessionStorageCache(propertyId, roomId);
+            await loadMeterReadings(propertyId, roomId);
+          } else {
+            throw new Error(result.error || '指示数の更新に失敗しました。');
+          }
+        } catch (error) {
+          console.error('[meter_reading] handleUpdateReadings error:', error);
+          displayToast('更新エラー: ' + error.message);
+        } finally {
+          setUpdating(false);
+        }
+      };
+
+      // 初期ローディング
+      if (loading) {
+        return (
+          <>
+            <div className="app-header">
+              <button onClick={handleBackButton} className="back-button" aria-label="戻る">
+                &lt;
+              </button>
+              <h1 className="header-title">検針情報</h1>
+            </div>
+            <div className="content-area mantine-container">
+              <div className="mantine-stack center">
+                <div className="mantine-loader"></div>
+                <p className="mantine-text">検針データを読み込んでいます...</p>
+              </div>
+            </div>
+          </>
+        );
+      }
+
+      // エラー時の表示
+      if (error) {
+        return (
+          <>
+            <div className="app-header">
+              <button onClick={handleBackButton} className="back-button" aria-label="戻る">
+                &lt;
+              </button>
+              <h1 className="header-title">検針情報</h1>
+            </div>
+            <div className="content-area mantine-container">              <div className="mantine-stack">
+                <div className="mantine-alert">
+                  <h3 className="mantine-text weight-600">エラー</h3>
+                  <p className="mantine-text">{String(error || 'エラーが発生しました')}</p>
+                </div>
+              </div>
+            </div>
+          </>
+        );
+      }
+
+      // メインコンテンツ表示
+      return (
+        <>
+          {isNavigating && <LoadingOverlay message={navigationMessage} />}
+          <div className="app-header">
+            <button onClick={handleBackButton} className="back-button" aria-label="戻る">
+              &lt;
+            </button>
+            <h1 className="header-title">検針情報</h1>
+          </div>
+
+          <div className="content-area mantine-container">
+            <div className="mantine-stack">
+              <div className="property-info-card">
+                <h2 className="property-name">{String(propertyName || '物件名未設定')}</h2>
+                <p className="room-info">部屋: {String(roomName || '部屋名未設定')}</p>
+                {/* 新規追加: 部屋ナビゲーション */}
+                {/* デバッグ情報表示 */}
+                {/* デバッグ表示削除 */}
+                {allRooms.length > 0 && currentRoomIndex >= 0 ? (
+                  <div className="room-navigation" style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginTop: '12px',
+                    padding: '8px 0'
+                  }}>
+                    <button
+                      onClick={navigateToPreviousRoom}
+                      disabled={currentRoomIndex <= 0 || navigationInProgress}
+                      className="mantine-button"
+                      style={{
+                        opacity: currentRoomIndex <= 0 ? 0.5 : 1,
+                        fontSize: '14px',
+                        padding: '6px 12px',
+                        backgroundColor: currentRoomIndex <= 0 ? '#ccc' : '#007bff'
+                      }}
+                      title="前の部屋"
+                    >
+                      ← 前の部屋
+                    </button>
+                    
+                    <span style={{
+                      fontSize: '14px',
+                      color: '#666',
+                      fontWeight: '500'
+                    }}>
+                      {currentRoomIndex + 1} / {allRooms.length}
+                    </span>
+                    
+                    <button
+                      onClick={navigateToNextRoom}
+                      disabled={currentRoomIndex >= allRooms.length - 1 || navigationInProgress}
+                      className="mantine-button"
+                      style={{
+                        opacity: currentRoomIndex >= allRooms.length - 1 ? 0.5 : 1,
+                        fontSize: '14px',
+                        padding: '6px 12px',
+                        backgroundColor: currentRoomIndex >= allRooms.length - 1 ? '#ccc' : '#007bff'
+                      }}
+                      title="次の部屋"
+                    >
+                      次の部屋 →
+                    </button>
+                  </div>
+                ) : (
+                  /* デバッグ: 条件が満たされない場合の情報表示 */
+                  <div style={{ 
+                    fontSize: '12px', 
+                    color: '#f44336', 
+                    marginTop: '8px',
+                    padding: '4px 8px',
+                    backgroundColor: '#fff3e0',
+                    borderRadius: '4px'
+                  }}>
+                    部屋ナビゲーション非表示: 部屋数={allRooms.length}, インデックス={currentRoomIndex}
+                  </div>
+                )}
+              </div><div className="mantine-paper reading-history-container" style={{padding: 'var(--mantine-spacing-xs)', margin: '0'}}>                <h3 className="mantine-subtitle desktop-only" style={{ textAlign: 'center', marginBottom: 'var(--mantine-spacing-md)' }}>検針履歴</h3>
+
+                {Array.isArray(meterReadings) && meterReadings.length > 0 && 
+                 meterReadings.some(reading => reading.previousReading && reading.previousReading !== '' && reading.previousReading !== 0) ? (
+                  <table className="mantine-table">
+                    <thead style={{ display: 'none' }}>
+                      <tr>
+                        <th>検針日時</th>
+                        <th>今回指示数(㎥)</th>
+                        <th>今回使用量</th>
+                        <th>状態</th>
+                        <th>前回履歴</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {meterReadings
+                        .filter(reading => reading.previousReading && reading.previousReading !== '' && reading.previousReading !== 0)
+                        .map((reading, index) => {
+                        const formattedDate = formatDateForDisplay(reading.date);
+                        const inspectionStatus = formatInspectionStatus(reading.date);
+                        const dateForDataAttribute = reading.date;
+                        const currentReadingDisplay = formatReading(reading.currentReading);
+                        
+                        const usageToDisplay = usageStates[dateForDataAttribute] !== undefined 
+                                            ? usageStates[dateForDataAttribute]
+                                            : calculateUsageDisplay(reading.currentReading, reading.previousReading);
+                        
+                        const usageDisplayString = `${usageToDisplay}${usageToDisplay !== '-' ? '㎥' : ''}`;
+                        const statusDisplay = formatStatus(reading.status);
+                        const previousReadingsInfo = getPreviousReadingsText(reading);
+                        
+                        return (
+                          <tr key={index}>
+                            <td data-label="検針日時">
+                              <span style={{
+                                color: inspectionStatus.status === '未検針' ? 'var(--mantine-color-red-6)' : 'inherit',
+                                fontWeight: inspectionStatus.status === '未検針' ? 'bold' : 'normal'
+                              }}>
+                                最終検針日時: {inspectionStatus.status === '未検針' ? '未検針' : inspectionStatus.displayDate}
+                              </span>
+                            </td>
+                            <td data-label="今回指示数(㎥)">
+                              <input 
+                                type="number" 
+                                step="any" 
+                                defaultValue={currentReadingDisplay} 
+                                placeholder="指示数入力" 
+                                min="0" 
+                                data-date={dateForDataAttribute} 
+                                data-original-value={formatReading(reading.currentReading)} 
+                                data-previous-reading={formatReading(reading.previousReading)} 
+                                className="mantine-input" 
+                                onChange={(e) => {
+                                  const currentValue = e.target.value;
+                                  const previousValue = formatReading(reading.previousReading);
+                                  const numericValue = parseFloat(currentValue);
+                                  
+                                  if (currentValue === '') {
+                                    setInputErrors(prev => ({...prev, [dateForDataAttribute]: ''}));
+                                    e.target.style.borderColor = '';
+                                    setUsageStates(prev => ({ ...prev, [dateForDataAttribute]: calculateUsageDisplay(currentValue, previousValue) }));
+                                  } else if (isNaN(numericValue) || numericValue < 0) {
+                                    setInputErrors(prev => ({...prev, [dateForDataAttribute]: '0以上の数値を入力'}));
+                                    e.target.style.borderColor = 'var(--mantine-color-red-6)';
+                                    setUsageStates(prev => ({ ...prev, [dateForDataAttribute]: '-' }));
+                                  } else {
+                                    setInputErrors(prev => ({...prev, [dateForDataAttribute]: ''}));
+                                    e.target.style.borderColor = '';
+                                    
+                                    // 使用量を計算してリアルタイムで警告フラグを更新
+                                    const usageDisplay = calculateUsageDisplay(currentValue, previousValue);
+                                    setUsageStates(prev => ({ ...prev, [dateForDataAttribute]: usageDisplay }));
+                                    
+                                    // 警告フラグをリアルタイムで計算（指示数ベース）
+                                    const currentReadingValue = numericValue;
+                                    const previousReadingValue = parseFloat(reading.previousReading) || 0;
+                                    const previousPreviousReadingValue = parseFloat(reading.previousPreviousReading) || 0;
+                                    const threeTimesPreviousReadingValue = parseFloat(reading.threeTimesPrevious) || 0;
+                                    
+                                    const warningResult = calculateWarningFlag(currentReadingValue, previousReadingValue, previousPreviousReadingValue, threeTimesPreviousReadingValue);
+                                    
+                                    // 警告フラグの状態を更新
+                                    setMeterReadings(prevReadings => 
+                                      prevReadings.map((r, idx) => 
+                                        idx === index ? {
+                                          ...r,
+                                          warningFlag: warningResult.warningFlag,
+                                          standardDeviation: warningResult.standardDeviation
+                                        } : r
+                                      )
+                                    );
+                                  }
+                                }} 
+                              />
+                              {inputErrors[dateForDataAttribute] && (
+                                <div style={{ 
+                                  color: 'var(--mantine-color-red-6)', 
+                                  fontSize: '0.9em', 
+                                  marginTop: '4px' 
+                                }}>
+                                  {inputErrors[dateForDataAttribute]}
+                                </div>
+                              )}
+                            </td>
+                            <td data-label="今回使用量">
+                              {usageDisplayString}
+                            </td>
+                            <td data-label="状態">
+                              <span style={{ 
+                                display: 'inline-block', 
+                                padding: '3px 9px', 
+                                fontSize: '0.9em', 
+                                fontWeight: 500, 
+                                backgroundColor: (() => {
+                                  const status = getStatusDisplay(reading);
+                                  if (status === '要確認') return 'var(--mantine-color-red-light)';
+                                  if (status === '正常') return 'var(--mantine-color-green-light)';
+                                  return 'var(--mantine-color-gray-2)';
+                                })(),
+                                color: (() => {
+                                  const status = getStatusDisplay(reading);
+                                  if (status === '要確認') return 'var(--mantine-color-red-8)';
+                                  if (status === '正常') return 'var(--mantine-color-green-8)';
+                                  return 'var(--mantine-color-gray-7)';
+                                })(),
+                                borderRadius: 'var(--mantine-radius-sm)' 
+                              }}>
+                                {getStatusDisplay(reading)}
+                                {(() => {
+                                  const sigma = getStandardDeviationDisplay(reading);
+                                  return sigma ? (
+                                    <div style={{ fontSize: '0.7em', marginTop: '2px', opacity: 0.8 }}>
+                                      σ: {sigma}
+                                    </div>
+                                  ) : null;
+                                })()}
+                              </span>
+                            </td>
+                            <td data-label="前回履歴">
+                              {previousReadingsInfo && previousReadingsInfo.length > 0 ? (
+                                <div style={{ lineHeight: '1.6' }}>
+                                  {previousReadingsInfo.map((info, infoIndex) => (
+                                    <div 
+                                      key={infoIndex} 
+                                      className="previous-reading-text"
+                                      style={{ 
+                                        marginBottom: infoIndex < previousReadingsInfo.length - 1 ? '6px' : '0'
+                                      }}
+                                    >
+                                      {info}
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <div>-</div>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                ) : (
+                  <div className="mantine-stack">
+                    <div className="mantine-alert info">
+                      <h3 className="mantine-text weight-600">初回検針</h3>
+                    </div>
+                    <div className="mantine-paper" style={{marginTop: 'var(--mantine-spacing-md)', padding: 'var(--mantine-spacing-md)'}}>
+                      <h4 className="mantine-subtitle" style={{marginBottom: 'var(--mantine-spacing-sm)'}}>初回データ入力</h4>
+                      <div className="mantine-stack" style={{gap: 'var(--mantine-spacing-lg)'}}>
+                        <div>
+                          <label htmlFor="initialReadingDate" className="mantine-text weight-600" style={{fontSize: '0.9rem', marginBottom: '4px', display: 'block'}}>検針日時:</label>
+                          <input 
+                            type="text" 
+                            id="initialReadingDate" 
+                            value="未検針" 
+                            readOnly 
+                            className="mantine-input" 
+                            style={{fontSize: '1rem', padding: '10px'}} 
+                          />
+                        </div>
+                        <div>
+                          <label htmlFor="initialReadingValue" className="mantine-text weight-600" style={{fontSize: '0.9rem', marginBottom: '4px', display: 'block'}}>今回指示数(㎥):</label>
+                          <input
+                            type="number"
+                            id="initialReadingValue"
+                            className="mantine-input"
+                            placeholder="指示数入力"
+                            min="0"
+                            step="any"
+                            style={{fontSize: '1rem', padding: '10px'}}
+                            data-date="" 
+                            data-original-value=""
+                            data-previous-reading=""
+                            onChange={(e) => {
+                              const dateForDataAttribute = "";
+                              const numericValue = parseFloat(e.target.value);
+                              if (e.target.value === '') {
+                                  setInputErrors(prev => ({...prev, [dateForDataAttribute]: '初回検針では指示数の入力が必須です。'}));
+                                  e.target.style.borderColor = 'var(--mantine-color-red-6)';
+                                  setUsageStates(prev => ({ ...prev, [dateForDataAttribute]: '-' }));
+                              } else if (isNaN(numericValue) || numericValue < 0) {
+                                  setInputErrors(prev => ({...prev, [dateForDataAttribute]: '0以上の数値を入力してください。'}));
+                                  e.target.style.borderColor = 'var(--mantine-color-red-6)';
+                                  setUsageStates(prev => ({ ...prev, [dateForDataAttribute]: '-' }));
+                              } else {
+                                  setInputErrors(prev => ({...prev, [dateForDataAttribute]: ''}));
+                                  e.target.style.borderColor = '';
+                                  setUsageStates(prev => ({ ...prev, [dateForDataAttribute]: calculateUsageDisplay(e.target.value, '') }));
+                              }
+                            }}
+                          />
+                          {inputErrors[""] && (
+                            <div style={{ color: 'var(--mantine-color-red-6)', fontSize: '0.9em', marginTop: '4px' }}>
+                              {inputErrors[""]}
+                            </div>
+                          )}
+                        </div>
+                        <div>
+                          <label className="mantine-text weight-600" style={{fontSize: '0.9rem', marginBottom: '4px', display: 'block'}}>今回使用量:</label>
+                          <div style={{
+                            backgroundColor: '#e3f2fd',
+                            border: '1px solid var(--mantine-color-gray-3)',
+                            borderRadius: 'var(--mantine-radius-sm)',
+                            padding: '10px',
+                            fontSize: '1.2rem',
+                            fontWeight: 'bold',
+                            color: 'var(--mantine-color-blue-7)',
+                            minHeight: '44px',
+                            display: 'flex',
+                            alignItems: 'center'
+                          }}>
+                            {usageStates[""] !== undefined 
+                              ? `${usageStates[""]}${usageStates[""] !== '-' ? '㎥' : ''}`
+                              : '-'}
+                          </div>
+                          <div style={{ fontSize: '0.85em', color: 'var(--mantine-color-gray-6)', marginTop: '4px' }}>
+                            ※初回検針では、指示数がそのまま使用量になります
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            {(!loading && !error) && (
+              <div className="fab-container" style={{ position: 'fixed', bottom: '20px', right: '20px', zIndex: 1001}}>
+                <button
+                  className="fab-button mantine-button variant-filled"
+                  onClick={handleUpdateReadings}
+                  disabled={updating || isNavigating}                  title={Array.isArray(meterReadings) && meterReadings.length > 0 && 
+                         meterReadings.some(reading => reading.previousReading && reading.previousReading !== '' && reading.previousReading !== 0) 
+                         ? "指示数を更新" : "初回検針データを保存"}
+                  style={{
+                      width: '72px',
+                      height: '72px',
+                      borderRadius: '50%', 
+                      fontSize: '28px',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                  }}
+                >
+                  {updating ? <div className="mantine-loader" style={{width: '32px', height: '32px', borderTopColor: 'white'}}></div> : '💾'}
+                </button>
+              </div>
+            )}
+            
+            {showToast && (
+              <div style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                zIndex: 2000,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <div style={{
+                  backgroundColor: 'var(--mantine-color-blue-6)',
+                  color: 'white',
+                  padding: '24px 32px',
+                  borderRadius: 'var(--mantine-radius-lg)',
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+                  fontSize: '1.2rem',
+                  fontWeight: '600',
+                  textAlign: 'center',
+                  minWidth: '240px',
+                  animation: 'fadeInScale 0.3s ease-out'
+                }}>
+                  {toastMessage}
+                </div>
+              </div>
+            )}
+
+          </div>
+        </>
+      );
+    };
+
+    // CSS読み込み完了後にアプリを起動
+    waitForStylesLoaded().then(() => {
+      ReactDOM.createRoot(document.getElementById('root')).render(<MeterReadingApp />);
+      console.log('🎨 メーター読み取りアプリ起動: CSS読み込み完了後に実行');
+    });
+    
+    // 閾値情報を履歴データのみで計算する関数（今回指示数不要）
+    const calculateThreshold = (previousReading, previousPreviousReading, threeTimesPreviousReading) => {
+      try {
+        // 履歴データの準備（指示数ベース）
+        const readingHistory = [];
+        
+        // 前回、前々回、前々々回の指示数を履歴に追加
+        if (typeof previousReading === 'number' && !isNaN(previousReading) && previousReading >= 0) {
+          readingHistory.push(previousReading);
+        }
+        if (typeof previousPreviousReading === 'number' && !isNaN(previousPreviousReading) && previousPreviousReading >= 0) {
+          readingHistory.push(previousPreviousReading);
+        }
+        if (typeof threeTimesPreviousReading === 'number' && !isNaN(threeTimesPreviousReading) && threeTimesPreviousReading >= 0) {
+          readingHistory.push(threeTimesPreviousReading);
+        }
+        
+        // 履歴データが2件未満の場合は標準偏差計算不可
+        if (readingHistory.length < 2) {
+          return {
+            standardDeviation: 0,
+            threshold: 0,
+            reason: '履歴データ不足',
+            isCalculable: false
+          };
+        }
+        
+        // STDEV.S準拠の標準偏差を計算
+        const average = calculateAVERAGE(readingHistory);
+        const standardDeviation = calculateSTDEV_S(readingHistory);
+        
+        // 閾値計算：前回値 + 標準偏差（切り捨て） + 10
+        const threshold = previousReading + Math.floor(standardDeviation) + 10;
+        
+        console.log(`[calculateThreshold] 前回値: ${previousReading}, 履歴: [${readingHistory.join(', ')}], 平均: ${average.toFixed(2)}, 標準偏差: ${standardDeviation.toFixed(2)}, 閾値: ${threshold}`);
+        
+        return {
+          standardDeviation: Math.floor(standardDeviation), // 整数化（切り捨て）
+          threshold: threshold, // 整数値
+          reason: `前回値${previousReading} + σ${Math.floor(standardDeviation)} + 10`,
+          isCalculable: true
+        };
+        
+      } catch (error) {
+        console.warn('[calculateThreshold] エラー:', error);
+        return {
+          standardDeviation: 0,
+          threshold: 0,
+          reason: 'エラー',
+          isCalculable: false
+        };
+      }
+    };
+    
+    // 警告フラグを計算する関数（指示数ベース・STDEV.S準拠）
+    const calculateWarningFlag = (currentReading, previousReading, previousPreviousReading, threeTimesPreviousReading) => {
+      try {
+        // まず閾値情報を履歴データのみで計算（今回指示数不要）
+        const thresholdInfo = calculateThreshold(previousReading, previousPreviousReading, threeTimesPreviousReading);
+        
+        // 今回指示数が無効な場合は入力待ち状態を表示
+        if (currentReading === null || currentReading === undefined || currentReading === '' || 
+            typeof currentReading !== 'number' || isNaN(currentReading) || currentReading < 0) {
+          return {
+            warningFlag: thresholdInfo.isCalculable ? '入力待ち' : '判定不可',
+            standardDeviation: thresholdInfo.standardDeviation,
+            threshold: thresholdInfo.threshold,
+            reason: thresholdInfo.reason
+          };
+        }
+        
+        // 前回指示数との比較：今回が前回未満の場合は即「要確認」
+        if (typeof previousReading === 'number' && !isNaN(previousReading) && previousReading >= 0) {
+          if (currentReading < previousReading) {
+            console.log(`[calculateWarningFlag] 今回指示数(${currentReading})が前回値(${previousReading})未満のため要確認`);
+            return {
+              warningFlag: '要確認',
+              standardDeviation: thresholdInfo.standardDeviation,
+              threshold: thresholdInfo.threshold,
+              reason: '前回値未満'
+            };
+          }
+        }
+        
+        // 履歴データ不足の場合
+        if (!thresholdInfo.isCalculable) {
+          return {
+            warningFlag: '正常',
+            standardDeviation: 0,
+            threshold: 0,
+            reason: thresholdInfo.reason
+          };
+        }
+        
+        // 警告フラグを判定：今回指示数が閾値を超えた場合のみ「要確認」
+        const warningFlag = (currentReading > thresholdInfo.threshold) ? '要確認' : '正常';
+        
+        console.log(`[calculateWarningFlag] 今回指示数: ${currentReading}, 前回値: ${previousReading}, 標準偏差: ${thresholdInfo.standardDeviation}, 閾値: ${thresholdInfo.threshold}, 判定: ${warningFlag}`);
+        
+        return {
+          warningFlag: warningFlag,
+          standardDeviation: thresholdInfo.standardDeviation,
+          threshold: thresholdInfo.threshold,
+          reason: thresholdInfo.reason
+        };
+        
+      } catch (error) {
+        console.warn('[calculateWarningFlag] エラー:', error);
+        return {
+          warningFlag: 'エラー',
+          standardDeviation: 0,
+          threshold: 0,
+          reason: 'エラー'
+        };
+      }
+    };
+
+    // 使用量計算と警告フラグ判定を含む関数（指示数ベース警告フラグ）
+    const calculateUsageWithWarning = (currentReading, previousReading, previousPreviousReading, threeTimesPreviousReading) => {
+      const current = parseFloat(currentReading) || 0;
+      const previous = parseFloat(previousReading) || 0;
+      
+      if (current === 0 || isNaN(current) || !currentReading || currentReading === '') {
+        // 今回指示数が未入力の場合、履歴データから閾値を計算
+        const thresholdResult = calculateWarningFlag(null, previous, parseFloat(previousPreviousReading) || 0, parseFloat(threeTimesPreviousReading) || 0);
+        return { 
+          usage: '-', 
+          warningFlag: thresholdResult.warningFlag,
+          standardDeviation: thresholdResult.standardDeviation 
+        };
+      }
+      
+      const usage = previous > 0 ? current - previous : current;
+      
+      if (usage < 0) {
+        return { usage: `${usage}㎥`, warningFlag: '要確認', standardDeviation: 0 };
+      }
+      
+      // 警告フラグを計算（指示数ベース）
+      const prevPrevious = parseFloat(previousPreviousReading) || 0;
+      const threePrevious = parseFloat(threeTimesPreviousReading) || 0;
+      
+      const warningResult = calculateWarningFlag(current, previous, prevPrevious, threePrevious);
+      
+      return {
+        usage: `${usage}㎥`,
+        warningFlag: warningResult.warningFlag,
+        standardDeviation: warningResult.standardDeviation
+      };
+    };
+    
+    // 状態表示の拡張
+    const getStatusDisplay = (reading) => {
+      if (!reading.currentReading || reading.currentReading === '') {
+        // 未入力時は警告フラグ判定を表示
+        if (reading.warningFlag && reading.warningFlag !== '') {
+          return reading.warningFlag;
+        }
+        
+        // 警告フラグが計算されていない場合は履歴データから計算
+        const previousReading = parseFloat(reading.previousReading) || 0;
+        const previousPreviousReading = parseFloat(reading.previousPreviousReading) || 0;
+        const threeTimesPreviousReading = parseFloat(reading.threeTimesPrevious) || 0;
+        
+        const thresholdResult = calculateWarningFlag(null, previousReading, previousPreviousReading, threeTimesPreviousReading);
+        return thresholdResult.warningFlag;
+      }
+      
+      // 警告フラグがある場合はそれを表示
+      if (reading.warningFlag && reading.warningFlag !== '') {
+        return reading.warningFlag;
+      }
+      
+      // 警告フラグがない場合は使用量から判定
+      const current = parseFloat(reading.currentReading) || 0;
+      const previous = parseFloat(reading.previousReading) || 0;
+      
+      if (current > 0 && previous > 0) {
+        const usage = current - previous;
+        return usage < 0 ? '要確認' : '正常';
+      }
+      
+      return '正常';
+    };
+
+    // σ値表示のヘルパー関数（表示しない）
+    const getStandardDeviationDisplay = (reading) => {
+      return null; // 常にnullを返して表示しない
+    };
+    
+    // デバッグ用：警告フラグの詳細情報
+    const getWarningFlagDebugInfo = (reading) => {
+      const hasBackendFlag = reading._original && (reading._original['警告フラグ'] || reading._original['warningFlag']);
+      const hasBackendSigma = reading._original && (reading._original['標準偏差値'] || reading._original['standardDeviation']);
+      
+      return {
+        warningFlag: reading.warningFlag,
+        standardDeviation: reading.standardDeviation,
+        source: {
+          warningFlag: hasBackendFlag ? 'backend' : 'frontend',
+          standardDeviation: hasBackendSigma ? 'backend' : 'frontend'
+        }
+      };
+    };
+    
+    // JST日付処理のテスト用関数（開発時のみ）
+    const testJSTDateFunctions = () => {
+      console.log('=== JST日付処理テスト開始 ===');
+      
+      const testCases = [
+        '2025-01-15T15:00:00.000Z',  // ISO UTC形式
+        '2025-01-15',                // YYYY-MM-DD形式
+        new Date('2025-01-15'),      // Dateオブジェクト
+        '',                          // 空文字
+        null,                        // null
+        undefined                    // undefined
+      ];
+      
+      testCases.forEach((testCase, index) => {
+        console.log(`--- テストケース ${index + 1}: ${testCase} ---`);
+        
+        const normalized = normalizeToJSTDate(testCase);
+        console.log(`正規化結果: ${normalized}`);
+        
+        const displayed = formatDateForDisplay(testCase);
+        console.log(`表示結果: ${displayed}`);
+        
+        console.log('');
+      });
+      
+      console.log('=== 現在日時テスト ===');
+      const currentJST = getCurrentJSTDateString();
+      console.log(`現在のJST日付: ${currentJST}`);
+      
+      console.log('=== JST日付処理テスト完了 ===');
+    };
+
+    // 開発時にテストを実行（本番では削除可能）
+    // testJSTDateFunctions();
+
+    // STDEV.S関数相当の標準偏差を計算（標本標準偏差：n-1で割る）
+    const calculateSTDEV_S = (values) => {
+      if (!values || values.length < 2) return 0;
+      
+      const mean = values.reduce((sum, val) => sum + val, 0) / values.length;
+      const variance = values.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / (values.length - 1); // n-1で割る
+      return Math.sqrt(variance);
+    };
+
+    // AVERAGE関数相当の平均値を計算
+    const calculateAVERAGE = (values) => {
+      if (!values || values.length === 0) return 0;
+      return values.reduce((sum, val) => sum + val, 0) / values.length;
+    };
+
+  </script>
+  
+  <!-- PWA初期化スクリプト -->
+  <script>
+    // PWA機能の初期化
+    document.addEventListener('DOMContentLoaded', () => {
+      console.log('[PWA] Meter Reading page loaded with PWA support (Browser version)');
+      
+      // Service Worker登録
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/service-worker.js')
+            .then(registration => {
+              console.log('[PWA] Service Worker registered from meter reading page');
+            })
+            .catch(error => {
+              console.error('[PWA] Service Worker registration failed:', error);
+            });
+        });
+      }
+      
+      // PWAインストール状態の確認
+      if (window.pwaUtils) {
+        const appInfo = window.pwaUtils.getAppInfo();
+        console.log('[PWA] App info:', appInfo);
+        
+        // インストール済みの場合、UI調整
+        if (appInfo.isInstalled) {
+          document.body.classList.add('pwa-installed');
+        }
+        
+        // オフライン状態の場合、警告表示
+        if (!appInfo.isOnline) {
+          window.pwaUtils.showNetworkStatus('オフライン', 'warning');
+        }
+      }
+    });
+  </script>
+</body>
+</html>

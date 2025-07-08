@@ -16,6 +16,8 @@ export default defineConfig({
       input: {
         main: './index-new.html',
         property_select: './html_files/main_app/property_select-new.html',
+        room_select: './html_files/main_app/room_select.html',
+        meter_reading: './html_files/main_app/meter_reading.html',
         debug: './debug.html',
         test: './test.html'
       },
