@@ -200,21 +200,19 @@
     /* 極小デバイス向けの部屋ナビゲーション */
     @media (max-width: 480px) {
       .room-navigation {
-        flex-direction: column;
+        flex-direction: row !important;
         gap: 8px;
-        align-items: stretch;
+        align-items: center;
       }
-      
       .room-navigation button {
-        width: 100%;
-        max-width: 120px;
-        margin: 0 auto;
+        width: auto;
+        max-width: none;
+        margin: 0;
       }
-      
       .room-navigation span {
-        order: -1;
+        order: 0;
         text-align: center;
-        margin-bottom: 4px;
+        margin-bottom: 0;
       }
     }
     
