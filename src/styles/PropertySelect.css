@@ -1,0 +1,224 @@
+/* Material UI Critical CSS */
+:root {
+  --mui-palette-primary-main: #1976d2;
+  --mui-palette-primary-dark: #1565c0;
+  --mui-palette-primary-light: #42a5f5;
+  --mui-palette-grey-50: #fafafa;
+  --mui-palette-grey-100: #f5f5f5;
+  --mui-palette-grey-600: #757575;
+  --mui-palette-grey-900: #212121;
+  --mui-shadows-1: 0px 2px 1px -1px rgba(0,0,0,0.2), 0px 1px 1px 0px rgba(0,0,0,0.14), 0px 1px 3px 0px rgba(0,0,0,0.12);
+  --mui-shadows-2: 0px 3px 1px -2px rgba(0,0,0,0.2), 0px 2px 2px 0px rgba(0,0,0,0.14), 0px 1px 5px 0px rgba(0,0,0,0.12);
+  --mui-shadows-4: 0px 2px 4px -1px rgba(0,0,0,0.2), 0px 4px 5px 0px rgba(0,0,0,0.14), 0px 1px 10px 0px rgba(0,0,0,0.12);
+}
+
+* { 
+  box-sizing: border-box; 
+}
+
+body { 
+  margin: 0; 
+  padding: 0; 
+  font-family: "Roboto", "Helvetica", "Arial", sans-serif;
+  background-color: var(--mui-palette-grey-50);
+  color: var(--mui-palette-grey-900);
+  font-size: 1rem; 
+  line-height: 1.5; 
+  letter-spacing: 0.00938em;
+  -webkit-font-smoothing: antialiased; 
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Material UI AppBar */
+.MuiAppBar-root {
+  background-color: var(--mui-palette-primary-main);
+  color: #fff; 
+  box-shadow: var(--mui-shadows-4);
+  min-height: 64px; 
+  border-radius: 0 0 12px 12px;
+}
+
+.MuiToolbar-root {
+  display: flex; 
+  align-items: center; 
+  justify-content: center;
+  min-height: 64px; 
+  padding: 0 16px; 
+  gap: 8px;
+}
+
+.app-title {
+  flex-grow: 1; 
+  text-align: center; 
+  font-size: 1.5rem;
+  font-weight: 500; 
+  color: #fff; 
+  letter-spacing: 0.0075em;
+}
+
+/* Material UI Container */
+.MuiContainer-root {
+  max-width: 1200px; 
+  margin: 0 auto; 
+  padding: 32px 16px;
+}
+
+/* Material UI Cards */
+.MuiCard-root {
+  background: #fff; 
+  border-radius: 16px;
+  box-shadow: var(--mui-shadows-1);
+  transition: box-shadow 0.2s, transform 0.2s;
+  cursor: pointer; 
+  margin-bottom: 16px;
+}
+
+.MuiCard-root:hover {
+  box-shadow: var(--mui-shadows-4);
+  transform: translateY(-2px) scale(1.01);
+}
+
+.MuiCardContent-root { 
+  padding: 20px; 
+}
+
+/* Loading & Error States */
+.loading-container { 
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  display: flex !important; 
+  justify-content: center !important; 
+  align-items: center !important; 
+  flex-direction: column; 
+  gap: 16px;
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  z-index: 9999 !important;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  margin: 0 !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.MuiCircularProgress-root {
+  width: 40px; 
+  height: 40px; 
+  border: 4px solid #e0e0e0;
+  border-top-color: var(--mui-palette-primary-main);
+  border-radius: 50%; 
+  animation: spin 1.4s linear infinite;
+}
+
+@keyframes spin { 
+  to { 
+    transform: rotate(360deg); 
+  } 
+}
+
+.MuiAlert-root {
+  display: flex; 
+  padding: 12px 16px; 
+  border-radius: 16px;
+  background: linear-gradient(135deg, #fff5f5 0%, #fed7d7 100%);
+  border: 1px solid #fecaca; 
+  color: #b91c1c;
+  box-shadow: 0 4px 12px rgba(185, 28, 28, 0.1); 
+  margin-bottom: 16px;
+}
+
+/* Search Input */
+.MuiTextField-root { 
+  margin-bottom: 24px; 
+}
+
+.MuiTextField-root input {
+  width: 100%; 
+  padding: 18px 20px; 
+  border: 2px solid #e0e0e0;
+  border-radius: 16px; 
+  font-size: 16px;
+  background: linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.MuiTextField-root input:focus {
+  outline: none; 
+  border-color: var(--mui-palette-primary-main);
+  box-shadow: 0 4px 12px rgba(25,118,210,0.1);
+  background: #ffffff; 
+  transform: translateY(-1px);
+}
+
+#root { 
+  min-height: 100vh; 
+  background: linear-gradient(135deg, #f0f4f8 0%, #e1e8ed 100%); 
+}
+
+/* Chip styles */
+.MuiChip-root {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Typography */
+.MuiTypography-root {
+  font-family: "Roboto", "Helvetica", "Arial", sans-serif;
+  font-weight: 400;
+  line-height: 1.5;
+  letter-spacing: 0.00938em;
+}
+
+/* Responsive design */
+@media (max-width: 768px) { 
+  .MuiContainer-root { 
+    padding: 16px; 
+  } 
+  
+  .app-title { 
+    font-size: 1.25rem; 
+  }
+  
+  .MuiCard-root { 
+    margin-bottom: 12px; 
+  }
+  
+  .MuiCardContent-root { 
+    padding: 16px; 
+  }
+  
+  .MuiTextField-root input { 
+    padding: 16px 18px; 
+  }
+}
+
+@media (max-width: 480px) {
+  .MuiContainer-root { 
+    padding: 12px; 
+  }
+  
+  .app-title { 
+    font-size: 1.125rem; 
+  }
+  
+  .MuiCardContent-root { 
+    padding: 14px; 
+  }
+}
+
+/* Remove fade-in animation delays for better performance */
+.MuiCard-root {
+  animation: none;
+}
+
+/* Disable card animation delays */
+.MuiCard-root:nth-child(1) { animation-delay: 0s; }
+.MuiCard-root:nth-child(2) { animation-delay: 0s; }
+.MuiCard-root:nth-child(3) { animation-delay: 0s; }
+.MuiCard-root:nth-child(4) { animation-delay: 0s; }
+.MuiCard-root:nth-child(5) { animation-delay: 0s; }

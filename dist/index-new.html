@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>水道検針アプリ</title>
+  <link rel="manifest" href="/assets/manifest-Dz1MFj89.json">
+  
+  <!-- iOS用メタタグ -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="水道検針">
+  
+  <!-- Android用メタタグ -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="application-name" content="水道検針">
+  
+  <!-- Fonts with optimized loading -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+  
+  <!-- PWA detection and redirect script -->
+  <script>
+    // PWA起動時の即座リダイレクト
+    (function() {
+      const isPWAMode = window.matchMedia('(display-mode: standalone)').matches || 
+                       window.navigator.standalone === true ||
+                       new URLSearchParams(window.location.search).get('pwa') === 'true';
+      
+      if (isPWAMode) {
+        window.location.replace('/property_select');
+        return;
+      }
+    })();
+  </script>
+  <script type="module" crossorigin src="/assets/main-P68BwjJ7.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/vendor-DJG_os-6.js">
+  <link rel="modulepreload" crossorigin href="/assets/main-Dmh_vogW.js">
+  <link rel="stylesheet" crossorigin href="/assets/main-D2UJXSsU.css">
+</head>
+<body>
+  <div id="root"></div>
+  
+  <!-- Service Worker Registration -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('/service-worker.js');
+      });
+    }
+  </script>
+</body>
+</html>
