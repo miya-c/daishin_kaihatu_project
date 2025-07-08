@@ -568,6 +568,12 @@
           return;
         }
 
+        // 先に状態を設定
+        setPropertyId(propId);
+        setPropertyName(propName || '');
+        setRoomId(rId);
+        setRoomName(rName || '');
+
         // 統合版getMeterReadings APIから物件名・部屋名・検針データを一括取得
         console.log('[meter_reading] 🚀 統合API呼び出し開始 - propertyId:', propId, 'roomId:', rId);
         loadMeterReadings(propId, rId);
@@ -650,11 +656,9 @@
           console.log('[meter_reading] - 検針データ件数:', readings.length);
           console.log('[meter_reading] - 検針データ:', readings);
 
-          // 状態を更新
-          setPropertyId(propId || 'N/A');
-          setPropertyName(propertyName);
-          setRoomId(rId || 'N/A');
-          setRoomName(roomName);
+          // 物件名・部屋名を更新（APIから取得した正確な情報）
+          if (propertyName) setPropertyName(propertyName);
+          if (roomName) setRoomName(roomName);
 
           // 検針データ処理
           if (Array.isArray(readings) && readings.length > 0) {
@@ -1299,7 +1303,7 @@
                 <p className="room-info">部屋: {String(roomName || '部屋名未設定')}</p>
                 {/* 新規追加: 部屋ナビゲーション */}
                 {/* デバッグ情報表示 */}
-                {process.env.NODE_ENV === 'development' && (
+                {true && (
                   <div style={{ fontSize: '12px', color: '#999', marginTop: '8px' }}>
                     Debug: allRooms.length={allRooms.length}, currentRoomIndex={currentRoomIndex}
                   </div>
