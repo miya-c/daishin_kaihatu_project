@@ -22,15 +22,20 @@
   
   <!-- PWA detection and redirect script -->
   <script>
-    // PWA起動時の即座リダイレクト
+    // PWA起動時の即座リダイレクト（installページからのみ）
     (function() {
-      const isPWAMode = window.matchMedia('(display-mode: standalone)').matches || 
-                       window.navigator.standalone === true ||
-                       new URLSearchParams(window.location.search).get('pwa') === 'true';
+      const currentPath = window.location.pathname;
       
-      if (isPWAMode) {
-        window.location.replace('/property_select');
-        return;
+      // /install パスからのアクセスの場合のみPWAチェック
+      if (currentPath === '/install' || currentPath === '/index-new.html') {
+        const isPWAMode = window.matchMedia('(display-mode: standalone)').matches || 
+                         window.navigator.standalone === true ||
+                         new URLSearchParams(window.location.search).get('pwa') === 'true';
+        
+        if (isPWAMode) {
+          window.location.replace('/property_select');
+          return;
+        }
       }
     })();
   </script>
