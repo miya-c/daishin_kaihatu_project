@@ -878,11 +878,6 @@
         }
       };
 
-      // コンポーネントマウント時にスクロール位置をリセット
-      React.useEffect(() => {
-        window.scrollTo(0, 0);
-      }, []);
-
       const handleBackButton = async () => {
         try {
           setIsNavigating(true);
