@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import PropertyCard from './PropertyCard.jsx';
+import { fetchPropertiesWithFallback, fetchRoomsWithFallback } from '../utils/api.js';
 
 const PropertySelect = () => {
   const [properties, setProperties] = useState([]);
@@ -52,50 +53,25 @@ const PropertySelect = () => {
     }
   }, []);
 
-  // Fetch properties data
+  // Fetch properties data with improved error handling
   useEffect(() => {
     window.scrollTo(0, 0);
     
     const fetchProperties = async () => {
+      console.log('🚀 プロパティデータ取得開始');
       setLoading(true);
       setError(null);
       setIsFetched(false);
       
       try {
-        const requestUrl = `${gasWebAppUrl}?action=getProperties&cache=${Date.now()}`;
-        const response = await fetch(requestUrl);
-        
-        if (!response.ok) {
-          throw new Error(`Network response was not ok. Status: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        
-        if (!data) {
-          throw new Error('サーバーからのレスポンスが空です。');
-        }
-        
-        if (data.success === false) {
-          throw new Error(`GASエラー: ${data.error || 'Unknown error'}`);
-        }
-        
-        let actualData = null;
-        if (data.success === true && data.data) {
-          actualData = data.data;
-        } else if (Array.isArray(data)) {
-          actualData = data;
-        } else if (data.properties && Array.isArray(data.properties)) {
-          actualData = data.properties;
-        } else if (data.availableSheets) {
-          throw new Error('Google Spreadsheetの「物件マスタ」シートが見つかりません。管理者に連絡してください。');
-        } else {
-          throw new Error('物件データの形式が正しくありません。管理者に連絡してください。');
-        }
+        // 改良されたフォールバック付き取得関数を使用
+        const actualData = await fetchPropertiesWithFallback();
         
         if (!Array.isArray(actualData)) {
-          throw new Error('物件データが配列形式ではありません。管理者に連絡してください。');
+          throw new Error('取得されたデータが配列形式ではありません。');
         }
         
+        // データの正規化
         const normalizedData = actualData.map(property => {
           const safeProperty = {
             ...property,
@@ -104,6 +80,7 @@ const PropertySelect = () => {
             completionDate: property.completionDate || property['検針完了日'] || '',
           };
           
+          // null/undefined値の安全化
           Object.keys(safeProperty).forEach(key => {
             if (safeProperty[key] === null || safeProperty[key] === undefined) {
               safeProperty[key] = '';
@@ -113,11 +90,12 @@ const PropertySelect = () => {
           return safeProperty;
         });
         
+        console.log('✅ プロパティデータ正規化完了:', normalizedData.length, '件');
         setProperties(normalizedData);
         setLoading(true); // Keep loading for render completion detection
         
       } catch (fetchError) {
-        console.error('物件データ取得エラー:', fetchError);
+        console.error('❌ プロパティデータ取得エラー:', fetchError);
         setError(`物件情報の取得に失敗しました: ${fetchError.message}`);
         setLoading(false);
       } finally {
@@ -126,7 +104,7 @@ const PropertySelect = () => {
     };
 
     fetchProperties();
-  }, [gasWebAppUrl]);
+  }, []);
 
   // Detect render completion and hide loading
   useEffect(() => {
@@ -177,28 +155,10 @@ const PropertySelect = () => {
     setNavigationMessage('');
     
     try {
-      const requestUrl = `${gasWebAppUrl}?action=getRooms&propertyId=${property.id}&cache=${Date.now()}`;
-      const roomResponse = await fetch(requestUrl);
+      console.log(`🏠 部屋データ取得開始 - 物件ID: ${property.id}`);
       
-      if (!roomResponse.ok) {
-        const errorText = await roomResponse.text();
-        throw new Error(`部屋情報の取得に失敗しました。ステータス: ${roomResponse.status}. 詳細: ${errorText}`);
-      }
-      
-      const roomData = await roomResponse.json();
-      
-      let rooms = [];
-      if (roomData && typeof roomData === 'object' && roomData !== null && roomData.success === true && Array.isArray(roomData.data)) {
-        rooms = roomData.data;
-      } else if (Array.isArray(roomData)) {
-        rooms = roomData;
-      } else if (roomData && roomData.success === false) {
-        console.error('エラーレスポンス:', roomData.error);
-        rooms = [];
-      } else {
-        console.warn('予期しない形式 - 空配列で継続:', roomData);
-        rooms = [];
-      }
+      // 改良されたAPI関数を使用
+      const rooms = await fetchRoomsWithFallback(property.id);
       
       const normalizedRooms = rooms.map((room, index) => ({
         ...room,

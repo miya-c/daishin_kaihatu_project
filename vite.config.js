@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
+  publicDir: 'public',
   build: {
     outDir: 'dist',
     // Enable minification and compression
@@ -14,7 +15,9 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: './index-new.html',
-        property_select: './html_files/main_app/property_select-new.html'
+        property_select: './html_files/main_app/property_select-new.html',
+        debug: './debug.html',
+        test: './test.html'
       },
       output: {
         manualChunks: {
