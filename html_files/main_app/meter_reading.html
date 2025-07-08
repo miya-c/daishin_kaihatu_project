@@ -744,6 +744,7 @@
       // 新規追加: 部屋リストを読み込む関数
       const loadRoomsList = async () => {
         try {
+          console.log('[meter_reading] 🏠 部屋リスト読み込み開始');
           const urlParams = new URLSearchParams(window.location.search);
           const propId = urlParams.get('propertyId');
           
@@ -754,9 +755,13 @@
 
           // sessionStorageから部屋リストを取得
           const cachedRooms = sessionStorage.getItem('selectedRooms');
+          console.log('[meter_reading] キャッシュされた部屋データ:', cachedRooms ? '存在' : '無し');
+          
           if (cachedRooms) {
             try {
               const roomsArray = JSON.parse(cachedRooms);
+              console.log('[meter_reading] 解析した部屋データ:', roomsArray.length, '件');
+              
               if (Array.isArray(roomsArray) && roomsArray.length > 0) {
                 // 検針が必要な部屋のみをフィルタリング
                 const meterReadingRooms = roomsArray.filter(room => {
@@ -764,8 +769,15 @@
                   return needsMeterReading;
                 });
                 
+                console.log('[meter_reading] ✅ 検針対象部屋をフィルタリング:', meterReadingRooms.length, '件');
+                console.log('[meter_reading] 検針対象部屋一覧:', meterReadingRooms.map(r => ({
+                  id: r['部屋ID'] || r['roomId'] || r['id'],
+                  name: r['部屋名'] || r['roomName'] || r['name'],
+                  needsReading: r['検針要否'] || r['meterReadingRequired']
+                })));
+                
                 setAllRooms(meterReadingRooms);
-                console.log('[meter_reading] 検針対象部屋数:', meterReadingRooms.length);
+                console.log('[meter_reading] 検針対象部屋数をstateに設定:', meterReadingRooms.length);
                 return;
               }
             } catch (parseError) {
@@ -774,22 +786,33 @@
           }
 
           // キャッシュがない場合はAPIから取得
+          console.log('[meter_reading] 📡 APIから部屋リストを取得開始');
           const currentGasUrl = gasWebAppUrl || sessionStorage.getItem('gasWebAppUrl');
-          if (!currentGasUrl) return;
+          if (!currentGasUrl) {
+            console.warn('[meter_reading] gasWebAppURLが無いためAPI取得をスキップ');
+            return;
+          }
 
           const fetchUrl = `${currentGasUrl}?action=getRooms&propertyId=${encodeURIComponent(propId)}`;
+          console.log('[meter_reading] API呼び出しURL:', fetchUrl);
+          
           const response = await fetch(fetchUrl);
           
           if (response.ok) {
             const result = await response.json();
+            console.log('[meter_reading] API応答:', result);
+            
             let roomsArray;
             
             if (result && result.success === true && Array.isArray(result.data)) {
               roomsArray = result.data;
+              console.log('[meter_reading] 統一形式でデータ取得:', roomsArray.length, '件');
             } else if (Array.isArray(result)) {
               roomsArray = result;
+              console.log('[meter_reading] 配列形式でデータ取得:', roomsArray.length, '件');
             } else if (result && Array.isArray(result.rooms)) {
               roomsArray = result.rooms;
+              console.log('[meter_reading] rooms配列形式でデータ取得:', roomsArray.length, '件');
             }
             
             if (roomsArray && roomsArray.length > 0) {
@@ -799,10 +822,14 @@
                 return needsMeterReading;
               });
               
+              console.log('[meter_reading] ✅ API経由で検針対象部屋を取得:', meterReadingRooms.length, '件');
               setAllRooms(meterReadingRooms);
               sessionStorage.setItem('selectedRooms', JSON.stringify(roomsArray));
-              console.log('[meter_reading] API経由で検針対象部屋を取得:', meterReadingRooms.length);
+            } else {
+              console.warn('[meter_reading] 部屋データが空または無効');
             }
+          } else {
+            console.error('[meter_reading] API呼び出し失敗:', response.status, response.statusText);
           }
         } catch (error) {
           console.error('[meter_reading] 部屋リスト読み込みエラー:', error);
@@ -811,16 +838,38 @@
 
       // 新規追加: 現在の部屋インデックスを設定
       React.useEffect(() => {
+        console.log('[meter_reading] 🎯 部屋インデックス設定処理開始');
+        console.log('[meter_reading] allRooms.length:', allRooms.length);
+        console.log('[meter_reading] roomId:', roomId);
+        
         if (allRooms.length > 0 && roomId) {
+          console.log('[meter_reading] 部屋リスト詳細:', allRooms.map(room => ({
+            id: room['部屋ID'] || room['roomId'] || room['id'],
+            name: room['部屋名'] || room['roomName'] || room['name']
+          })));
+          
           const index = allRooms.findIndex(room => {
             const roomIdInData = room['部屋ID'] || room['roomId'] || room['id'];
-            return String(roomIdInData) === String(roomId);
+            const match = String(roomIdInData) === String(roomId);
+            console.log(`[meter_reading] 部屋比較: データ内ID="${roomIdInData}" vs 現在ID="${roomId}" -> ${match ? '一致' : '不一致'}`);
+            return match;
           });
+          
+          console.log('[meter_reading] 検索結果インデックス:', index);
           
           if (index >= 0) {
             setCurrentRoomIndex(index);
-            console.log('[meter_reading] 現在の部屋インデックス:', index, '/', allRooms.length);
+            console.log('[meter_reading] ✅ 現在の部屋インデックスを設定:', index, '/', allRooms.length);
+          } else {
+            console.warn('[meter_reading] ⚠️ 現在の部屋が部屋リストに見つかりません');
+            console.warn('[meter_reading] 探索対象roomId:', roomId);
+            console.warn('[meter_reading] 利用可能な部屋ID一覧:', allRooms.map(r => r['部屋ID'] || r['roomId'] || r['id']));
           }
+        } else {
+          console.log('[meter_reading] 部屋インデックス設定をスキップ:', {
+            allRoomsEmpty: allRooms.length === 0,
+            roomIdEmpty: !roomId
+          });
         }
       }, [allRooms, roomId]);
 
@@ -1244,7 +1293,13 @@
                 <h2 className="property-name">{String(propertyName || '物件名未設定')}</h2>
                 <p className="room-info">部屋: {String(roomName || '部屋名未設定')}</p>
                 {/* 新規追加: 部屋ナビゲーション */}
-                {allRooms.length > 0 && currentRoomIndex >= 0 && (
+                {/* デバッグ情報表示 */}
+                {process.env.NODE_ENV === 'development' && (
+                  <div style={{ fontSize: '12px', color: '#999', marginTop: '8px' }}>
+                    Debug: allRooms.length={allRooms.length}, currentRoomIndex={currentRoomIndex}
+                  </div>
+                )}
+                {allRooms.length > 0 && currentRoomIndex >= 0 ? (
                   <div className="room-navigation" style={{
                     display: 'flex',
                     justifyContent: 'space-between',
@@ -1289,6 +1344,18 @@
                     >
                       次の部屋 →
                     </button>
+                  </div>
+                ) : (
+                  /* デバッグ: 条件が満たされない場合の情報表示 */
+                  <div style={{ 
+                    fontSize: '12px', 
+                    color: '#f44336', 
+                    marginTop: '8px',
+                    padding: '4px 8px',
+                    backgroundColor: '#fff3e0',
+                    borderRadius: '4px'
+                  }}>
+                    部屋ナビゲーション非表示: 部屋数={allRooms.length}, インデックス={currentRoomIndex}
                   </div>
                 )}
               </div><div className="mantine-paper reading-history-container" style={{padding: 'var(--mantine-spacing-xs)', margin: '0'}}>                <h3 className="mantine-subtitle desktop-only" style={{ textAlign: 'center', marginBottom: 'var(--mantine-spacing-md)' }}>検針履歴</h3>
