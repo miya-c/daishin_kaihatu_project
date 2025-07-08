@@ -1,0 +1,12 @@
+# Cloudflare Pages リダイレクト設定
+
+# メインアプリケーションのクリーンURL
+/property_select  /html_files/main_app/property_select.html  200
+/room_select      /html_files/main_app/room_select.html      200
+/meter_reading    /html_files/main_app/meter_reading.html    200
+
+# PWAリダイレクト
+/app              /html_files/main_app/property_select.html  200
+
+# ルートアクセス時の処理
+/                 /index.html                                 200
