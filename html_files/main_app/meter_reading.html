@@ -810,12 +810,37 @@
           if (response.ok) {
             const result = await response.json();
             console.log('[meter_reading] API応答:', result);
+            console.log('[meter_reading] API応答詳細分析:');
+            console.log('[meter_reading] - result.success:', result.success);
+            console.log('[meter_reading] - result.data type:', typeof result.data);
+            console.log('[meter_reading] - result.data isArray:', Array.isArray(result.data));
+            console.log('[meter_reading] - result.data keys:', result.data ? Object.keys(result.data) : 'N/A');
+            console.log('[meter_reading] - result.data:', result.data);
             
             let roomsArray;
             
             if (result && result.success === true && Array.isArray(result.data)) {
               roomsArray = result.data;
               console.log('[meter_reading] 統一形式でデータ取得:', roomsArray.length, '件');
+            } else if (result && result.success === true && result.data && typeof result.data === 'object') {
+              // dataがオブジェクトの場合、その中から配列を探す
+              console.log('[meter_reading] dataオブジェクト内の検索開始');
+              if (Array.isArray(result.data.rooms)) {
+                roomsArray = result.data.rooms;
+                console.log('[meter_reading] data.rooms配列でデータ取得:', roomsArray.length, '件');
+              } else if (Array.isArray(result.data.roomList)) {
+                roomsArray = result.data.roomList;
+                console.log('[meter_reading] data.roomList配列でデータ取得:', roomsArray.length, '件');
+              } else {
+                // dataオブジェクト自体が部屋データの可能性
+                const dataKeys = Object.keys(result.data);
+                console.log('[meter_reading] dataオブジェクトのキー:', dataKeys);
+                // キーが数値的（部屋IDなど）の場合、値の配列として扱う
+                if (dataKeys.length > 0) {
+                  roomsArray = Object.values(result.data);
+                  console.log('[meter_reading] dataオブジェクトの値を配列化:', roomsArray.length, '件');
+                }
+              }
             } else if (Array.isArray(result)) {
               roomsArray = result;
               console.log('[meter_reading] 配列形式でデータ取得:', roomsArray.length, '件');
