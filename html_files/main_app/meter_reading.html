@@ -772,9 +772,28 @@
               console.log('[meter_reading] 解析した部屋データ:', roomsArray.length, '件');
               
               if (Array.isArray(roomsArray) && roomsArray.length > 0) {
+                console.log('[meter_reading] 🔍 キャッシュデータサンプル（最初の3件）:');
+                roomsArray.slice(0, 3).forEach((room, index) => {
+                  console.log(`[meter_reading] キャッシュ部屋[${index}]:`, room);
+                  console.log(`[meter_reading] キャッシュ部屋[${index}] 検針要否チェック:`, {
+                    '検針要否': room['検針要否'],
+                    'meterReadingRequired': room['meterReadingRequired'],
+                    '検針不要': room['検針不要'],
+                    'keys': Object.keys(room)
+                  });
+                });
+                
                 // 検針が必要な部屋のみをフィルタリング
                 const meterReadingRooms = roomsArray.filter(room => {
-                  const needsMeterReading = room['検針要否'] === '要' || room['meterReadingRequired'] === true || room['meterReadingRequired'] === '要';
+                  // より幅広い条件でチェック
+                  const needsMeterReading = 
+                    room['検針要否'] === '要' || 
+                    room['meterReadingRequired'] === true || 
+                    room['meterReadingRequired'] === '要' ||
+                    room['検針不要'] !== '不要' ||  // 「検針不要」が「不要」でなければ必要
+                    room['検針不要'] !== true ||   // 「検針不要」がtrueでなければ必要
+                    (room['検針不要'] === undefined && room['検針要否'] === undefined); // 両方未定義なら必要と判断
+                  
                   return needsMeterReading;
                 });
                 
@@ -850,9 +869,29 @@
             }
             
             if (roomsArray && roomsArray.length > 0) {
+              console.log('[meter_reading] 🔍 部屋データサンプル（最初の3件）:');
+              roomsArray.slice(0, 3).forEach((room, index) => {
+                console.log(`[meter_reading] 部屋[${index}]:`, room);
+                console.log(`[meter_reading] 部屋[${index}] 検針要否チェック:`, {
+                  '検針要否': room['検針要否'],
+                  'meterReadingRequired': room['meterReadingRequired'],
+                  '検針不要': room['検針不要'],
+                  'keys': Object.keys(room)
+                });
+              });
+              
               // 検針が必要な部屋のみをフィルタリング
               const meterReadingRooms = roomsArray.filter(room => {
-                const needsMeterReading = room['検針要否'] === '要' || room['meterReadingRequired'] === true || room['meterReadingRequired'] === '要';
+                // より幅広い条件でチェック
+                const needsMeterReading = 
+                  room['検針要否'] === '要' || 
+                  room['meterReadingRequired'] === true || 
+                  room['meterReadingRequired'] === '要' ||
+                  room['検針不要'] !== '不要' ||  // 「検針不要」が「不要」でなければ必要
+                  room['検針不要'] !== true ||   // 「検針不要」がtrueでなければ必要
+                  (room['検針不要'] === undefined && room['検針要否'] === undefined); // 両方未定義なら必要と判断
+                
+                console.log(`[meter_reading] フィルタリング: 部屋ID=${room['部屋ID'] || room['roomId']}, 検針要否=${room['検針要否']}, 検針不要=${room['検針不要']}, meterReadingRequired=${room['meterReadingRequired']}, 結果=${needsMeterReading}`);
                 return needsMeterReading;
               });
               
