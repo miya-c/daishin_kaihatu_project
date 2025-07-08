@@ -523,9 +523,6 @@
             setGasWebAppUrl(urlFromSession);
             console.log('[meter_reading] gasWebAppUrlを取得しました:', urlFromSession);
 
-            // 部屋リストを読み込み
-            await loadRoomsList();
-
             console.log('[meter_reading] 初期化完了しました。');
 
             // URLパラメータからデータを読み込み開始
@@ -539,6 +536,14 @@
 
         initializeApp();
       }, []);
+
+      // プロパティIDが設定された時に部屋リストを読み込む
+      React.useEffect(() => {
+        if (propertyId && gasWebAppUrl) {
+          console.log('[meter_reading] propertyIdが設定されました、部屋リストを読み込みます:', propertyId);
+          loadRoomsList(propertyId);
+        }
+      }, [propertyId, gasWebAppUrl]);
 
       const loadUrlParams = async () => {
         const urlParams = new URLSearchParams(window.location.search);
