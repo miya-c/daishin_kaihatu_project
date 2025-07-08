@@ -161,6 +161,63 @@
         font-size: 16px !important;
       }
     }
+    
+    /* 部屋ナビゲーションのスタイル */
+    .room-navigation {
+      border-top: 1px solid #e9ecef;
+      border-bottom: 1px solid #e9ecef;
+    }
+    
+    .room-navigation button {
+      min-width: 80px;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    
+    .room-navigation button:disabled {
+      cursor: not-allowed;
+      opacity: 0.5 !important;
+    }
+    
+    .room-navigation button:not(:disabled):hover {
+      background-color: #0056b3 !important;
+      transform: translateY(-1px);
+    }
+    
+    /* モバイル向けの部屋ナビゲーション */
+    @media (max-width: 768px) {
+      .room-navigation {
+        padding: 10px 0;
+      }
+      
+      .room-navigation button {
+        font-size: 13px;
+        padding: 8px 10px;
+        min-width: 70px;
+      }
+    }
+    
+    /* 極小デバイス向けの部屋ナビゲーション */
+    @media (max-width: 480px) {
+      .room-navigation {
+        flex-direction: column;
+        gap: 8px;
+        align-items: stretch;
+      }
+      
+      .room-navigation button {
+        width: 100%;
+        max-width: 120px;
+        margin: 0 auto;
+      }
+      
+      .room-navigation span {
+        order: -1;
+        text-align: center;
+        margin-bottom: 4px;
+      }
+    }
+    
     /* スタイル読み込み状態の管理 */
     .styles-loading { 
       opacity: 0.3; 
@@ -434,6 +491,11 @@
       const [meterReadings, setMeterReadings] = React.useState([]);
       const [debugInfo, setDebugInfo] = React.useState(null);
 
+      // 新規追加: 部屋リストと現在の部屋インデックス
+      const [allRooms, setAllRooms] = React.useState([]);
+      const [currentRoomIndex, setCurrentRoomIndex] = React.useState(-1);
+      const [navigationInProgress, setNavigationInProgress] = React.useState(false);
+
       const [updating, setUpdating] = React.useState(false);
       const [usageStates, setUsageStates] = React.useState({});
       const [toastMessage, setToastMessage] = React.useState('');
@@ -461,6 +523,9 @@
             setGasWebAppUrl(urlFromSession);
             console.log('[meter_reading] gasWebAppUrlを取得しました:', urlFromSession);
 
+            // 部屋リストを読み込み
+            await loadRoomsList();
+
             console.log('[meter_reading] 初期化完了しました。');
 
             // URLパラメータからデータを読み込み開始
@@ -475,10 +540,7 @@
         initializeApp();
       }, []);
 
-      // コンポーネントマウント時にスクロール位置をリセット
-      React.useEffect(() => {
-        window.scrollTo(0, 0);
-      }, []);      const loadUrlParams = async () => {
+      const loadUrlParams = async () => {
         const urlParams = new URLSearchParams(window.location.search);
         const propId = urlParams.get('propertyId');
         const propName = urlParams.get('propertyName');
@@ -678,6 +740,148 @@
           setLoading(false);
         }
       };
+
+      // 新規追加: 部屋リストを読み込む関数
+      const loadRoomsList = async () => {
+        try {
+          const urlParams = new URLSearchParams(window.location.search);
+          const propId = urlParams.get('propertyId');
+          
+          if (!propId) {
+            console.warn('[meter_reading] 物件IDがないため部屋リスト読み込みをスキップ');
+            return;
+          }
+
+          // sessionStorageから部屋リストを取得
+          const cachedRooms = sessionStorage.getItem('selectedRooms');
+          if (cachedRooms) {
+            try {
+              const roomsArray = JSON.parse(cachedRooms);
+              if (Array.isArray(roomsArray) && roomsArray.length > 0) {
+                // 検針が必要な部屋のみをフィルタリング
+                const meterReadingRooms = roomsArray.filter(room => {
+                  const needsMeterReading = room['検針要否'] === '要' || room['meterReadingRequired'] === true || room['meterReadingRequired'] === '要';
+                  return needsMeterReading;
+                });
+                
+                setAllRooms(meterReadingRooms);
+                console.log('[meter_reading] 検針対象部屋数:', meterReadingRooms.length);
+                return;
+              }
+            } catch (parseError) {
+              console.warn('[meter_reading] キャッシュデータ解析エラー:', parseError);
+            }
+          }
+
+          // キャッシュがない場合はAPIから取得
+          const currentGasUrl = gasWebAppUrl || sessionStorage.getItem('gasWebAppUrl');
+          if (!currentGasUrl) return;
+
+          const fetchUrl = `${currentGasUrl}?action=getRooms&propertyId=${encodeURIComponent(propId)}`;
+          const response = await fetch(fetchUrl);
+          
+          if (response.ok) {
+            const result = await response.json();
+            let roomsArray;
+            
+            if (result && result.success === true && Array.isArray(result.data)) {
+              roomsArray = result.data;
+            } else if (Array.isArray(result)) {
+              roomsArray = result;
+            } else if (result && Array.isArray(result.rooms)) {
+              roomsArray = result.rooms;
+            }
+            
+            if (roomsArray && roomsArray.length > 0) {
+              // 検針が必要な部屋のみをフィルタリング
+              const meterReadingRooms = roomsArray.filter(room => {
+                const needsMeterReading = room['検針要否'] === '要' || room['meterReadingRequired'] === true || room['meterReadingRequired'] === '要';
+                return needsMeterReading;
+              });
+              
+              setAllRooms(meterReadingRooms);
+              sessionStorage.setItem('selectedRooms', JSON.stringify(roomsArray));
+              console.log('[meter_reading] API経由で検針対象部屋を取得:', meterReadingRooms.length);
+            }
+          }
+        } catch (error) {
+          console.error('[meter_reading] 部屋リスト読み込みエラー:', error);
+        }
+      };
+
+      // 新規追加: 現在の部屋インデックスを設定
+      React.useEffect(() => {
+        if (allRooms.length > 0 && roomId) {
+          const index = allRooms.findIndex(room => {
+            const roomIdInData = room['部屋ID'] || room['roomId'] || room['id'];
+            return String(roomIdInData) === String(roomId);
+          });
+          
+          if (index >= 0) {
+            setCurrentRoomIndex(index);
+            console.log('[meter_reading] 現在の部屋インデックス:', index, '/', allRooms.length);
+          }
+        }
+      }, [allRooms, roomId]);
+
+      // 新規追加: 前の部屋への移動
+      const navigateToPreviousRoom = async () => {
+        if (navigationInProgress || currentRoomIndex <= 0 || allRooms.length === 0) return;
+        
+        setNavigationInProgress(true);
+        setIsNavigating(true);
+        setNavigationMessage('前の部屋に移動しています...');
+        
+        try {
+          const previousRoom = allRooms[currentRoomIndex - 1];
+          const prevRoomId = previousRoom['部屋ID'] || previousRoom['roomId'] || previousRoom['id'];
+          const prevRoomName = previousRoom['部屋名'] || previousRoom['roomName'] || previousRoom['name'];
+          
+          await updateSessionStorageCache(propertyId, roomId);
+          
+          const newUrl = `meter_reading.html?propertyId=${encodeURIComponent(propertyId)}&propertyName=${encodeURIComponent(propertyName)}&roomId=${encodeURIComponent(prevRoomId)}&roomName=${encodeURIComponent(prevRoomName)}`;
+          console.log('[meter_reading] 前の部屋に移動:', newUrl);
+          
+          window.location.href = newUrl;
+        } catch (error) {
+          console.error('[meter_reading] 前の部屋への移動エラー:', error);
+          displayToast('前の部屋への移動に失敗しました');
+          setNavigationInProgress(false);
+          setIsNavigating(false);
+        }
+      };
+
+      // 新規追加: 次の部屋への移動
+      const navigateToNextRoom = async () => {
+        if (navigationInProgress || currentRoomIndex >= allRooms.length - 1 || allRooms.length === 0) return;
+        
+        setNavigationInProgress(true);
+        setIsNavigating(true);
+        setNavigationMessage('次の部屋に移動しています...');
+        
+        try {
+          const nextRoom = allRooms[currentRoomIndex + 1];
+          const nextRoomId = nextRoom['部屋ID'] || nextRoom['roomId'] || nextRoom['id'];
+          const nextRoomName = nextRoom['部屋名'] || nextRoom['roomName'] || nextRoom['name'];
+          
+          await updateSessionStorageCache(propertyId, roomId);
+          
+          const newUrl = `meter_reading.html?propertyId=${encodeURIComponent(propertyId)}&propertyName=${encodeURIComponent(propertyName)}&roomId=${encodeURIComponent(nextRoomId)}&roomName=${encodeURIComponent(nextRoomName)}`;
+          console.log('[meter_reading] 次の部屋に移動:', newUrl);
+          
+          window.location.href = newUrl;
+        } catch (error) {
+          console.error('[meter_reading] 次の部屋への移動エラー:', error);
+          displayToast('次の部屋への移動に失敗しました');
+          setNavigationInProgress(false);
+          setIsNavigating(false);
+        }
+      };
+
+      // コンポーネントマウント時にスクロール位置をリセット
+      React.useEffect(() => {
+        window.scrollTo(0, 0);
+      }, []);
 
       const handleBackButton = async () => {
         try {
@@ -1040,9 +1244,58 @@
           </div>
 
           <div className="content-area mantine-container">
-            <div className="mantine-stack">              <div className="property-info-card">
+            <div className="mantine-stack">
+              <div className="property-info-card">
                 <h2 className="property-name">{String(propertyName || '物件名未設定')}</h2>
                 <p className="room-info">部屋: {String(roomName || '部屋名未設定')}</p>
+                {/* 新規追加: 部屋ナビゲーション */}
+                {allRooms.length > 0 && currentRoomIndex >= 0 && (
+                  <div className="room-navigation" style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginTop: '12px',
+                    padding: '8px 0'
+                  }}>
+                    <button
+                      onClick={navigateToPreviousRoom}
+                      disabled={currentRoomIndex <= 0 || navigationInProgress}
+                      className="mantine-button"
+                      style={{
+                        opacity: currentRoomIndex <= 0 ? 0.5 : 1,
+                        fontSize: '14px',
+                        padding: '6px 12px',
+                        backgroundColor: currentRoomIndex <= 0 ? '#ccc' : '#007bff'
+                      }}
+                      title="前の部屋"
+                    >
+                      ← 前の部屋
+                    </button>
+                    
+                    <span style={{
+                      fontSize: '14px',
+                      color: '#666',
+                      fontWeight: '500'
+                    }}>
+                      {currentRoomIndex + 1} / {allRooms.length}
+                    </span>
+                    
+                    <button
+                      onClick={navigateToNextRoom}
+                      disabled={currentRoomIndex >= allRooms.length - 1 || navigationInProgress}
+                      className="mantine-button"
+                      style={{
+                        opacity: currentRoomIndex >= allRooms.length - 1 ? 0.5 : 1,
+                        fontSize: '14px',
+                        padding: '6px 12px',
+                        backgroundColor: currentRoomIndex >= allRooms.length - 1 ? '#ccc' : '#007bff'
+                      }}
+                      title="次の部屋"
+                    >
+                      次の部屋 →
+                    </button>
+                  </div>
+                )}
               </div><div className="mantine-paper reading-history-container" style={{padding: 'var(--mantine-spacing-xs)', margin: '0'}}>                <h3 className="mantine-subtitle desktop-only" style={{ textAlign: 'center', marginBottom: 'var(--mantine-spacing-md)' }}>検針履歴</h3>
 
                 {Array.isArray(meterReadings) && meterReadings.length > 0 && 
