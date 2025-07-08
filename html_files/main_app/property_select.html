@@ -715,208 +715,39 @@
         setSearchTerm(event.target.value);
       };
 
-      const handlePropertySelect = async (property) => {
+      const handlePropertySelect = (property) => {
         console.log('[ReactApp] handlePropertySelect called with:', property);
-        
-        if (!property) {
-            console.error('[ReactApp] Property is null or undefined');
-            alert('選択された物件情報が無効です。(property is null)');
-            return;
+
+        if (!property || typeof property.id === 'undefined' || typeof property.name === 'undefined') {
+          console.error('[ReactApp] Invalid property data:', property);
+          alert('選択された物件情報が無効です。');
+          return;
         }
-        
-        if (typeof property.id === 'undefined') {
-            console.error('[ReactApp] Property.id is undefined:', property);
-            alert('選択された物件のIDが無効です。(property.id is undefined)');
-            return;
-        }
-        
-        if (typeof property.name === 'undefined') {
-            console.error('[ReactApp] Property.name is undefined:', property);
-            alert('選択された物件の名前が無効です。(property.name is undefined)');
-            return;
-        }
-        
-        console.log('[ReactApp] Property selected:', property);
-        
-        // ✅ 画面遷移前にページの最上部にスクロール
-        window.scrollTo(0, 0);
-        
+
+        console.log('[ReactApp] Property selected:', property.id, property.name);
+
+        // 画面遷移前の準備
         setIsNavigating(true);
-        setNavigationMessage('');
+        setNavigationMessage('部屋情報を読み込んでいます...');
+
+        // 必要な情報をsessionStorageに保存
+        sessionStorage.setItem('selectedPropertyId', String(property.id));
+        sessionStorage.setItem('selectedPropertyName', String(property.name));
         
-        try {
-          const requestUrl = `${gasWebAppUrl}?action=getRooms&propertyId=${property.id}&cache=${Date.now()}`;
-          console.log(`[ReactApp] Fetching rooms for propertyId: ${property.id}`);
-          console.log('[ReactApp] Room request URL breakdown:', {
-            baseUrl: gasWebAppUrl,
-            parameters: `action=getRooms&propertyId=${property.id}`,
-            fullUrl: requestUrl
-          });
-          
-          const roomResponse = await fetch(requestUrl);
-          
-          console.log('[ReactApp] Room Response Status:', roomResponse.status);
-          console.log('[ReactApp] Room Response Headers:', roomResponse.headers);
-          if (!roomResponse.ok) {
-            const errorText = await roomResponse.text();
-            console.error('[ReactApp] Failed to fetch room information:', roomResponse.status, errorText);
-            throw new Error(`部屋情報の取得に失敗しました。ステータス: ${roomResponse.status}. 詳細: ${errorText}`);
-          }
-            const roomData = await roomResponse.json();
-          console.log('[ReactApp] Fetched room data:', roomData);
-          console.log('[ReactApp] Room data type:', typeof roomData);
-          
-          // 🔍 部屋データの詳細構造をログ出力
-          if (roomData && roomData.data && Array.isArray(roomData.data)) {
-            console.log('[ReactApp] 部屋データサンプル:');
-            roomData.data.slice(0, 2).forEach((room, index) => {
-              console.log(`[ReactApp] 部屋[${index}] プロパティ一覧:`, Object.keys(room));
-              console.log(`[ReactApp] 部屋[${index}] 詳細:`, room);
-            });
-          } else if (Array.isArray(roomData)) {
-            console.log('[ReactApp] 直接配列の部屋データサンプル:');
-            roomData.slice(0, 2).forEach((room, index) => {
-              console.log(`[ReactApp] 部屋[${index}] プロパティ一覧:`, Object.keys(room));
-              console.log(`[ReactApp] 部屋[${index}] 詳細:`, room);
-            });
-          }
-
-          // 🔥 完全修正版: 統一レスポンス判定処理
-          let rooms = [];
-          console.log('[ReactApp] 🔍 レスポンス形式判定開始');
-          console.log('[ReactApp] レスポンス詳細:', {
-            type: typeof roomData,
-            isNull: roomData === null,
-            isUndefined: roomData === undefined,
-            hasSuccess: roomData && typeof roomData === 'object' && 'success' in roomData,
-            successValue: roomData?.success,
-            hasData: roomData && typeof roomData === 'object' && 'data' in roomData,
-            dataValue: roomData?.data,
-            isDataArray: Array.isArray(roomData?.data),
-            isDirectArray: Array.isArray(roomData),
-            keys: roomData && typeof roomData === 'object' ? Object.keys(roomData) : 'N/A'
-          });
-
-          // パターン1: 統一形式 {success: true, data: []}
-          if (roomData && 
-              typeof roomData === 'object' && 
-              roomData !== null && 
-              roomData.success === true && 
-              Array.isArray(roomData.data)) {
-            rooms = roomData.data;
-            console.log('[ReactApp] ✅ 統一形式採用 - データ件数:', rooms.length);
-          }
-          // パターン2: 直接配列
-          else if (Array.isArray(roomData)) {
-            rooms = roomData;
-            console.log('[ReactApp] ⚠️ 直接配列形式採用 - データ件数:', rooms.length);
-          }
-          // パターン3: エラーレスポンス
-          else if (roomData && roomData.success === false) {
-            console.error('[ReactApp] ❌ エラーレスポンス:', roomData.error);
-            rooms = [];
-          }
-          // パターン4: 予期しない形式
-          else {
-            console.warn('[ReactApp] ⚠️ 予期しない形式 - 空配列で継続:', roomData);
-            rooms = [];
-          }
-
-          console.log('[ReactApp] 最終採用データ:', rooms.length, '件');
-          
-          // 🔧 部屋データの正規化処理を追加
-          const normalizedRooms = rooms.map((room, index) => {
-            console.log(`[ReactApp] 部屋データ[${index}] 正規化前:`, room);
-            console.log(`[ReactApp] 部屋データ[${index}] プロパティ一覧:`, Object.keys(room));
-            
-            return {
-              ...room,
-              // 基本プロパティの正規化
-              id: room.id || room.roomId || room['部屋ID'] || `room-${index}`,
-              name: room.name || room.roomName || room['部屋名'] || '部屋名未設定',
-              
-              // 検針関連プロパティの正規化
-              rawInspectionDate: room.rawInspectionDate || room.inspectionDate || room['検針日時'],
-              hasActualReading: room.hasActualReading || room.hasReading || room['検針済み'] || false,
-              
-              // その他のプロパティを保持
-              ...Object.keys(room).reduce((acc, key) => {
-                if (!['id', 'name', 'rawInspectionDate', 'hasActualReading'].includes(key)) {
-                  acc[key] = room[key];
-                }
-                return acc;
-              }, {})
-            };
-          });
-          
-          console.log('[ReactApp] 正規化後の部屋データ:', normalizedRooms);
-          console.log('[ReactApp] 正規化後サンプル:', normalizedRooms.slice(0, 1));          
-          console.log('[ReactApp] Processed rooms:', normalizedRooms);
-          console.log('[ReactApp] Rooms array check:', Array.isArray(normalizedRooms));
-          console.log('[ReactApp] Rooms length:', normalizedRooms.length);
-
-          console.log('[ReactApp] Storing to sessionStorage...');
-          console.log('[ReactApp] - propertyId:', property.id, '(type:', typeof property.id, ')');
-          console.log('[ReactApp] - propertyName:', property.name, '(type:', typeof property.name, ')');
-          console.log('[ReactApp] - rooms length:', Array.isArray(normalizedRooms) ? normalizedRooms.length : 'not array');
-          
-          sessionStorage.setItem('selectedPropertyId', String(property.id));
-          sessionStorage.setItem('selectedPropertyName', String(property.name));
-          sessionStorage.setItem('selectedRooms', JSON.stringify(normalizedRooms));
-          
-          console.log('[ReactApp] sessionStorage after saving:');
-          console.log('[ReactApp] - selectedPropertyId:', sessionStorage.getItem('selectedPropertyId'));
-          console.log('[ReactApp] - selectedPropertyName:', sessionStorage.getItem('selectedPropertyName'));
-          console.log('[ReactApp] - selectedRooms length:', sessionStorage.getItem('selectedRooms')?.length);
-          
-          if (gasWebAppUrl) {
-            sessionStorage.setItem('gasWebAppUrl', gasWebAppUrl);
-            console.log('[ReactApp] gasWebAppUrl saved to sessionStorage:', gasWebAppUrl);
-          } else {
-            console.error('[ReactApp] ★ERROR: gasWebAppUrl is not defined before saving to sessionStorage!');
-            alert('アプリケーションの設定にエラーがあります。(code: RP1)');
-            setIsNavigating(false);
-            return;
-          }
-
-          setNavigationMessage('');
-          
-          const targetUrl = `/room_select?propertyId=${encodeURIComponent(property.id)}`;
-          console.log(`[ReactApp] Redirecting to: ${targetUrl}`);
-          // 短い遅延の後に画面遷移
-          setTimeout(() => {
-            window.location.href = targetUrl;
-          }, 300);
-        } catch (error) {
-          console.error('[ReactApp] Error fetching rooms or navigating:', error);
-          
-          // エラー時でも基本情報を保存（空配列で継続）
-          console.log('[ReactApp] エラー時の基本情報保存...');
-          sessionStorage.setItem('selectedPropertyId', String(property.id));
-          sessionStorage.setItem('selectedPropertyName', String(property.name));
-          sessionStorage.setItem('selectedRooms', JSON.stringify([])); // 空配列で保存
-          
-          if (gasWebAppUrl) {
-            sessionStorage.setItem('gasWebAppUrl', gasWebAppUrl);
-          }
-          
-          // エラーメッセージを設定（但し、致命的ではない場合は継続）
-          if (error.message && (error.message.includes('部屋データの形式') || error.message.includes('部屋情報の取得に失敗'))) {
-            console.warn('[ReactApp] データ形式エラーですが、空配列で継続します:', error.message);
-            
-            // 空の状態で画面遷移を続行
-            setNavigationMessage('');
-            
-            const targetUrl = `/room_select?propertyId=${encodeURIComponent(property.id)}`;
-            console.log(`[ReactApp] エラー時でも画面遷移: ${targetUrl}`);
-            setTimeout(() => {
-              window.location.href = targetUrl;
-            }, 300);
-          } else {
-            setError(`部屋情報の処理中にエラーが発生しました: ${error.message}`);
-            setIsNavigating(false);
-          }
+        if (gasWebAppUrl) {
+          sessionStorage.setItem('gasWebAppUrl', gasWebAppUrl);
+          console.log('[ReactApp] gasWebAppUrl saved to sessionStorage:', gasWebAppUrl);
+        } else {
+          console.error('[ReactApp] ★ERROR: gasWebAppUrl is not defined!');
+          alert('アプリケーションの設定にエラーがあります。(code: RP1)');
+          setIsNavigating(false);
+          return;
         }
+
+        // すぐに画面遷移
+        const targetUrl = `/room_select?propertyId=${encodeURIComponent(property.id)}`;
+        console.log(`[ReactApp] Navigating immediately to: ${targetUrl}`);
+        window.location.href = targetUrl;
       };
 
       // Material UI LoadingOverlayコンポーネント（ユーザーディスプレイ中央表示&操作完全ブロック）
