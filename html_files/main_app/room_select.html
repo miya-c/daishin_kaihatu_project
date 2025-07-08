@@ -223,6 +223,12 @@
                 
                 rooms = (data.data && Array.isArray(data.data.rooms)) ? data.data.rooms : [];
                 console.log('[room_select] 部屋データ抽出:', rooms.length, '件');
+
+                // 取得した部屋データをsessionStorageに保存して再利用する
+                if (rooms.length > 0) {
+                    sessionStorage.setItem('selectedRooms', JSON.stringify(rooms));
+                    console.log('[room_select] 部屋データをsessionStorageに保存しました。');
+                }
                 
                 if (!Array.isArray(rooms)) {
                     throw new Error('部屋データの取得に失敗しました（roomsが配列ではありません）');
