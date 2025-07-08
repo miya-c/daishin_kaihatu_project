@@ -783,16 +783,10 @@
                   });
                 });
                 
-                // 検針が必要な部屋のみをフィルタリング
+                // 検針が必要な部屋のみをフィルタリング（readingStatusベース）
                 const meterReadingRooms = roomsArray.filter(room => {
-                  // より幅広い条件でチェック
-                  const needsMeterReading = 
-                    room['検針要否'] === '要' || 
-                    room['meterReadingRequired'] === true || 
-                    room['meterReadingRequired'] === '要' ||
-                    room['検針不要'] !== '不要' ||  // 「検針不要」が「不要」でなければ必要
-                    room['検針不要'] !== true ||   // 「検針不要」がtrueでなければ必要
-                    (room['検針不要'] === undefined && room['検針要否'] === undefined); // 両方未定義なら必要と判断
+                  // readingStatusが'not-needed'でない部屋を対象とする
+                  const needsMeterReading = room.readingStatus !== 'not-needed';
                   
                   return needsMeterReading;
                 });
@@ -880,18 +874,12 @@
                 });
               });
               
-              // 検針が必要な部屋のみをフィルタリング
+              // 検針が必要な部屋のみをフィルタリング（readingStatusベース）
               const meterReadingRooms = roomsArray.filter(room => {
-                // より幅広い条件でチェック
-                const needsMeterReading = 
-                  room['検針要否'] === '要' || 
-                  room['meterReadingRequired'] === true || 
-                  room['meterReadingRequired'] === '要' ||
-                  room['検針不要'] !== '不要' ||  // 「検針不要」が「不要」でなければ必要
-                  room['検針不要'] !== true ||   // 「検針不要」がtrueでなければ必要
-                  (room['検針不要'] === undefined && room['検針要否'] === undefined); // 両方未定義なら必要と判断
+                // readingStatusが'not-needed'でない部屋を対象とする
+                const needsMeterReading = room.readingStatus !== 'not-needed';
                 
-                console.log(`[meter_reading] フィルタリング: 部屋ID=${room['部屋ID'] || room['roomId']}, 検針要否=${room['検針要否']}, 検針不要=${room['検針不要']}, meterReadingRequired=${room['meterReadingRequired']}, 結果=${needsMeterReading}`);
+                console.log(`[meter_reading] フィルタリング: 部屋ID=${room.id || room['部屋ID'] || room['roomId']}, readingStatus=${room.readingStatus}, 結果=${needsMeterReading}`);
                 return needsMeterReading;
               });
               
@@ -917,12 +905,12 @@
         
         if (allRooms.length > 0 && roomId) {
           console.log('[meter_reading] 部屋リスト詳細:', allRooms.map(room => ({
-            id: room['部屋ID'] || room['roomId'] || room['id'],
-            name: room['部屋名'] || room['roomName'] || room['name']
+            id: room.id || room['部屋ID'] || room['roomId'],
+            name: room.name || room['部屋名'] || room['roomName']
           })));
           
           const index = allRooms.findIndex(room => {
-            const roomIdInData = room['部屋ID'] || room['roomId'] || room['id'];
+            const roomIdInData = room.id || room['部屋ID'] || room['roomId'];
             const match = String(roomIdInData) === String(roomId);
             console.log(`[meter_reading] 部屋比較: データ内ID="${roomIdInData}" vs 現在ID="${roomId}" -> ${match ? '一致' : '不一致'}`);
             return match;
