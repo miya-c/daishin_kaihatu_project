@@ -7,7 +7,7 @@ const PropertySelect = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
-  const gasWebAppUrl = 'https://script.google.com/macros/s/AKfycbxo-Zij6If9eSFO-hB2bC_mvYtEGFxaUdwsngqGKcygh2GTHWqHPDrdHSJVC_JTpq2KSw/exec';
+  const gasWebAppUrl = import.meta.env.VITE_GAS_WEB_APP_URL;
 
   useEffect(() => {
     const fetchProperties = async () => {
