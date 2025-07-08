@@ -538,7 +538,7 @@
       // プロパティIDが設定された時に部屋リストを読み込む
       React.useEffect(() => {
         if (propertyId && gasWebAppUrl) {
-          console.log('[meter_reading] propertyIdが設定されました、部屋リストを読み込みます:', propertyId);
+        // デバッグログ削除
           loadRoomsList(propertyId);
         }
       }, [propertyId, gasWebAppUrl]);
@@ -897,38 +897,27 @@
 
       // 新規追加: 現在の部屋インデックスを設定
       React.useEffect(() => {
-        console.log('[meter_reading] 🎯 部屋インデックス設定処理開始');
-        console.log('[meter_reading] allRooms.length:', allRooms.length);
-        console.log('[meter_reading] roomId:', roomId);
+        // デバッグログ削除
         
         if (allRooms.length > 0 && roomId) {
-          console.log('[meter_reading] 部屋リスト詳細:', allRooms.map(room => ({
-            id: room.id || room['部屋ID'] || room['roomId'],
-            name: room.name || room['部屋名'] || room['roomName']
-          })));
+          // デバッグログ削除
           
           const index = allRooms.findIndex(room => {
             const roomIdInData = room.id || room['部屋ID'] || room['roomId'];
             const match = String(roomIdInData) === String(roomId);
-            console.log(`[meter_reading] 部屋比較: データ内ID="${roomIdInData}" vs 現在ID="${roomId}" -> ${match ? '一致' : '不一致'}`);
+            // デバッグログ削除
             return match;
           });
           
-          console.log('[meter_reading] 検索結果インデックス:', index);
+          // デバッグログ削除
           
           if (index >= 0) {
             setCurrentRoomIndex(index);
-            console.log('[meter_reading] ✅ 現在の部屋インデックスを設定:', index, '/', allRooms.length);
           } else {
-            console.warn('[meter_reading] ⚠️ 現在の部屋が部屋リストに見つかりません');
-            console.warn('[meter_reading] 探索対象roomId:', roomId);
-            console.warn('[meter_reading] 利用可能な部屋ID一覧:', allRooms.map(r => r['部屋ID'] || r['roomId'] || r['id']));
+            setCurrentRoomIndex(-1);
           }
         } else {
-          console.log('[meter_reading] 部屋インデックス設定をスキップ:', {
-            allRoomsEmpty: allRooms.length === 0,
-            roomIdEmpty: !roomId
-          });
+          // デバッグログ削除
         }
       }, [allRooms, roomId]);
 
@@ -1353,11 +1342,7 @@
                 <p className="room-info">部屋: {String(roomName || '部屋名未設定')}</p>
                 {/* 新規追加: 部屋ナビゲーション */}
                 {/* デバッグ情報表示 */}
-                {true && (
-                  <div style={{ fontSize: '12px', color: '#999', marginTop: '8px' }}>
-                    Debug: allRooms.length={allRooms.length}, currentRoomIndex={currentRoomIndex}
-                  </div>
-                )}
+                {/* デバッグ表示削除 */}
                 {allRooms.length > 0 && currentRoomIndex >= 0 ? (
                   <div className="room-navigation" style={{
                     display: 'flex',
