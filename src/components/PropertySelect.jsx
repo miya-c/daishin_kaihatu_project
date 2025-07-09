@@ -3,6 +3,7 @@ import PropertyCard from './PropertyCard.jsx';
 import { fetchPropertiesWithFallback, fetchRoomsWithFallback } from '../utils/api.js';
 
 const PropertySelect = () => {
+  // All state declarations
   const [properties, setProperties] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
@@ -10,29 +11,11 @@ const PropertySelect = () => {
   const [isFetched, setIsFetched] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
   const [navigationMessage, setNavigationMessage] = useState('');
+  
+  // Constants
   const gasWebAppUrl = 'https://script.google.com/macros/s/AKfycbxo-Zij6If9eSFO-hB2bC_mvYtEGFxaUdwsngqGKcygh2GTHWqHPDrdHSJVC_JTpq2KSw/exec';
 
-  // Handle forced loading hide on page restore
-  useEffect(() => {
-    const handleForceHideLoading = () => {
-      if (!isFetched) {
-        setLoading(false);
-        setError(null);
-        setIsNavigating(false);
-        setNavigationMessage('');
-      }
-    };
-
-    if (window.forceHideLoading) {
-      handleForceHideLoading();
-      window.forceHideLoading = false;
-    }
-
-    window.addEventListener('forceHideLoading', handleForceHideLoading);
-    return () => window.removeEventListener('forceHideLoading', handleForceHideLoading);
-  }, [isFetched]);
-
-  // Format completion date with memoization
+  // All callback functions first
   const formatCompletionDate = useCallback((dateStr) => {
     if (!dateStr || typeof dateStr !== 'string' || dateStr.trim() === '') {
       return '';
@@ -53,64 +36,11 @@ const PropertySelect = () => {
     }
   }, []);
 
-  // Fetch properties data with improved error handling
-  useEffect(() => {
-    window.scrollTo(0, 0);
-    
-    const fetchProperties = async () => {
-      console.log('🚀 プロパティデータ取得開始');
-      setLoading(true);
-      setError(null);
-      setIsFetched(false);
-      
-      try {
-        // 改良されたフォールバック付き取得関数を使用
-        const actualData = await fetchPropertiesWithFallback();
-        
-        if (!Array.isArray(actualData)) {
-          throw new Error('取得されたデータが配列形式ではありません。');
-        }
-        
-        // データの正規化
-        const normalizedData = actualData.map(property => {
-          const safeProperty = {
-            ...property,
-            id: String(property.id || property['物件ID'] || ''),
-            name: String(property.name || property['物件名'] || '名称未設定'),
-            completionDate: property.completionDate || property['検針完了日'] || '',
-          };
-          
-          // null/undefined値の安全化
-          Object.keys(safeProperty).forEach(key => {
-            if (safeProperty[key] === null || safeProperty[key] === undefined) {
-              safeProperty[key] = '';
-            }
-          });
-          
-          return safeProperty;
-        });
-        
-        console.log('✅ プロパティデータ正規化完了:', normalizedData.length, '件');
-        setProperties(normalizedData);
-        setLoading(true); // Keep loading for render completion detection
-        
-      } catch (fetchError) {
-        console.error('❌ プロパティデータ取得エラー:', fetchError);
-        setError(`物件情報の取得に失敗しました: ${fetchError.message}`);
-        setLoading(false);
-      } finally {
-        setIsFetched(true);
-      }
-    };
-
-    fetchProperties();
-  }, []);
-
   const handleSearchChange = useCallback((event) => {
     setSearchTerm(event.target.value);
   }, []);
 
-  // Filter and sort properties with memoization - defined before useEffect
+  // All memoized values
   const filteredProperties = useMemo(() => {
     return (properties || [])
       .filter(property => {
@@ -126,17 +56,85 @@ const PropertySelect = () => {
       });
   }, [properties, searchTerm]);
 
-  // Detect render completion and hide loading
+  // All useEffects
+  useEffect(() => {
+    const handleForceHideLoading = () => {
+      if (!isFetched) {
+        setLoading(false);
+        setError(null);
+        setIsNavigating(false);
+        setNavigationMessage('');
+      }
+    };
+
+    if (window.forceHideLoading) {
+      handleForceHideLoading();
+      window.forceHideLoading = false;
+    }
+
+    window.addEventListener('forceHideLoading', handleForceHideLoading);
+    return () => window.removeEventListener('forceHideLoading', handleForceHideLoading);
+  }, [isFetched]);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    
+    const fetchProperties = async () => {
+      console.log('🚀 プロパティデータ取得開始');
+      setLoading(true);
+      setError(null);
+      setIsFetched(false);
+      
+      try {
+        const actualData = await fetchPropertiesWithFallback();
+        
+        if (!Array.isArray(actualData)) {
+          throw new Error('取得されたデータが配列形式ではありません。');
+        }
+        
+        const normalizedData = actualData.map(property => {
+          const safeProperty = {
+            ...property,
+            id: String(property.id || property['物件ID'] || ''),
+            name: String(property.name || property['物件名'] || '名称未設定'),
+            completionDate: property.completionDate || property['検針完了日'] || '',
+          };
+          
+          Object.keys(safeProperty).forEach(key => {
+            if (safeProperty[key] === null || safeProperty[key] === undefined) {
+              safeProperty[key] = '';
+            }
+          });
+          
+          return safeProperty;
+        });
+        
+        console.log('✅ プロパティデータ正規化完了:', normalizedData.length, '件');
+        setProperties(normalizedData);
+        setLoading(true);
+        
+      } catch (fetchError) {
+        console.error('❌ プロパティデータ取得エラー:', fetchError);
+        setError(`物件情報の取得に失敗しました: ${fetchError.message}`);
+        setLoading(false);
+      } finally {
+        setIsFetched(true);
+      }
+    };
+
+    fetchProperties();
+  }, []);
+
   useEffect(() => {
     if (isFetched && loading) {
-      const expectedCount = filteredProperties ? filteredProperties.length : 0;
+      const expectedCount = filteredProperties.length;
       
       if (expectedCount === 0) {
         setLoading(false);
         return;
       }
       
-      const checkRenderingComplete = () => {
+      function checkRenderingComplete() {
         requestAnimationFrame(() => {
           const propertyElements = document.querySelectorAll('.MuiCard-root, .property-card, [data-property-id]');
           
@@ -148,7 +146,7 @@ const PropertySelect = () => {
             setTimeout(checkRenderingComplete, 50);
           }
         });
-      };
+      }
       
       const fallbackTimeout = setTimeout(() => {
         setLoading(false);
