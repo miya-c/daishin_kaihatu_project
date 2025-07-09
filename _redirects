@@ -1,12 +1,22 @@
 # Cloudflare Pages リダイレクト設定
 
-# メインアプリケーションのクリーンURL
-/property_select  /html_files/main_app/property_select.html  200
-/room_select      /html_files/main_app/room_select.html      200
-/meter_reading    /html_files/main_app/meter_reading.html    200
+# ルートからメインアプリへの直接リダイレクト
+/                   /property_select                               302
 
-# PWAリダイレクト
-/app              /html_files/main_app/property_select.html  200
+# デバッグ・テストページ（静的ファイル）
+/debug              /debug.html                                    200
+/test               /test.html                                     200
 
-# ルートアクセス時の処理
-/                 /index.html                                 200
+# PWA入口ページ（インストール用）
+/install            /index-new.html                                200
+
+# メインアプリページ（静的ファイル）
+/property_select    /html_files/main_app/property_select.html      200
+/room_select        /html_files/main_app/room_select.html          200  
+/meter_reading      /html_files/main_app/meter_reading.html        200
+
+# 静的アセット（変更なし）
+/assets/*           /assets/:splat                                 200
+
+# その他の未定義パスはメインアプリにリダイレクト
+/*                  /property_select                               302

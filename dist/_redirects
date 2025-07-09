@@ -11,7 +11,7 @@
 /install            /index-new.html                                200
 
 # メインアプリページ（静的ファイル）
-/property_select    /html_files/main_app/property_select-new.html  200
+/property_select    /html_files/main_app/property_select.html      200
 /room_select        /html_files/main_app/room_select.html          200  
 /meter_reading      /html_files/main_app/meter_reading.html        200
 
