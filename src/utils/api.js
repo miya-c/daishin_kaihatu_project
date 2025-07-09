@@ -8,9 +8,9 @@ async function robustFetch(url, options = {}) {
     method: 'GET',
     mode: 'cors',
     cache: 'no-cache',
+    credentials: 'omit',
     headers: {
-      'Accept': 'application/json',
-      'Content-Type': 'application/json'
+      'Accept': 'application/json'
     },
     redirect: 'follow',
     ...options
@@ -19,8 +19,16 @@ async function robustFetch(url, options = {}) {
   console.log(`🌐 API リクエスト: ${url}`);
   console.log('リクエストオプション:', defaultOptions);
 
+  // タイムアウト付きfetch
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15000); // 15秒タイムアウト
+
   try {
-    const response = await fetch(url, defaultOptions);
+    const response = await fetch(url, {
+      ...defaultOptions,
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
     
     console.log('レスポンス情報:', {
       status: response.status,
@@ -65,14 +73,28 @@ async function robustFetch(url, options = {}) {
       throw new Error('空のレスポンスを受信しました');
     }
   } catch (networkError) {
+    clearTimeout(timeoutId);
     console.error('❌ ネットワークエラー:', networkError);
+    console.error('エラーの詳細:', {
+      name: networkError.name,
+      message: networkError.message,
+      stack: networkError.stack
+    });
     
-    // CORS エラーの特別処理
-    if (networkError.message.includes('CORS') || networkError.message.includes('fetch')) {
-      throw new Error('ネットワーク接続エラー: GASスクリプトへの接続に失敗しました。CORS設定またはネットワーク接続を確認してください。');
+    // より具体的なエラーメッセージ
+    if (networkError.name === 'AbortError') {
+      throw new Error('タイムアウトエラー: GASスクリプトからの応答が15秒以内に返されませんでした。');
     }
     
-    throw networkError;
+    if (networkError.name === 'TypeError' && networkError.message === 'Failed to fetch') {
+      throw new Error('ネットワーク接続エラー: GASスクリプトへの接続に失敗しました。インターネット接続またはGASデプロイ設定を確認してください。');
+    }
+    
+    if (networkError.message.includes('CORS')) {
+      throw new Error('CORS エラー: GASスクリプトでCORS設定が正しく構成されていません。');
+    }
+    
+    throw new Error(`ネットワークエラー: ${networkError.message}`);
   }
 }
 
