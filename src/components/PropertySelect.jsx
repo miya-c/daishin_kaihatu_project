@@ -144,6 +144,22 @@ const PropertySelect = () => {
     setSearchTerm(event.target.value);
   }, []);
 
+  // Filter and sort properties with memoization - moved up before useEffect
+  const filteredProperties = useMemo(() => {
+    return (properties || [])
+      .filter(property => {
+        const propertyIdString = String(property.id != null ? property.id : ''); 
+        const propertyNameString = String(property.name != null ? property.name : '');
+        return propertyIdString.toLowerCase().includes(searchTerm.toLowerCase()) ||
+               propertyNameString.toLowerCase().includes(searchTerm.toLowerCase());
+      })
+      .sort((a, b) => {
+        const idA = String(a.id || '').trim();
+        const idB = String(b.id || '').trim();
+        return idA.localeCompare(idB, 'ja', { numeric: true, sensitivity: 'base' });
+      });
+  }, [properties, searchTerm]);
+
   const handlePropertySelect = async (property) => {
     if (!property || typeof property.id === 'undefined' || typeof property.name === 'undefined') {
       alert('選択された物件情報が無効です。');
@@ -282,21 +298,6 @@ const PropertySelect = () => {
     );
   };
 
-  // Filter and sort properties with memoization
-  const filteredProperties = useMemo(() => {
-    return (properties || [])
-      .filter(property => {
-        const propertyIdString = String(property.id != null ? property.id : ''); 
-        const propertyNameString = String(property.name != null ? property.name : '');
-        return propertyIdString.toLowerCase().includes(searchTerm.toLowerCase()) ||
-               propertyNameString.toLowerCase().includes(searchTerm.toLowerCase());
-      })
-      .sort((a, b) => {
-        const idA = String(a.id || '').trim();
-        const idB = String(b.id || '').trim();
-        return idA.localeCompare(idB, 'ja', { numeric: true, sensitivity: 'base' });
-      });
-  }, [properties, searchTerm]);
 
   // Initial loading state
   if (loading && !isFetched) {

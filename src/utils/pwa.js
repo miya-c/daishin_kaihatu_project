@@ -137,8 +137,10 @@ export function generateIconsAndManifest() {
   img.src = url;
 }
 
-// PWA mode detection and redirection
+// PWA mode detection (no redirect for SPA compatibility)
 export function checkPWAModeAndRedirect() {
+  // Removed redirect logic for SPA compatibility
+  // This function now only detects PWA mode without redirecting
   const currentPath = window.location.pathname;
   
   // Only check for PWA mode on install path
@@ -147,11 +149,9 @@ export function checkPWAModeAndRedirect() {
                      window.navigator.standalone === true ||
                      new URLSearchParams(window.location.search).get('pwa') === 'true';
     
-    if (isPWAMode) {
-      window.location.replace('/property_select');
-      return;
-    }
+    return isPWAMode;
   }
+  return false;
 }
 
 // Check PWA mode and installability
@@ -337,17 +337,12 @@ window.addEventListener('appinstalled', (e) => {
   deferredPrompt = null;
 });
 
-// Page visibility handling
+// Page visibility handling (no redirect for SPA compatibility)
 document.addEventListener('visibilitychange', () => {
   if (!document.hidden) {
-    setTimeout(() => {
-      const urlParams = new URLSearchParams(window.location.search);
-      const isPWAFromParam = urlParams.get('pwa') === 'true';
-      
-      if (browserInfo.isPWAMode() || isPWAFromParam) {
-        window.location.replace('/property_select');
-      }
-    }, 100);
+    // Removed automatic redirect logic for SPA compatibility
+    // PWA mode detection is now handled separately without redirecting
+    console.log('Page became visible - PWA mode detected but no redirect for SPA');
   }
 });
 
