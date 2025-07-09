@@ -1,8 +1,11 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import PropertyCard from './PropertyCard.jsx';
 import { fetchPropertiesWithFallback, fetchRoomsWithFallback } from '../utils/api.js';
 
 const PropertySelect = () => {
+  const navigate = useNavigate();
+  
   // All state declarations
   const [properties, setProperties] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -201,8 +204,8 @@ const PropertySelect = () => {
       setNavigationMessage('');
       
       const targetUrl = `/room_select?propertyId=${encodeURIComponent(property.id)}`;
-      // Remove artificial delay - performance improvement
-      window.location.href = targetUrl;
+      // Use React Router navigation
+      navigate(targetUrl);
       
     } catch (error) {
       console.error('Error fetching rooms or navigating:', error);
@@ -218,7 +221,7 @@ const PropertySelect = () => {
       if (error.message && (error.message.includes('部屋データの形式') || error.message.includes('部屋情報の取得に失敗'))) {
         setNavigationMessage('');
         const targetUrl = `/room_select?propertyId=${encodeURIComponent(property.id)}`;
-        window.location.href = targetUrl;
+        navigate(targetUrl);
       } else {
         setError(`部屋情報の処理中にエラーが発生しました: ${error.message}`);
         setIsNavigating(false);
