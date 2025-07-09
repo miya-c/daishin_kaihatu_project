@@ -255,10 +255,20 @@ export async function fetchRooms(propertyId) {
     // データ形式の検証と正規化
     let actualData = null;
     
-    if (data.success === true && Array.isArray(data.data)) {
-      // 統一レスポンス形式
-      actualData = data.data;
-      console.log('✅ 統一形式の部屋データ:', actualData.length, '件');
+    if (data.success === true && data.data) {
+      // GAS APIの実際のレスポンス形式: {success: true, data: {property: {...}, rooms: [...]}}
+      if (data.data.rooms && Array.isArray(data.data.rooms)) {
+        actualData = data.data.rooms;
+        console.log('✅ GAS形式の部屋データ:', actualData.length, '件');
+        console.log('✅ 物件情報:', data.data.property);
+      } else if (Array.isArray(data.data)) {
+        // 統一レスポンス形式: {success: true, data: [...]}
+        actualData = data.data;
+        console.log('✅ 統一形式の部屋データ:', actualData.length, '件');
+      } else {
+        console.warn('⚠️ data.dataの形式が不明:', data.data);
+        actualData = [];
+      }
     } else if (Array.isArray(data)) {
       // 直接配列形式
       actualData = data;
