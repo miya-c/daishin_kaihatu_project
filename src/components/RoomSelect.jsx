@@ -173,10 +173,10 @@ const RoomSelect = () => {
 
       <div className="MuiContainer-root">
         {/* 物件名カード */}
-        <div className="MuiCard-root property-card">
+        <div className="MuiCard-root MuiPaper-root MuiPaper-elevation1 property-card">
           <div className="MuiCardHeader-root property-header">
-            <span className="material-icons property-icon">home</span>
-            <span className="MuiTypography-root">{propertyName}</span>
+            <span className="MuiSvgIcon-root material-icons property-icon" aria-hidden="true">home</span>
+            <span className="MuiTypography-root MuiTypography-h5">{propertyName}</span>
           </div>
         </div>
 
@@ -206,7 +206,7 @@ const RoomSelect = () => {
               return (
                 <div
                   key={room.id}
-                  className={`MuiCard-root room-card ${
+                  className={`MuiCard-root MuiPaper-root MuiPaper-elevation1 MuiCardActionArea-root room-card ${
                     isSkipInspection ? 'status-skip' : 
                     (room.readingStatus === 'completed' || room.isCompleted) ? 'status-completed' : 'status-pending'
                   }`}
@@ -217,19 +217,26 @@ const RoomSelect = () => {
                       handleRoomSelect(room);
                     }
                   }}
-                  style={{ cursor: isSkipInspection ? 'not-allowed' : 'pointer' }}
+                  style={{ 
+                    cursor: isSkipInspection ? 'not-allowed' : 'pointer',
+                    pointerEvents: isSkipInspection ? 'none' : 'auto'
+                  }}
+                  tabIndex={isSkipInspection ? -1 : 0}
+                  role={isSkipInspection ? 'presentation' : 'button'}
+                  aria-label={`${room.name} ${statusText}`}
                 >
                   <div className="MuiCardContent-root room-info-row">
                     <span 
-                      className="material-icons status-icon" 
+                      className="MuiSvgIcon-root material-icons status-icon" 
                       style={{ color: statusColor }}
+                      aria-hidden="true"
                     >
                       {statusIcon}
                     </span>
-                    <span className="MuiTypography-root room-name">
+                    <span className="MuiTypography-root MuiTypography-h6 room-name">
                       {room.name}
                     </span>
-                    <span className="MuiTypography-root room-status">
+                    <span className="MuiTypography-root MuiTypography-body2 room-status">
                       {statusText}
                     </span>
                   </div>
@@ -243,11 +250,12 @@ const RoomSelect = () => {
         {rooms.length > 0 && (
           <div className="complete-button-container">
             <button 
-              className="MuiButton-root complete-button"
+              className="MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeLarge complete-button"
               onClick={completeInspection}
+              aria-label="この物件の検針を完了する"
             >
-              <span className="material-icons">check_circle</span>
-              <span>この物件の検針を完了する</span>
+              <span className="MuiSvgIcon-root material-icons" aria-hidden="true">check_circle</span>
+              <span className="MuiButton-label">この物件の検針を完了する</span>
             </button>
           </div>
         )}
