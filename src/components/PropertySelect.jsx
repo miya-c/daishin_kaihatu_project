@@ -135,25 +135,25 @@ const PropertySelect = () => {
         return;
       }
       
-      function checkRenderingComplete() {
+      const checkRenderingComplete = (count) => {
         requestAnimationFrame(() => {
           const propertyElements = document.querySelectorAll('.MuiCard-root, .property-card, [data-property-id]');
           
-          if (propertyElements.length >= expectedCount && expectedCount > 0) {
+          if (propertyElements.length >= count && count > 0) {
             requestAnimationFrame(() => {
               setLoading(false);
             });
           } else {
-            setTimeout(checkRenderingComplete, 50);
+            setTimeout(() => checkRenderingComplete(count), 50);
           }
         });
-      }
+      };
       
       const fallbackTimeout = setTimeout(() => {
         setLoading(false);
       }, 3000);
       
-      checkRenderingComplete();
+      checkRenderingComplete(expectedCount);
       
       return () => clearTimeout(fallbackTimeout);
     }
