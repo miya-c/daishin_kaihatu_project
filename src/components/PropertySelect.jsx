@@ -42,7 +42,8 @@ const PropertySelect = () => {
 
   // All memoized values
   const filteredProperties = useMemo(() => {
-    return (properties || [])
+    if (!properties) return [];
+    return properties
       .filter(property => {
         const propertyIdString = String(property.id != null ? property.id : ''); 
         const propertyNameString = String(property.name != null ? property.name : '');
@@ -127,7 +128,7 @@ const PropertySelect = () => {
 
   useEffect(() => {
     if (isFetched && loading) {
-      const expectedCount = filteredProperties.length;
+      const expectedCount = filteredProperties ? filteredProperties.length : 0;
       
       if (expectedCount === 0) {
         setLoading(false);
