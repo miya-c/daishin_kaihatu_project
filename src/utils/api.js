@@ -2,6 +2,48 @@
 
 const gasWebAppUrl = 'https://script.google.com/macros/s/AKfycbxo-Zij6If9eSFO-hB2bC_mvYtEGFxaUdwsngqGKcygh2GTHWqHPDrdHSJVC_JTpq2KSw/exec';
 
+// Alternative approach: use a proxy or direct connection method
+async function tryDirectConnection(url) {
+  const maxRetries = 3;
+  let lastError = null;
+  
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      console.log(`🔄 直接接続試行 ${i + 1}/${maxRetries}: ${url}`);
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        mode: 'no-cors', // CORS問題を回避
+        cache: 'no-cache',
+        redirect: 'follow'
+      });
+      
+      console.log('直接接続レスポンス:', {
+        status: response.status,
+        type: response.type,
+        ok: response.ok
+      });
+      
+      if (response.type === 'opaque') {
+        console.log('⚠️ Opaqueレスポンス: データを読み取れませんが、リクエストは送信されました');
+        throw new Error('CORS制限によりレスポンスを読み取れません');
+      }
+      
+      return response;
+      
+    } catch (error) {
+      console.warn(`直接接続試行 ${i + 1} 失敗:`, error.message);
+      lastError = error;
+      
+      if (i < maxRetries - 1) {
+        await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1))); // 指数バックオフ
+      }
+    }
+  }
+  
+  throw lastError;
+}
+
 // 堅牢なfetch実装
 async function robustFetch(url, options = {}) {
   const defaultOptions = {
@@ -98,11 +140,50 @@ async function robustFetch(url, options = {}) {
   }
 }
 
+// JSONP fallback for CORS issues
+function fetchWithJsonp(url) {
+  return new Promise((resolve, reject) => {
+    const callbackName = 'jsonp_callback_' + Math.round(100000 * Math.random());
+    const script = document.createElement('script');
+    
+    // Clean up function
+    const cleanup = () => {
+      document.head.removeChild(script);
+      delete window[callbackName];
+    };
+    
+    // Set up callback
+    window[callbackName] = (data) => {
+      cleanup();
+      resolve(data);
+    };
+    
+    // Handle errors
+    script.onerror = () => {
+      cleanup();
+      reject(new Error('JSONP request failed'));
+    };
+    
+    // Create script tag
+    script.src = `${url}&callback=${callbackName}`;
+    document.head.appendChild(script);
+    
+    // Timeout after 15 seconds
+    setTimeout(() => {
+      if (window[callbackName]) {
+        cleanup();
+        reject(new Error('JSONP request timed out'));
+      }
+    }, 15000);
+  });
+}
+
 // プロパティデータ取得
 export async function fetchProperties() {
   const url = `${gasWebAppUrl}?action=getProperties&cache=${Date.now()}`;
   
   try {
+    console.log('🌐 標準CORS APIリクエストを試行...');
     const data = await robustFetch(url);
     
     // データ形式の検証と正規化
@@ -136,8 +217,31 @@ export async function fetchProperties() {
     return actualData;
     
   } catch (error) {
-    console.error('❌ プロパティ取得エラー:', error.message);
-    throw error;
+    console.error('❌ CORS APIリクエスト失敗:', error.message);
+    
+    // CORS失敗時にJSONPを試行
+    try {
+      console.log('🔄 JSONPフォールバックを試行...');
+      const jsonpData = await fetchWithJsonp(url);
+      
+      // JSONPデータの正規化
+      let actualData = null;
+      if (jsonpData.success === true && Array.isArray(jsonpData.data)) {
+        actualData = jsonpData.data;
+        console.log('✅ JSONP形式のプロパティデータ:', actualData.length, '件');
+      } else if (Array.isArray(jsonpData)) {
+        actualData = jsonpData;
+        console.log('✅ JSONP直接配列形式のプロパティデータ:', actualData.length, '件');
+      } else {
+        throw new Error('JSONPデータの形式が認識できません');
+      }
+      
+      return actualData;
+      
+    } catch (jsonpError) {
+      console.error('❌ JSONPフォールバックも失敗:', jsonpError.message);
+      throw error; // 元のエラーを投げる
+    }
   }
 }
 
