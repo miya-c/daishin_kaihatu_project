@@ -137,13 +137,29 @@ export function generateIconsAndManifest() {
   img.src = url;
 }
 
+// PWA mode detection and redirection
+export function checkPWAModeAndRedirect() {
+  const currentPath = window.location.pathname;
+  
+  // Only check for PWA mode on install path
+  if (currentPath === '/install' || currentPath === '/index-new.html') {
+    const isPWAMode = window.matchMedia('(display-mode: standalone)').matches || 
+                     window.navigator.standalone === true ||
+                     new URLSearchParams(window.location.search).get('pwa') === 'true';
+    
+    if (isPWAMode) {
+      window.location.replace('/property_select');
+      return;
+    }
+  }
+}
+
 // Check PWA mode and installability
 export function checkPWAModeAndInstallability() {
   const urlParams = new URLSearchParams(window.location.search);
   const isPWAFromParam = urlParams.get('pwa') === 'true';
   
   if (browserInfo.isPWAMode() || isPWAFromParam) {
-    window.location.replace('/property_select');
     return { isPWAMode: true, shouldShowButton: false };
   }
   
@@ -171,6 +187,11 @@ export function initializePWA() {
       }
     }, 1000);
   }
+}
+
+// Initialize PWA redirect check (for DOM-ready usage)
+export function initializePWARedirect() {
+  checkPWAModeAndRedirect();
 }
 
 // Install PWA
