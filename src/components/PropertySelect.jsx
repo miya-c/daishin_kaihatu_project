@@ -106,6 +106,26 @@ const PropertySelect = () => {
     fetchProperties();
   }, []);
 
+  const handleSearchChange = useCallback((event) => {
+    setSearchTerm(event.target.value);
+  }, []);
+
+  // Filter and sort properties with memoization - defined before useEffect
+  const filteredProperties = useMemo(() => {
+    return (properties || [])
+      .filter(property => {
+        const propertyIdString = String(property.id != null ? property.id : ''); 
+        const propertyNameString = String(property.name != null ? property.name : '');
+        return propertyIdString.toLowerCase().includes(searchTerm.toLowerCase()) ||
+               propertyNameString.toLowerCase().includes(searchTerm.toLowerCase());
+      })
+      .sort((a, b) => {
+        const idA = String(a.id || '').trim();
+        const idB = String(b.id || '').trim();
+        return idA.localeCompare(idB, 'ja', { numeric: true, sensitivity: 'base' });
+      });
+  }, [properties, searchTerm]);
+
   // Detect render completion and hide loading
   useEffect(() => {
     if (isFetched && loading) {
@@ -138,27 +158,7 @@ const PropertySelect = () => {
       
       return () => clearTimeout(fallbackTimeout);
     }
-  }, [isFetched, loading, filteredProperties ? filteredProperties.length : 0]);
-
-  const handleSearchChange = useCallback((event) => {
-    setSearchTerm(event.target.value);
-  }, []);
-
-  // Filter and sort properties with memoization - moved up before useEffect
-  const filteredProperties = useMemo(() => {
-    return (properties || [])
-      .filter(property => {
-        const propertyIdString = String(property.id != null ? property.id : ''); 
-        const propertyNameString = String(property.name != null ? property.name : '');
-        return propertyIdString.toLowerCase().includes(searchTerm.toLowerCase()) ||
-               propertyNameString.toLowerCase().includes(searchTerm.toLowerCase());
-      })
-      .sort((a, b) => {
-        const idA = String(a.id || '').trim();
-        const idB = String(b.id || '').trim();
-        return idA.localeCompare(idB, 'ja', { numeric: true, sensitivity: 'base' });
-      });
-  }, [properties, searchTerm]);
+  }, [isFetched, loading, filteredProperties]);
 
   const handlePropertySelect = async (property) => {
     if (!property || typeof property.id === 'undefined' || typeof property.name === 'undefined') {
