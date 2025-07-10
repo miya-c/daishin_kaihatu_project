@@ -999,7 +999,7 @@
 
           setNavigationMessage('');
           
-          const targetUrl = `/room_select?propertyId=${encodeURIComponent(property.id)}`;
+          const targetUrl = `./room_select.html?propertyId=${encodeURIComponent(property.id)}`;
           console.log(`[ReactApp] Fast navigation to: ${targetUrl}`);
           // 即座に画面遷移（部屋データ取得遅延により高速化）
           window.location.href = targetUrl;

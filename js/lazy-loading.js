@@ -132,11 +132,34 @@ const imageObserver = new MutationObserver((mutations) => {
   });
 });
 
-// 監視開始
-imageObserver.observe(document.body, {
-  childList: true,
-  subtree: true
+// MutationObserverで動的に追加される画像を監視
+const mutationObserver = new MutationObserver((mutations) => {
+  mutations.forEach((mutation) => {
+    if (mutation.type === 'childList') {
+      mutation.addedNodes.forEach((node) => {
+        if (node.nodeType === 1) { // Element node
+          // 追加されたノードが画像の場合
+          if (node.tagName === 'IMG' && node.dataset.src) {
+            imageObserver.observe(node);
+          }
+          // 追加されたノード内の画像をすべて監視
+          const images = node.querySelectorAll && node.querySelectorAll('img[data-src]');
+          if (images) {
+            images.forEach(img => imageObserver.observe(img));
+          }
+        }
+      });
+    }
+  });
 });
+
+// DOM監視開始
+if (document.body) {
+  mutationObserver.observe(document.body, {
+    childList: true,
+    subtree: true
+  });
+}
 
 // エクスポート
 if (typeof module !== 'undefined' && module.exports) {
