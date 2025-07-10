@@ -810,29 +810,83 @@
         }, 100);
       }, [isLoadingMore]);
 
-      // Intersection Observer の設定
+      // Intersection Observer の設定（デバッグ強化版）
       React.useEffect(() => {
+        console.log('[property_select] Intersection Observer useEffect開始:', {
+          hasMoreItems,
+          isLoadingMore,
+          visibleCount,
+          filteredCount: filteredProperties?.length || 0
+        });
+
         const observer = new IntersectionObserver(
           (entries) => {
-            // console.log('[property_select] Intersection Observer:', entries[0].isIntersecting);
-            if (entries[0].isIntersecting && !isLoadingMore && hasMoreItems) {
-              // console.log('[property_select] Intersection Observer - loadMoreItems呼び出し');
+            const entry = entries[0];
+            console.log('[property_select] Intersection Observer 検知:', {
+              isIntersecting: entry.isIntersecting,
+              intersectionRatio: entry.intersectionRatio,
+              boundingClientRect: entry.boundingClientRect,
+              rootBounds: entry.rootBounds,
+              hasMoreItems,
+              isLoadingMore
+            });
+            
+            if (entry.isIntersecting && !isLoadingMore && hasMoreItems) {
+              console.log('[property_select] ✅ 条件満たし - loadMoreItems呼び出し');
               loadMoreItems();
+            } else {
+              console.log('[property_select] ❌ 条件満たさず:', {
+                isIntersecting: entry.isIntersecting,
+                hasMoreItems,
+                isLoadingMore
+              });
             }
           },
-          { threshold: 0.1 }
+          { 
+            threshold: 0.1,
+            rootMargin: '50px' // より早く検知するため
+          }
         );
 
         if (loadMoreRef.current) {
+          console.log('[property_select] Intersection Observer 要素観察開始:', loadMoreRef.current);
           observer.observe(loadMoreRef.current);
+        } else {
+          console.log('[property_select] ❌ loadMoreRef.current が見つかりません');
         }
 
         return () => {
+          console.log('[property_select] Intersection Observer クリーンアップ');
           if (loadMoreRef.current) {
             observer.unobserve(loadMoreRef.current);
           }
         };
       }, [loadMoreItems, isLoadingMore, hasMoreItems]);
+
+      // スクロールイベントの監視（デバッグ用）
+      React.useEffect(() => {
+        let lastScrollTime = 0;
+        const handleScroll = () => {
+          const now = Date.now();
+          if (now - lastScrollTime > 500) { // 500ms間隔でログ
+            console.log('[property_select] スクロールイベント検知:', {
+              scrollY: window.scrollY,
+              documentHeight: document.documentElement.scrollHeight,
+              windowHeight: window.innerHeight,
+              scrollProgress: `${Math.round((window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100)}%`
+            });
+            lastScrollTime = now;
+          }
+        };
+
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        console.log('[property_select] スクロールイベント監視開始');
+
+        return () => {
+          window.removeEventListener('scroll', handleScroll);
+          console.log('[property_select] スクロールイベント監視終了');
+        };
+      }, []);
 
       // PropertyCard コンポーネントの最適化
       const PropertyCard = React.memo(({ property, index, isDisabled, onSelect }) => {
@@ -1097,7 +1151,11 @@
       const visibleProperties = React.useMemo(() => {
         if (!filteredProperties || !Array.isArray(filteredProperties)) return [];
         const result = filteredProperties.slice(0, visibleCount);
-        // console.log('[property_select] visibleProperties更新:', result.length);
+        console.log('[property_select] visibleProperties更新:', {
+          filteredCount: filteredProperties.length,
+          visibleCount,
+          resultCount: result.length
+        });
         return result;
       }, [filteredProperties, visibleCount]);
 
@@ -1105,7 +1163,11 @@
       const hasMoreItems = React.useMemo(() => {
         const filteredCount = filteredProperties?.length || 0;
         const hasMore = filteredCount > visibleCount;
-        // console.log('[property_select] hasMoreItems計算:', hasMore);
+        console.log('[property_select] hasMoreItems計算:', {
+          filteredCount,
+          visibleCount,
+          hasMore
+        });
         return hasMore;
       }, [filteredProperties, visibleCount]);
 
@@ -1317,6 +1379,99 @@
               )}
 
 
+              {/* デバッグ情報とテストボタン */}
+              <div style={{ 
+                padding: '10px', 
+                backgroundColor: '#f0f0f0', 
+                marginBottom: '10px',
+                fontSize: '12px'
+              }}>
+                <div>
+                  デバッグ: properties={properties?.length || 0}, 
+                  filtered={filteredProperties?.length || 0}, 
+                  visible={visibleProperties?.length || 0}, 
+                  visibleCount={visibleCount}, 
+                  hasMore={hasMoreItems ? 'true' : 'false'}
+                </div>
+                <div style={{ marginTop: '10px', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                  <button 
+                    onClick={() => {
+                      console.log('[TEST] 手動でloadMoreItems実行');
+                      loadMoreItems();
+                    }}
+                    style={{
+                      padding: '4px 8px',
+                      fontSize: '11px',
+                      background: '#007bff',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    手動読み込み
+                  </button>
+                  <button 
+                    onClick={() => {
+                      console.log('[TEST] 現在の状態:', {
+                        filteredProperties: filteredProperties?.length || 0,
+                        visibleCount,
+                        hasMoreItems,
+                        isLoadingMore
+                      });
+                    }}
+                    style={{
+                      padding: '4px 8px',
+                      fontSize: '11px',
+                      background: '#28a745',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    状態確認
+                  </button>
+                  <button 
+                    onClick={() => {
+                      const triggerElement = loadMoreRef.current;
+                      if (triggerElement) {
+                        triggerElement.scrollIntoView({ behavior: 'smooth' });
+                        console.log('[TEST] Load More要素までスクロール実行');
+                      }
+                    }}
+                    style={{
+                      padding: '4px 8px',
+                      fontSize: '11px',
+                      background: '#17a2b8',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Load More位置へ
+                  </button>
+                  <button 
+                    onClick={() => {
+                      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+                      console.log('[TEST] ページ最下部へスクロール実行');
+                    }}
+                    style={{
+                      padding: '4px 8px',
+                      fontSize: '11px',
+                      background: '#6f42c1',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    最下部へ
+                  </button>
+                </div>
+              </div>
+
               {/* 仮想スクロール対応 Property Cards */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 {visibleProperties.map((property, index) => (
@@ -1330,8 +1485,8 @@
                 ))}
               </div>
 
-              {/* Load More トリガー */}
-              {hasMoreItems && (
+              {/* Load More トリガー - デバッグ用に常に表示 */}
+              {true && (
                 <div 
                   ref={loadMoreRef}
                   style={{
@@ -1340,6 +1495,10 @@
                     alignItems: 'center',
                     padding: '20px',
                     minHeight: '60px',
+                    border: '2px dashed #ff6b6b', // デバッグ用：赤い点線で境界を明確化
+                    backgroundColor: '#fff3f3', // デバッグ用：薄い赤背景
+                    borderRadius: '8px',
+                    marginTop: '16px'
                   }}
                 >
                   {isLoadingMore ? (
@@ -1357,12 +1516,23 @@
                       </span>
                     </>
                   ) : (
-                    <span style={{
-                      color: 'var(--mui-palette-grey-500)',
-                      fontSize: '0.875rem'
-                    }}>
-                      スクロールして続きを読み込み
-                    </span>
+                    <div style={{ textAlign: 'center' }}>
+                      <span style={{
+                        color: 'var(--mui-palette-grey-500)',
+                        fontSize: '0.875rem',
+                        display: 'block'
+                      }}>
+                        スクロールして続きを読み込み
+                      </span>
+                      <span style={{
+                        color: '#ff6b6b',
+                        fontSize: '0.75rem',
+                        display: 'block',
+                        marginTop: '4px'
+                      }}>
+                        [デバッグ] Intersection Observer 監視中 (hasMore: {hasMoreItems ? 'true' : 'false'})
+                      </span>
+                    </div>
                   )}
                 </div>
               )}
