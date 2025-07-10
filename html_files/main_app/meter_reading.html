@@ -251,6 +251,18 @@
   <!-- PWA Utilities -->
   <script src="/pwa-utils.js"></script>
   
+  <!-- Service Worker Registration -->
+  <script src="/js/sw-registration.js"></script>
+  
+  <!-- Lazy Loading Utilities -->
+  <script src="/js/lazy-loading.js"></script>
+  
+  <!-- Preloader -->
+  <script src="/js/preloader.js"></script>
+  
+  <!-- Performance Monitor -->
+  <script src="/js/performance-monitor.js"></script>
+  
   <!-- 動的CSS読み込みヘルパー -->
   <script>
     // 開発用動的CSS読み込み機能
@@ -456,6 +468,99 @@
       }
       return numValue.toString();
     };
+
+    // 改善されたキャッシュマネージャー
+    class CacheManager {
+      constructor() {
+        this.CACHE_PREFIX = 'meter_cache_';
+        this.CACHE_EXPIRY = 5 * 60 * 1000; // 5分間有効
+      }
+
+      // キャッシュキーの生成
+      generateCacheKey(type, propertyId, roomId = null) {
+        const key = roomId ? 
+          `${this.CACHE_PREFIX}${type}_${propertyId}_${roomId}` :
+          `${this.CACHE_PREFIX}${type}_${propertyId}`;
+        return key;
+      }
+
+      // キャッシュに保存
+      setCache(key, data) {
+        try {
+          const cacheData = {
+            data: data,
+            timestamp: Date.now(),
+            expiry: Date.now() + this.CACHE_EXPIRY
+          };
+          sessionStorage.setItem(key, JSON.stringify(cacheData));
+          console.log(`[CacheManager] キャッシュ保存: ${key}`);
+        } catch (error) {
+          console.warn(`[CacheManager] キャッシュ保存エラー: ${error.message}`);
+        }
+      }
+
+      // キャッシュから取得
+      getCache(key) {
+        try {
+          const cached = sessionStorage.getItem(key);
+          if (!cached) return null;
+
+          const cacheData = JSON.parse(cached);
+          const now = Date.now();
+
+          // 有効期限チェック
+          if (cacheData.expiry && now > cacheData.expiry) {
+            sessionStorage.removeItem(key);
+            console.log(`[CacheManager] キャッシュ期限切れ: ${key}`);
+            return null;
+          }
+
+          console.log(`[CacheManager] キャッシュヒット: ${key}`);
+          return cacheData.data;
+        } catch (error) {
+          console.warn(`[CacheManager] キャッシュ取得エラー: ${error.message}`);
+          return null;
+        }
+      }
+
+      // 検針データのキャッシュ
+      cacheMeterReadings(propertyId, roomId, readings) {
+        const key = this.generateCacheKey('readings', propertyId, roomId);
+        this.setCache(key, readings);
+      }
+
+      // 検針データの取得
+      getCachedMeterReadings(propertyId, roomId) {
+        const key = this.generateCacheKey('readings', propertyId, roomId);
+        return this.getCache(key);
+      }
+
+      // 部屋リストのキャッシュ
+      cacheRooms(propertyId, rooms) {
+        const key = this.generateCacheKey('rooms', propertyId);
+        this.setCache(key, rooms);
+      }
+
+      // 部屋リストの取得
+      getCachedRooms(propertyId) {
+        const key = this.generateCacheKey('rooms', propertyId);
+        return this.getCache(key);
+      }
+
+      // キャッシュクリア
+      clearCache() {
+        const keys = Object.keys(sessionStorage);
+        keys.forEach(key => {
+          if (key.startsWith(this.CACHE_PREFIX)) {
+            sessionStorage.removeItem(key);
+          }
+        });
+        console.log('[CacheManager] 全キャッシュクリア完了');
+      }
+    }
+
+    // グローバルキャッシュマネージャーインスタンス
+    const cacheManager = new CacheManager();
     
     const formatStatus = (value) => {
       if (!value || value === '' || value === '未入力' || value === null || value === undefined) {
@@ -479,6 +584,91 @@
       return jstDateString;
     };
     
+    // 遅延読み込み対応画像コンポーネント
+    const LazyImage = React.memo(({ src, alt, className, style, placeholder = '/images/placeholder.svg' }) => {
+      const [isLoaded, setIsLoaded] = React.useState(false);
+      const [isInView, setIsInView] = React.useState(false);
+      const imgRef = React.useRef();
+
+      React.useEffect(() => {
+        if (!imgRef.current) return;
+
+        const observer = new IntersectionObserver(
+          ([entry]) => {
+            if (entry.isIntersecting) {
+              setIsInView(true);
+              observer.disconnect();
+            }
+          },
+          { threshold: 0.1, rootMargin: '50px' }
+        );
+
+        observer.observe(imgRef.current);
+        return () => observer.disconnect();
+      }, []);
+
+      const handleLoad = React.useCallback(() => {
+        setIsLoaded(true);
+      }, []);
+
+      return (
+        <img
+          ref={imgRef}
+          src={isInView ? src : placeholder}
+          alt={alt}
+          className={`${className || ''} ${isLoaded ? 'lazy-loaded' : 'lazy-loading'}`}
+          style={{
+            ...style,
+            transition: 'opacity 0.3s ease-in-out',
+            opacity: isLoaded ? 1 : 0.7
+          }}
+          onLoad={handleLoad}
+          loading="lazy"
+        />
+      );
+    });
+
+    // メモ化されたメーター読み取り項目コンポーネント
+    const MeterReadingItem = React.memo(({ reading, onReadingChange, inputError }) => {
+      const currentReading = reading.currentReading || '';
+      
+      const handleInputChange = React.useCallback((e) => {
+        const value = e.target.value;
+        onReadingChange(reading.id, value);
+      }, [reading.id, onReadingChange]);
+
+      return (
+        <div className="mantine-card">
+          <div className="mantine-stack" style={{ gap: '8px' }}>
+            <div className="mantine-group" style={{ justifyContent: 'space-between' }}>
+              <span className="mantine-text weight-600">今回指示数</span>
+              <span className="mantine-text size-sm" style={{ color: 'var(--mantine-color-gray-6)' }}>
+                前回: {formatReading(reading.previousReading)}
+              </span>
+            </div>
+            <input
+              type="number"
+              className="mantine-text-input"
+              value={currentReading}
+              onChange={handleInputChange}
+              placeholder="指示数を入力"
+              style={{
+                border: inputError ? '2px solid var(--mantine-color-red-6)' : '1px solid var(--mantine-color-red-6)',
+                borderRadius: '4px',
+                padding: '12px',
+                fontSize: '18px'
+              }}
+            />
+            {inputError && (
+              <div className="mantine-text size-sm" style={{ color: 'var(--mantine-color-red-6)' }}>
+                {inputError}
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    });
+
     const MeterReadingApp = () => {
       const [loading, setLoading] = React.useState(true);
       const [error, setError] = React.useState(null);
@@ -537,13 +727,13 @@
         initializeApp();
       }, []);
 
-      // プロパティIDが設定された時に部屋リストを読み込む
+      // プロパティIDが設定された時に部屋リストを読み込む（最適化版）
       React.useEffect(() => {
         if (propertyId && gasWebAppUrl) {
-        // デバッグログ削除
+          // デバッグログ削除
           loadRoomsList(propertyId);
         }
-      }, [propertyId, gasWebAppUrl]);
+      }, [propertyId, gasWebAppUrl]); // 必要最小限の依存関係のみ
 
       const loadUrlParams = async () => {
         const urlParams = new URLSearchParams(window.location.search);
@@ -581,13 +771,27 @@
 
       const loadMeterReadings = async (propId, rId) => {
         try {
+          // キャッシュから検針データを取得を試行
+          const cachedReadings = cacheManager.getCachedMeterReadings(propId, rId);
+          if (cachedReadings) {
+            console.log('[meter_reading] キャッシュから検針データを取得しました');
+            
+            // キャッシュデータから必要な情報を抽出
+            if (cachedReadings.propertyName) setPropertyName(cachedReadings.propertyName);
+            if (cachedReadings.roomName) setRoomName(cachedReadings.roomName);
+            if (cachedReadings.readings) setMeterReadings(cachedReadings.readings);
+            
+            setLoading(false);
+            return;
+          }
+
           const currentGasUrl = gasWebAppUrl || sessionStorage.getItem('gasWebAppUrl');
           if (!currentGasUrl) {
             throw new Error('gasWebAppURLが設定されていません。物件選択画面から再度アクセスしてください。');
           }
           
           const fetchUrl = `${currentGasUrl}?action=getMeterReadings&propertyId=${propId}&roomId=${rId}`;
-          console.log('[meter_reading] Fetching meter readings from URL:', fetchUrl);
+          console.log('[meter_reading] API経由で検針データを取得:', fetchUrl);
           
           const response = await fetch(fetchUrl);
           if (!response.ok) {
@@ -738,6 +942,14 @@
             
             console.log('[meter_reading] Setting mapped meterReadings state with:', mappedReadings);
             setMeterReadings(mappedReadings);
+            
+            // 取得したデータをキャッシュに保存
+            const cacheData = {
+              propertyName: propertyName,
+              roomName: roomName,
+              readings: mappedReadings
+            };
+            cacheManager.cacheMeterReadings(propId, rId, cacheData);
           } else {
             console.log('[meter_reading] 検針データが空です');
             setMeterReadings([]);
@@ -922,6 +1134,37 @@
           // デバッグログ削除
         }
       }, [allRooms, roomId]);
+
+      // プリロード機能：次と前の部屋のデータを事前読み込み
+      React.useEffect(() => {
+        if (currentRoomIndex >= 0 && allRooms.length > 0 && propertyId) {
+          // 次の部屋のプリロード
+          const nextRoomIndex = currentRoomIndex + 1;
+          if (nextRoomIndex < allRooms.length) {
+            const nextRoom = allRooms[nextRoomIndex];
+            const nextRoomId = nextRoom['部屋ID'] || nextRoom['roomId'] || nextRoom['id'];
+            
+            if (nextRoomId && window.preloadManager) {
+              setTimeout(() => {
+                window.preloadManager.preloadMeterReadings(propertyId, nextRoomId);
+              }, 1000);
+            }
+          }
+
+          // 前の部屋のプリロード
+          const prevRoomIndex = currentRoomIndex - 1;
+          if (prevRoomIndex >= 0) {
+            const prevRoom = allRooms[prevRoomIndex];
+            const prevRoomId = prevRoom['部屋ID'] || prevRoom['roomId'] || prevRoom['id'];
+            
+            if (prevRoomId && window.preloadManager) {
+              setTimeout(() => {
+                window.preloadManager.preloadMeterReadings(propertyId, prevRoomId);
+              }, 1500);
+            }
+          }
+        }
+      }, [currentRoomIndex, allRooms, propertyId]);
 
       // 新規追加: 前の部屋への移動
       const navigateToPreviousRoom = async () => {

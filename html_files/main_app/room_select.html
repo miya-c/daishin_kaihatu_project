@@ -85,6 +85,56 @@
             });
         }
 
+        // 部屋選択画面用のキャッシュマネージャー
+        class RoomCacheManager {
+            constructor() {
+                this.CACHE_PREFIX = 'room_cache_';
+                this.CACHE_EXPIRY = 3 * 60 * 1000; // 3分間有効
+            }
+
+            generateCacheKey(propertyId) {
+                return `${this.CACHE_PREFIX}rooms_${propertyId}`;
+            }
+
+            setCache(propertyId, data) {
+                try {
+                    const cacheData = {
+                        data: data,
+                        timestamp: Date.now(),
+                        expiry: Date.now() + this.CACHE_EXPIRY
+                    };
+                    sessionStorage.setItem(this.generateCacheKey(propertyId), JSON.stringify(cacheData));
+                    console.log(`[RoomCacheManager] 部屋データキャッシュ保存: ${propertyId}`);
+                } catch (error) {
+                    console.warn(`[RoomCacheManager] キャッシュ保存エラー: ${error.message}`);
+                }
+            }
+
+            getCache(propertyId) {
+                try {
+                    const cached = sessionStorage.getItem(this.generateCacheKey(propertyId));
+                    if (!cached) return null;
+
+                    const cacheData = JSON.parse(cached);
+                    const now = Date.now();
+
+                    if (cacheData.expiry && now > cacheData.expiry) {
+                        sessionStorage.removeItem(this.generateCacheKey(propertyId));
+                        console.log(`[RoomCacheManager] キャッシュ期限切れ: ${propertyId}`);
+                        return null;
+                    }
+
+                    console.log(`[RoomCacheManager] キャッシュヒット: ${propertyId}`);
+                    return cacheData.data;
+                } catch (error) {
+                    console.warn(`[RoomCacheManager] キャッシュ取得エラー: ${error.message}`);
+                    return null;
+                }
+            }
+        }
+
+        const roomCacheManager = new RoomCacheManager();
+
         // GAS Web App URL取得（property_select.htmlから継承）
         const gasWebAppUrl = sessionStorage.getItem('gasWebAppUrl');
         
@@ -194,6 +244,17 @@
                 if (!gasWebAppUrl || !propertyId) {
                     throw new Error('必要なパラメータが不足しています');
                 }
+
+                // キャッシュから部屋データを取得を試行
+                const cachedRooms = roomCacheManager.getCache(propertyId);
+                if (cachedRooms && cachedRooms.rooms && cachedRooms.propertyName) {
+                    console.log('[room_select] キャッシュから部屋データを取得しました');
+                    document.getElementById('propertyName').textContent = cachedRooms.propertyName;
+                    displayRooms(cachedRooms.rooms);
+                    updateCompleteButton(cachedRooms.rooms);
+                    showContentAfterLoading();
+                    return;
+                }
                 
                 const fetchUrl = `${gasWebAppUrl}?action=getRooms&propertyId=${encodeURIComponent(propertyId)}`;
                 console.log('[room_select] API呼び出し開始:', fetchUrl);
@@ -235,6 +296,14 @@
                 displayRooms(rooms);
                 console.log('[room_select] updateCompleteButton呼び出し開始');
                 updateCompleteButton(rooms);
+                
+                // 取得したデータをキャッシュに保存
+                const roomCacheData = {
+                    propertyName: propertyName,
+                    rooms: rooms
+                };
+                roomCacheManager.setCache(propertyId, roomCacheData);
+                
                 console.log('[room_select] showContentAfterLoading呼び出し開始');
                 showContentAfterLoading();
                 
