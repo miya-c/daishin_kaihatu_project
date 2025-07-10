@@ -795,18 +795,18 @@
       const loadMoreItems = React.useCallback(() => {
         if (isLoadingMore) return;
         
-        console.log('[property_select] loadMoreItems実行開始');
+        // console.log('[property_select] loadMoreItems実行開始');
         setIsLoadingMore(true);
         
         // 遅延を少なくしてユーザー体験を改善
         setTimeout(() => {
           setVisibleCount(prev => {
             const newCount = prev + 15;
-            console.log('[property_select] visibleCount更新:', prev, '→', newCount);
+            // console.log('[property_select] visibleCount更新:', prev, '→', newCount);
             return newCount;
           });
           setIsLoadingMore(false);
-          console.log('[property_select] loadMoreItems完了');
+          // console.log('[property_select] loadMoreItems完了');
         }, 100);
       }, [isLoadingMore]);
 
@@ -814,13 +814,9 @@
       React.useEffect(() => {
         const observer = new IntersectionObserver(
           (entries) => {
-            console.log('[property_select] Intersection Observer:', {
-              isIntersecting: entries[0].isIntersecting,
-              isLoadingMore,
-              hasMoreItems
-            });
+            // console.log('[property_select] Intersection Observer:', entries[0].isIntersecting);
             if (entries[0].isIntersecting && !isLoadingMore && hasMoreItems) {
-              console.log('[property_select] Intersection Observer - loadMoreItems呼び出し');
+              // console.log('[property_select] Intersection Observer - loadMoreItems呼び出し');
               loadMoreItems();
             }
           },
@@ -1101,11 +1097,7 @@
       const visibleProperties = React.useMemo(() => {
         if (!filteredProperties || !Array.isArray(filteredProperties)) return [];
         const result = filteredProperties.slice(0, visibleCount);
-        console.log('[property_select] visibleProperties更新:', {
-          filteredCount: filteredProperties.length,
-          visibleCount,
-          resultCount: result.length
-        });
+        // console.log('[property_select] visibleProperties更新:', result.length);
         return result;
       }, [filteredProperties, visibleCount]);
 
@@ -1113,11 +1105,7 @@
       const hasMoreItems = React.useMemo(() => {
         const filteredCount = filteredProperties?.length || 0;
         const hasMore = filteredCount > visibleCount;
-        console.log('[property_select] hasMoreItems計算:', {
-          filteredCount,
-          visibleCount,
-          hasMore
-        });
+        // console.log('[property_select] hasMoreItems計算:', hasMore);
         return hasMore;
       }, [filteredProperties, visibleCount]);
 
@@ -1328,19 +1316,6 @@
                 </div>
               )}
 
-              {/* デバッグ情報 */}
-              <div style={{ 
-                padding: '10px', 
-                backgroundColor: '#f0f0f0', 
-                marginBottom: '10px',
-                fontSize: '12px'
-              }}>
-                デバッグ: properties={properties?.length || 0}, 
-                filtered={filteredProperties?.length || 0}, 
-                visible={visibleProperties?.length || 0}, 
-                visibleCount={visibleCount}, 
-                hasMore={hasMoreItems ? 'true' : 'false'}
-              </div>
 
               {/* 仮想スクロール対応 Property Cards */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -1355,8 +1330,8 @@
                 ))}
               </div>
 
-              {/* Load More トリガー - 一時的にhasMoreItemsの条件を無効化 */}
-              {true && (
+              {/* Load More トリガー */}
+              {hasMoreItems && (
                 <div 
                   ref={loadMoreRef}
                   style={{
@@ -1365,7 +1340,6 @@
                     alignItems: 'center',
                     padding: '20px',
                     minHeight: '60px',
-                    border: '1px dashed #ccc' // デバッグ用
                   }}
                 >
                   {isLoadingMore ? (
@@ -1383,22 +1357,12 @@
                       </span>
                     </>
                   ) : (
-                    <button 
-                      onClick={() => {
-                        console.log('[property_select] 手動loadMoreItems実行');
-                        loadMoreItems();
-                      }}
-                      style={{
-                        padding: '10px 20px',
-                        backgroundColor: '#007bff',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '4px',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      手動で追加読み込み（テスト用）
-                    </button>
+                    <span style={{
+                      color: 'var(--mui-palette-grey-500)',
+                      fontSize: '0.875rem'
+                    }}>
+                      スクロールして続きを読み込み
+                    </span>
                   )}
                 </div>
               )}
