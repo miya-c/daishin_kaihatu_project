@@ -704,10 +704,14 @@
         
         // データ取得が完了し、ローディング中の場合のみ描画完了を監視
         if (isFetched && loading) {
-          console.log('[ReactApp] 🎨 描画完了監視開始 - 物件数:', properties.length, 'フィルタ後:', filteredProperties.length, '表示中:', visibleProperties.length);
+          const propertiesCount = properties?.length || 0;
+          const filteredCount = filteredProperties?.length || 0;
+          const visibleCount = visibleProperties?.length || 0;
+          
+          console.log('[ReactApp] 🎨 描画完了監視開始 - 物件数:', propertiesCount, 'フィルタ後:', filteredCount, '表示中:', visibleCount);
           
           // 仮想スクロール: 実際に表示される物件数を基準に描画を監視
-          const expectedCount = visibleProperties.length;
+          const expectedCount = visibleCount;
           
           if (expectedCount === 0) {
             // 表示する物件がない場合は即座にローディング解除
@@ -764,7 +768,7 @@
             clearTimeout(fallbackTimeout);
           };
         }
-      }, [isFetched, loading, visibleProperties.length]);
+      }, [isFetched, loading, visibleProperties]);
 
       // Debounce機能付き検索ハンドラ
       const debouncedSearchRef = React.useRef(null);
@@ -1083,13 +1087,15 @@
 
       // 仮想スクロール用: 表示する物件リスト
       const visibleProperties = React.useMemo(() => {
+        if (!filteredProperties || !Array.isArray(filteredProperties)) return [];
         return filteredProperties.slice(0, visibleCount);
       }, [filteredProperties, visibleCount]);
 
       // 追加読み込み可能かの判定
       const hasMoreItems = React.useMemo(() => {
-        return filteredProperties.length > visibleCount;
-      }, [filteredProperties.length, visibleCount]);
+        const filteredCount = filteredProperties?.length || 0;
+        return filteredCount > visibleCount;
+      }, [filteredProperties, visibleCount]);
 
       // 物件データ取得中の初期ローディング（Material UI準拠）
       if (loading && !isFetched) {
@@ -1201,8 +1207,8 @@
       console.log('[ReactApp] 🎨 メイン画面レンダリング:', { 
         loading, 
         isFetched, 
-        propertiesCount: properties.length, 
-        filteredCount: filteredProperties ? filteredProperties.length : 0 
+        propertiesCount: properties?.length || 0, 
+        filteredCount: filteredProperties?.length || 0 
       });
       
       return (
@@ -1226,7 +1232,7 @@
                   placeholder="物件IDまたは物件名で検索..."
                   value={searchTerm}
                   onChange={handleSearchChange}
-                  disabled={loading && properties.length === 0}
+                  disabled={loading && (properties?.length || 0) === 0}
                 />
               </div>
               
@@ -1275,7 +1281,7 @@
               )}
 
               {/* 修正：データ取得完了後かつ物件が0件の場合のみ表示 */}
-              {!loading && isFetched && properties.length === 0 && !error && (
+              {!loading && isFetched && (properties?.length || 0) === 0 && !error && (
                 <div className="MuiTypography-root" style={{
                   textAlign: 'center',
                   color: 'var(--mui-palette-grey-900)',
@@ -1287,7 +1293,7 @@
               )}
               
               {/* 検索結果が0件の場合 */}
-              {!loading && isFetched && properties.length > 0 && filteredProperties.length === 0 && (
+              {!loading && isFetched && (properties?.length || 0) > 0 && (filteredProperties?.length || 0) === 0 && (
                 <div className="MuiTypography-root" style={{
                   textAlign: 'center',
                   color: 'var(--mui-palette-grey-900)',
@@ -1349,14 +1355,14 @@
               )}
 
               {/* 全件表示完了メッセージ */}
-              {!hasMoreItems && filteredProperties.length > 20 && (
+              {!hasMoreItems && (filteredProperties?.length || 0) > 20 && (
                 <div style={{
                   textAlign: 'center',
                   padding: '20px',
                   color: 'var(--mui-palette-grey-600)',
                   fontSize: '0.875rem'
                 }}>
-                  全 {filteredProperties.length} 件を表示しています
+                  全 {filteredProperties?.length || 0} 件を表示しています
                 </div>
               )}
             </div>
