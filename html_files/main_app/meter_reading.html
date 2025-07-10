@@ -524,6 +524,8 @@
             console.log('[meter_reading] 初期化完了しました。');
 
             // URLパラメータからデータを読み込み開始
+            // ローディング中は何も表示しない
+            setLoading(true);
             loadUrlParams();
           } catch (error) {
             console.error('[meter_reading] アプリの初期化に失敗しました:', error);

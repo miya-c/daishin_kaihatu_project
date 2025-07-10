@@ -118,12 +118,15 @@
                 console.log('[room_select] window.onloadにloadRoomData設定');
                 window.onload = function() {
                     console.log('[room_select] window.onload発火 - loadRoomData実行開始');
+                    // データ取得中は画面を表示しない
+                    hideContentDuringLoading();
                     loadRoomData();
                 };
                 
                 // 既にページが読み込み済みの場合は即座に実行
                 if (document.readyState === 'complete') {
                     console.log('[room_select] ページ読み込み完了済み - loadRoomData即座実行');
+                    hideContentDuringLoading();
                     loadRoomData();
                 }
             }
@@ -232,6 +235,8 @@
                 displayRooms(rooms);
                 console.log('[room_select] updateCompleteButton呼び出し開始');
                 updateCompleteButton(rooms);
+                console.log('[room_select] showContentAfterLoading呼び出し開始');
+                showContentAfterLoading();
                 
             } catch (error) {
                 console.error('[room_select] エラー発生:', error);
@@ -255,6 +260,41 @@
             }
         }
 
+        // データ取得中にコンテンツを非表示にする
+        function hideContentDuringLoading() {
+            const roomGrid = document.getElementById('roomGrid');
+            const completeBtn = document.getElementById('completeInspectionBtn');
+            const propertyCard = document.querySelector('.property-card');
+            
+            if (roomGrid) roomGrid.style.display = 'none';
+            if (completeBtn) completeBtn.style.display = 'none';
+            if (propertyCard) propertyCard.style.visibility = 'hidden';
+            
+            // ローディングを表示
+            const loadingElement = document.getElementById('loading');
+            if (loadingElement) {
+                loadingElement.style.display = 'flex';
+                loadingElement.style.visibility = 'visible';
+                loadingElement.style.opacity = '1';
+            }
+        }
+        
+        // データ取得完了後にコンテンツを表示する
+        function showContentAfterLoading() {
+            const propertyCard = document.querySelector('.property-card');
+            if (propertyCard) propertyCard.style.visibility = 'visible';
+            
+            // ローディングを非表示
+            const loadingElement = document.getElementById('loading');
+            if (loadingElement) {
+                loadingElement.style.display = 'none';
+                loadingElement.style.visibility = 'hidden';
+                loadingElement.style.opacity = '0';
+                loadingElement.style.pointerEvents = 'none';
+                loadingElement.style.zIndex = '-1';
+            }
+        }
+        
         // ページ表示時にローディングを必ず非表示にする
         function hideLoadingOnPageShow() {
             const loadingElement = document.getElementById('loading');
