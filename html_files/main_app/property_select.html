@@ -827,13 +827,18 @@
 
       // Intersection Observer の設定（修正版）
       React.useEffect(() => {
-        // hasMoreItemsがfalseの場合は観察を設定しない
-        if (!hasMoreItems) {
-          console.log('[property_select] hasMoreItems=false のため Intersection Observer 設定スキップ');
+        // データ取得完了前またはhasMoreItemsがfalseの場合は観察を設定しない
+        if (!isFetched || !hasMoreItems) {
+          console.log('[property_select] Intersection Observer 設定スキップ:', {
+            isFetched,
+            hasMoreItems,
+            reason: !isFetched ? 'データ未取得' : 'hasMoreItems=false'
+          });
           return;
         }
 
         console.log('[property_select] Intersection Observer useEffect開始:', {
+          isFetched,
           hasMoreItems,
           isLoadingMore,
           visibleCount,
@@ -885,7 +890,7 @@
           clearTimeout(timeoutId);
           observer.disconnect(); // unobserveではなくdisconnectを使用
         };
-      }, [loadMoreItems, isLoadingMore, hasMoreItems, visibleCount]); // visibleCountも依存関係に追加
+      }, [loadMoreItems, isLoadingMore, hasMoreItems, visibleCount, isFetched]); // isFetchedも依存関係に追加
 
       // スクロールイベントの監視（デバッグ用）
       React.useEffect(() => {
@@ -1183,17 +1188,25 @@
         return result;
       }, [filteredProperties, visibleCount]);
 
-      // 追加読み込み可能かの判定
+      // 追加読み込み可能かの判定（データ取得完了後のみ有効）
       const hasMoreItems = React.useMemo(() => {
-        const filteredCount = filteredProperties?.length || 0;
+        // データが取得されていない場合は false を返す
+        if (!isFetched || !filteredProperties) {
+          console.log('[property_select] hasMoreItems計算: データ未取得のためfalse');
+          return false;
+        }
+        
+        const filteredCount = filteredProperties.length;
         const hasMore = filteredCount > visibleCount;
         console.log('[property_select] hasMoreItems計算:', {
+          isFetched,
           filteredCount,
           visibleCount,
-          hasMore
+          hasMore,
+          calculation: `${filteredCount} > ${visibleCount} = ${hasMore}`
         });
         return hasMore;
-      }, [filteredProperties, visibleCount]);
+      }, [filteredProperties, visibleCount, isFetched]);
 
       // 物件データ取得中の初期ローディング（Material UI準拠）
       if (loading && !isFetched) {
