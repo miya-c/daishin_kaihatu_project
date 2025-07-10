@@ -93,11 +93,29 @@ const MeterReading = () => {
         const readings = result.data.readings || [];
         setMeterReadings(readings);
         
-        // 前回データがあるかチェック
-        const hasData = readings.some(r => r.previousReading && r.previousReading !== '' && r.previousReading !== 0);
+        console.log('[meter_reading] 取得した検針データ:', readings);
+        
+        // 前回データがあるかチェック - より柔軟な判定に変更
+        const hasData = readings.some(r => {
+          // 前回指示数または今回指示数のいずれかがある場合は既存データと判定
+          const hasPreviousReading = r.previousReading !== null && r.previousReading !== undefined && String(r.previousReading).trim() !== '';
+          const hasCurrentReading = r.currentReading !== null && r.currentReading !== undefined && String(r.currentReading).trim() !== '';
+          const hasReadingDate = r.date !== null && r.date !== undefined && String(r.date).trim() !== '';
+          
+          console.log('[meter_reading] 検針データ判定:', {
+            previousReading: r.previousReading,
+            currentReading: r.currentReading,
+            date: r.date,
+            hasPreviousReading,
+            hasCurrentReading,
+            hasReadingDate
+          });
+          
+          return hasPreviousReading || hasCurrentReading || hasReadingDate;
+        });
         setHasExistingData(hasData);
         
-        console.log('[meter_reading] 前回データ存在:', hasData);
+        console.log('[meter_reading] 前回データ存在:', hasData, '検針データ件数:', readings.length);
       } else {
         console.log('[meter_reading] 検針データが空または取得失敗');
         setMeterReadings([]);
