@@ -793,25 +793,46 @@
       
       // 仮想スクロール: 追加読み込み処理
       const loadMoreItems = React.useCallback(() => {
-        if (isLoadingMore) return;
+        console.log('[property_select] 🔄 loadMoreItems実行開始:', {
+          isLoadingMore,
+          currentVisibleCount: visibleCount,
+          filteredPropertiesLength: filteredProperties?.length || 0,
+          hasMoreItems
+        });
         
-        // console.log('[property_select] loadMoreItems実行開始');
+        if (isLoadingMore) {
+          console.log('[property_select] ❌ 既に読み込み中のためスキップ');
+          return;
+        }
+        
+        if (!hasMoreItems) {
+          console.log('[property_select] ❌ hasMoreItems=false のためスキップ');
+          return;
+        }
+        
+        console.log('[property_select] ✅ 読み込み処理開始');
         setIsLoadingMore(true);
         
         // 遅延を少なくしてユーザー体験を改善
         setTimeout(() => {
           setVisibleCount(prev => {
             const newCount = prev + 15;
-            // console.log('[property_select] visibleCount更新:', prev, '→', newCount);
+            console.log('[property_select] ✅ visibleCount更新:', prev, '→', newCount);
             return newCount;
           });
           setIsLoadingMore(false);
-          // console.log('[property_select] loadMoreItems完了');
+          console.log('[property_select] ✅ loadMoreItems完了');
         }, 100);
-      }, [isLoadingMore]);
+      }, [isLoadingMore, hasMoreItems, visibleCount, filteredProperties]);
 
-      // Intersection Observer の設定（デバッグ強化版）
+      // Intersection Observer の設定（修正版）
       React.useEffect(() => {
+        // hasMoreItemsがfalseの場合は観察を設定しない
+        if (!hasMoreItems) {
+          console.log('[property_select] hasMoreItems=false のため Intersection Observer 設定スキップ');
+          return;
+        }
+
         console.log('[property_select] Intersection Observer useEffect開始:', {
           hasMoreItems,
           isLoadingMore,
@@ -828,7 +849,8 @@
               boundingClientRect: entry.boundingClientRect,
               rootBounds: entry.rootBounds,
               hasMoreItems,
-              isLoadingMore
+              isLoadingMore,
+              target: entry.target
             });
             
             if (entry.isIntersecting && !isLoadingMore && hasMoreItems) {
@@ -844,24 +866,26 @@
           },
           { 
             threshold: 0.1,
-            rootMargin: '50px' // より早く検知するため
+            rootMargin: '100px' // より早く検知するため範囲を拡大
           }
         );
 
-        if (loadMoreRef.current) {
-          console.log('[property_select] Intersection Observer 要素観察開始:', loadMoreRef.current);
-          observer.observe(loadMoreRef.current);
-        } else {
-          console.log('[property_select] ❌ loadMoreRef.current が見つかりません');
-        }
+        // 少し遅延してから観察開始（DOM更新完了を待つ）
+        const timeoutId = setTimeout(() => {
+          if (loadMoreRef.current && hasMoreItems) {
+            console.log('[property_select] Intersection Observer 要素観察開始:', loadMoreRef.current);
+            observer.observe(loadMoreRef.current);
+          } else {
+            console.log('[property_select] ❌ loadMoreRef.current が見つからないか hasMoreItems=false');
+          }
+        }, 100);
 
         return () => {
           console.log('[property_select] Intersection Observer クリーンアップ');
-          if (loadMoreRef.current) {
-            observer.unobserve(loadMoreRef.current);
-          }
+          clearTimeout(timeoutId);
+          observer.disconnect(); // unobserveではなくdisconnectを使用
         };
-      }, [loadMoreItems, isLoadingMore, hasMoreItems]);
+      }, [loadMoreItems, isLoadingMore, hasMoreItems, visibleCount]); // visibleCountも依存関係に追加
 
       // スクロールイベントの監視（デバッグ用）
       React.useEffect(() => {
@@ -1469,6 +1493,30 @@
                   >
                     最下部へ
                   </button>
+                  <button 
+                    onClick={() => {
+                      const triggerElement = loadMoreRef.current;
+                      console.log('[TEST] Load More要素確認:', {
+                        elementExists: !!triggerElement,
+                        element: triggerElement,
+                        isVisible: triggerElement ? triggerElement.offsetParent !== null : false,
+                        boundingRect: triggerElement ? triggerElement.getBoundingClientRect() : null,
+                        hasMoreItems,
+                        isLoadingMore
+                      });
+                    }}
+                    style={{
+                      padding: '4px 8px',
+                      fontSize: '11px',
+                      background: '#dc3545',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    要素確認
+                  </button>
                 </div>
               </div>
 
@@ -1485,8 +1533,8 @@
                 ))}
               </div>
 
-              {/* Load More トリガー - デバッグ用に常に表示 */}
-              {true && (
+              {/* Load More トリガー - hasMoreItems時のみ表示 */}
+              {hasMoreItems && (
                 <div 
                   ref={loadMoreRef}
                   style={{
@@ -1534,6 +1582,34 @@
                       </span>
                     </div>
                   )}
+                </div>
+              )}
+
+              {/* デバッグ用：hasMoreItemsがfalseの時の状態表示 */}
+              {!hasMoreItems && (
+                <div style={{
+                  padding: '20px',
+                  textAlign: 'center',
+                  backgroundColor: '#e8f5e8',
+                  border: '2px dashed #4caf50',
+                  borderRadius: '8px',
+                  marginTop: '16px'
+                }}>
+                  <span style={{
+                    color: '#2e7d32',
+                    fontSize: '0.875rem',
+                    display: 'block'
+                  }}>
+                    [デバッグ] 全件表示完了 (hasMoreItems: false)
+                  </span>
+                  <span style={{
+                    color: '#2e7d32',
+                    fontSize: '0.75rem',
+                    display: 'block',
+                    marginTop: '4px'
+                  }}>
+                    表示件数: {visibleProperties?.length || 0} / 全件数: {filteredProperties?.length || 0}
+                  </span>
                 </div>
               )}
 
