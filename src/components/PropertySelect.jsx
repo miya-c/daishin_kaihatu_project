@@ -201,11 +201,13 @@ const PropertySelect = () => {
         sessionStorage.setItem('gasWebAppUrl', gasWebAppUrl);
       }
 
-      setNavigationMessage('');
+      setNavigationMessage('部屋データを準備中...');
       
-      const targetUrl = `/room_select?propertyId=${encodeURIComponent(property.id)}`;
-      // Use React Router navigation
-      navigate(targetUrl);
+      // 元ファイル準拠：データ準備完了後の適切な遅延
+      setTimeout(() => {
+        const targetUrl = `/room_select?propertyId=${encodeURIComponent(property.id)}`;
+        navigate(targetUrl);
+      }, 300);
       
     } catch (error) {
       console.error('Error fetching rooms or navigating:', error);
