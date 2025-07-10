@@ -162,7 +162,7 @@ const RoomSelect = () => {
 
   return (
     <div>
-      <div className="MuiAppBar-root">
+      <div className="MuiAppBar-root app-header">
         <div className="MuiToolbar-root">
           <button className="MuiIconButton-root" onClick={goBack}>
             <span className="material-icons">arrow_back</span>

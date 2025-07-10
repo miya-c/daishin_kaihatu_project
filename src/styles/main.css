@@ -706,6 +706,304 @@ body.pwa-installed {
   }
 }
 
+/* === Meter Reading Application Styles (Mantine-based) === */
+:root {
+  --mantine-color-blue-6: #228be6;
+  --mantine-color-blue-7: #1c7ed6;
+  --mantine-color-blue-8: #1971c2;
+  --mantine-color-blue-light: #e7f5ff;
+  --mantine-color-gray-0: #f8f9fa;
+  --mantine-color-gray-1: #f1f3f4;
+  --mantine-color-gray-2: #e9ecef;
+  --mantine-color-gray-3: #dee2e6;
+  --mantine-color-gray-6: #868e96;
+  --mantine-color-gray-7: #495057;
+  --mantine-color-gray-8: #343a40;
+  --mantine-color-red-6: #fa5252;
+  --mantine-color-red-light: #fff5f5;
+  --mantine-color-green-6: #40c057;
+  --mantine-color-green-light: #ebfbee;
+  --mantine-radius-xs: 2px;
+  --mantine-radius-sm: 4px;
+  --mantine-radius-md: 8px;
+  --mantine-spacing-xs: 10px;
+  --mantine-spacing-sm: 12px;
+  --mantine-spacing-md: 16px;
+  --mantine-spacing-lg: 20px;
+  --mantine-spacing-xl: 32px;
+  --app-bg-color: #f0f4f8;
+  --header-bg-color: #007bff;
+  --header-text-color: #ffffff;
+  --card-bg-color: #ffffff;
+  --primary-text-color: #333333;
+  --secondary-text-color: #555555;
+  --accent-color: #007bff;
+  --border-color: #dddddd;
+  --font-family-sans-serif: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+}
+
+/* Mantine Component Styles for Meter Reading */
+.mantine-container {
+  min-height: 100vh;
+  padding: var(--mantine-spacing-lg);
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.mantine-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mantine-spacing-xl);
+}
+
+@media (max-width: 768px) {
+  .mantine-stack {
+    gap: 8px;
+  }
+}
+
+.mantine-stack.center {
+  align-items: center;
+  text-align: center;
+}
+
+.mantine-title {
+  font-size: 3.2rem;
+  font-weight: 700;
+  margin: 0;
+  color: var(--mantine-color-gray-8);
+}
+
+.mantine-subtitle {
+  font-size: clamp(1.6rem, 4vw, 2.2rem);
+  font-weight: 600;
+  margin: 0;
+  color: var(--mantine-color-gray-7);
+}
+
+.mantine-text {
+  font-size: 1.3rem;
+  color: var(--mantine-color-gray-6);
+  margin: 0;
+  line-height: 1.6;
+}
+
+.mantine-text.center {
+  text-align: center;
+}
+
+.mantine-text.weight-600 {
+  font-weight: 600;
+}
+
+.mantine-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--mantine-spacing-xs);
+  padding: 20px 28px;
+  border-radius: var(--mantine-radius-sm);
+  border: 1px solid transparent;
+  font-size: 1.2rem;
+  font-weight: 600;
+  line-height: 1;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+  min-height: 48px;
+}
+
+.mantine-button.variant-filled {
+  background-color: var(--mantine-color-blue-6);
+  color: white;
+}
+
+.mantine-button.variant-filled:hover {
+  background-color: var(--mantine-color-blue-7);
+}
+
+.mantine-button.variant-outline {
+  background-color: transparent;
+  border: 1px solid var(--mantine-color-gray-3);
+  color: var(--mantine-color-gray-7);
+}
+
+.mantine-button.variant-outline:hover {
+  background-color: var(--mantine-color-gray-1);
+}
+
+.mantine-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.mantine-paper {
+  background-color: white;
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: var(--mantine-radius-md);
+  padding: var(--mantine-spacing-md);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.mantine-loader {
+  width: 48px;
+  height: 48px;
+  border: 3px solid var(--mantine-color-gray-2);
+  border-top: 3px solid var(--mantine-color-blue-6);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.mantine-alert {
+  padding: var(--mantine-spacing-md);
+  border-radius: var(--mantine-radius-sm);
+  border-left: 4px solid var(--mantine-color-red-6);
+  background-color: var(--mantine-color-red-light);
+  color: var(--mantine-color-gray-7);
+}
+
+.mantine-alert.info {
+  border-left-color: var(--mantine-color-blue-6);
+  background-color: var(--mantine-color-blue-light);
+}
+
+.mantine-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--mantine-spacing-xl);
+}
+
+.mantine-input {
+  width: 100%;
+  padding: 20px;
+  border: 1px solid var(--mantine-color-gray-3);
+  border-radius: var(--mantine-radius-sm);
+  font-size: 1.4rem;
+  transition: border-color 0.15s ease;
+  min-height: 60px;
+}
+
+.mantine-input:focus {
+  outline: none;
+  border-color: var(--mantine-color-blue-6);
+  box-shadow: 0 0 0 2px var(--mantine-color-blue-light);
+}
+
+/* Mobile specific styles for meter reading */
+@media (max-width: 768px) {
+  body {
+    font-size: 20px;
+    padding-left: 0;
+    padding-right: 0;
+    margin-left: 0;
+    margin-right: 0;
+  }
+  
+  .mantine-container {
+    padding: 0;
+    max-width: 100%;
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  .mantine-title {
+    font-size: 2.2rem;
+  }
+
+  .app-header {
+    background-color: var(--header-bg-color);
+    color: var(--header-text-color);
+    padding: 12px 16px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+
+  .back-button {
+    background-color: transparent;
+    border: none;
+    color: var(--header-text-color);
+    font-size: 28px;
+    cursor: pointer;
+    position: absolute;
+    left: 16px;
+  }
+
+  .header-title {
+    margin: 0;
+    font-size: 1.3rem;
+    font-weight: bold;
+  }
+
+  .content-area {
+    padding-top: 60px;
+    padding-left: 0;
+    padding-right: 0;
+    padding-bottom: 24px;
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  .property-info-card {
+    background-color: var(--accent-color);
+    color: var(--header-text-color);
+    padding: 5px 8px;
+    margin-bottom: 8px;
+    margin-left: 0;
+    margin-right: 0;
+    border-radius: 0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+
+  .property-name {
+    font-size: clamp(1.5rem, 5vw, 2.5rem);
+    font-weight: bold;
+    margin: 0 0 10px 0;
+  }
+
+  .room-label {
+    font-size: clamp(1.0rem, 3vw, 1.5rem);
+    margin: 0 0 4px 0;
+    opacity: 0.9;
+  }
+
+  .room-name {
+    font-size: clamp(1.3rem, 4vw, 2.0rem);
+    font-weight: bold;
+    margin: 0;
+  }
+
+  .room-info {
+    font-size: clamp(1.3rem, 4vw, 2.0rem);
+    font-weight: bold;
+    margin: 0;
+  }
+
+  .mantine-paper {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+    border-radius: 0;
+  }
+
+  .mantine-alert {
+    margin-left: 0;
+    margin-right: 0;
+    padding-left: 8px;
+    padding-right: 8px;
+    border-radius: 0;
+  }
+}
+
 /* === Room Selection Specific Styles === */
 
 /* Property Card Specific Styling */

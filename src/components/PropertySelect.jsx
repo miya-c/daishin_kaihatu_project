@@ -305,7 +305,7 @@ const PropertySelect = () => {
   if (loading && !isFetched) {
     return (
       <div>
-        <div className="MuiAppBar-root">
+        <div className="MuiAppBar-root app-header">
           <div className="MuiToolbar-root">
             <div className="app-title">物件選択</div>
           </div>
@@ -356,7 +356,7 @@ const PropertySelect = () => {
   if (error && isFetched) {
     return (
       <div>
-        <div className="MuiAppBar-root">
+        <div className="MuiAppBar-root app-header">
           <div className="MuiToolbar-root">
             <div className="app-title">物件選択</div>
           </div>
@@ -403,7 +403,7 @@ const PropertySelect = () => {
     <div style={{ minHeight: '100vh' }}>
       {isNavigating && <LoadingOverlay message={navigationMessage} />}
       
-      <div className="MuiAppBar-root">
+      <div className="MuiAppBar-root app-header">
         <div className="MuiToolbar-root">
           <div className="app-title">物件選択</div>
         </div>

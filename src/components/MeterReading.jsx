@@ -98,159 +98,122 @@ const MeterReading = () => {
     }
   }, [propertyId, roomId, navigate]);
 
-  return (
-    <div>
-      <div className="MuiAppBar-root">
-        <div className="MuiToolbar-root">
-          <button className="MuiIconButton-root" onClick={goBack}>
-            <span className="material-icons">arrow_back</span>
-          </button>
-          <div className="app-title">検針入力</div>
+  // ローディング中
+  if (loading) {
+    return (
+      <div className="mantine-container">
+        <div className="mantine-center">
+          <div className="mantine-loader"></div>
         </div>
       </div>
+    );
+  }
 
-      <div className="MuiContainer-root">
-        {/* 物件・部屋情報カード */}
-        <div className="MuiCard-root property-card">
-          <div className="MuiCardContent-root">
-            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '16px' }}>
-              <span className="material-icons" style={{ marginRight: '8px', color: '#1976d2' }}>home</span>
-              <span className="MuiTypography-root" style={{ fontSize: '1.1rem', fontWeight: 500 }}>
-                {propertyName}
-              </span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center' }}>
-              <span className="material-icons" style={{ marginRight: '8px', color: '#1976d2' }}>meeting_room</span>
-              <span className="MuiTypography-root" style={{ fontSize: '1.25rem', fontWeight: 600 }}>
-                {roomName}
-              </span>
-            </div>
-          </div>
-        </div>
+  return (
+    <div style={{ backgroundColor: 'var(--app-bg-color)', minHeight: '100vh' }}>
+      {/* Mobile Header */}
+      <div className="app-header">
+        <button className="back-button" onClick={goBack}>
+          ←
+        </button>
+        <h1 className="header-title">検針入力</h1>
+      </div>
 
-        {/* エラーメッセージ */}
-        {error && (
-          <div className="MuiAlert-root" style={{ marginBottom: '16px' }}>
-            <div className="MuiTypography-root" style={{ color: '#b91c1c' }}>
-              {error}
+      <div className="content-area">
+        <div className="mantine-container">
+          <div className="mantine-stack">
+            {/* Property Info Card */}
+            <div className="property-info-card">
+              <div className="property-name">{propertyName}</div>
+              <div className="room-label">部屋</div>
+              <div className="room-name">{roomName}</div>
             </div>
-          </div>
-        )}
 
-        {/* 検針入力フォーム */}
-        <div className="MuiCard-root">
-          <div className="MuiCardContent-root">
-            <form onSubmit={handleSubmit}>
-              <div style={{ marginBottom: '24px' }}>
-                <label 
-                  htmlFor="reading-input"
-                  className="MuiTypography-root"
-                  style={{ 
-                    display: 'block', 
-                    marginBottom: '8px',
-                    fontSize: '1rem',
-                    fontWeight: 500,
-                    color: '#1976d2'
-                  }}
-                >
-                  メーター検針値
-                </label>
-                <div className="MuiTextField-root">
-                  <input
-                    id="reading-input"
-                    type="number"
-                    value={reading}
-                    onChange={(e) => setReading(e.target.value)}
-                    placeholder="検針値を入力してください"
-                    disabled={loading}
-                    style={{
-                      width: '100%',
-                      padding: '16px',
-                      fontSize: '1.2rem',
-                      border: '2px solid #e0e0e0',
-                      borderRadius: '8px',
-                      outline: 'none',
-                      transition: 'border-color 0.2s'
-                    }}
-                    onFocus={(e) => e.target.style.borderColor = '#1976d2'}
-                    onBlur={(e) => e.target.style.borderColor = '#e0e0e0'}
-                  />
+            {/* Error Message */}
+            {error && (
+              <div className="mantine-alert">
+                <div className="mantine-text">
+                  {error}
                 </div>
               </div>
+            )}
 
-              <div style={{ display: 'flex', gap: '16px', justifyContent: 'space-between' }}>
-                <button
-                  type="button"
-                  className="MuiButton-root"
-                  onClick={goBack}
-                  disabled={loading}
-                  style={{
-                    flex: 1,
-                    padding: '12px 24px',
-                    fontSize: '1rem',
-                    fontWeight: 500,
-                    border: '2px solid #1976d2',
-                    backgroundColor: 'transparent',
-                    color: '#1976d2',
-                    borderRadius: '8px',
-                    cursor: loading ? 'not-allowed' : 'pointer',
-                    opacity: loading ? 0.6 : 1
-                  }}
-                >
-                  キャンセル
-                </button>
-                
-                <button
-                  type="submit"
-                  className="MuiButton-root"
-                  disabled={loading || !reading.trim()}
-                  style={{
-                    flex: 1,
-                    padding: '12px 24px',
-                    fontSize: '1rem',
-                    fontWeight: 500,
-                    border: 'none',
-                    backgroundColor: loading || !reading.trim() ? '#ccc' : '#1976d2',
-                    color: 'white',
-                    borderRadius: '8px',
-                    cursor: loading || !reading.trim() ? 'not-allowed' : 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px'
-                  }}
-                >
-                  {loading ? (
-                    <>
-                      <div className="MuiCircularProgress-root" style={{ width: '20px', height: '20px' }}></div>
-                      保存中...
-                    </>
-                  ) : (
-                    <>
-                      <span className="material-icons">save</span>
-                      保存
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+            {/* Input Form */}
+            <div className="mantine-paper">
+              <form onSubmit={handleSubmit}>
+                <div className="mantine-stack">
+                  <div>
+                    <label 
+                      htmlFor="reading-input"
+                      className="mantine-text weight-600"
+                      style={{ 
+                        display: 'block', 
+                        marginBottom: '8px',
+                        color: 'var(--mantine-color-blue-7)'
+                      }}
+                    >
+                      メーター検針値
+                    </label>
+                    <input
+                      id="reading-input"
+                      type="number"
+                      value={reading}
+                      onChange={(e) => setReading(e.target.value)}
+                      placeholder="検針値を入力してください"
+                      disabled={loading}
+                      className="mantine-input"
+                      step="0.01"
+                      min="0"
+                    />
+                  </div>
 
-        {/* 使用方法のヒント */}
-        <div className="MuiCard-root" style={{ marginTop: '24px', backgroundColor: '#f5f5f5' }}>
-          <div className="MuiCardContent-root">
-            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
-              <span className="material-icons" style={{ marginRight: '8px', color: '#666' }}>info</span>
-              <span className="MuiTypography-root" style={{ fontWeight: 500, color: '#666' }}>
-                検針のヒント
-              </span>
+                  <div style={{ 
+                    display: 'flex', 
+                    gap: 'var(--mantine-spacing-md)', 
+                    justifyContent: 'space-between',
+                    marginTop: 'var(--mantine-spacing-lg)'
+                  }}>
+                    <button
+                      type="button"
+                      className="mantine-button variant-outline"
+                      onClick={goBack}
+                      disabled={loading}
+                      style={{ flex: 1 }}
+                    >
+                      キャンセル
+                    </button>
+                    
+                    <button
+                      type="submit"
+                      className="mantine-button variant-filled"
+                      disabled={loading || !reading.trim()}
+                      style={{ 
+                        flex: 1,
+                        backgroundColor: loading || !reading.trim() ? 'var(--mantine-color-gray-3)' : 'var(--mantine-color-blue-6)'
+                      }}
+                    >
+                      {loading ? '保存中...' : '保存'}
+                    </button>
+                  </div>
+                </div>
+              </form>
             </div>
-            <ul style={{ margin: 0, paddingLeft: '20px', color: '#666' }}>
-              <li>メーターの数値を正確に読み取ってください</li>
-              <li>小数点以下がある場合は含めて入力してください</li>
-              <li>前回の検針値と比較して異常がないか確認してください</li>
-            </ul>
+
+            {/* Usage Hints */}
+            <div className="mantine-paper" style={{ backgroundColor: 'var(--mantine-color-gray-0)' }}>
+              <div className="mantine-stack">
+                <div className="mantine-text weight-600" style={{ color: 'var(--mantine-color-gray-7)' }}>
+                  検針のヒント
+                </div>
+                <div className="mantine-text" style={{ fontSize: '1.1rem' }}>
+                  <ul style={{ margin: 0, paddingLeft: '20px' }}>
+                    <li>メーターの数値を正確に読み取ってください</li>
+                    <li>小数点以下がある場合は含めて入力してください</li>
+                    <li>前回の検針値と比較して異常がないか確認してください</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
