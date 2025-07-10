@@ -793,11 +793,17 @@
       
       // 仮想スクロール: 追加読み込み処理
       const loadMoreItems = React.useCallback(() => {
+        // リアルタイムで状態を再計算
+        const currentFilteredCount = filteredProperties?.length || 0;
+        const currentHasMore = isFetched && currentFilteredCount > visibleCount;
+        
         console.log('[property_select] 🔄 loadMoreItems実行開始:', {
           isLoadingMore,
           currentVisibleCount: visibleCount,
-          filteredPropertiesLength: filteredProperties?.length || 0,
-          hasMoreItems
+          filteredPropertiesLength: currentFilteredCount,
+          hasMoreItems,
+          realtimeHasMore: currentHasMore,
+          isFetched
         });
         
         if (isLoadingMore) {
@@ -805,8 +811,14 @@
           return;
         }
         
-        if (!hasMoreItems) {
-          console.log('[property_select] ❌ hasMoreItems=false のためスキップ');
+        // リアルタイム計算値を使用
+        if (!currentHasMore) {
+          console.log('[property_select] ❌ リアルタイム計算でhasMore=false のためスキップ:', {
+            isFetched,
+            filteredCount: currentFilteredCount,
+            visibleCount,
+            calculation: `${currentFilteredCount} > ${visibleCount} = ${currentHasMore}`
+          });
           return;
         }
         
@@ -823,7 +835,7 @@
           setIsLoadingMore(false);
           console.log('[property_select] ✅ loadMoreItems完了');
         }, 100);
-      }, [isLoadingMore, hasMoreItems, visibleCount, filteredProperties]);
+      }, [isLoadingMore, visibleCount, filteredProperties, isFetched]);
 
       // Intersection Observer の設定（修正版）
       React.useEffect(() => {
@@ -848,23 +860,34 @@
         const observer = new IntersectionObserver(
           (entries) => {
             const entry = entries[0];
+            
+            // 最新の状態を再取得
+            const currentFilteredCount = filteredProperties?.length || 0;
+            const currentHasMore = isFetched && currentFilteredCount > visibleCount;
+            
             console.log('[property_select] Intersection Observer 検知:', {
               isIntersecting: entry.isIntersecting,
               intersectionRatio: entry.intersectionRatio,
               boundingClientRect: entry.boundingClientRect,
               rootBounds: entry.rootBounds,
               hasMoreItems,
+              realtimeHasMore: currentHasMore,
               isLoadingMore,
+              isFetched,
+              filteredCount: currentFilteredCount,
+              visibleCount,
               target: entry.target
             });
             
-            if (entry.isIntersecting && !isLoadingMore && hasMoreItems) {
+            // 最新の状態でチェック
+            if (entry.isIntersecting && !isLoadingMore && currentHasMore) {
               console.log('[property_select] ✅ 条件満たし - loadMoreItems呼び出し');
               loadMoreItems();
             } else {
               console.log('[property_select] ❌ 条件満たさず:', {
                 isIntersecting: entry.isIntersecting,
                 hasMoreItems,
+                realtimeHasMore: currentHasMore,
                 isLoadingMore
               });
             }
