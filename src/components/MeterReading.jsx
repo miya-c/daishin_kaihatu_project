@@ -101,16 +101,18 @@ const MeterReading = () => {
   // ローディング中
   if (loading) {
     return (
-      <div className="mantine-container">
-        <div className="mantine-center">
-          <div className="mantine-loader"></div>
+      <div className="meter-reading-page">
+        <div className="mantine-container">
+          <div className="mantine-center">
+            <div className="mantine-loader"></div>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div style={{ backgroundColor: 'var(--app-bg-color)', minHeight: '100vh' }}>
+    <div className="meter-reading-page" style={{ backgroundColor: 'var(--app-bg-color)', minHeight: '100vh' }}>
       {/* Mobile Header */}
       <div className="app-header">
         <button className="back-button" onClick={goBack}>

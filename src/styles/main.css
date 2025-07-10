@@ -68,6 +68,41 @@
   --pwa-styles-loaded: 'true';
   --pwa-install-bottom: 20px;
   --pwa-install-right: 20px;
+  
+  /* Mantine Color Variables (for meter reading screen) */
+  --mantine-color-blue-6: #228be6;
+  --mantine-color-blue-7: #1c7ed6;
+  --mantine-color-blue-8: #1971c2;
+  --mantine-color-blue-light: #e7f5ff;
+  --mantine-color-gray-0: #f8f9fa;
+  --mantine-color-gray-1: #f1f3f4;
+  --mantine-color-gray-2: #e9ecef;
+  --mantine-color-gray-3: #dee2e6;
+  --mantine-color-gray-6: #868e96;
+  --mantine-color-gray-7: #495057;
+  --mantine-color-gray-8: #343a40;
+  --mantine-color-red-6: #fa5252;
+  --mantine-color-red-light: #fff5f5;
+  --mantine-color-green-6: #40c057;
+  --mantine-color-green-light: #ebfbee;
+  --mantine-radius-xs: 2px;
+  --mantine-radius-sm: 4px;
+  --mantine-radius-md: 8px;
+  --mantine-spacing-xs: 10px;
+  --mantine-spacing-sm: 12px;
+  --mantine-spacing-md: 16px;
+  --mantine-spacing-lg: 20px;
+  --mantine-spacing-xl: 32px;
+  
+  /* App-specific colors */
+  --app-bg-color: #f0f4f8;
+  --header-bg-color: #007bff;
+  --header-text-color: #ffffff;
+  --card-bg-color: #ffffff;
+  --primary-text-color: #333333;
+  --secondary-text-color: #555555;
+  --accent-color: #007bff;
+  --border-color: #dddddd;
 }
 
 /* Reset and Base Styles */
@@ -83,7 +118,7 @@ body {
   line-height: 1.5;
   letter-spacing: 0.00938em;
   color: var(--mui-palette-grey-900);
-  background: linear-gradient(135deg, var(--mui-palette-grey-50) 0%, #e1e8ed 100%);
+  background-color: var(--mui-palette-grey-50);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -211,17 +246,44 @@ body {
 
 /* Material UI Cards */
 .MuiCard-root {
-  background: #fff; 
-  border-radius: 16px;
+  background: linear-gradient(145deg, #ffffff 0%, var(--mui-palette-grey-50) 100%);
+  border-radius: var(--mui-shape-borderRadius-xxl);
   box-shadow: var(--mui-shadows-1);
-  transition: box-shadow 0.2s ease, transform 0.2s ease;
-  cursor: pointer; 
-  margin-bottom: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  margin-bottom: var(--mui-spacing-2);
+}
+
+.MuiCard-root::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(145deg, rgba(25, 118, 210, 0.04) 0%, rgba(25, 118, 210, 0.01) 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  border-radius: var(--mui-shape-borderRadius-xxl);
+  pointer-events: none;
 }
 
 .MuiCard-root:hover {
-  box-shadow: var(--mui-shadows-4);
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: var(--mui-shadows-8);
+  border-color: rgba(25, 118, 210, 0.3);
+}
+
+.MuiCard-root:hover::before {
+  opacity: 1;
+}
+
+.MuiCard-root:active {
   transform: translateY(-2px) scale(1.01);
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Material UI Card Action Area */
@@ -258,7 +320,9 @@ body {
 }
 
 .MuiCardContent-root { 
-  padding: 20px; 
+  padding: 20px;
+  position: relative;
+  z-index: 1;
 }
 
 /* Loading States */
@@ -333,28 +397,36 @@ body {
   margin-bottom: 16px;
 }
 
-/* Search Input */
+/* Material UI TextField (元ファイル準拠) */
 .MuiTextField-root { 
-  margin-bottom: 24px; 
+  margin-bottom: var(--mui-spacing-3);
+  width: 100%;
 }
 
 .MuiTextField-root input {
   width: 100%; 
   padding: 18px 20px; 
-  border: 2px solid #e0e0e0;
-  border-radius: 16px; 
-  font-size: 16px;
-  background: linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%);
+  border: 2px solid var(--mui-palette-grey-300);
+  border-radius: var(--mui-shape-borderRadius-xxl); 
+  font-size: var(--mui-typography-body1-size);
+  font-family: "Roboto", sans-serif;
+  background: linear-gradient(145deg, #ffffff 0%, var(--mui-palette-grey-50) 100%);
+  color: var(--mui-palette-grey-900);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  font-family: inherit;
+  box-shadow: var(--mui-shadows-1);
 }
 
 .MuiTextField-root input:focus {
   outline: none; 
   border-color: var(--mui-palette-primary-main);
-  box-shadow: 0 4px 12px rgba(25,118,210,0.1);
+  box-shadow: 0 0 0 4px rgba(25, 118, 210, 0.12), var(--mui-shadows-2);
   background: #ffffff; 
   transform: translateY(-1px);
+}
+
+.MuiTextField-root input::placeholder {
+  color: var(--mui-palette-grey-500);
+  opacity: 1;
 }
 
 .MuiTextField-root input:disabled {
@@ -534,6 +606,35 @@ body {
   will-change: auto;
 }
 
+/* Fade-in Animation for Cards (Material UI準拠) - 元ファイルより */
+@keyframes mui-fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Property select cards only */
+.property-select-page .MuiCard-root {
+  animation: mui-fade-in-up 0.6s ease-out;
+}
+
+.property-select-page .MuiCard-root:nth-child(1) { animation-delay: 0.1s; }
+.property-select-page .MuiCard-root:nth-child(2) { animation-delay: 0.2s; }
+.property-select-page .MuiCard-root:nth-child(3) { animation-delay: 0.3s; }
+.property-select-page .MuiCard-root:nth-child(4) { animation-delay: 0.4s; }
+.property-select-page .MuiCard-root:nth-child(5) { animation-delay: 0.5s; }
+
+/* Arrow Icon Hover Effect (Material UI準拠) */
+.property-select-page .MuiCard-root:hover svg {
+  transform: translateX(4px);
+  color: var(--mui-palette-primary-dark);
+}
+
 /* PWA Specific Styles */
 /* PWA installed state styling */
 body.pwa-installed {
@@ -707,96 +808,63 @@ body.pwa-installed {
 }
 
 /* === Meter Reading Application Styles (Mantine-based) === */
-:root {
-  --mantine-color-blue-6: #228be6;
-  --mantine-color-blue-7: #1c7ed6;
-  --mantine-color-blue-8: #1971c2;
-  --mantine-color-blue-light: #e7f5ff;
-  --mantine-color-gray-0: #f8f9fa;
-  --mantine-color-gray-1: #f1f3f4;
-  --mantine-color-gray-2: #e9ecef;
-  --mantine-color-gray-3: #dee2e6;
-  --mantine-color-gray-6: #868e96;
-  --mantine-color-gray-7: #495057;
-  --mantine-color-gray-8: #343a40;
-  --mantine-color-red-6: #fa5252;
-  --mantine-color-red-light: #fff5f5;
-  --mantine-color-green-6: #40c057;
-  --mantine-color-green-light: #ebfbee;
-  --mantine-radius-xs: 2px;
-  --mantine-radius-sm: 4px;
-  --mantine-radius-md: 8px;
-  --mantine-spacing-xs: 10px;
-  --mantine-spacing-sm: 12px;
-  --mantine-spacing-md: 16px;
-  --mantine-spacing-lg: 20px;
-  --mantine-spacing-xl: 32px;
-  --app-bg-color: #f0f4f8;
-  --header-bg-color: #007bff;
-  --header-text-color: #ffffff;
-  --card-bg-color: #ffffff;
-  --primary-text-color: #333333;
-  --secondary-text-color: #555555;
-  --accent-color: #007bff;
-  --border-color: #dddddd;
-  --font-family-sans-serif: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
-}
+/* Mantine variables merged into main :root to avoid conflicts */
 
-/* Mantine Component Styles for Meter Reading */
-.mantine-container {
+/* Mantine Component Styles for Meter Reading (scoped to avoid conflicts) */
+.meter-reading-page .mantine-container {
   min-height: 100vh;
   padding: var(--mantine-spacing-lg);
   max-width: 900px;
   margin: 0 auto;
 }
 
-.mantine-stack {
+.meter-reading-page .mantine-stack {
   display: flex;
   flex-direction: column;
   gap: var(--mantine-spacing-xl);
 }
 
 @media (max-width: 768px) {
-  .mantine-stack {
+  .meter-reading-page .mantine-stack {
     gap: 8px;
   }
 }
 
-.mantine-stack.center {
+.meter-reading-page .mantine-stack.center {
   align-items: center;
   text-align: center;
 }
 
-.mantine-title {
+.meter-reading-page .mantine-title {
   font-size: 3.2rem;
   font-weight: 700;
   margin: 0;
   color: var(--mantine-color-gray-8);
 }
 
-.mantine-subtitle {
+.meter-reading-page .mantine-subtitle {
   font-size: clamp(1.6rem, 4vw, 2.2rem);
   font-weight: 600;
   margin: 0;
   color: var(--mantine-color-gray-7);
 }
 
-.mantine-text {
+.meter-reading-page .mantine-text {
   font-size: 1.3rem;
   color: var(--mantine-color-gray-6);
   margin: 0;
   line-height: 1.6;
 }
 
-.mantine-text.center {
+.meter-reading-page .mantine-text.center {
   text-align: center;
 }
 
-.mantine-text.weight-600 {
+.meter-reading-page .mantine-text.weight-600 {
   font-weight: 600;
 }
 
-.mantine-button {
+.meter-reading-page .mantine-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -814,31 +882,31 @@ body.pwa-installed {
   min-height: 48px;
 }
 
-.mantine-button.variant-filled {
+.meter-reading-page .mantine-button.variant-filled {
   background-color: var(--mantine-color-blue-6);
   color: white;
 }
 
-.mantine-button.variant-filled:hover {
+.meter-reading-page .mantine-button.variant-filled:hover {
   background-color: var(--mantine-color-blue-7);
 }
 
-.mantine-button.variant-outline {
+.meter-reading-page .mantine-button.variant-outline {
   background-color: transparent;
   border: 1px solid var(--mantine-color-gray-3);
   color: var(--mantine-color-gray-7);
 }
 
-.mantine-button.variant-outline:hover {
+.meter-reading-page .mantine-button.variant-outline:hover {
   background-color: var(--mantine-color-gray-1);
 }
 
-.mantine-button:disabled {
+.meter-reading-page .mantine-button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
-.mantine-paper {
+.meter-reading-page .mantine-paper {
   background-color: white;
   border: 1px solid var(--mantine-color-gray-2);
   border-radius: var(--mantine-radius-md);
@@ -846,7 +914,7 @@ body.pwa-installed {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
-.mantine-loader {
+.meter-reading-page .mantine-loader {
   width: 48px;
   height: 48px;
   border: 3px solid var(--mantine-color-gray-2);
@@ -855,7 +923,7 @@ body.pwa-installed {
   animation: spin 1s linear infinite;
 }
 
-.mantine-alert {
+.meter-reading-page .mantine-alert {
   padding: var(--mantine-spacing-md);
   border-radius: var(--mantine-radius-sm);
   border-left: 4px solid var(--mantine-color-red-6);
@@ -863,19 +931,19 @@ body.pwa-installed {
   color: var(--mantine-color-gray-7);
 }
 
-.mantine-alert.info {
+.meter-reading-page .mantine-alert.info {
   border-left-color: var(--mantine-color-blue-6);
   background-color: var(--mantine-color-blue-light);
 }
 
-.mantine-center {
+.meter-reading-page .mantine-center {
   display: flex;
   align-items: center;
   justify-content: center;
   padding: var(--mantine-spacing-xl);
 }
 
-.mantine-input {
+.meter-reading-page .mantine-input {
   width: 100%;
   padding: 20px;
   border: 1px solid var(--mantine-color-gray-3);
@@ -885,34 +953,30 @@ body.pwa-installed {
   min-height: 60px;
 }
 
-.mantine-input:focus {
+.meter-reading-page .mantine-input:focus {
   outline: none;
   border-color: var(--mantine-color-blue-6);
   box-shadow: 0 0 0 2px var(--mantine-color-blue-light);
 }
 
-/* Mobile specific styles for meter reading */
+/* Mobile specific styles for meter reading (scoped) */
 @media (max-width: 768px) {
-  body {
+  .meter-reading-page {
     font-size: 20px;
-    padding-left: 0;
-    padding-right: 0;
-    margin-left: 0;
-    margin-right: 0;
   }
   
-  .mantine-container {
+  .meter-reading-page .mantine-container {
     padding: 0;
     max-width: 100%;
     margin-left: 0;
     margin-right: 0;
   }
 
-  .mantine-title {
+  .meter-reading-page .mantine-title {
     font-size: 2.2rem;
   }
 
-  .app-header {
+  .meter-reading-page .app-header {
     background-color: var(--header-bg-color);
     color: var(--header-text-color);
     padding: 12px 16px;
@@ -927,7 +991,7 @@ body.pwa-installed {
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   }
 
-  .back-button {
+  .meter-reading-page .back-button {
     background-color: transparent;
     border: none;
     color: var(--header-text-color);
@@ -937,13 +1001,13 @@ body.pwa-installed {
     left: 16px;
   }
 
-  .header-title {
+  .meter-reading-page .header-title {
     margin: 0;
     font-size: 1.3rem;
     font-weight: bold;
   }
 
-  .content-area {
+  .meter-reading-page .content-area {
     padding-top: 60px;
     padding-left: 0;
     padding-right: 0;
@@ -952,7 +1016,7 @@ body.pwa-installed {
     margin-right: 0;
   }
 
-  .property-info-card {
+  .meter-reading-page .property-info-card {
     background-color: var(--accent-color);
     color: var(--header-text-color);
     padding: 5px 8px;
@@ -963,31 +1027,31 @@ body.pwa-installed {
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   }
 
-  .property-name {
+  .meter-reading-page .property-name {
     font-size: clamp(1.5rem, 5vw, 2.5rem);
     font-weight: bold;
     margin: 0 0 10px 0;
   }
 
-  .room-label {
+  .meter-reading-page .room-label {
     font-size: clamp(1.0rem, 3vw, 1.5rem);
     margin: 0 0 4px 0;
     opacity: 0.9;
   }
 
-  .room-name {
+  .meter-reading-page .room-name {
     font-size: clamp(1.3rem, 4vw, 2.0rem);
     font-weight: bold;
     margin: 0;
   }
 
-  .room-info {
+  .meter-reading-page .room-info {
     font-size: clamp(1.3rem, 4vw, 2.0rem);
     font-weight: bold;
     margin: 0;
   }
 
-  .mantine-paper {
+  .meter-reading-page .mantine-paper {
     margin-left: 0 !important;
     margin-right: 0 !important;
     padding-left: 8px !important;
@@ -995,7 +1059,7 @@ body.pwa-installed {
     border-radius: 0;
   }
 
-  .mantine-alert {
+  .meter-reading-page .mantine-alert {
     margin-left: 0;
     margin-right: 0;
     padding-left: 8px;

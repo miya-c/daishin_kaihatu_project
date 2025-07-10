@@ -116,7 +116,7 @@ const RoomSelect = () => {
   // ローディング中
   if (loading) {
     return (
-      <div>
+      <div className="room-select-page">
         <div className="MuiAppBar-root">
           <div className="MuiToolbar-root">
             <button className="MuiIconButton-root" onClick={goBack}>
@@ -139,7 +139,7 @@ const RoomSelect = () => {
   // エラー時
   if (error) {
     return (
-      <div>
+      <div className="room-select-page">
         <div className="MuiAppBar-root">
           <div className="MuiToolbar-root">
             <button className="MuiIconButton-root" onClick={goBack}>
@@ -161,7 +161,7 @@ const RoomSelect = () => {
   }
 
   return (
-    <div>
+    <div className="room-select-page">
       <div className="MuiAppBar-root app-header">
         <div className="MuiToolbar-root">
           <button className="MuiIconButton-root" onClick={goBack}>
