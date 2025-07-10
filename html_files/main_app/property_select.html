@@ -1356,7 +1356,7 @@
               </div>
 
               {/* Load More トリガー */}
-              {hasMoreItems && (
+              {true && (  {/* 一時的にhasMoreItemsの条件を無効化 */}
                 <div 
                   ref={loadMoreRef}
                   style={{
@@ -1383,12 +1383,22 @@
                       </span>
                     </>
                   ) : (
-                    <span style={{
-                      color: 'var(--mui-palette-grey-500)',
-                      fontSize: '0.875rem'
-                    }}>
-                      スクロールして続きを読み込み
-                    </span>
+                    <button 
+                      onClick={() => {
+                        console.log('[property_select] 手動loadMoreItems実行');
+                        loadMoreItems();
+                      }}
+                      style={{
+                        padding: '10px 20px',
+                        backgroundColor: '#007bff',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      手動で追加読み込み（テスト用）
+                    </button>
                   )}
                 </div>
               )}
