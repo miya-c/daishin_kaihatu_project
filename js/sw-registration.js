@@ -50,7 +50,10 @@ class ServiceWorkerManager {
       if (installingWorker.state === 'installed') {
         if (navigator.serviceWorker.controller) {
           // 新しいバージョンが利用可能
-          this.showUpdateNotification();
+          // 開発環境での頻繁な更新を避けるため遅延実行
+          setTimeout(() => {
+            this.showUpdateNotification();
+          }, 2000); // 2秒後に通知
         } else {
           // 初回インストール
           console.log('[SW] Service Worker installed for the first time');
@@ -59,15 +62,54 @@ class ServiceWorkerManager {
     });
   }
 
-  // アップデート通知表示
+  // アップデート通知表示（改善版）
   showUpdateNotification() {
-    const shouldUpdate = confirm(
-      '新しいバージョンが利用可能です。更新しますか？'
-    );
-
-    if (shouldUpdate) {
-      this.skipWaiting();
+    // 最後の通知から一定時間経過していない場合はスキップ
+    const lastNotification = localStorage.getItem('lastUpdateNotification');
+    const now = Date.now();
+    const NOTIFICATION_COOLDOWN = 30 * 60 * 1000; // 30分間隔
+    
+    if (lastNotification && (now - parseInt(lastNotification)) < NOTIFICATION_COOLDOWN) {
+      console.log('[SW] アップデート通知をスキップ（クールダウン中）');
+      return;
     }
+
+    // より控えめな通知方法を使用
+    if (this.shouldShowUpdatePrompt()) {
+      localStorage.setItem('lastUpdateNotification', now.toString());
+      
+      const shouldUpdate = confirm(
+        'アプリの新しいバージョンが利用可能です。\n今すぐ更新しますか？\n\n（「キャンセル」を選択した場合、次回アクセス時に再度通知されます）'
+      );
+
+      if (shouldUpdate) {
+        this.skipWaiting();
+      }
+    }
+  }
+
+  // アップデート通知を表示すべきかを判定
+  shouldShowUpdatePrompt() {
+    // 開発環境では更新通知を制限
+    const isDevelopment = window.location.hostname === 'localhost' || 
+                         window.location.hostname === '127.0.0.1' ||
+                         window.location.hostname.includes('pages.dev');
+    
+    if (isDevelopment) {
+      // 開発環境では1時間に1回まで
+      const lastDevNotification = localStorage.getItem('lastDevUpdateNotification');
+      const now = Date.now();
+      const DEV_COOLDOWN = 60 * 60 * 1000; // 1時間
+      
+      if (lastDevNotification && (now - parseInt(lastDevNotification)) < DEV_COOLDOWN) {
+        console.log('[SW] 開発環境: アップデート通知をスキップ');
+        return false;
+      }
+      localStorage.setItem('lastDevUpdateNotification', now.toString());
+    }
+    
+    // ページの読み込み完了から少し待つ
+    return document.readyState === 'complete';
   }
 
   // 新しいService Workerをアクティブ化
