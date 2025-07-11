@@ -751,10 +751,20 @@
         console.log('[meter_reading] - URLSearchParams:', window.location.search);
 
         // 必須パラメータチェック
-        if (!propId || !rId) {
-          console.error('[meter_reading] 物件IDまたは部屋IDがURLパラメータにありません。');
-          setError('物件情報または部屋情報が不足しているため、検針データを取得できません。');
-          setLoading(false);
+        if (!propId) {
+          console.error('[meter_reading] 物件IDがURLパラメータにありません。');
+          setError('物件情報が不足しています。物件選択画面に戻ります。');
+          setTimeout(() => {
+            window.location.href = './property_select.html';
+          }, 2000);
+          return;
+        }
+        
+        if (!rId) {
+          console.warn('[meter_reading] 部屋IDがありません。部屋選択画面に遷移します。');
+          const redirectUrl = `./room_select.html?propertyId=${encodeURIComponent(propId)}${propName ? `&propertyName=${encodeURIComponent(propName)}` : ''}`;
+          console.log('[meter_reading] リダイレクト先:', redirectUrl);
+          window.location.href = redirectUrl;
           return;
         }
 
