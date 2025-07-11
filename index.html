@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>水道検針アプリ</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="stylesheet" href="/css_styles/pwa-materialui.css">
+  
+  <!-- 動的アイコン生成により、静的リンクは不要 -->
+  
+  <!-- iOS用メタタグ -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="水道検針">
+  
+  <!-- Android用メタタグ -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="application-name" content="水道検針">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+  <script>
+    // PWA起動時の即座リダイレクト（DOM読み込み前に実行）
+    (function() {
+      const isPWAMode = window.matchMedia('(display-mode: standalone)').matches || 
+                       window.navigator.standalone === true ||
+                       new URLSearchParams(window.location.search).get('pwa') === 'true';
+      
+      if (isPWAMode) {
+        window.location.replace('/property_select');
+        return; // リダイレクト後は処理を停止
+      }
+    })();
+    
+    let deferredPrompt;
+    let isInstallable = false;
+    
+    // ブラウザ情報をキャッシュ（一度だけ判定）
+    const browserInfo = {
+      isIOS: /iPad|iPhone|iPod/.test(navigator.userAgent),
+      isSafari: /^((?!chrome|android).)*safari/i.test(navigator.userAgent),
+      isChrome: /Chrome/.test(navigator.userAgent),
+      isBrave: /Brave/.test(navigator.userAgent),
+      isEdge: /Edg/.test(navigator.userAgent),
+      isPWAMode: () => window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true
+    };
+    
+    // アイコンSVGテンプレート
+    const iconSVG = `
+      <svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+        <rect width="512" height="512" fill="#1976d2" rx="80"/>
+        <path d="M256 64c-48 64-96 128-96 192 0 53 43 96 96 96s96-43 96-96c0-64-48-128-96-192z" 
+              fill="#ffffff" opacity="0.9"/>
+        <circle cx="256" cy="320" r="80" fill="none" stroke="#ffffff" stroke-width="8" opacity="0.7"/>
+        <line x1="256" y1="320" x2="320" y2="280" stroke="#ffffff" stroke-width="6" stroke-linecap="round"/>
+        <text x="256" y="420" font-family="Arial, sans-serif" font-size="40" font-weight="bold" 
+              text-anchor="middle" fill="#ffffff">検針</text>
+      </svg>
+    `;
+    
+    // 統合されたアイコン生成・マニフェスト更新関数
+    function generateIconsAndManifest() {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+      const svgBlob = new Blob([iconSVG], {type: 'image/svg+xml'});
+      const url = URL.createObjectURL(svgBlob);
+      
+      img.onload = function() {
+        // アイコン生成設定
+        const iconSizes = [
+          {size: 16, rel: 'icon', type: 'image/png'},
+          {size: 32, rel: 'icon', type: 'image/png'},
+          {size: 57, rel: 'apple-touch-icon'},
+          {size: 60, rel: 'apple-touch-icon'},
+          {size: 72, rel: 'apple-touch-icon'},
+          {size: 76, rel: 'apple-touch-icon'},
+          {size: 114, rel: 'apple-touch-icon'},
+          {size: 120, rel: 'apple-touch-icon'},
+          {size: 144, rel: 'apple-touch-icon'},
+          {size: 152, rel: 'apple-touch-icon'},
+          {size: 180, rel: 'apple-touch-icon'},
+          {size: 192, rel: 'icon', type: 'image/png'},
+          {size: 512, rel: 'icon', type: 'image/png'}
+        ];
+        
+        const manifestIcons = [];
+        
+        // アイコンを生成してHTMLヘッダーとマニフェスト用に準備
+        iconSizes.forEach(iconConfig => {
+          canvas.width = iconConfig.size;
+          canvas.height = iconConfig.size;
+          ctx.drawImage(img, 0, 0, iconConfig.size, iconConfig.size);
+          const dataURL = canvas.toDataURL('image/png');
+          
+          // HTMLヘッダー用のリンク要素作成
+          const existingLinks = document.querySelectorAll(`link[rel="${iconConfig.rel}"][sizes="${iconConfig.size}x${iconConfig.size}"]`);
+          existingLinks.forEach(link => link.remove());
+          
+          const link = document.createElement('link');
+          link.rel = iconConfig.rel;
+          link.sizes = `${iconConfig.size}x${iconConfig.size}`;
+          if (iconConfig.type) link.type = iconConfig.type;
+          link.href = dataURL;
+          document.head.appendChild(link);
+          
+          // マニフェスト用アイコンデータ準備
+          if ([72, 96, 128, 144, 152, 192, 384, 512].includes(iconConfig.size)) {
+            if (iconConfig.size === 384) {
+              canvas.width = 384;
+              canvas.height = 384;
+              ctx.drawImage(img, 0, 0, 384, 384);
+              manifestIcons.push({
+                src: canvas.toDataURL('image/png'),
+                sizes: '384x384',
+                type: 'image/png',
+                purpose: 'maskable any'
+              });
+            } else {
+              manifestIcons.push({
+                src: dataURL,
+                sizes: `${iconConfig.size}x${iconConfig.size}`,
+                type: 'image/png',
+                purpose: 'maskable any'
+              });
+            }
+          }
+        });
+        
+        // ファビコン設定
+        const favicon = document.createElement('link');
+        favicon.rel = 'shortcut icon';
+        favicon.type = 'image/png';
+        canvas.width = 32;
+        canvas.height = 32;
+        ctx.drawImage(img, 0, 0, 32, 32);
+        favicon.href = canvas.toDataURL('image/png');
+        document.head.appendChild(favicon);
+        
+        // 動的マニフェストを作成・設定
+        const manifest = {
+          name: '水道検針アプリ',
+          short_name: '水道検針',
+          description: '水道メーター検針用PWAアプリ',
+          start_url: '/?pwa=true',
+          display: 'standalone',
+          background_color: '#ffffff',
+          theme_color: '#1976d2',
+          orientation: 'portrait',
+          scope: '/',
+          lang: 'ja',
+          icons: manifestIcons,
+          categories: ['utilities', 'productivity'],
+          prefer_related_applications: false
+        };
+        
+        const manifestBlob = new Blob([JSON.stringify(manifest)], {type: 'application/json'});
+        const manifestURL = URL.createObjectURL(manifestBlob);
+        
+        let manifestLink = document.querySelector('link[rel="manifest"]');
+        if (!manifestLink) {
+          manifestLink = document.createElement('link');
+          manifestLink.rel = 'manifest';
+          document.head.appendChild(manifestLink);
+        }
+        manifestLink.href = manifestURL;
+        
+        URL.revokeObjectURL(url);
+        console.log('アイコンとマニフェストが統合生成されました');
+      };
+      
+      img.src = url;
+    }
+    
+    // 統合されたPWAモード・インストール状態チェック
+    function checkPWAModeAndInstallability() {
+      // URLパラメータでPWA起動を判定
+      const urlParams = new URLSearchParams(window.location.search);
+      const isPWAFromParam = urlParams.get('pwa') === 'true';
+      
+      // PWAモードで起動されている場合は即座にリダイレクト
+      if (browserInfo.isPWAMode() || isPWAFromParam) {
+        window.location.replace('/property_select');
+        return { isPWAMode: true, shouldShowButton: false };
+      }
+      
+      // インストール可能性をチェック
+      const canInstall = 
+        (browserInfo.isIOS && browserInfo.isSafari) || // iOS Safari
+        isInstallable || // beforeinstallpromptが発火した場合
+        browserInfo.isChrome || browserInfo.isBrave || browserInfo.isEdge; // Chrome系
+      
+      return { isPWAMode: false, shouldShowButton: canInstall };
+    }
+    
+    // 統合された初期化処理
+    function initializePWA() {
+      // アイコンとマニフェストを生成
+      generateIconsAndManifest();
+      
+      // PWAモードチェックとボタン表示判定
+      const { isPWAMode, shouldShowButton } = checkPWAModeAndInstallability();
+      
+      if (!isPWAMode && shouldShowButton) {
+        setTimeout(() => {
+          const installBtn = document.getElementById('install-btn');
+          if (installBtn) {
+            installBtn.style.display = 'block';
+            installBtn.disabled = false;
+            installBtn.textContent = 'PWAをインストール';
+            console.log('インストールボタンを表示しました');
+          }
+        }, 1000);
+      }
+    }
+    
+    // ページ読み込み時に統合初期化実行
+    window.addEventListener('DOMContentLoaded', initializePWA);
+
+    // Chrome/Edge用のbeforeinstallpromptイベント
+    window.addEventListener('beforeinstallprompt', (e) => {
+      console.log('beforeinstallpromptイベントが発火しました');
+      e.preventDefault();
+      deferredPrompt = e;
+      isInstallable = true;
+      
+      // 少し遅延してからボタンを表示
+      setTimeout(() => {
+        showInstallButton();
+      }, 500);
+    });
+
+    // アプリがインストールされた時のイベント
+    window.addEventListener('appinstalled', (e) => {
+      console.log('PWAがインストールされました');
+      const installBtn = document.getElementById('install-btn');
+      if (installBtn) {
+        installBtn.style.display = 'none';
+      }
+      showInstallSuccess();
+      deferredPrompt = null;
+    });
+
+    // PWAがすでにインストールされているかチェック（統合）
+    function isPWAInstalled() {
+      return browserInfo.isPWAMode();
+    }
+
+    // インストール可能かチェック（簡略化版）
+    function checkInstallability() {
+      return !isPWAInstalled() && (
+        (browserInfo.isIOS && browserInfo.isSafari) ||
+        isInstallable ||
+        browserInfo.isChrome || browserInfo.isBrave || browserInfo.isEdge
+      );
+    }
+
+    function showInstallButton() {
+      if (checkInstallability()) {
+        const installBtn = document.getElementById('install-btn');
+        if (installBtn) {
+          installBtn.style.display = 'block';
+          installBtn.disabled = false;
+          installBtn.textContent = 'PWAをインストール';
+          console.log('インストールボタンを表示しました');
+        }
+      }
+    }
+
+    function installPWA() {
+      console.log('インストール開始:', { 
+        deferredPrompt: !!deferredPrompt, 
+        isIOS: browserInfo.isIOS, 
+        isSafari: browserInfo.isSafari, 
+        isChrome: browserInfo.isChrome 
+      });
+      
+      if (browserInfo.isIOS && browserInfo.isSafari) {
+        showIOSInstallInstructions();
+      } else if (deferredPrompt) {
+        // Chrome/Edge/Brave用の自動インストール（beforeinstallpromptが発火した場合）
+        console.log('deferredPrompt.prompt()を実行中...');
+        
+        // ボタンを無効化してダブルクリックを防止
+        const installBtn = document.getElementById('install-btn');
+        if (installBtn) {
+          installBtn.disabled = true;
+          installBtn.textContent = 'インストール中...';
+        }
+        
+        try {
+          deferredPrompt.prompt();
+          
+          deferredPrompt.userChoice.then((choiceResult) => {
+            console.log('ユーザーの選択:', choiceResult.outcome);
+            
+            if (choiceResult.outcome === 'accepted') {
+              console.log('インストールが承認されました');
+              if (installBtn) {
+                installBtn.style.display = 'none';
+              }
+              showInstallSuccess();
+            } else {
+              console.log('インストールが拒否されました');
+              // ボタンを元に戻す
+              if (installBtn) {
+                installBtn.disabled = false;
+                installBtn.textContent = 'PWAをインストール';
+              }
+            }
+            
+            deferredPrompt = null;
+          }).catch((error) => {
+            console.error('インストールエラー:', error);
+            // ボタンを元に戻す
+            if (installBtn) {
+              installBtn.disabled = false;
+              installBtn.textContent = 'PWAをインストール';
+            }
+            // エラーの場合は手動インストール手順を表示
+            showChromeInstallInstructions();
+          });
+          
+        } catch (error) {
+          console.error('prompt()実行エラー:', error);
+          // ボタンを元に戻す
+          if (installBtn) {
+            installBtn.disabled = false;
+            installBtn.textContent = 'PWAをインストール';
+          }
+          // エラーの場合は手動インストール手順を表示
+          showChromeInstallInstructions();
+        }
+        
+      } else if (browserInfo.isChrome || browserInfo.isBrave || browserInfo.isEdge) {
+        // Chrome系ブラウザでbeforeinstallpromptが発火しない場合
+        console.log('beforeinstallpromptが利用できないため手動インストール手順を表示');
+        showChromeInstallInstructions();
+      } else {
+        // その他のブラウザ用の手動インストール説明
+        console.log('その他ブラウザ用の手動インストール手順を表示');
+        showManualInstallInstructions();
+      }
+    }
+
+    function showIOSInstallInstructions() {
+      const instructions = document.createElement('div');
+      instructions.id = 'install-instructions';
+      instructions.innerHTML = `
+        <div style="background: #f5f5f5; padding: 16px; border-radius: 8px; margin-top: 16px;">
+          <h3 style="margin-top: 0;">iOSでのインストール方法</h3>
+          <ol style="text-align: left; margin: 0;">
+            <li>画面下部の共有ボタン <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"/></svg> をタップ</li>
+            <li>「ホーム画面に追加」を選択</li>
+            <li>「追加」をタップして完了</li>
+          </ol>
+          <p style="font-size: 0.9em; color: #666; margin-top: 8px;">
+            インストール後、ホーム画面のアイコンから起動すると物件一覧画面に直接移動します。<br>
+            <strong>アイコンは自動で設定されます。</strong>
+          </p>
+          <button onclick="closeInstructions()" style="margin-top: 12px; padding: 8px 16px; background: #1976d2; color: white; border: none; border-radius: 4px;">閉じる</button>
+        </div>
+      `;
+      document.querySelector('.container').appendChild(instructions);
+    }
+
+    function showManualInstallInstructions() {
+      const instructions = document.createElement('div');
+      instructions.id = 'install-instructions';
+      instructions.innerHTML = `
+        <div style="background: #f5f5f5; padding: 16px; border-radius: 8px; margin-top: 16px;">
+          <h3 style="margin-top: 0;">手動インストール方法</h3>
+          <p style="text-align: left; margin: 0;">ブラウザのメニューから「ホーム画面に追加」または「アプリをインストール」を選択してください。</p>
+          <p style="font-size: 0.9em; color: #666; margin-top: 8px;">
+            インストール後、ホーム画面のアイコンから起動すると物件一覧画面に直接移動します。<br>
+            <strong>アイコンは自動で設定されます。</strong>
+          </p>
+          <button onclick="closeInstructions()" style="margin-top: 12px; padding: 8px 16px; background: #1976d2; color: white; border: none; border-radius: 4px;">閉じる</button>
+        </div>
+      `;
+      document.querySelector('.container').appendChild(instructions);
+    }
+
+    function showChromeInstallInstructions() {
+      const instructions = document.createElement('div');
+      instructions.id = 'install-instructions';
+      instructions.innerHTML = `
+        <div style="background: #f5f5f5; padding: 16px; border-radius: 8px; margin-top: 16px;">
+          <h3 style="margin-top: 0;">Chrome/Braveでのインストール方法</h3>
+          <ol style="text-align: left; margin: 0;">
+            <li>アドレスバー右端のインストールアイコン 📱 をクリック<br>
+                <small style="color: #666;">（または右上の ⋮ メニュー → 「アプリをインストール」）</small></li>
+            <li>「インストール」をクリック</li>
+            <li>インストール完了</li>
+          </ol>
+          <p style="font-size: 0.9em; color: #666; margin-top: 8px;">
+            <strong>ヒント:</strong> アドレスバーにインストールアイコンが表示されない場合は、<br>
+            ページを再読み込みしてから少し待ってみてください。<br>
+            または、Ctrl+Shift+I でデベロッパーツールを開き、Console タブで<br>
+            エラーがないか確認してください。<br>
+            <strong>アイコンは自動で設定されます。</strong>
+          </p>
+          <div style="margin-top: 12px;">
+            <button onclick="retryInstall()" style="padding: 8px 16px; background: #4caf50; color: white; border: none; border-radius: 4px; margin-right: 8px;">再試行</button>
+            <button onclick="closeInstructions()" style="padding: 8px 16px; background: #1976d2; color: white; border: none; border-radius: 4px;">閉じる</button>
+          </div>
+        </div>
+      `;
+      document.querySelector('.container').appendChild(instructions);
+    }
+
+    // インストールの再試行（最適化版）
+    function retryInstall() {
+      console.log('インストールを再試行中...');
+      closeInstructions();
+      
+      setTimeout(() => {
+        if (deferredPrompt) {
+          installPWA();
+        } else {
+          alert('自動インストールが利用できません。ブラウザのメニューから手動でインストールしてください。');
+        }
+      }, 1000);
+    }
+
+    function showInstallSuccess() {
+      const msg = document.createElement('div');
+      msg.innerHTML = 'インストールが完了しました。<br>ホーム画面からアプリを起動すると物件一覧画面に移動します。';
+      msg.style.marginTop = '24px';
+      msg.style.color = '#1976d2';
+      msg.style.fontWeight = 'bold';
+      document.querySelector('.container').appendChild(msg);
+    }
+
+    function closeInstructions() {
+      const instructions = document.getElementById('install-instructions');
+      if (instructions) {
+        instructions.remove();
+      }
+    }
+
+    // ページ表示時の追加チェック（最適化版）
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) {
+        setTimeout(() => {
+          // URLパラメータも含めたPWAモードチェック
+          const urlParams = new URLSearchParams(window.location.search);
+          const isPWAFromParam = urlParams.get('pwa') === 'true';
+          
+          if (browserInfo.isPWAMode() || isPWAFromParam) {
+            window.location.replace('/property_select');
+          }
+        }, 100);
+      }
+    });
+  </script>
+</head>
+<body>
+  <div class="container">
+    <h1>水道検針アプリ</h1>
+    <p>このアプリはPWAとしてインストールできます。</p>
+    <button id="install-btn" style="display:none;" onclick="installPWA()">PWAをインストール</button>
+  </div>
+  <script>
+    // サービスワーカー登録
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('/service-worker.js');
+      });
+    }
+  </script>
+</body>
+</html>
