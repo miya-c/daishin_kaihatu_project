@@ -1,8 +1,0 @@
-<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="512" height="512" fill="#007bff"/>
-  <g transform="translate(102.4, 102.4)">
-    <circle cx="153.6" cy="153.6" r="128" fill="white" stroke="white" stroke-width="3"/>
-    <path d="M76.8 153.6 L230.4 153.6 M153.6 76.8 L153.6 230.4" stroke="#007bff" stroke-width="4" stroke-linecap="round"/>
-    <text x="153.6" y="281.6" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="61.44" font-weight="bold">H₂O</text>
-  </g>
-</svg>
