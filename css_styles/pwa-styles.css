@@ -1,0 +1,293 @@
+/* PWA Specific Styles */
+/* Progressive Web App support styles for the water meter reading application */
+
+:root {
+  --pwa-styles-loaded: 'true';
+  --pwa-install-bottom: 20px;
+  --pwa-install-right: 20px;
+}
+
+/* PWA installed state styling */
+body.pwa-installed {
+  /* Hide browser UI elements when installed as PWA */
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* Install button styling */
+#pwa-install-button {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 1000;
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 25px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  display: none;
+  transition: all 0.3s ease;
+}
+
+#pwa-install-button:hover {
+  background: #0056b3;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+}
+
+#pwa-install-button:active {
+  transform: translateY(0);
+}
+
+/* Additional styling for dynamically created install button */
+.pwa-install-btn {
+  position: fixed !important;
+  bottom: 20px !important;
+  right: 20px !important;
+  z-index: 1000 !important;
+  border-radius: 25px !important;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2) !important;
+  display: none !important;
+}
+
+/* Network status notification */
+#network-status {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1002;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: bold;
+  text-align: center;
+  min-width: 200px;
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* PWA splash screen styles */
+.pwa-splash-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #007bff, #0056b3);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  color: white;
+}
+
+.pwa-splash-logo {
+  width: 120px;
+  height: 120px;
+  background: white;
+  border-radius: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+.pwa-splash-title {
+  font-size: 24px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.pwa-splash-subtitle {
+  font-size: 16px;
+  opacity: 0.8;
+}
+
+/* Offline indicator */
+.offline-indicator {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: #ffc107;
+  color: #212529;
+  text-align: center;
+  padding: 8px;
+  font-weight: 500;
+  z-index: 1001;
+  transform: translateY(-100%);
+  transition: transform 0.3s ease;
+}
+
+.offline-indicator.show {
+  transform: translateY(0);
+}
+
+/* Update available notification */
+.update-notification {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  right: 20px;
+  background: #28a745;
+  color: white;
+  padding: 16px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  z-index: 1003;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.update-notification button {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.update-notification button:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* PWA specific media queries */
+@media (display-mode: standalone) {
+  /* Styles applied when app is installed and running in standalone mode */
+  body {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  /* Hide install button when already installed */
+  #pwa-install-button {
+    display: none !important;
+  }
+}
+
+@media (display-mode: minimal-ui) {
+  /* Styles for minimal UI mode */
+  body {
+    padding-top: 20px;
+  }
+}
+
+/* iOS specific PWA styles */
+@supports (-webkit-touch-callout: none) {
+  /* iOS Safari specific styles */
+  .pwa-ios-safe-area {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* Dark mode support for PWA elements */
+@media (prefers-color-scheme: dark) {
+  #pwa-install-button {
+    background: #0d6efd;
+  }
+  
+  #pwa-install-button:hover {
+    background: #0b5ed7;
+  }
+  
+  .pwa-splash-screen {
+    background: linear-gradient(135deg, #1a1a1a, #333);
+  }
+  
+  .offline-indicator {
+    background: #856404;
+    color: #fff3cd;
+  }
+}
+
+/* Responsive design for PWA elements */
+@media (max-width: 768px) {
+  #pwa-install-button {
+    bottom: 10px;
+    right: 10px;
+    padding: 10px 16px;
+    font-size: 13px;
+  }
+  
+  #network-status {
+    left: 10px;
+    right: 10px;
+    transform: none;
+    width: auto;
+  }
+  
+  .update-notification {
+    left: 10px;
+    right: 10px;
+  }
+}
+
+/* Animation for PWA state changes */
+.pwa-transition {
+  transition: all 0.3s ease;
+}
+
+/* Loading states for offline content */
+.pwa-loading {
+  position: relative;
+  opacity: 0.6;
+}
+
+.pwa-loading::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent,
+    transparent 35px,
+    rgba(255, 255, 255, 0.3) 35px,
+    rgba(255, 255, 255, 0.3) 70px
+  );
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
