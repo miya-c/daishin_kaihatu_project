@@ -443,7 +443,7 @@
       const [isFetched, setIsFetched] = React.useState(false); // ← 追加
       const [isNavigating, setIsNavigating] = React.useState(false);
       const [navigationMessage, setNavigationMessage] = React.useState('');
-      const gasWebAppUrl = 'https://script.google.com/macros/s/AKfycbxo-Zij6If9eSFO-hB2bC_mvYtEGFxaUdwsngqGKcygh2GTHWqHPDrdHSJVC_JTpq2KSw/exec';
+      const gasWebAppUrl = 'https://script.google.com/macros/s/AKfycbw7Yxs4h5vpqIC11Qd4i3bKDBW_aA53P84awbdIJTn6ZGVO011j0hr0UH63tlDig5J_Tw/exec';
 
       // ページ復元時のローディング強制解除
       React.useEffect(() => {
@@ -883,10 +883,8 @@
           
           const targetUrl = `/room_select?propertyId=${encodeURIComponent(property.id)}`;
           console.log(`[ReactApp] Redirecting to: ${targetUrl}`);
-          // 短い遅延の後に画面遷移
-          setTimeout(() => {
-            window.location.href = targetUrl;
-          }, 300);
+          // 即座に画面遷移
+          window.location.href = targetUrl;
         } catch (error) {
           console.error('[ReactApp] Error fetching rooms or navigating:', error);
           
@@ -909,9 +907,8 @@
             
             const targetUrl = `/room_select?propertyId=${encodeURIComponent(property.id)}`;
             console.log(`[ReactApp] エラー時でも画面遷移: ${targetUrl}`);
-            setTimeout(() => {
-              window.location.href = targetUrl;
-            }, 300);
+            // 即座に画面遷移
+            window.location.href = targetUrl;
           } else {
             setError(`部屋情報の処理中にエラーが発生しました: ${error.message}`);
             setIsNavigating(false);
@@ -1371,9 +1368,7 @@
       hideLoadingOnPageShow();
       
       // React側にイベント通知
-      setTimeout(() => {
-        window.dispatchEvent(new CustomEvent('forceHideLoading'));
-      }, 100);
+      window.dispatchEvent(new CustomEvent('forceHideLoading'));
     });
   </script>
 </body>

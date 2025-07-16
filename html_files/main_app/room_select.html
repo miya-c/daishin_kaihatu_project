@@ -92,7 +92,8 @@
         if (!gasWebAppUrl) {
             showError('Web App URLが設定されていません。物件選択画面から再度アクセスしてください。');
             document.getElementById('loading').innerHTML = '<div class="loading-spinner"></div><p class="loading-text">Web App URLが設定されていません</p>';
-            setTimeout(() => window.location.href = '/property_select', 3000);
+            // 即座に画面遷移
+            window.location.href = '/property_select';
         } else {
             // URLパラメータから物件IDを取得
             const urlParams = new URLSearchParams(window.location.search);
@@ -110,7 +111,8 @@
                     window.location.href = '/property_select';
                 } else {
                     document.getElementById('loading').innerHTML = '<div class="loading-spinner"></div><p class="loading-text">物件IDが指定されていません</p>';
-                    setTimeout(() => window.location.href = '/property_select', 3000);
+                    // 即座に画面遷移
+                    window.location.href = '/property_select';
                 }
             } else {
                 console.log('[room_select] 物件ID確認完了:', propertyId);

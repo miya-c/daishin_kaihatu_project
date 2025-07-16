@@ -1,0 +1,11 @@
+<svg width="750" height="1334" viewBox="0 0 750 1334" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="750" height="1334" fill="#f0f4f8"/>
+  <g transform="translate(275, 567)">
+    <circle cx="100" cy="100" r="80" fill="#007bff"/>
+    <circle cx="100" cy="100" r="60" fill="white" stroke="#007bff" stroke-width="4"/>
+    <path d="M60 100 L140 100 M100 60 L100 140" stroke="#007bff" stroke-width="6" stroke-linecap="round"/>
+    <text x="100" y="160" text-anchor="middle" fill="#007bff" font-family="Arial, sans-serif" font-size="24" font-weight="bold">H₂O</text>
+  </g>
+  <text x="375" y="800" text-anchor="middle" fill="#007bff" font-family="Arial, sans-serif" font-size="32" font-weight="bold">水道検針アプリ</text>
+  <text x="375" y="850" text-anchor="middle" fill="#6c757d" font-family="Arial, sans-serif" font-size="18">読み込み中...</text>
+</svg>
