@@ -1,0 +1,14 @@
+# Cloudflare Pages Redirects for Water Meter Reading App
+# Legacy path redirects to new structure
+
+/html_files/main_app/property_select.html   /property_select.html   301
+/html_files/main_app/room_select.html       /room_select.html       301  
+/html_files/main_app/meter_reading.html     /meter_reading.html     301
+
+# Clean URL support (optional)
+/property_select    /property_select.html   301
+/room_select        /room_select.html       301
+/meter_reading      /meter_reading.html     301
+
+# SPA fallback for client-side routing
+/*    /index.html   200

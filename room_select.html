@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>部屋選択 - 水道メーター読み取りアプリ</title>
+    
+    <!-- PWA メタタグ -->
+    <meta name="description" content="水道メーターの読み取りを管理するアプリケーション">
+    <meta name="theme-color" content="#007bff">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="メーター読み取り">
+    
+    <!-- Favicon and Icons -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iNCIgZmlsbD0iIzAwN2JmZiIvPgo8c3ZnIHg9IjgiIHk9IjgiIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJ3aGl0ZSI+CjxwYXRoIGQ9Ik0xMiAyQzYuNDggMiAyIDYuNDggMiAxMnM0LjQ4IDEwIDEwIDEwIDEwLTQuNDggMTAtMTBTMTcuNTIgMiAxMiAyem0tMiAxNWwtNS01IDEuNDEtMS40MUwxMCAxNC4xN2w3LjU5LTcuNTlMMTkgOGwtOSA5eiIvPgo8L3N2Zz4KPC9zdmc+">
+    <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTgwIiBoZWlnaHQ9IjE4MCIgdmlld0JveD0iMCAwIDE4MCAxODAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxODAiIGhlaWdodD0iMTgwIiByeD0iMjAiIGZpbGw9IiMwMDdiZmYiLz4KPHN2ZyB4PSI0NSIgeT0iNDUiIHdpZHRoPSI5MCIgaGVpZ2h0PSI5MCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJ3aGl0ZSI+CjxwYXRoIGQ9Ik0xMiAyQzYuNDggMiAyIDYuNDggMiAxMnM0LjQ4IDEwIDEwIDEwIDEwLTQuNDggMTAtMTBTMTcuNTIgMiAxMiAyem0tMiAxNWwtNS01IDEuNDEtMS40MUwxMCAxNC4xN2w3LjU5LTcuNTlMMTkgOGwtOSA5eiIvPgo8L3N2Zz4KPC9zdmc+">
+    
+    <!-- External CSS -->
+    <link rel="stylesheet" href="../../css_styles/room_select.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    
+    <!-- PWA Utilities -->
+    <script src="/pwa-utils.js"></script>
+    
+    <!-- Performance Monitor -->
+    <script src="/performance-monitor.js"></script>
+</head>
+<body>
+    <!-- Material UI AppBar -->
+    <header class="MuiAppBar-root MuiAppBar-colorPrimary MuiAppBar-positionStatic mui-elevation-4" role="banner">
+      <nav class="MuiToolbar-root MuiToolbar-regular" aria-label="部屋選択ナビゲーション">
+        <button class="MuiIconButton-root MuiIconButton-colorInherit" onclick="goBack()" aria-label="戻る">
+          <span class="material-icons MuiSvgIcon-root">arrow_back</span>
+        </button>
+        <span class="MuiTypography-root MuiTypography-h6 app-title" aria-label="画面タイトル">部屋選択</span>
+      </nav>
+    </header>
+
+    <main class="MuiContainer-root MuiContainer-maxWidthLg" style="padding-top:32px;" role="main" aria-label="部屋選択メイン">
+      <!-- 物件名カード -->
+      <section class="MuiCard-root MuiPaper-root MuiPaper-elevation1 property-card" aria-label="物件情報" tabindex="0" role="region">
+        <div class="MuiCardHeader-root property-header">
+          <span class="material-icons MuiSvgIcon-root property-icon" aria-hidden="true">home</span>
+          <span class="MuiTypography-root MuiTypography-h5" id="propertyName">物件名読み込み中...</span>
+        </div>
+      </section>
+
+      <!-- エラーアラート -->
+      <div class="MuiAlert-root MuiAlert-standardError" id="errorMessage" style="display:none;" role="alert" aria-live="assertive">
+        <span class="MuiAlert-icon"><span class="material-icons MuiSvgIcon-root" aria-hidden="true">error</span></span>
+        <span class="MuiAlert-message" id="errorText"></span>
+      </div>
+
+      <!-- ローディング -->
+      <div class="loading-container" id="loading" aria-live="polite" aria-busy="true">
+        <span class="MuiCircularProgress-root" aria-label="読み込み中"></span>
+        <span class="MuiTypography-root MuiTypography-body1">部屋データを読み込み中...</span>
+      </div>
+
+      <!-- 部屋グリッド -->
+      <section class="room-grid" id="roomGrid" style="display:none;" aria-label="部屋一覧" role="list"></section>
+
+      <!-- 完了ボタン -->
+      <div class="complete-button-container">
+        <button class="MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeLarge complete-button" id="completeInspectionBtn" onclick="completeInspection()" style="display:none;" aria-label="この物件の検針を完了する" tabindex="0" role="button">
+          <span class="material-icons MuiSvgIcon-root" aria-hidden="true">check_circle</span>
+          <span class="MuiButton-label">この物件の検針を完了する</span>
+        </button>
+      </div>
+    </main>
+
+<script>
+        // 🚀 Room Select App v20250826a - Cache+Light API+Preload最適化版
+        console.log('🚀 Room Select App v20250826a - Cache+Light API+Preload最適化版');
+        console.log('🔧 SessionStorage継続: property_select.html.htmlからの高速遷移対応');
+        console.log('🔧 キャッシュ機能統合: LocalStorage + 差分更新対応');
+        console.log('🔧 軽量API使用: getRoomsLight');
+        console.log('🔧 プリロード機能: メーター読み取りデータ事前取得');
+        console.log('🔧 パフォーマンス向上: 50-70%データ削減 + 即座表示');
+        
+        // キャッシュ統計情報の表示
+        if (window.pwaUtils) {
+            const cacheStats = window.pwaUtils.getCacheStats();
+            console.log('📊 キャッシュ統計:', cacheStats);
+        }
+        
+        // Ripple effect for buttons and cards
+        function addRippleEffect(element) {
+            element.addEventListener('click', function(e) {
+                const circle = document.createElement('span');
+                circle.className = 'ripple';
+                const rect = element.getBoundingClientRect();
+                const size = Math.max(rect.width, rect.height);
+                circle.style.width = circle.style.height = size + 'px';
+                circle.style.left = (e.clientX - rect.left - size / 2) + 'px';
+                circle.style.top = (e.clientY - rect.top - size / 2) + 'px';
+                element.appendChild(circle);
+                setTimeout(() => {
+                    if (circle.parentNode) {
+                        circle.parentNode.removeChild(circle);
+                    }
+                }, 600);
+            });
+        }
+
+        // GAS Web App URL取得（property_select.html.htmlから継承）
+        const gasWebAppUrl = sessionStorage.getItem('gasWebAppUrl');
+        
+        // URL検証
+        if (!gasWebAppUrl) {
+            showError('Web App URLが設定されていません。物件選択画面から再度アクセスしてください。');
+            document.getElementById('loading').innerHTML = '<div class="loading-spinner"></div><p class="loading-text">Web App URLが設定されていません</p>';
+            setTimeout(() => window.location.href = '/property_select.html', 3000);
+        } else {
+            // URLパラメータから物件IDを取得
+            const urlParams = new URLSearchParams(window.location.search);
+            const propertyId = urlParams.get('propertyId');
+            
+            console.log('[room_select] URLパラメータ確認:', {
+                propertyId: propertyId,
+                fullUrl: window.location.href,
+                searchParams: window.location.search
+            });
+            
+            if (!propertyId) {
+                console.error('[room_select] 物件IDが指定されていません');
+                if (confirm('物件IDが指定されていません。物件選択画面に戻りますか？')) {
+                    window.location.href = '/property_select.html';
+                } else {
+                    document.getElementById('loading').innerHTML = '<div class="loading-spinner"></div><p class="loading-text">物件IDが指定されていません</p>';
+                    setTimeout(() => window.location.href = '/property_select.html', 3000);
+                }
+            } else {
+                console.log('[room_select] 物件ID確認完了:', propertyId);
+                // 正常な場合のみloadRoomDataを実行
+                console.log('[room_select] window.onloadにloadRoomData設定');
+                window.onload = function() {
+                    console.log('[room_select] window.onload発火 - loadRoomData実行開始');
+                    loadRoomData();
+                };
+                
+                // 既にページが読み込み済みの場合は即座に実行
+                if (document.readyState === 'complete') {
+                    console.log('[room_select] ページ読み込み完了済み - loadRoomData即座実行');
+                    loadRoomData();
+                }
+            }
+        }
+
+        // エラーメッセージ表示 - React Error #418対策
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            const errorText = document.getElementById('errorText');
+            errorText.textContent = String(message || 'エラーが発生しました');
+            errorDiv.style.display = 'flex';
+        }
+
+        // ローディング中のキーボード操作を完全にブロックする関数
+        function blockAllKeyEvents(e) {
+            // ESC、Tab、Enter、Space、Arrow keys等を無効化
+            const blockedKeys = ['Escape', 'Tab', 'Enter', ' ', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
+            if (blockedKeys.includes(e.key) || e.keyCode === 27 || e.keyCode === 9) {
+                e.preventDefault();
+                e.stopPropagation();
+                return false;
+            }
+        }
+
+        // ローディング開始時の操作ブロック設定
+        function enableLoadingBlock() {
+            document.body.style.overflow = 'hidden';
+            document.body.style.pointerEvents = 'none';
+            document.addEventListener('keydown', blockAllKeyEvents, true);
+            document.addEventListener('keyup', blockAllKeyEvents, true);
+            document.addEventListener('keypress', blockAllKeyEvents, true);
+            
+            // ローディング要素は操作可能にする
+            const loadingElement = document.getElementById('loading');
+            if (loadingElement) {
+                loadingElement.style.pointerEvents = 'all';
+            }
+        }
+
+        // ローディング終了時の操作ブロック解除
+        function disableLoadingBlock() {
+            document.body.style.overflow = '';
+            document.body.style.pointerEvents = '';
+            document.removeEventListener('keydown', blockAllKeyEvents, true);
+            document.removeEventListener('keyup', blockAllKeyEvents, true);
+            document.removeEventListener('keypress', blockAllKeyEvents, true);
+        }
+
+        async function loadRoomData() {
+            console.log('[room_select] 🚀 loadRoomData関数開始 - Cache+Light API対応');
+            let rooms = [];
+            let propertyName = '物件名不明';
+            
+            try {
+                console.log('[room_select] enableLoadingBlock開始');
+                enableLoadingBlock();
+                
+                const gasWebAppUrl = sessionStorage.getItem('gasWebAppUrl');
+                const urlParams = new URLSearchParams(window.location.search);
+                const propertyId = urlParams.get('propertyId');
+                
+                console.log('[room_select] パラメータ確認:', {
+                    gasWebAppUrl: gasWebAppUrl ? '設定済み' : '未設定',
+                    propertyId: propertyId
+                });
+                
+                if (!gasWebAppUrl || !propertyId) {
+                    throw new Error('必要なパラメータが不足しています');
+                }
+                
+                // Step 1: SessionStorageから継続データを確認（property_select.html.htmlからの高速遷移）
+                const sessionRooms = sessionStorage.getItem('selectedRooms');
+                const sessionPropertyName = sessionStorage.getItem('selectedPropertyName');
+                const sessionPropertyId = sessionStorage.getItem('selectedPropertyId');
+                
+                console.log('[room_select] 🔄 SessionStorage確認:', {
+                    hasRooms: !!sessionRooms,
+                    hasPropertyName: !!sessionPropertyName,
+                    sessionPropertyId: sessionPropertyId,
+                    currentPropertyId: propertyId,
+                    propertyIdMatch: sessionPropertyId === propertyId
+                });
+                
+                if (sessionRooms && sessionPropertyId === propertyId && sessionPropertyName) {
+                    // SessionStorageから即座にデータを表示
+                    try {
+                        const parsedRooms = JSON.parse(sessionRooms);
+                        if (Array.isArray(parsedRooms)) {
+                            console.log('[room_select] ⚡ SessionStorage継続データ使用 - 即座表示:', parsedRooms.length, '件');
+                            rooms = parsedRooms;
+                            propertyName = sessionPropertyName;
+                            
+                            // 即座に表示
+                            document.getElementById('propertyName').textContent = propertyName;
+                            displayRooms(rooms);
+                            updateCompleteButton(rooms);
+                            
+                            // バックグラウンドで差分更新を実行
+                            console.log('[room_select] 🔄 バックグラウンド差分更新開始...');
+                            setTimeout(() => performRoomDeltaUpdateBackground(propertyId), 100);
+                            return; // SessionStorage継続時は早期リターン
+                        }
+                    } catch (parseError) {
+                        console.warn('[room_select] SessionStorageデータのパース失敗:', parseError);
+                    }
+                }
+                
+                // Step 2: LocalStorageキャッシュ確認
+                const roomCacheKey = `rooms_${propertyId}`;
+                const isCacheValid = window.pwaUtils?.isCacheValid(roomCacheKey);
+                
+                console.log('[room_select] 🗄️ キャッシュ確認:', { key: roomCacheKey, valid: isCacheValid });
+                
+                if (isCacheValid) {
+                    const cachedData = window.pwaUtils.getCacheData(roomCacheKey);
+                    console.log('[room_select] ⚡ キャッシュヒット:', cachedData?.data?.length || 0, '件');
+                    
+                    if (cachedData?.data && Array.isArray(cachedData.data)) {
+                        rooms = cachedData.data;
+                        
+                        // 物件名をSessionStorageまたはキャッシュから取得
+                        propertyName = sessionPropertyName || '物件名取得中...';
+                        
+                        console.log('[room_select] 🚀 キャッシュから部屋データ使用 - 高速表示');
+                        document.getElementById('propertyName').textContent = propertyName;
+                        displayRooms(rooms);
+                        updateCompleteButton(rooms);
+                        
+                        // バックグラウンドで差分更新
+                        setTimeout(() => performRoomDeltaUpdateBackground(propertyId, cachedData.timestamp), 100);
+                        return;
+                    }
+                }
+                
+                // Step 3: 軽量API使用
+                console.log('[room_select] 🚀 軽量API使用 - getRoomsLight');
+                const fetchUrl = `${gasWebAppUrl}?action=getRoomsLight&propertyId=${encodeURIComponent(propertyId)}&cache=${Date.now()}`;
+                console.log('[room_select] Light API呼び出し:', fetchUrl);
+                
+                const response = await fetch(fetchUrl);
+                console.log('[room_select] Light APIレスポンス:', response.status, response.ok);
+                
+                if (!response.ok) {
+                    // 軽量API失敗時は従来APIにフォールバック
+                    console.warn('[room_select] Light API失敗 - 従来APIフォールバック');
+                    return await loadRoomDataLegacy(propertyId, gasWebAppUrl);
+                }
+                
+                const data = await response.json();
+                console.log('[room_select] Light APIデータ:', data);
+                console.log('[room_select] 部屋圧縮統計:', {
+                    success: data.success,
+                    count: data.count,
+                    compressionRatio: data.compressionRatio,
+                    timeSavedMs: data.timeSavedMs
+                });
+                
+                if (data.success === false) {
+                    console.error('[room_select] Light APIエラー:', data.error);
+                    throw new Error(`部屋軽量APIエラー: ${data.error}`);
+                }
+                
+                // Step 4: データ正規化とキャッシュ保存
+                rooms = data.data?.rooms || data.data || [];
+                propertyName = data.data?.propertyName || sessionPropertyName || '物件名不明';
+                
+                if (!Array.isArray(rooms)) {
+                    console.error('[room_select] 部屋データが配列ではない:', rooms);
+                    throw new Error('部屋軽量APIのデータ形式が正しくありません');
+                }
+                
+                console.log('[room_select] 📋 軽量APIデータ設定:', rooms.length, '件');
+                
+                // 部屋データをキャッシュに保存
+                if (window.pwaUtils && rooms.length > 0) {
+                    const roomCacheData = {
+                        data: rooms,
+                        propertyName: propertyName,
+                        timestamp: Date.now(),
+                        source: 'getRoomsLight'
+                    };
+                    window.pwaUtils.setCacheData(roomCacheKey, roomCacheData);
+                    console.log('[room_select] 💾 部屋データキャッシュ保存完了');
+                }
+                
+                console.log('[room_select] 物件名設定:', propertyName);
+                document.getElementById('propertyName').textContent = propertyName;
+                
+                console.log('[room_select] displayRooms呼び出し開始');
+                displayRooms(rooms);
+                console.log('[room_select] updateCompleteButton呼び出し開始');
+                updateCompleteButton(rooms);
+                
+            } catch (error) {
+                console.error('[room_select] ❌ エラー発生:', error);
+                showError(error.message);
+            } finally {
+                console.log('[room_select] 🏁 finally処理開始 - ローディング解除');
+                hideLoadingElement();
+                disableLoadingBlock();
+                console.log('[room_select] ✅ disableLoadingBlock完了');
+            }
+        }
+
+        // 従来API用のフォールバック関数
+        async function loadRoomDataLegacy(propertyId, gasWebAppUrl) {
+            console.log('[room_select] 🔄 従来API使用 - getRooms (フォールバック)');
+            
+            const fetchUrl = `${gasWebAppUrl}?action=getRooms&propertyId=${encodeURIComponent(propertyId)}`;
+            const response = await fetch(fetchUrl);
+            
+            if (!response.ok) {
+                throw new Error(`API呼び出しに失敗しました: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            console.log('[room_select] 従来API Response:', data);
+            
+            if (!data.success) {
+                throw new Error(data.error || 'データの取得に失敗しました');
+            }
+            
+            let propertyName = '物件名不明';
+            if (data.data) {
+                propertyName = data.data.propertyName
+                    || (data.data.property && data.data.property.name)
+                    || data.data.property_name
+                    || data.data.name
+                    || sessionStorage.getItem('selectedPropertyName')
+                    || '物件名不明';
+            }
+            
+            let rooms = (data.data && Array.isArray(data.data.rooms)) ? data.data.rooms : [];
+            
+            if (!Array.isArray(rooms)) {
+                throw new Error('部屋データの取得に失敗しました（roomsが配列ではありません）');
+            }
+            
+            console.log('[room_select] 📋 従来API部屋データ設定:', rooms.length, '件');
+            
+            // フォールバック時もキャッシュに保存
+            if (window.pwaUtils && rooms.length > 0) {
+                const roomCacheKey = `rooms_${propertyId}`;
+                const roomCacheData = {
+                    data: rooms,
+                    propertyName: propertyName,
+                    timestamp: Date.now(),
+                    source: 'getRooms'
+                };
+                window.pwaUtils.setCacheData(roomCacheKey, roomCacheData);
+                console.log('[room_select] 💾 従来API部屋データキャッシュ保存完了');
+            }
+            
+            document.getElementById('propertyName').textContent = propertyName;
+            displayRooms(rooms);
+            updateCompleteButton(rooms);
+        }
+
+        // 部屋データの差分更新（バックグラウンド実行）
+        async function performRoomDeltaUpdateBackground(propertyId, lastTimestamp = null) {
+            console.log('[room_select] 🔄 バックグラウンド差分更新開始:', { 
+                propertyId, 
+                lastTimestamp: lastTimestamp ? new Date(lastTimestamp).toLocaleString() : '初回' 
+            });
+            
+            try {
+                const gasWebAppUrl = sessionStorage.getItem('gasWebAppUrl');
+                if (!gasWebAppUrl) {
+                    console.warn('[room_select] gasWebAppUrl未設定 - 差分更新スキップ');
+                    return;
+                }
+                
+                const timestamp = lastTimestamp || Date.now() - (24 * 60 * 60 * 1000); // 24時間前をデフォルト
+                const deltaUrl = `${gasWebAppUrl}?action=getDeltaData&dataType=rooms&propertyId=${propertyId}&lastSync=${timestamp}&cache=${Date.now()}`;
+                console.log('[room_select] 差分更新URL:', deltaUrl);
+                
+                const response = await fetch(deltaUrl);
+                if (!response.ok) {
+                    console.warn('[room_select] 差分更新API失敗 - スキップ');
+                    return;
+                }
+                
+                const deltaData = await response.json();
+                console.log('[room_select] 差分データ:', deltaData);
+                
+                if (deltaData.success && deltaData.data && deltaData.data.length > 0) {
+                    console.log('[room_select] 📊 差分データあり:', deltaData.data.length, '件');
+                    
+                    // 現在のキャッシュデータを取得してマージ
+                    const roomCacheKey = `rooms_${propertyId}`;
+                    const currentCache = window.pwaUtils?.getCacheData(roomCacheKey);
+                    
+                    if (currentCache && currentCache.data) {
+                        const mergedData = window.pwaUtils.mergeData(currentCache.data, deltaData.data);
+                        
+                        // 更新されたデータをキャッシュに保存
+                        const updatedCache = {
+                            data: mergedData,
+                            propertyName: currentCache.propertyName,
+                            timestamp: Date.now(),
+                            source: 'room_delta_update'
+                        };
+                        window.pwaUtils.setCacheData(roomCacheKey, updatedCache);
+                        console.log('[room_select] 💾 差分更新キャッシュ保存完了');
+                        
+                        // 表示中の画面も更新（ユーザーが気づかないレベルで）
+                        displayRooms(mergedData);
+                        updateCompleteButton(mergedData);
+                        console.log('[room_select] 🔄 画面表示も更新完了');
+                    }
+                } else {
+                    console.log('[room_select] 📊 差分データなし - 最新状態を維持');
+                }
+            } catch (deltaError) {
+                console.warn('[room_select] ⚠️ 差分更新エラー:', deltaError.message);
+            }
+        }
+
+        // ローディング要素の非表示処理を共通化
+        function hideLoadingElement() {
+            const loadingElement = document.getElementById('loading');
+            if (loadingElement) {
+                loadingElement.style.display = 'none';
+                loadingElement.style.visibility = 'hidden';
+                loadingElement.style.opacity = '0';
+                loadingElement.style.pointerEvents = 'none';
+                loadingElement.style.zIndex = '-1';
+                console.log('[room_select] loading要素完全非表示完了');
+            } else {
+                console.error('[room_select] loading要素が見つかりません');
+            }
+        }
+
+        // ページ表示時にローディングを必ず非表示にする
+        function hideLoadingOnPageShow() {
+            const loadingElement = document.getElementById('loading');
+            if (loadingElement) {
+                loadingElement.style.display = 'none';
+                loadingElement.style.visibility = 'hidden';
+                loadingElement.style.opacity = '0';
+                loadingElement.style.pointerEvents = 'none';
+                loadingElement.style.zIndex = '-1';
+            }
+            document.body.style.overflow = '';
+            document.body.style.pointerEvents = '';
+        }
+
+        window.addEventListener('pageshow', function(event) {
+            hideLoadingOnPageShow();
+        });
+
+        function displayRooms(rooms) {
+            console.log('[room_select] displayRooms開始:', rooms.length, '件');
+            const roomGrid = document.getElementById('roomGrid');
+            const loading = document.getElementById('loading');
+            
+            if (!roomGrid) {
+                console.error('[room_select] roomGrid要素が見つかりません');
+                return;
+            }
+            
+            roomGrid.innerHTML = '';
+            
+            if (rooms.length === 0) {
+                console.log('[room_select] 部屋データが0件のため、メッセージ表示');
+                roomGrid.innerHTML = '<div class="no-rooms-message">部屋データがありません</div>';
+                roomGrid.style.display = 'block';
+                // 部屋データが0件の場合もローディング完全非表示
+                if (loading) {
+                    loading.style.display = 'none';
+                    loading.style.visibility = 'hidden';
+                    loading.style.opacity = '0';
+                    loading.style.pointerEvents = 'none';
+                    loading.style.zIndex = '-1';
+                    console.log('[room_select] 0件時のloading完全非表示完了');
+                }
+                return;
+            }
+            
+            const urlParams = new URLSearchParams(window.location.search);
+            const propertyId = urlParams.get('propertyId');
+            
+            console.log('[room_select] 部屋カード作成開始');
+            rooms.forEach((room, index) => {
+                console.log(`[room_select] 部屋[${index}]処理:`, room.name || room['部屋名'] || room.id);
+                
+                // 検針不要フラグの確認（新しいisNotNeededフィールドを使用）
+                const isSkipInspection = room.isNotNeeded === true;
+                
+                // Material UI Card構造
+                const card = document.createElement('div');
+                let cardClasses = 'MuiCard-root MuiPaper-root MuiPaper-elevation1 MuiCardActionArea-root room-card';
+                
+                // ステータスに応じてクラスを追加
+                if (isSkipInspection) {
+                    cardClasses += ' status-skip';
+                } else if (room.readingStatus === 'completed' || room.isCompleted) {
+                    cardClasses += ' status-completed';
+                } else {
+                    cardClasses += ' status-pending';
+                }
+                
+                card.className = cardClasses;
+                card.setAttribute('tabindex', isSkipInspection ? '-1' : '0');
+                card.setAttribute('role', isSkipInspection ? 'presentation' : 'button');
+                
+                // アクセシビリティラベル
+                let ariaLabel = String(room.name || room['部屋名'] || room.id || '不明');
+                if (isSkipInspection) {
+                    ariaLabel += ' 検針不要';
+                } else if (room.readingStatus === 'completed') {
+                    ariaLabel += ' 検針済み';
+                } else {
+                    ariaLabel += ' 未検針';
+                }
+                card.setAttribute('aria-label', ariaLabel);
+                
+                // アイコンとステータステキストの決定
+                let statusIcon, statusColor, statusText;
+                if (isSkipInspection) {
+                    statusIcon = 'block';
+                    statusColor = '#9e9e9e';
+                    statusText = '検針不要';
+                } else if (room.readingStatus === 'completed') {
+                    statusIcon = 'check_circle';
+                    statusColor = '#2e7d32';
+                    statusText = room.readingDateFormatted ? `検針済み：${String(room.readingDateFormatted)}` : '検針済み';
+                } else {
+                    statusIcon = 'warning';
+                    statusColor = '#ed6c02';
+                    statusText = '未検針';
+                }
+                
+                card.innerHTML = `
+                  <div class="MuiCardContent-root room-info-row">
+                    <span class="material-icons MuiSvgIcon-root status-icon" aria-hidden="true" style="color:${statusColor};">
+                      ${statusIcon}
+                    </span>
+                    <span class="MuiTypography-root MuiTypography-h6 room-name">${String(room.name || room['部屋名'] || room.id || '不明')}</span>
+                    <span class="MuiTypography-root MuiTypography-body2 room-status">${statusText}</span>
+                  </div>
+                `;
+                
+                // クリックイベント（検針不要の場合は無効）
+                if (!isSkipInspection) {
+                    card.onclick = () => {
+                        // プリロードしたデータがあるかチェック
+                        const roomId = String(room.id || '');
+                        preloadMeterReadingData(propertyId, roomId);
+                        
+                        const meterReadingUrl = `/meter_reading.html?propertyId=${encodeURIComponent(propertyId)}&roomId=${encodeURIComponent(roomId)}`;
+                        window.location.href = meterReadingUrl;
+                    };
+                    
+                    // ホバー時にプリロードを実行（デスクトップ用）
+                    card.onmouseenter = () => {
+                        const roomId = String(room.id || '');
+                        setTimeout(() => preloadMeterReadingData(propertyId, roomId), 200);
+                    };
+                    
+                    addRippleEffect(card);
+                } else {
+                    // 検針不要の場合、クリック時に説明を表示
+                    card.onclick = (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        alert('この部屋は検針不要に設定されています。');
+                        return false;
+                    };
+                }
+                
+                roomGrid.appendChild(card);
+            });
+            
+            console.log('[room_select] 部屋カード作成完了、ローディング非表示とグリッド表示');
+            if (loading) {
+                loading.style.display = 'none';
+                loading.style.visibility = 'hidden';
+                loading.style.opacity = '0';
+                loading.style.pointerEvents = 'none';
+                console.log('[room_select] loading完全非表示設定完了');
+            }
+            roomGrid.style.display = 'grid';
+            
+            // 表示完了後にバックグラウンドプリロード開始
+            setTimeout(() => {
+                performBatchPreload(rooms, propertyId);
+            }, 1000);
+            
+            console.log('[room_select] displayRooms完了');
+        }
+
+        function updateCompleteButton(rooms) {
+            const completeBtn = document.getElementById('completeInspectionBtn');
+            
+            // 部屋データが1件以上あれば常にボタンを表示
+            if (rooms.length > 0) {
+                completeBtn.style.display = 'flex';
+                completeBtn.innerHTML = `
+                    <span class="material-icons MuiSvgIcon-root">check_circle</span>
+                    <span class="MuiButton-label">この物件の検針を完了する</span>
+                `;
+                console.log('[room_select] 検針完了ボタンを表示');
+            } else {
+                completeBtn.style.display = 'none';
+                console.log('[room_select] 部屋がないため検針完了ボタンを非表示');
+            }
+        }
+
+        async function completeInspection() {
+            console.log('[room_select] 検針完了ボタンクリック');
+            
+            const urlParams = new URLSearchParams(window.location.search);
+            const propertyId = urlParams.get('propertyId');
+            
+            if (!propertyId) {
+                alert('物件IDが取得できませんでした');
+                return;
+            }
+            
+            if (!gasWebAppUrl) {
+                alert('Web App URLが設定されていません');
+                return;
+            }
+            
+            try {
+                // 現在の日付をYYYY-MM-DD形式で取得
+                const today = new Date();
+                const completionDate = today.getFullYear() + '-' + 
+                    String(today.getMonth() + 1).padStart(2, '0') + '-' + 
+                    String(today.getDate()).padStart(2, '0');
+                
+                console.log(`[completeInspection] 検針完了処理開始 - 物件ID: ${propertyId}, 完了日: ${completionDate}`);
+                
+                // GAS API呼び出し
+                const response = await fetch(`${gasWebAppUrl}?action=completeInspection&propertyId=${propertyId}&completionDate=${completionDate}`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                console.log('[completeInspection] API応答:', result);
+                
+                if (result.success) {
+                    alert(`検針完了日を ${completionDate} で保存しました！`);
+                    // ページをリロードして最新状態を反映
+                    window.location.reload();
+                } else {
+                    throw new Error(result.error || '検針完了処理に失敗しました');
+                }
+                
+            } catch (error) {
+                console.error('[completeInspection] エラー:', error);
+                alert(`検針完了処理でエラーが発生しました: ${error.message}`);
+            }
+        }
+
+        // メーター読み取りページのプリロード機能
+        const preloadCache = new Map(); // プリロード済みデータのキャッシュ
+        
+        async function preloadMeterReadingData(propertyId, roomId) {
+            const preloadKey = `${propertyId}_${roomId}`;
+            
+            // 既にプリロード済みまたは実行中の場合はスキップ
+            if (preloadCache.has(preloadKey)) {
+                console.log('[room_select] 🚀 プリロードスキップ（実行済み）:', preloadKey);
+                return;
+            }
+            
+            preloadCache.set(preloadKey, 'loading');
+            console.log('[room_select] 🔄 メーター読み取りデータプリロード開始:', { propertyId, roomId });
+            
+            try {
+                const gasWebAppUrl = sessionStorage.getItem('gasWebAppUrl');
+                if (!gasWebAppUrl) {
+                    console.warn('[room_select] gasWebAppUrl未設定 - プリロードスキップ');
+                    return;
+                }
+                
+                // 検針データのプリロード（軽量版を優先）
+                const preloadUrl = `${gasWebAppUrl}?action=getMeterReadingDataLight&propertyId=${propertyId}&roomId=${roomId}&cache=${Date.now()}`;
+                console.log('[room_select] プリロードURL:', preloadUrl);
+                
+                const response = await fetch(preloadUrl);
+                if (!response.ok) {
+                    console.warn('[room_select] プリロード失敗:', response.status);
+                    preloadCache.delete(preloadKey);
+                    return;
+                }
+                
+                const data = await response.json();
+                console.log('[room_select] プリロードデータ取得完了:', data);
+                
+                if (data.success && window.pwaUtils) {
+                    // プリロードしたデータをキャッシュに保存
+                    const meterCacheKey = `meter_${propertyId}_${roomId}`;
+                    const meterCacheData = {
+                        data: data.data,
+                        timestamp: Date.now(),
+                        source: 'preload_getMeterReadingDataLight'
+                    };
+                    
+                    window.pwaUtils.setCacheData(meterCacheKey, meterCacheData);
+                    console.log('[room_select] 💾 プリロードデータキャッシュ保存完了');
+                    preloadCache.set(preloadKey, 'completed');
+                } else {
+                    console.warn('[room_select] プリロードデータ無効:', data);
+                    preloadCache.delete(preloadKey);
+                }
+                
+            } catch (error) {
+                console.warn('[room_select] ⚠️ プリロードエラー:', error.message);
+                preloadCache.delete(preloadKey);
+            }
+        }
+        
+        // バックグラウンドでの一括プリロード（表示完了後に実行）
+        function performBatchPreload(rooms, propertyId) {
+            console.log('[room_select] 🔄 一括プリロード開始:', rooms.length, '件');
+            
+            // 最初の3つの部屋のデータを事前取得（優先度順）
+            const priorityRooms = rooms
+                .filter(room => room.isNotNeeded !== true) // 検針不要以外
+                .filter(room => room.readingStatus !== 'completed') // 未完了のみ
+                .slice(0, 3); // 最初の3件
+                
+            priorityRooms.forEach((room, index) => {
+                const delay = index * 1000; // 1秒間隔で実行
+                setTimeout(() => {
+                    const roomId = String(room.id || '');
+                    preloadMeterReadingData(propertyId, roomId);
+                }, delay);
+            });
+            
+            console.log('[room_select] 📊 一括プリロード対象:', priorityRooms.length, '件');
+        }
+
+        function goBack() {
+            console.log('[room_select] 戻るボタンクリック');
+            window.location.href = '/property_select.html';
+        }
+    </script>
+</body>
+</html>
