@@ -42,14 +42,14 @@
     // アプリ開始関数（デバッグ情報付き）
     function startApp() {
       console.log('🚀 [Index] アプリ開始ボタンクリック');
-      console.log('📍 [Index] 遷移先:', '/html_files/main_app/property_select.html');
+      console.log('📍 [Index] 遷移先:', '/property_select.html');
       
       // 保存されたGAS URLの確認
       const savedUrl = localStorage.getItem('gasWebAppUrl') || sessionStorage.getItem('gasWebAppUrl');
       console.log('🔗 [Index] 保存されたGAS URL:', savedUrl || 'なし');
       
       try {
-        window.location.href = '/html_files/main_app/property_select.html';
+        window.location.href = '/property_select.html';
       } catch (error) {
         console.error('❌ [Index] 画面遷移エラー:', error);
         alert('画面遷移でエラーが発生しました: ' + error.message);
@@ -59,7 +59,7 @@
     // PWA起動時は物件一覧へリダイレクト
     if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
       console.log('📱 [Index] PWAスタンドアロンモードで起動');
-      startApp();
+      window.location.href = '/property_select.html';
     }
   </script>
 </head>
