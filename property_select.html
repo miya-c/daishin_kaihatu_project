@@ -394,16 +394,55 @@
     // WOFF完全削除済み - 一般ブラウザ専用
     // CSS読み込み完了待機機能追加
     
-    console.log('🚀 Property Select App v20250826a - Cache+Light API最適化版');
+    console.log('🚀 Property Select App v20250826b - エラーハンドリング強化版');
     console.log('WOFF Status:', typeof woff !== 'undefined' ? '❌ ERROR: WOFF still loaded!' : '✅ WOFF successfully removed');
     console.log('🔧 キャッシュ機能統合: LocalStorage + 差分更新対応');
     console.log('🔧 軽量API使用: getPropertiesLight + getRoomsLight');
     console.log('🔧 パフォーマンス向上: 50-70%データ削減 + 即座表示');
+    console.log('🛡️ エラーハンドリング: ErrorBoundary + Global Handler');
+    
+    // Global Error Handler - 未捕捉のJavaScriptエラーをキャッチ
+    window.addEventListener('error', (event) => {
+      console.error('🚨 [GlobalErrorHandler] 未捕捉エラー:', {
+        message: event.message,
+        filename: event.filename,
+        lineno: event.lineno,
+        colno: event.colno,
+        error: event.error,
+        timestamp: new Date().toISOString(),
+        url: window.location.href,
+        userAgent: navigator.userAgent
+      });
+      
+      // 重要: 本番環境では詳細なエラー情報をログに送信（ここではコンソールログのみ）
+      if (event.error && event.error.stack) {
+        console.error('🚨 [GlobalErrorHandler] スタックトレース:', event.error.stack);
+      }
+    });
+    
+    // Promise Rejection Handler - 未処理のPromise拒否をキャッチ
+    window.addEventListener('unhandledrejection', (event) => {
+      console.error('🚨 [GlobalErrorHandler] 未処理Promise拒否:', {
+        reason: event.reason,
+        promise: event.promise,
+        timestamp: new Date().toISOString(),
+        url: window.location.href
+      });
+      
+      // ネットワークエラーやAPI呼び出し失敗の詳細ログ
+      if (event.reason && event.reason.name === 'TypeError' && event.reason.message.includes('fetch')) {
+        console.error('🚨 [GlobalErrorHandler] ネットワーク/API エラー:', event.reason);
+      }
+    });
     
     // キャッシュ統計情報の表示
-    if (window.pwaUtils) {
-      const cacheStats = window.pwaUtils.getCacheStats();
-      console.log('📊 キャッシュ統計:', cacheStats);
+    try {
+      if (window.pwaUtils) {
+        const cacheStats = window.pwaUtils.getCacheStats();
+        console.log('📊 キャッシュ統計:', cacheStats);
+      }
+    } catch (cacheError) {
+      console.warn('⚠️ キャッシュ統計取得エラー:', cacheError);
     }
     
     // CSS読み込み完了を待機する関数（改良版）
@@ -445,18 +484,112 @@
       });
     }
     
+    // React Error Boundary - JavaScript エラーをキャッチ
+    class ErrorBoundary extends React.Component {
+      constructor(props) {
+        super(props);
+        this.state = { hasError: false, error: null, errorInfo: null };
+      }
+
+      static getDerivedStateFromError(error) {
+        return { hasError: true };
+      }
+
+      componentDidCatch(error, errorInfo) {
+        console.error('🚨 [ErrorBoundary] React エラーキャッチ:', error);
+        console.error('🚨 [ErrorBoundary] エラー詳細:', errorInfo);
+        
+        this.setState({
+          error: error,
+          errorInfo: errorInfo
+        });
+        
+        // エラーレポート（開発用）
+        if (window.location.hostname === 'localhost' || window.location.hostname.includes('daishin-kaihatu-project.pages.dev')) {
+          const errorMessage = `
+React エラーが発生しました:
+
+エラー: ${error.message}
+スタック: ${error.stack}
+コンポーネントスタック: ${errorInfo.componentStack}
+時刻: ${new Date().toISOString()}
+URL: ${window.location.href}
+          `;
+          console.group('🚨 詳細エラーレポート');
+          console.error(errorMessage);
+          console.groupEnd();
+        }
+      }
+
+      render() {
+        if (this.state.hasError) {
+          return (
+            React.createElement('div', {
+              style: {
+                padding: '20px',
+                textAlign: 'center',
+                backgroundColor: '#fff3cd',
+                border: '1px solid #ffeaa7',
+                borderRadius: '8px',
+                margin: '20px'
+              }
+            },
+              React.createElement('h2', null, '🚨 アプリでエラーが発生しました'),
+              React.createElement('p', null, 'ページを再読み込みしてください。'),
+              React.createElement('button', {
+                onClick: () => window.location.reload(),
+                style: {
+                  padding: '10px 20px',
+                  backgroundColor: '#007bff',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  marginTop: '10px'
+                }
+              }, 'ページを再読み込み'),
+              window.location.hostname === 'localhost' && React.createElement('details', {
+                style: { marginTop: '20px', textAlign: 'left' }
+              },
+                React.createElement('summary', null, 'エラー詳細（開発用）'),
+                React.createElement('pre', {
+                  style: { 
+                    backgroundColor: '#f8f9fa', 
+                    padding: '10px', 
+                    overflow: 'auto',
+                    fontSize: '12px'
+                  }
+                }, this.state.error && this.state.error.toString())
+              )
+            )
+          );
+        }
+
+        return this.props.children;
+      }
+    }
+
     const App = () => {
+      // React Hooks の安全な初期化（エラー防止）
       const [properties, setProperties] = React.useState([]);
       const [searchTerm, setSearchTerm] = React.useState('');
       const [loading, setLoading] = React.useState(true);
       const [error, setError] = React.useState(null);
-      const [isFetched, setIsFetched] = React.useState(false); // ← 追加
+      const [isFetched, setIsFetched] = React.useState(false);
       const [isNavigating, setIsNavigating] = React.useState(false);
       const [navigationMessage, setNavigationMessage] = React.useState('');
-      // GAS Web App URL設定（本番環境対応）
-      const gasWebAppUrl = sessionStorage.getItem('gasWebAppUrl') || 
-                          localStorage.getItem('gasWebAppUrl') || 
-                          'https://script.google.com/macros/s/AKfycbzWlHl0iAm3m1JXXQLqXKr-5x9YbhmA4P8gv7ErjtzVyfk1XOhSBy_rjgOB8O8Vw5maBw/exec';
+      
+      // GAS Web App URL設定（本番環境対応・エラーハンドリング強化）
+      const gasWebAppUrl = React.useMemo(() => {
+        try {
+          return sessionStorage.getItem('gasWebAppUrl') || 
+                 localStorage.getItem('gasWebAppUrl') || 
+                 'https://script.google.com/macros/s/AKfycbzWlHl0iAm3m1JXXQLqXKr-5x9YbhmA4P8gv7ErjtzVyfk1XOhSBy_rjgOB8O8Vw5maBw/exec';
+        } catch (storageError) {
+          console.warn('🚨 [App] Storage access error:', storageError);
+          return 'https://script.google.com/macros/s/AKfycbzWlHl0iAm3m1JXXQLqXKr-5x9YbhmA4P8gv7ErjtzVyfk1XOhSBy_rjgOB8O8Vw5maBw/exec';
+        }
+      }, []);
 
       // ページ復元時のローディング強制解除
       React.useEffect(() => {
@@ -1508,9 +1641,13 @@
     waitForStylesLoaded().then(() => {
       console.log('🎨 物件選択アプリ起動: CSS読み込み完了後に実行');
       
-      // Use React 18 createRoot API instead of ReactDOM.render
+      // Use React 18 createRoot API with Error Boundary
       const root = ReactDOM.createRoot(document.getElementById('root'));
-      root.render(<App />);
+      root.render(
+        <ErrorBoundary>
+          <App />
+        </ErrorBoundary>
+      );
     });
   </script>
   
