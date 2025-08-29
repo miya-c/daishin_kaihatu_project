@@ -10,6 +10,12 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
   <script>
+    // デバッグ用: 本番環境の状況をコンソールに記録
+    console.log('🚀 水道検針アプリ - Index Page 初期化');
+    console.log('📍 現在のURL:', window.location.href);
+    console.log('📱 User Agent:', navigator.userAgent);
+    console.log('🌐 PWA対応:', 'serviceWorker' in navigator);
+    
     let deferredPrompt;
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
@@ -33,9 +39,27 @@
         });
       }
     }
+    // アプリ開始関数（デバッグ情報付き）
+    function startApp() {
+      console.log('🚀 [Index] アプリ開始ボタンクリック');
+      console.log('📍 [Index] 遷移先:', '/html_files/main_app/property_select.html');
+      
+      // 保存されたGAS URLの確認
+      const savedUrl = localStorage.getItem('gasWebAppUrl') || sessionStorage.getItem('gasWebAppUrl');
+      console.log('🔗 [Index] 保存されたGAS URL:', savedUrl || 'なし');
+      
+      try {
+        window.location.href = '/html_files/main_app/property_select.html';
+      } catch (error) {
+        console.error('❌ [Index] 画面遷移エラー:', error);
+        alert('画面遷移でエラーが発生しました: ' + error.message);
+      }
+    }
+
     // PWA起動時は物件一覧へリダイレクト
     if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
-      window.location.href = '/property_select';
+      console.log('📱 [Index] PWAスタンドアロンモードで起動');
+      startApp();
     }
   </script>
 </head>
@@ -45,7 +69,7 @@
     <p>このアプリはPWAとしてインストールできます。</p>
     <button id="install-btn" style="display:none;" onclick="installPWA()">PWAをインストール</button>
     <br><br>
-    <button onclick="window.location.href='/property_select'" style="padding: 12px 24px; background-color: #1976d2; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px;">アプリを開始</button>
+    <button onclick="startApp()" style="padding: 12px 24px; background-color: #1976d2; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px;">アプリを開始</button>
   </div>
   <script>
     // サービスワーカー登録

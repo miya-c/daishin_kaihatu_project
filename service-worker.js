@@ -3,7 +3,7 @@
 const CACHE_NAME = 'meter-reading-app-v2-optimized';
 const DATA_CACHE_NAME = 'meter-reading-data-v2';
 
-// Static assets for offline support
+// Static assets for offline support (Cloudflare Pages compatible paths)
 const CACHE_ASSETS = [
   '/',
   '/index.html',
@@ -11,9 +11,10 @@ const CACHE_ASSETS = [
   '/html_files/main_app/room_select.html',
   '/html_files/main_app/meter_reading.html',
   '/css_styles/pwa-styles.css',
-  '/css_styles/property_select.css',
+  '/css_styles/property_select.css', 
   '/css_styles/room_select.css',
   '/css_styles/meter_reading.css',
+  '/css_styles/pwa-materialui.css',
   '/pwa-utils.js',
   '/manifest.json'
 ];

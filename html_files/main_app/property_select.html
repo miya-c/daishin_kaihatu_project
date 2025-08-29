@@ -453,7 +453,10 @@
       const [isFetched, setIsFetched] = React.useState(false); // ← 追加
       const [isNavigating, setIsNavigating] = React.useState(false);
       const [navigationMessage, setNavigationMessage] = React.useState('');
-      const gasWebAppUrl = 'https://script.google.com/macros/s/AKfycbxo-Zij6If9eSFO-hB2bC_mvYtEGFxaUdwsngqGKcygh2GTHWqHPDrdHSJVC_JTpq2KSw/exec';
+      // GAS Web App URL設定（本番環境対応）
+      const gasWebAppUrl = sessionStorage.getItem('gasWebAppUrl') || 
+                          localStorage.getItem('gasWebAppUrl') || 
+                          'https://script.google.com/macros/s/AKfycbzWlHl0iAm3m1JXXQLqXKr-5x9YbhmA4P8gv7ErjtzVyfk1XOhSBy_rjgOB8O8Vw5maBw/exec';
 
       // ページ復元時のローディング強制解除
       React.useEffect(() => {
@@ -519,9 +522,35 @@
         // キャッシュ統合型プロパティ取得関数（軽量API使用）
         const fetchProperties = async () => {
           console.log('[ReactApp] 📡 fetchProperties関数開始 - Cache+Light API対応');
+          console.log('[ReactApp] 設定されたGAS URL:', gasWebAppUrl);
           setLoading(true);
           setError(null);
           setIsFetched(false);
+          
+          // GAS URLの有効性チェック
+          if (!gasWebAppUrl || !gasWebAppUrl.includes('script.google.com')) {
+            console.error('[ReactApp] ★ERROR: 無効なGAS Web App URL:', gasWebAppUrl);
+            
+            // GAS URLの設定を求める
+            const userInput = prompt(
+              'GAS Web App URLが設定されていません。\n\nGoogle Apps ScriptのWeb App URLを入力してください:\n\n例: https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec',
+              'https://script.google.com/macros/s/'
+            );
+            
+            if (userInput && userInput.includes('script.google.com')) {
+              localStorage.setItem('gasWebAppUrl', userInput);
+              sessionStorage.setItem('gasWebAppUrl', userInput);
+              console.log('[ReactApp] ✅ GAS URL設定完了:', userInput);
+              
+              // ページをリロードして新しいURLで再試行
+              window.location.reload();
+              return;
+            } else {
+              setError('正しいGAS Web App URLを設定してください。\n\n設定方法:\n1. Google Apps ScriptでWeb Appとしてデプロイ\n2. 生成されたURLをここで設定');
+              setLoading(false);
+              return;
+            }
+          }
           
           console.log('[ReactApp] 📊 状態設定完了:', { loading: true, error: null, isFetched: false });
           
@@ -620,7 +649,25 @@
             
           } catch (fetchError) {
             console.error('[ReactApp] ❌ 物件データ取得エラー:', fetchError);
-            setError(`物件情報の取得に失敗しました: ${fetchError.message}`);
+            
+            // 詳細なエラー情報を提供
+            let errorMessage = '物件情報の取得に失敗しました。\n\n';
+            
+            if (fetchError.message.includes('Failed to fetch')) {
+              errorMessage += '原因: ネットワークエラーまたはCORS問題\n';
+              errorMessage += '対処法:\n';
+              errorMessage += '1. インターネット接続を確認してください\n';
+              errorMessage += '2. GAS Web App URLが正しく設定されているか確認してください\n';
+              errorMessage += '3. Google Apps ScriptのWeb Appが正しくデプロイされているか確認してください';
+            } else if (fetchError.message.includes('404')) {
+              errorMessage += '原因: APIエンドポイントが見つかりません\n';
+              errorMessage += '対処法: GAS Web App URLを確認してください';
+            } else {
+              errorMessage += `原因: ${fetchError.message}\n`;
+              errorMessage += '対処法: 管理者にお問い合わせください';
+            }
+            
+            setError(errorMessage);
             setLoading(false);
           } finally {
             console.log('[ReactApp] 🏁 データ取得処理完了');
