@@ -9,22 +9,32 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="revision" content="20250826b-cloudflare-path-fixed">
+  <meta name="revision" content="20250829a-javascript-error-fix">
   <link rel="manifest" href="./manifest.json">
   <link rel="stylesheet" href="./css_styles/pwa-materialui.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="container">
+    <h1>水道検針アプリaaaaa</h1>
+    <p>このアプリはPWAとしてインストールできます。</p>
+    <button id="install-btn" style="display:none;" onclick="installPWA()">PWAをインストール</button>
+    <br><br>
+    <button onclick="startApp()" style="padding: 12px 24px; background-color: #1976d2; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px;">アプリを開始</button>
+  </div>
+
   <script>
     // デバッグ用: 本番環境の状況をコンソールに記録
-    console.log('🚀 水道検針アプリ v20250826c - 無限リダイレクト防止版');
+    console.log('🚀 水道検針アプリ v20250829a - JavaScript エラー修正版');
     console.log('📍 現在のURL:', window.location.href);
     console.log('📍 pathname:', window.location.pathname);
     console.log('📍 search:', window.location.search);
     console.log('📍 hash:', window.location.hash);
     console.log('📱 User Agent:', navigator.userAgent);
     console.log('🌐 PWA対応:', 'serviceWorker' in navigator);
-    console.log('🔧 パス構造変更版:', '20250826c-redirect-loop-fixed');
+    console.log('🔧 JavaScript エラー修正版:', '20250829a-js-error-fixed');
     
     // PWA モード判定の詳細ログ
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
@@ -56,160 +66,243 @@
       }
     }
     
+    // グローバル変数とエラーハンドリング
     let deferredPrompt;
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      deferredPrompt = e;
-      document.getElementById('install-btn').style.display = 'block';
-    });
-    function installPWA() {
-      if (deferredPrompt) {
-        deferredPrompt.prompt();
-        deferredPrompt.userChoice.then((choiceResult) => {
-          if (choiceResult.outcome === 'accepted') {
-            document.getElementById('install-btn').style.display = 'none';
-            const msg = document.createElement('div');
-            msg.innerHTML = 'インストールが完了しました。<br>ホーム画面からアプリを起動できます。';
-            msg.style.marginTop = '24px';
-            msg.style.color = '#1976d2';
-            msg.style.fontWeight = 'bold';
-            document.querySelector('.container').appendChild(msg);
-          }
-          deferredPrompt = null;
-        });
-      }
-    }
-    // 無限リダイレクト防止のためのフラグ
     const REDIRECT_STORAGE_KEY = 'app_redirect_flag';
     const MAX_REDIRECT_COUNT = 3;
     
+    // エラーハンドリングの設定
+    window.onerror = function(msg, url, lineNo, columnNo, error) {
+      console.error('🚨 [Global] JavaScript エラー:', {
+        message: msg,
+        source: url,
+        line: lineNo,
+        column: columnNo,
+        error: error
+      });
+      return false;
+    };
+    
+    window.addEventListener('unhandledrejection', function(event) {
+      console.error('🚨 [Global] Promise エラー:', event.reason);
+    });
+    
+    // PWA インストール関数
+    function installPWA() {
+      try {
+        console.log('🔽 [Index] PWA インストール開始');
+        if (deferredPrompt) {
+          deferredPrompt.prompt();
+          deferredPrompt.userChoice.then((choiceResult) => {
+            if (choiceResult.outcome === 'accepted') {
+              document.getElementById('install-btn').style.display = 'none';
+              const msg = document.createElement('div');
+              msg.innerHTML = 'インストールが完了しました。<br>ホーム画面からアプリを起動できます。';
+              msg.style.marginTop = '24px';
+              msg.style.color = '#1976d2';
+              msg.style.fontWeight = 'bold';
+              document.querySelector('.container').appendChild(msg);
+              console.log('✅ [Index] PWA インストール完了');
+            }
+            deferredPrompt = null;
+          }).catch((error) => {
+            console.error('❌ [Index] PWA インストールエラー:', error);
+          });
+        } else {
+          console.warn('⚠️ [Index] PWA インストール対象なし');
+        }
+      } catch (error) {
+        console.error('❌ [Index] installPWA 関数エラー:', error);
+      }
+    }
+    
     // アプリ開始関数（デバッグ情報付き・無限ループ防止機能付き）
     function startApp() {
-      console.log('🚀 [Index] アプリ開始ボタンクリック');
-      console.log('📍 [Index] 遷移先:', '/property_select.html');
-      
-      // 無限リダイレクト防止チェック
       try {
-        const redirectCount = parseInt(sessionStorage.getItem(REDIRECT_STORAGE_KEY) || '0');
-        const currentTime = Date.now();
-        const lastRedirectTime = parseInt(sessionStorage.getItem(REDIRECT_STORAGE_KEY + '_time') || '0');
+        console.log('🚀 [Index] アプリ開始ボタンクリック');
+        console.log('📍 [Index] 遷移先:', '/property_select.html');
         
-        // 5秒以内に3回以上リダイレクトしている場合は停止
-        if (redirectCount >= MAX_REDIRECT_COUNT && (currentTime - lastRedirectTime) < 5000) {
-          console.error('🚨 [Index] 無限リダイレクト検出! 遷移を停止します');
-          alert('リダイレクトループが検出されました。\n\nページを手動で更新するか、ブラウザのキャッシュをクリアしてください。');
+        // 無限リダイレクト防止チェック
+        try {
+          const redirectCount = parseInt(sessionStorage.getItem(REDIRECT_STORAGE_KEY) || '0');
+          const currentTime = Date.now();
+          const lastRedirectTime = parseInt(sessionStorage.getItem(REDIRECT_STORAGE_KEY + '_time') || '0');
           
-          // 5秒後にカウンタをリセット
-          setTimeout(() => {
-            sessionStorage.removeItem(REDIRECT_STORAGE_KEY);
-            sessionStorage.removeItem(REDIRECT_STORAGE_KEY + '_time');
-          }, 5000);
-          return;
+          // 5秒以内に3回以上リダイレクトしている場合は停止
+          if (redirectCount >= MAX_REDIRECT_COUNT && (currentTime - lastRedirectTime) < 5000) {
+            console.error('🚨 [Index] 無限リダイレクト検出! 遷移を停止します');
+            alert('リダイレクトループが検出されました。\n\nページを手動で更新するか、ブラウザのキャッシュをクリアしてください。');
+            
+            // 5秒後にカウンタをリセット
+            setTimeout(() => {
+              try {
+                sessionStorage.removeItem(REDIRECT_STORAGE_KEY);
+                sessionStorage.removeItem(REDIRECT_STORAGE_KEY + '_time');
+              } catch (e) {
+                console.warn('⚠️ [Index] Storage クリア失敗:', e);
+              }
+            }, 5000);
+            return;
+          }
+          
+          // リダイレクト回数を記録
+          sessionStorage.setItem(REDIRECT_STORAGE_KEY, (redirectCount + 1).toString());
+          sessionStorage.setItem(REDIRECT_STORAGE_KEY + '_time', currentTime.toString());
+          
+        } catch (storageError) {
+          console.warn('⚠️ [Index] Storage access warning:', storageError);
         }
         
-        // リダイレクト回数を記録
-        sessionStorage.setItem(REDIRECT_STORAGE_KEY, (redirectCount + 1).toString());
-        sessionStorage.setItem(REDIRECT_STORAGE_KEY + '_time', currentTime.toString());
+        // 保存されたGAS URLの確認
+        try {
+          const savedUrl = localStorage.getItem('gasWebAppUrl') || sessionStorage.getItem('gasWebAppUrl');
+          console.log('🔗 [Index] 保存されたGAS URL:', savedUrl || 'なし');
+        } catch (storageError) {
+          console.warn('⚠️ [Index] GAS URL読み取りエラー:', storageError);
+        }
         
-      } catch (storageError) {
-        console.warn('⚠️ [Index] Storage access warning:', storageError);
-      }
-      
-      // 保存されたGAS URLの確認
-      const savedUrl = localStorage.getItem('gasWebAppUrl') || sessionStorage.getItem('gasWebAppUrl');
-      console.log('🔗 [Index] 保存されたGAS URL:', savedUrl || 'なし');
-      
-      try {
-        console.log('🔄 [Index] property_select.html へリダイレクト実行');
-        window.location.href = '/property_select.html';
+        try {
+          console.log('🔄 [Index] property_select.html へリダイレクト実行');
+          window.location.href = '/property_select.html';
+        } catch (error) {
+          console.error('❌ [Index] 画面遷移エラー:', error);
+          alert('画面遷移でエラーが発生しました: ' + error.message);
+        }
       } catch (error) {
-        console.error('❌ [Index] 画面遷移エラー:', error);
-        alert('画面遷移でエラーが発生しました: ' + error.message);
+        console.error('❌ [Index] startApp 関数エラー:', error);
+        alert('アプリ開始でエラーが発生しました: ' + error.message);
       }
     }
-
-    // PWA起動時は物件一覧へリダイレクト（無限ループ防止機能付き）
-    if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
-      console.log('📱 [Index] PWAスタンドアロンモードで起動');
-      
-      // PWA自動起動の場合もリダイレクト防止チェックを適用
+    
+    // PWA インストールプロンプト設定
+    window.addEventListener('beforeinstallprompt', (e) => {
       try {
-        const autoRedirectCount = parseInt(sessionStorage.getItem('pwa_auto_redirect_count') || '0');
-        const currentTime = Date.now();
-        const lastAutoRedirectTime = parseInt(sessionStorage.getItem('pwa_auto_redirect_time') || '0');
-        
-        // 3秒以内に2回以上自動リダイレクトしている場合は停止
-        if (autoRedirectCount >= 2 && (currentTime - lastAutoRedirectTime) < 3000) {
-          console.error('🚨 [Index] PWA自動リダイレクト無限ループ検出! 停止します');
-          return;
+        console.log('📱 [Index] PWA インストールプロンプト検出');
+        e.preventDefault();
+        deferredPrompt = e;
+        const installBtn = document.getElementById('install-btn');
+        if (installBtn) {
+          installBtn.style.display = 'block';
         }
-        
-        // 自動リダイレクト回数を記録
-        sessionStorage.setItem('pwa_auto_redirect_count', (autoRedirectCount + 1).toString());
-        sessionStorage.setItem('pwa_auto_redirect_time', currentTime.toString());
-        
-        // 3秒後にカウンタをリセット
-        setTimeout(() => {
-          sessionStorage.removeItem('pwa_auto_redirect_count');
-          sessionStorage.removeItem('pwa_auto_redirect_time');
-        }, 3000);
-        
-      } catch (storageError) {
-        console.warn('⚠️ [Index] PWA Storage access warning:', storageError);
+      } catch (error) {
+        console.error('❌ [Index] インストールプロンプト処理エラー:', error);
       }
-      
-      console.log('🔄 [Index] PWA自動リダイレクト実行');
-      window.location.href = '/property_select.html';
+    });
+
+    // PWA起動時自動リダイレクト処理
+    function handlePWAAutoRedirect() {
+      try {
+        if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
+          console.log('📱 [Index] PWAスタンドアロンモードで起動');
+          
+          // PWA自動起動の場合もリダイレクト防止チェックを適用
+          try {
+            const autoRedirectCount = parseInt(sessionStorage.getItem('pwa_auto_redirect_count') || '0');
+            const currentTime = Date.now();
+            const lastAutoRedirectTime = parseInt(sessionStorage.getItem('pwa_auto_redirect_time') || '0');
+            
+            // 3秒以内に2回以上自動リダイレクトしている場合は停止
+            if (autoRedirectCount >= 2 && (currentTime - lastAutoRedirectTime) < 3000) {
+              console.error('🚨 [Index] PWA自動リダイレクト無限ループ検出! 停止します');
+              return;
+            }
+            
+            // 自動リダイレクト回数を記録
+            sessionStorage.setItem('pwa_auto_redirect_count', (autoRedirectCount + 1).toString());
+            sessionStorage.setItem('pwa_auto_redirect_time', currentTime.toString());
+            
+            // 3秒後にカウンタをリセット
+            setTimeout(() => {
+              try {
+                sessionStorage.removeItem('pwa_auto_redirect_count');
+                sessionStorage.removeItem('pwa_auto_redirect_time');
+              } catch (e) {
+                console.warn('⚠️ [Index] PWA Storage クリア失敗:', e);
+              }
+            }, 3000);
+            
+          } catch (storageError) {
+            console.warn('⚠️ [Index] PWA Storage access warning:', storageError);
+          }
+          
+          console.log('🔄 [Index] PWA自動リダイレクト実行');
+          window.location.href = '/property_select.html';
+        }
+      } catch (error) {
+        console.error('❌ [Index] PWA自動リダイレクトエラー:', error);
+      }
     }
-  </script>
-</head>
-<body>
-  <div class="container">
-    <h1>水道検針アプリaaaaa</h1>
-    <p>このアプリはPWAとしてインストールできます。</p>
-    <button id="install-btn" style="display:none;" onclick="installPWA()">PWAをインストール</button>
-    <br><br>
-    <button onclick="startApp()" style="padding: 12px 24px; background-color: #1976d2; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px;">アプリを開始</button>
-  </div>
-  <script>
+    
+    // DOM読み込み完了後の処理
+    document.addEventListener('DOMContentLoaded', function() {
+      try {
+        console.log('📄 [Index] DOM読み込み完了');
+        handlePWAAutoRedirect();
+      } catch (error) {
+        console.error('❌ [Index] DOM読み込み後処理エラー:', error);
+      }
+    });
+    
+    // 即座にPWAチェックも実行（DOMContentLoadedより前に実行される場合に備えて）
+    handlePWAAutoRedirect();
+    
     // サービスワーカー登録とキャッシュ更新通知
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
-        navigator.serviceWorker.register('./service-worker.js')
-          .then(function(registration) {
-            console.log('PWA: Service Worker v20250826b 登録成功', registration);
-            
-            // Service Workerの更新をチェック
-            registration.addEventListener('updatefound', () => {
-              console.log('PWA: 新しいService Worker検出');
-              const newWorker = registration.installing;
-              newWorker.addEventListener('statechange', () => {
-                if (newWorker.state === 'activated') {
-                  console.log('PWA: 新しいService Worker有効化 - ページリロード推奨');
-                  if (confirm('アプリが更新されました。変更を反映するためにページを再読み込みしますか？')) {
-                    window.location.reload();
-                  }
+        try {
+          console.log('🔧 [Index] Service Worker登録開始');
+          navigator.serviceWorker.register('./service-worker.js')
+            .then(function(registration) {
+              console.log('PWA: Service Worker v20250829a 登録成功', registration);
+              
+              // Service Workerの更新をチェック
+              registration.addEventListener('updatefound', () => {
+                try {
+                  console.log('PWA: 新しいService Worker検出');
+                  const newWorker = registration.installing;
+                  newWorker.addEventListener('statechange', () => {
+                    if (newWorker.state === 'activated') {
+                      console.log('PWA: 新しいService Worker有効化 - ページリロード推奨');
+                      if (confirm('アプリが更新されました。変更を反映するためにページを再読み込みしますか？')) {
+                        window.location.reload();
+                      }
+                    }
+                  });
+                } catch (error) {
+                  console.error('❌ [Index] Service Worker更新処理エラー:', error);
                 }
               });
+            })
+            .catch(function(error) {
+              console.error('❌ [Index] Service Worker 登録失敗:', error);
             });
-          })
-          .catch(function(error) {
-            console.log('PWA: Service Worker 登録失敗', error);
-          });
+        } catch (error) {
+          console.error('❌ [Index] Service Worker登録処理エラー:', error);
+        }
       });
       
       // Service Workerからのメッセージを受信
-      navigator.serviceWorker.addEventListener('message', (event) => {
-        console.log('PWA: Service Workerメッセージ受信:', event.data);
-        
-        if (event.data && event.data.type === 'CACHE_UPDATED') {
-          console.log('PWA: キャッシュ更新通知');
-          // 強制リロードまたは通知表示
-          if (confirm(event.data.message)) {
-            window.location.reload();
+      try {
+        navigator.serviceWorker.addEventListener('message', (event) => {
+          try {
+            console.log('PWA: Service Workerメッセージ受信:', event.data);
+            
+            if (event.data && event.data.type === 'CACHE_UPDATED') {
+              console.log('PWA: キャッシュ更新通知');
+              // 強制リロードまたは通知表示
+              if (confirm(event.data.message)) {
+                window.location.reload();
+              }
+            }
+          } catch (error) {
+            console.error('❌ [Index] Service Workerメッセージ処理エラー:', error);
           }
-        }
-      });
+        });
+      } catch (error) {
+        console.error('❌ [Index] Service Workerメッセージリスナー設定エラー:', error);
+      }
+    } else {
+      console.warn('⚠️ [Index] Service Worker 未対応ブラウザ');
     }
   </script>
 </body>

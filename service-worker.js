@@ -1,7 +1,7 @@
 // Service Worker for PWA - Speed Optimized for Cache+Light API architecture
-// Version 20250826b - Path structure fixed for Cloudflare Pages
-const CACHE_NAME = 'meter-reading-app-v3-cloudflare-fixed';
-const DATA_CACHE_NAME = 'meter-reading-data-v3';
+// Version 20250829a - JavaScript Error Fix + Enhanced Cache Clear
+const CACHE_NAME = 'meter-reading-app-v4-js-error-fix';
+const DATA_CACHE_NAME = 'meter-reading-data-v4';
 
 // Static assets for offline support (Cloudflare Pages compatible paths)
 const CACHE_ASSETS = [
@@ -33,6 +33,8 @@ const CACHE_STRATEGIES = {
 
 // Legacy cache names to be deleted
 const LEGACY_CACHE_NAMES = [
+  'meter-reading-app-v3-cloudflare-fixed',
+  'meter-reading-data-v3',
   'meter-reading-app-v2-optimized',
   'meter-reading-data-v2',
   'meter-reading-app-v1',
@@ -41,7 +43,7 @@ const LEGACY_CACHE_NAMES = [
 
 // Install event - cache essential assets with performance optimization
 self.addEventListener('install', (event) => {
-  console.log('🚀 Service Worker v20250826b: Install event - Cloudflare Pages Path Fixed');
+  console.log('🚀 Service Worker v20250829a: Install event - JavaScript Error Fix');
   
   // 即座にアクティベート（古いSWを置き換え）
   self.skipWaiting();
@@ -78,7 +80,7 @@ self.addEventListener('install', (event) => {
 
 // Activate event - clean up old caches with enhanced management
 self.addEventListener('activate', (event) => {
-  console.log('SW: 🔄 Activate event v20250826b - 強制キャッシュクリア実行');
+  console.log('SW: 🔄 Activate event v20250829a - 強制キャッシュクリア実行');
   
   event.waitUntil(
     Promise.all([
