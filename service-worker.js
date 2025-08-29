@@ -1,7 +1,7 @@
 // Service Worker for PWA - Speed Optimized for Cache+Light API architecture
-// Version 20250826a - Cache integration + Performance optimizations
-const CACHE_NAME = 'meter-reading-app-v2-optimized';
-const DATA_CACHE_NAME = 'meter-reading-data-v2';
+// Version 20250826b - Path structure fixed for Cloudflare Pages
+const CACHE_NAME = 'meter-reading-app-v3-cloudflare-fixed';
+const DATA_CACHE_NAME = 'meter-reading-data-v3';
 
 // Static assets for offline support (Cloudflare Pages compatible paths)
 const CACHE_ASSETS = [
@@ -31,9 +31,20 @@ const CACHE_STRATEGIES = {
   SYNC_RETRY_INTERVAL: 30000
 };
 
+// Legacy cache names to be deleted
+const LEGACY_CACHE_NAMES = [
+  'meter-reading-app-v2-optimized',
+  'meter-reading-data-v2',
+  'meter-reading-app-v1',
+  'meter-reading-data-v1'
+];
+
 // Install event - cache essential assets with performance optimization
 self.addEventListener('install', (event) => {
-  console.log('🚀 Service Worker v20250826a: Install event - Cache+Light API対応');
+  console.log('🚀 Service Worker v20250826b: Install event - Cloudflare Pages Path Fixed');
+  
+  // 即座にアクティベート（古いSWを置き換え）
+  self.skipWaiting();
   
   event.waitUntil(
     Promise.all([
@@ -67,21 +78,38 @@ self.addEventListener('install', (event) => {
 
 // Activate event - clean up old caches with enhanced management
 self.addEventListener('activate', (event) => {
-  console.log('SW: 🔄 Activate event - キャッシュ最適化実行');
+  console.log('SW: 🔄 Activate event v20250826b - 強制キャッシュクリア実行');
   
   event.waitUntil(
     Promise.all([
-      // Clean up old caches
+      // 強制的に古いキャッシュを削除
       caches.keys().then((cacheNames) => {
+        console.log('SW: 📋 既存キャッシュ一覧:', cacheNames);
         const validCacheNames = [CACHE_NAME, DATA_CACHE_NAME];
+        
         return Promise.all(
           cacheNames.map((cacheName) => {
-            if (!validCacheNames.includes(cacheName)) {
-              console.log('SW: 🗑️ 古いキャッシュ削除:', cacheName);
+            if (!validCacheNames.includes(cacheName) || LEGACY_CACHE_NAMES.includes(cacheName)) {
+              console.log('SW: 🗑️ 古いキャッシュ強制削除:', cacheName);
               return caches.delete(cacheName);
             }
           })
         );
+      }),
+      
+      // 全クライアント（ページ）を強制リロード
+      self.clients.claim().then(() => {
+        console.log('SW: 🔄 全クライアント制御開始');
+        return self.clients.matchAll();
+      }).then((clients) => {
+        console.log('SW: 📱 アクティブクライアント数:', clients.length);
+        clients.forEach((client) => {
+          console.log('SW: 🔄 クライアント更新通知:', client.url);
+          client.postMessage({
+            type: 'CACHE_UPDATED',
+            message: 'キャッシュが更新されました。ページを再読み込みしてください。'
+          });
+        });
       }),
       
       // Initialize performance monitoring
