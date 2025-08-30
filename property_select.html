@@ -1188,7 +1188,7 @@ URL: ${window.location.href}
           console.log('[ReactApp] ✅ SessionStorage保存完了');
           setNavigationMessage('');
           
-          const targetUrl = `/room_select?propertyId=${encodeURIComponent(property.id)}`;
+          const targetUrl = `/room_select.html?propertyId=${encodeURIComponent(property.id)}`;
           console.log(`[ReactApp] 🚀 画面遷移: ${targetUrl}`);
           
           // シンプルなリダイレクト制限チェック
