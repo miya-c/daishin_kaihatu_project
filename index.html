@@ -71,6 +71,63 @@
     const REDIRECT_STORAGE_KEY = 'app_redirect_flag';
     const MAX_REDIRECT_COUNT = 3;
     
+    // 追加のリダイレクトループ検出機能（より強力）
+    const GLOBAL_REDIRECT_KEY = 'global_redirect_history';
+    const MAX_GLOBAL_REDIRECTS = 5;
+    const REDIRECT_HISTORY_TIMEOUT = 10000; // 10秒間の履歴を保持
+    
+    function recordRedirect(fromPage, toPage) {
+      try {
+        const redirectHistory = JSON.parse(sessionStorage.getItem(GLOBAL_REDIRECT_KEY) || '[]');
+        const now = Date.now();
+        
+        // 古い履歴を削除（10秒以上前）
+        const recentHistory = redirectHistory.filter(entry => (now - entry.timestamp) < REDIRECT_HISTORY_TIMEOUT);
+        
+        // 新しいリダイレクトを記録
+        recentHistory.push({
+          from: fromPage,
+          to: toPage,
+          timestamp: now,
+          url: window.location.href
+        });
+        
+        sessionStorage.setItem(GLOBAL_REDIRECT_KEY, JSON.stringify(recentHistory));
+        
+        console.log('🔄 [Global] リダイレクト記録:', { from: fromPage, to: toPage, total: recentHistory.length });
+        
+        // 無限ループ検出
+        if (recentHistory.length >= MAX_GLOBAL_REDIRECTS) {
+          // 同じパターンのリダイレクトが繰り返されているかチェック
+          const patterns = recentHistory.map(entry => `${entry.from}->${entry.to}`);
+          const patternCounts = {};
+          patterns.forEach(pattern => {
+            patternCounts[pattern] = (patternCounts[pattern] || 0) + 1;
+          });
+          
+          const maxPatternCount = Math.max(...Object.values(patternCounts));
+          if (maxPatternCount >= 3) {
+            console.error('🚨 [Global] 無限リダイレクトループ検出!', {
+              patterns: patternCounts,
+              history: recentHistory
+            });
+            
+            // 緊急停止
+            alert('無限リダイレクトが検出されました。\n\nアプリケーションを安全のため停止します。\n\nページを手動で更新してください。');
+            
+            // すべてのリダイレクト機能を無効化
+            window.location.href = 'javascript:void(0)';
+            throw new Error('Emergency redirect loop prevention');
+          }
+        }
+        
+        return recentHistory.length;
+      } catch (error) {
+        console.error('❌ [Global] リダイレクト記録エラー:', error);
+        return 0;
+      }
+    }
+    
     // エラーハンドリングの設定
     window.onerror = function(msg, url, lineNo, columnNo, error) {
       console.error('🚨 [Global] JavaScript エラー:', {
@@ -162,6 +219,9 @@
         }
         
         try {
+          // グローバルリダイレクト履歴を記録
+          const redirectCount = recordRedirect('index.html', 'property_select.html');
+          
           console.log('🔄 [Index] property_select.html へリダイレクト実行');
           window.location.href = '/property_select.html';
         } catch (error) {
@@ -226,6 +286,8 @@
           }
           
           console.log('🔄 [Index] PWA自動リダイレクト実行');
+          // グローバルリダイレクト履歴を記録
+          recordRedirect('index.html (PWA)', 'property_select.html');
           window.location.href = '/property_select.html';
         }
       } catch (error) {

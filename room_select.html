@@ -108,11 +108,68 @@
         // GAS Web App URL取得（property_select.html.htmlから継承）
         const gasWebAppUrl = sessionStorage.getItem('gasWebAppUrl');
         
-        // URL検証
+        // リダイレクトループ防止チェック
+        const ROOM_REDIRECT_KEY = 'room_redirect_count';
+        const ROOM_MAX_REDIRECTS = 2;
+        const currentTime = Date.now();
+        
+        try {
+            const redirectCount = parseInt(sessionStorage.getItem(ROOM_REDIRECT_KEY) || '0');
+            const lastRedirectTime = parseInt(sessionStorage.getItem(ROOM_REDIRECT_KEY + '_time') || '0');
+            
+            // 3秒以内に2回以上リダイレクトしている場合は停止
+            if (redirectCount >= ROOM_MAX_REDIRECTS && (currentTime - lastRedirectTime) < 3000) {
+                console.error('🚨 [room_select] 無限リダイレクト検出! 自動リダイレクトを停止');
+                showError('無限リダイレクトが検出されました。\n\nブラウザの戻るボタンで前のページに戻るか、\nページを手動で更新してください。');
+                document.getElementById('loading').innerHTML = '<div class="loading-spinner"></div><p class="loading-text">リダイレクトループ検出</p>';
+                
+                // 10秒後にカウンタをリセット
+                setTimeout(() => {
+                    try {
+                        sessionStorage.removeItem(ROOM_REDIRECT_KEY);
+                        sessionStorage.removeItem(ROOM_REDIRECT_KEY + '_time');
+                    } catch (e) {
+                        console.warn('⚠️ [room_select] Storage クリア失敗:', e);
+                    }
+                }, 10000);
+                return;
+            }
+        } catch (storageError) {
+            console.warn('⚠️ [room_select] Storage access error:', storageError);
+        }
+        
+        // URL検証（リダイレクトループ防止機能付き）
         if (!gasWebAppUrl) {
             showError('Web App URLが設定されていません。物件選択画面から再度アクセスしてください。');
             document.getElementById('loading').innerHTML = '<div class="loading-spinner"></div><p class="loading-text">Web App URLが設定されていません</p>';
-            setTimeout(() => window.location.href = '/property_select.html', 3000);
+            
+            console.warn('🚨 [room_select] GAS URL未設定による自動リダイレクトを無効化');
+            // 自動リダイレクトを削除し、ユーザーに選択を委ねる
+            const redirectBtn = document.createElement('button');
+            redirectBtn.textContent = '物件選択画面に戻る';
+            redirectBtn.onclick = () => {
+                // リダイレクト回数を記録
+                try {
+                    const redirectCount = parseInt(sessionStorage.getItem(ROOM_REDIRECT_KEY) || '0');
+                    sessionStorage.setItem(ROOM_REDIRECT_KEY, (redirectCount + 1).toString());
+                    sessionStorage.setItem(ROOM_REDIRECT_KEY + '_time', currentTime.toString());
+                    
+                    // グローバルリダイレクト履歴を記録
+                    const redirectHistory = JSON.parse(sessionStorage.getItem('global_redirect_history') || '[]');
+                    redirectHistory.push({
+                        from: 'room_select.html (GAS URL missing)',
+                        to: 'property_select.html',
+                        timestamp: Date.now(),
+                        url: window.location.href
+                    });
+                    sessionStorage.setItem('global_redirect_history', JSON.stringify(redirectHistory));
+                } catch (e) {
+                    console.warn('⚠️ Storage記録失敗:', e);
+                }
+                window.location.href = '/property_select.html';
+            };
+            redirectBtn.style.cssText = 'margin-top: 20px; padding: 12px 24px; background: #1976d2; color: white; border: none; border-radius: 4px; cursor: pointer;';
+            document.getElementById('loading').appendChild(redirectBtn);
         } else {
             // URLパラメータから物件IDを取得
             const urlParams = new URLSearchParams(window.location.search);
@@ -126,12 +183,35 @@
             
             if (!propertyId) {
                 console.error('[room_select] 物件IDが指定されていません');
-                if (confirm('物件IDが指定されていません。物件選択画面に戻りますか？')) {
+                showError('物件IDが指定されていません。物件選択画面に戻ってください。');
+                document.getElementById('loading').innerHTML = '<div class="loading-spinner"></div><p class="loading-text">物件IDが指定されていません</p>';
+                
+                // 自動リダイレクトをユーザー選択に変更
+                const redirectBtn = document.createElement('button');
+                redirectBtn.textContent = '物件選択画面に戻る';
+                redirectBtn.onclick = () => {
+                    // リダイレクト回数を記録
+                    try {
+                        const redirectCount = parseInt(sessionStorage.getItem(ROOM_REDIRECT_KEY) || '0');
+                        sessionStorage.setItem(ROOM_REDIRECT_KEY, (redirectCount + 1).toString());
+                        sessionStorage.setItem(ROOM_REDIRECT_KEY + '_time', currentTime.toString());
+                        
+                        // グローバルリダイレクト履歴を記録
+                        const redirectHistory = JSON.parse(sessionStorage.getItem('global_redirect_history') || '[]');
+                        redirectHistory.push({
+                            from: 'room_select.html (no propertyId)',
+                            to: 'property_select.html',
+                            timestamp: Date.now(),
+                            url: window.location.href
+                        });
+                        sessionStorage.setItem('global_redirect_history', JSON.stringify(redirectHistory));
+                    } catch (e) {
+                        console.warn('⚠️ Storage記録失敗:', e);
+                    }
                     window.location.href = '/property_select.html';
-                } else {
-                    document.getElementById('loading').innerHTML = '<div class="loading-spinner"></div><p class="loading-text">物件IDが指定されていません</p>';
-                    setTimeout(() => window.location.href = '/property_select.html', 3000);
-                }
+                };
+                redirectBtn.style.cssText = 'margin-top: 20px; padding: 12px 24px; background: #1976d2; color: white; border: none; border-radius: 4px; cursor: pointer;';
+                document.getElementById('loading').appendChild(redirectBtn);
             } else {
                 console.log('[room_select] 物件ID確認完了:', propertyId);
                 // 正常な場合のみloadRoomDataを実行
@@ -789,6 +869,27 @@
 
         function goBack() {
             console.log('[room_select] 戻るボタンクリック');
+            
+            // リダイレクト回数を記録
+            try {
+                const ROOM_REDIRECT_KEY = 'room_redirect_count';
+                const redirectCount = parseInt(sessionStorage.getItem(ROOM_REDIRECT_KEY) || '0');
+                sessionStorage.setItem(ROOM_REDIRECT_KEY, (redirectCount + 1).toString());
+                sessionStorage.setItem(ROOM_REDIRECT_KEY + '_time', Date.now().toString());
+                
+                // グローバルリダイレクト履歴を記録
+                const redirectHistory = JSON.parse(sessionStorage.getItem('global_redirect_history') || '[]');
+                redirectHistory.push({
+                    from: 'room_select.html (back button)',
+                    to: 'property_select.html',
+                    timestamp: Date.now(),
+                    url: window.location.href
+                });
+                sessionStorage.setItem('global_redirect_history', JSON.stringify(redirectHistory));
+            } catch (e) {
+                console.warn('⚠️ [room_select] goBack Storage記録失敗:', e);
+            }
+            
             window.location.href = '/property_select.html';
         }
     </script>
