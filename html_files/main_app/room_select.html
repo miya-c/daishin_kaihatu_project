@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
+    <!-- Version: 20250830f - JavaScript構文エラー修正版 -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>部屋選択 - 水道メーター読み取りアプリ</title>
@@ -72,13 +73,14 @@
     </main>
 
 <script>
-        // 🚀 Room Select App v20250826a - Cache+Light API+Preload最適化版
-        console.log('🚀 Room Select App v20250826a - Cache+Light API+Preload最適化版');
+        // 🚀 Room Select App v20250830f - JavaScript構文エラー修正版 + Cache+Light API+Preload最適化版
+        console.log('🚀 Room Select App v20250830f - JavaScript構文エラー修正版');
         console.log('🔧 SessionStorage継続: property_select.htmlからの高速遷移対応');
         console.log('🔧 キャッシュ機能統合: LocalStorage + 差分更新対応');
         console.log('🔧 軽量API使用: getRoomsLight');
         console.log('🔧 プリロード機能: メーター読み取りデータ事前取得');
         console.log('🔧 パフォーマンス向上: 50-70%データ削減 + 即座表示');
+        console.log('🛠️ 修正: gasWebAppUrl変数スコープ問題解決');
         
         // キャッシュ統計情報の表示
         if (window.pwaUtils) {
@@ -684,6 +686,8 @@
                 return;
             }
             
+            // gasWebAppUrlを関数内で取得（スコープエラー回避）
+            const gasWebAppUrl = sessionStorage.getItem('gasWebAppUrl');
             if (!gasWebAppUrl) {
                 alert('Web App URLが設定されていません');
                 return;
