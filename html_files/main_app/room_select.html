@@ -86,6 +86,14 @@
             console.log('📊 キャッシュ統計:', cacheStats);
         }
         
+        // エラーメッセージ表示 - React Error #418対策
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            const errorText = document.getElementById('errorText');
+            errorText.textContent = String(message || 'エラーが発生しました');
+            errorDiv.style.display = 'flex';
+        }
+        
         // Ripple effect for buttons and cards
         function addRippleEffect(element) {
             element.addEventListener('click', function(e) {
@@ -147,14 +155,6 @@
                     loadRoomData();
                 }
             }
-        }
-
-        // エラーメッセージ表示 - React Error #418対策
-        function showError(message) {
-            const errorDiv = document.getElementById('errorMessage');
-            const errorText = document.getElementById('errorText');
-            errorText.textContent = String(message || 'エラーが発生しました');
-            errorDiv.style.display = 'flex';
         }
 
         // ローディング中のキーボード操作を完全にブロックする関数
