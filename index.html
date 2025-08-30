@@ -79,31 +79,16 @@
       console.log('🔄 [DEBUG] 新パス構造へリダイレクト予定');
     }
     
-    // Referer情報の確認（無限ループ検出用）
+    // Referer情報の確認（デバッグ用のみ - アラート表示は削除）
     if (document.referrer) {
       console.log('🔗 Referrer:', document.referrer);
       console.log('🔗 Current URL:', window.location.href);
       console.log('🔗 Referrer matches current?', document.referrer === window.location.href);
       
+      // 注意: document.referrer === window.location.hrefは正常なアクセスでも発生するため
+      // アラート表示は削除し、ログ記録のみに変更
       if (document.referrer === window.location.href) {
-        console.error('🚨 [CRITICAL] 同一ページからのリダイレクト検出! 無限ループ確定');
-        console.error('🚨 [ANALYSIS] これはCloudflareの_redirectsファイルまたはキャッシュ問題の可能性');
-        
-        // 無限ループを完全に停止
-        alert('無限リダイレクトが検出されました。\\n\\n原因: Cloudflareキャッシュまたは_redirects設定\\n\\n対処: \\n1. ブラウザキャッシュをクリア\\n2. Cloudflareダッシュボードでキャッシュパージ\\n3. しばらく待ってから再試行');
-        
-        // フラグを設定して以降の処理をスキップ
-        window.infiniteLoopDetected = true;
-        
-        // フォールバック画面を表示
-        try {
-          const fallbackSection = document.getElementById('fallback-section');
-          if (fallbackSection) {
-            fallbackSection.style.display = 'block';
-          }
-        } catch (e) {
-          console.warn('⚠️ [Index] フォールバック画面表示エラー:', e);
-        }
+        console.warn('⚠️ [DEBUG] Referrerが現在URLと同一 (正常なブラウザ動作の可能性)');
       }
     }
     
@@ -113,14 +98,14 @@
       const currentTime = Date.now();
       const currentUrl = window.location.href;
       
-      // 直近5秒以内の同一URLロード履歴をチェック
+      // 直近10秒以内の同一URLロード履歴をチェック（緩和: 5回以上で検出）
       const recentLoads = loadHistory.filter(entry => 
-        (currentTime - entry.timestamp) < 5000 && entry.url === currentUrl
+        (currentTime - entry.timestamp) < 10000 && entry.url === currentUrl
       ).length;
       
-      if (recentLoads >= 3) {
-        console.error('🚨 [CRITICAL] 同一ページが5秒以内に3回以上ロード - 無限ループ確定');
-        alert('ページの無限ループが検出されました。\\n\\nCloudflareキャッシュをクリアしてください。');
+      if (recentLoads >= 5) {
+        console.error('🚨 [CRITICAL] 同一ページが10秒以内に5回以上ロード - 真の無限ループ検出');
+        alert('真の無限ループが検出されました。\\n\\nCloudflareキャッシュをクリアしてください。');
         
         // フラグを設定して以降の処理をスキップ
         window.infiniteLoopDetected = true;
@@ -273,12 +258,12 @@
           const currentTime = Date.now();
           const lastRedirectTime = parseInt(sessionStorage.getItem(REDIRECT_STORAGE_KEY + '_time') || '0');
           
-          // 5秒以内に3回以上リダイレクトしている場合は停止
-          if (redirectCount >= MAX_REDIRECT_COUNT && (currentTime - lastRedirectTime) < 5000) {
-            console.error('🚨 [Index] 無限リダイレクト検出! 遷移を停止します');
-            alert('リダイレクトループが検出されました。\n\nページを手動で更新するか、ブラウザのキャッシュをクリアしてください。');
+          // 10秒以内に5回以上リダイレクトしている場合は停止（緩和）
+          if (redirectCount >= 5 && (currentTime - lastRedirectTime) < 10000) {
+            console.error('🚨 [Index] 真の無限リダイレクト検出! 遷移を停止します');
+            alert('真の無限リダイレクトが検出されました。\n\nページを手動で更新するか、ブラウザのキャッシュをクリアしてください。');
             
-            // 5秒後にカウンタをリセット
+            // 10秒後にカウンタをリセット
             setTimeout(() => {
               try {
                 sessionStorage.removeItem(REDIRECT_STORAGE_KEY);
@@ -286,7 +271,7 @@
               } catch (e) {
                 console.warn('⚠️ [Index] Storage クリア失敗:', e);
               }
-            }, 5000);
+            }, 10000);
             return;
           }
           
@@ -369,9 +354,9 @@
             const currentTime = Date.now();
             const lastAutoRedirectTime = parseInt(sessionStorage.getItem('pwa_auto_redirect_time') || '0');
             
-            // 3秒以内に2回以上自動リダイレクトしている場合は停止
-            if (autoRedirectCount >= 2 && (currentTime - lastAutoRedirectTime) < 3000) {
-              console.error('🚨 [Index] PWA自動リダイレクト無限ループ検出! 停止します');
+            // 10秒以内に4回以上自動リダイレクトしている場合は停止（緩和）
+            if (autoRedirectCount >= 4 && (currentTime - lastAutoRedirectTime) < 10000) {
+              console.error('🚨 [Index] PWA真の無限リダイレクト検出! 停止します');
               return;
             }
             
@@ -379,7 +364,7 @@
             sessionStorage.setItem('pwa_auto_redirect_count', (autoRedirectCount + 1).toString());
             sessionStorage.setItem('pwa_auto_redirect_time', currentTime.toString());
             
-            // 3秒後にカウンタをリセット
+            // 10秒後にカウンタをリセット
             setTimeout(() => {
               try {
                 sessionStorage.removeItem('pwa_auto_redirect_count');
@@ -387,7 +372,7 @@
               } catch (e) {
                 console.warn('⚠️ [Index] PWA Storage クリア失敗:', e);
               }
-            }, 3000);
+            }, 10000);
             
           } catch (storageError) {
             console.warn('⚠️ [Index] PWA Storage access warning:', storageError);
