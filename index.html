@@ -9,7 +9,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="revision" content="20250830c-api-compatibility-fix">
+  <meta name="revision" content="20250830d-room-data-structure-fix">
   <link rel="manifest" href="./manifest.json">
   <link rel="stylesheet" href="./css_styles/pwa-materialui.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -28,7 +28,7 @@
     <div id="fallback-section" style="display:none; margin-top: 24px; padding: 16px; background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 4px;">
       <h3 style="color: #856404; margin-top: 0;">⚠️ リダイレクト問題検出</h3>
       <p style="color: #856404; margin-bottom: 16px;">Cloudflareキャッシュ問題により自動遷移できません。</p>
-      <a href="/property_select.html?v=20250830c&direct=1" 
+      <a href="/property_select.html?v=20250830d&direct=1" 
          style="display: inline-block; padding: 12px 24px; background-color: #28a745; color: white; text-decoration: none; border-radius: 4px; font-weight: bold;">
         📋 物件選択画面へ（直接リンク）
       </a>
@@ -328,7 +328,7 @@
           
           // キャッシュバスティング付きURL生成
           const timestamp = Date.now();
-          const targetUrl = `/property_select.html?v=20250830c&nocache=${timestamp}`;
+          const targetUrl = `/property_select.html?v=20250830d&nocache=${timestamp}`;
           console.log('🔄 [Index] キャッシュバイパス目標URL:', targetUrl);
           
           window.location.href = targetUrl;

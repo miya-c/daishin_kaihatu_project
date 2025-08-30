@@ -1077,10 +1077,17 @@ URL: ${window.location.href}
             throw new Error(`部屋軽量APIエラー: ${roomData.error}`);
           }
           
-          rooms = roomData.data || [];
-          if (!Array.isArray(rooms)) {
-            console.error('[ReactApp] 部屋軽量APIデータが配列ではない:', rooms);
-            throw new Error('部屋軽量APIのデータ形式が正しくありません。');
+          // GAS APIレスポンス構造: {success: true, data: {property: {...}, rooms: [...]}}
+          if (roomData.data && roomData.data.rooms && Array.isArray(roomData.data.rooms)) {
+            rooms = roomData.data.rooms;
+            console.log('[ReactApp] 部屋データ正常抽出:', rooms.length, '件');
+          } else if (Array.isArray(roomData.data)) {
+            // フォールバック: dataが直接配列の場合
+            rooms = roomData.data;
+            console.log('[ReactApp] 部屋データ直接配列:', rooms.length, '件');
+          } else {
+            console.error('[ReactApp] 部屋APIデータ構造エラー:', roomData);
+            throw new Error('部屋APIのデータ形式が正しくありません。');
           }
           
           // Step 3: 部屋データの正規化とキャッシュ保存
@@ -1129,13 +1136,23 @@ URL: ${window.location.href}
           
           // 従来形式の処理
           rooms = [];
-          if (roomData && roomData.success === true && Array.isArray(roomData.data)) {
-            rooms = roomData.data;
+          if (roomData && roomData.success === true) {
+            if (roomData.data && roomData.data.rooms && Array.isArray(roomData.data.rooms)) {
+              // ネストされた構造: {success: true, data: {rooms: [...]}}
+              rooms = roomData.data.rooms;
+              console.log('[ReactApp] 従来API部屋データ正常抽出:', rooms.length, '件');
+            } else if (Array.isArray(roomData.data)) {
+              // 直接配列: {success: true, data: [...]}
+              rooms = roomData.data;
+              console.log('[ReactApp] 従来API部屋データ直接配列:', rooms.length, '件');
+            }
           } else if (Array.isArray(roomData)) {
+            // 配列のみ: [...]
             rooms = roomData;
-          } else {
+          } 
+          
+          if (rooms.length === 0) {
             console.warn('[ReactApp] 予期しない部屋データ形式 - 空配列で継続');
-            rooms = [];
           }
           
           // 正規化

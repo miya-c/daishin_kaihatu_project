@@ -369,12 +369,22 @@
                 }
                 
                 // Step 4: データ正規化とキャッシュ保存
-                rooms = data.data?.rooms || data.data || [];
-                propertyName = data.data?.propertyName || sessionPropertyName || '物件名不明';
+                if (data.data?.rooms && Array.isArray(data.data.rooms)) {
+                    rooms = data.data.rooms;
+                    console.log('[room_select] 部屋データ正常抽出:', rooms.length, '件');
+                } else if (Array.isArray(data.data)) {
+                    rooms = data.data;
+                    console.log('[room_select] 部屋データ直接配列:', rooms.length, '件');
+                } else {
+                    rooms = [];
+                    console.warn('[room_select] 部屋データなし - 空配列で継続');
+                }
+                
+                propertyName = data.data?.property?.name || data.data?.propertyName || sessionPropertyName || '物件名不明';
                 
                 if (!Array.isArray(rooms)) {
                     console.error('[room_select] 部屋データが配列ではない:', rooms);
-                    throw new Error('部屋軽量APIのデータ形式が正しくありません');
+                    throw new Error('部屋APIのデータ形式が正しくありません');
                 }
                 
                 console.log('[room_select] 📋 軽量APIデータ設定:', rooms.length, '件');
