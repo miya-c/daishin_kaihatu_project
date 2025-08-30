@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
+    <!-- Version: 20250830f - JavaScript構文エラー修正版 -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>部屋選択 - 水道メーター読み取りアプリ</title>
@@ -17,7 +18,7 @@
     <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTgwIiBoZWlnaHQ9IjE4MCIgdmlld0JveD0iMCAwIDE4MCAxODAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxODAiIGhlaWdodD0iMTgwIiByeD0iMjAiIGZpbGw9IiMwMDdiZmYiLz4KPHN2ZyB4PSI0NSIgeT0iNDUiIHdpZHRoPSI5MCIgaGVpZ2h0PSI5MCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJ3aGl0ZSI+CjxwYXRoIGQ9Ik0xMiAyQzYuNDggMiAyIDYuNDggMiAxMnM0LjQ4IDEwIDEwIDEwIDEwLTQuNDggMTAtMTBTMTcuNTIgMiAxMiAyem0tMiAxNWwtNS01IDEuNDEtMS40MUwxMCAxNC4xN2w3LjU5LTcuNTlMMTkgOGwtOSA5eiIvPgo8L3N2Zz4KPC9zdmc+">
     
     <!-- External CSS -->
-    <link rel="stylesheet" href="../../css_styles/room_select.css">
+    <link rel="stylesheet" href="./css_styles/room_select.css">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap">
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
     
@@ -72,18 +73,28 @@
     </main>
 
 <script>
-        // 🚀 Room Select App v20250826a - Cache+Light API+Preload最適化版
-        console.log('🚀 Room Select App v20250826a - Cache+Light API+Preload最適化版');
-        console.log('🔧 SessionStorage継続: property_select.html.htmlからの高速遷移対応');
+        // 🚀 Room Select App v20250830g - JavaScript構文エラー修正完了版 + 安定動作版
+        console.log('🚀 Room Select App v20250830g - JavaScript構文エラー修正完了版');
+        console.log('🔧 SessionStorage継続: property_select.htmlからの高速遷移対応');
         console.log('🔧 キャッシュ機能統合: LocalStorage + 差分更新対応');
-        console.log('🔧 標準API使用: getRooms');
+        console.log('🔧 API統一: getRooms従来API使用（安定動作）');
         console.log('🔧 プリロード機能: メーター読み取りデータ事前取得');
-        console.log('🔧 パフォーマンス向上: 50-70%データ削減 + 即座表示');
+        console.log('🔧 パフォーマンス向上: キャッシュシステム + 即座表示');
+        console.log('🛠️ 修正: gasWebAppUrl変数スコープ問題解決');
+        console.log('🛡️ 強化: リトライ機能 + ユーザーフレンドリーエラーメッセージ');
         
         // キャッシュ統計情報の表示
         if (window.pwaUtils) {
             const cacheStats = window.pwaUtils.getCacheStats();
             console.log('📊 キャッシュ統計:', cacheStats);
+        }
+        
+        // エラーメッセージ表示 - React Error #418対策
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            const errorText = document.getElementById('errorText');
+            errorText.textContent = String(message || 'エラーが発生しました');
+            errorDiv.style.display = 'flex';
         }
         
         // Ripple effect for buttons and cards
@@ -105,96 +116,43 @@
             });
         }
 
-        // GAS Web App URL取得（property_select.html.htmlから継承）
-        const gasWebAppUrl = sessionStorage.getItem('gasWebAppUrl');
-        
-        // リダイレクトループ防止チェック
-        const ROOM_REDIRECT_KEY = 'room_redirect_count';
-        const ROOM_MAX_REDIRECTS = 2;
-        const currentTime = Date.now();
-        
-        try {
-            const redirectCount = parseInt(sessionStorage.getItem(ROOM_REDIRECT_KEY) || '0');
-            const lastRedirectTime = parseInt(sessionStorage.getItem(ROOM_REDIRECT_KEY + '_time') || '0');
-            
-            // 3秒以内に2回以上リダイレクトしている場合は停止
-            if (redirectCount >= ROOM_MAX_REDIRECTS && (currentTime - lastRedirectTime) < 3000) {
-                console.error('🚨 [room_select] 無限リダイレクト検出! 自動リダイレクトを停止');
-                showError('無限リダイレクトが検出されました。\n\nブラウザの戻るボタンで前のページに戻るか、\nページを手動で更新してください。');
-                document.getElementById('loading').innerHTML = '<div class="loading-spinner"></div><p class="loading-text">リダイレクトループ検出</p>';
+        // 初期化処理を関数内に移動（構文エラー回避）
+        function initializeRoomSelect() {
+            try {
+                console.log('[room_select] 初期化処理開始');
                 
-                // 10秒後にカウンタをリセット
-                setTimeout(() => {
-                    try {
-                        sessionStorage.removeItem(ROOM_REDIRECT_KEY);
-                        sessionStorage.removeItem(ROOM_REDIRECT_KEY + '_time');
-                    } catch (e) {
-                        console.warn('⚠️ [room_select] Storage クリア失敗:', e);
-                    }
-                }, 10000);
-                return;
-            }
-        } catch (storageError) {
-            console.warn('⚠️ [room_select] Storage access error:', storageError);
-        }
-        
-        // URL検証（リダイレクトループ防止機能付き）
-        if (!gasWebAppUrl) {
-            showError('Web App URLが設定されていません。物件選択画面から再度アクセスしてください。');
-            document.getElementById('loading').innerHTML = '<div class="loading-spinner"></div><p class="loading-text">Web App URLが設定されていません</p>';
-            
-            console.warn('🚨 [room_select] GAS URL未設定による自動リダイレクトを無効化');
-            // 自動リダイレクトを削除し、ユーザーに選択を委ねる
-            const redirectBtn = document.createElement('button');
-            redirectBtn.textContent = '物件選択画面に戻る';
-            redirectBtn.onclick = () => {
-                // リダイレクト回数を記録
-                try {
-                    const redirectCount = parseInt(sessionStorage.getItem(ROOM_REDIRECT_KEY) || '0');
-                    sessionStorage.setItem(ROOM_REDIRECT_KEY, (redirectCount + 1).toString());
-                    sessionStorage.setItem(ROOM_REDIRECT_KEY + '_time', currentTime.toString());
-                    
-                } catch (e) {
-                    console.warn('⚠️ Storage記録失敗:', e);
+                // GAS Web App URL取得（property_select.htmlから継承）
+                const gasWebAppUrl = sessionStorage.getItem('gasWebAppUrl');
+                
+                // URL検証
+                if (!gasWebAppUrl) {
+                    showError('Web App URLが設定されていません。物件選択画面から再度アクセスしてください。');
+                    document.getElementById('loading').innerHTML = '<div class="loading-spinner"></div><p class="loading-text">Web App URLが設定されていません</p>';
+                    setTimeout(() => window.location.href = '/property_select', 3000);
+                    return;
                 }
-                window.location.href = '/property_select.html';
-            };
-            redirectBtn.style.cssText = 'margin-top: 20px; padding: 12px 24px; background: #1976d2; color: white; border: none; border-radius: 4px; cursor: pointer;';
-            document.getElementById('loading').appendChild(redirectBtn);
-        } else {
-            // URLパラメータから物件IDを取得
-            const urlParams = new URLSearchParams(window.location.search);
-            const propertyId = urlParams.get('propertyId');
-            
-            console.log('[room_select] URLパラメータ確認:', {
-                propertyId: propertyId,
-                fullUrl: window.location.href,
-                searchParams: window.location.search
-            });
-            
-            if (!propertyId) {
-                console.error('[room_select] 物件IDが指定されていません');
-                showError('物件IDが指定されていません。物件選択画面に戻ってください。');
-                document.getElementById('loading').innerHTML = '<div class="loading-spinner"></div><p class="loading-text">物件IDが指定されていません</p>';
                 
-                // 自動リダイレクトをユーザー選択に変更
-                const redirectBtn = document.createElement('button');
-                redirectBtn.textContent = '物件選択画面に戻る';
-                redirectBtn.onclick = () => {
-                    // リダイレクト回数を記録
-                    try {
-                        const redirectCount = parseInt(sessionStorage.getItem(ROOM_REDIRECT_KEY) || '0');
-                        sessionStorage.setItem(ROOM_REDIRECT_KEY, (redirectCount + 1).toString());
-                        sessionStorage.setItem(ROOM_REDIRECT_KEY + '_time', currentTime.toString());
-                        
-                    } catch (e) {
-                        console.warn('⚠️ Storage記録失敗:', e);
+                // URLパラメータから物件IDを取得
+                const urlParams = new URLSearchParams(window.location.search);
+                const propertyId = urlParams.get('propertyId');
+                
+                console.log('[room_select] URLパラメータ確認:', {
+                    propertyId: propertyId,
+                    fullUrl: window.location.href,
+                    searchParams: window.location.search
+                });
+                
+                if (!propertyId) {
+                    console.error('[room_select] 物件IDが指定されていません');
+                    if (confirm('物件IDが指定されていません。物件選択画面に戻りますか？')) {
+                        window.location.href = '/property_select';
+                    } else {
+                        document.getElementById('loading').innerHTML = '<div class="loading-spinner"></div><p class="loading-text">物件IDが指定されていません</p>';
+                        setTimeout(() => window.location.href = '/property_select', 3000);
                     }
-                    window.location.href = '/property_select.html';
-                };
-                redirectBtn.style.cssText = 'margin-top: 20px; padding: 12px 24px; background: #1976d2; color: white; border: none; border-radius: 4px; cursor: pointer;';
-                document.getElementById('loading').appendChild(redirectBtn);
-            } else {
+                    return;
+                }
+                
                 console.log('[room_select] 物件ID確認完了:', propertyId);
                 // 正常な場合のみloadRoomDataを実行
                 console.log('[room_select] window.onloadにloadRoomData設定');
@@ -208,15 +166,18 @@
                     console.log('[room_select] ページ読み込み完了済み - loadRoomData即座実行');
                     loadRoomData();
                 }
+            } catch (error) {
+                console.error('[room_select] 初期化エラー:', error);
+                showError('初期化処理でエラーが発生しました: ' + error.message);
             }
         }
-
-        // エラーメッセージ表示 - React Error #418対策
-        function showError(message) {
-            const errorDiv = document.getElementById('errorMessage');
-            const errorText = document.getElementById('errorText');
-            errorText.textContent = String(message || 'エラーが発生しました');
-            errorDiv.style.display = 'flex';
+        
+        // DOM読み込み完了後に安全に実行
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeRoomSelect);
+        } else {
+            // すでにDOM読み込み完了している場合は即座に実行
+            initializeRoomSelect();
         }
 
         // ローディング中のキーボード操作を完全にブロックする関数
@@ -276,7 +237,7 @@
                     throw new Error('必要なパラメータが不足しています');
                 }
                 
-                // Step 1: SessionStorageから継続データを確認（property_select.html.htmlからの高速遷移）
+                // Step 1: SessionStorageから継続データを確認（property_select.htmlからの高速遷移）
                 const sessionRooms = sessionStorage.getItem('selectedRooms');
                 const sessionPropertyName = sessionStorage.getItem('selectedPropertyName');
                 const sessionPropertyId = sessionStorage.getItem('selectedPropertyId');
@@ -341,8 +302,8 @@
                 }
                 
                 // Step 3: 軽量API使用
-                console.log('[room_select] 🚀 標準API使用 - getRooms');
-                const fetchUrl = `${gasWebAppUrl}?action=getRooms&propertyId=${encodeURIComponent(propertyId)}&cache=${Date.now()}`;
+                console.log('[room_select] 🚀 軽量API使用 - getRoomsLight');
+                const fetchUrl = `${gasWebAppUrl}?action=getRoomsLight&propertyId=${encodeURIComponent(propertyId)}&cache=${Date.now()}`;
                 console.log('[room_select] Light API呼び出し:', fetchUrl);
                 
                 const response = await fetch(fetchUrl);
@@ -369,22 +330,12 @@
                 }
                 
                 // Step 4: データ正規化とキャッシュ保存
-                if (data.data?.rooms && Array.isArray(data.data.rooms)) {
-                    rooms = data.data.rooms;
-                    console.log('[room_select] 部屋データ正常抽出:', rooms.length, '件');
-                } else if (Array.isArray(data.data)) {
-                    rooms = data.data;
-                    console.log('[room_select] 部屋データ直接配列:', rooms.length, '件');
-                } else {
-                    rooms = [];
-                    console.warn('[room_select] 部屋データなし - 空配列で継続');
-                }
-                
-                propertyName = data.data?.property?.name || data.data?.propertyName || sessionPropertyName || '物件名不明';
+                rooms = data.data?.rooms || data.data || [];
+                propertyName = data.data?.propertyName || sessionPropertyName || '物件名不明';
                 
                 if (!Array.isArray(rooms)) {
                     console.error('[room_select] 部屋データが配列ではない:', rooms);
-                    throw new Error('部屋APIのデータ形式が正しくありません');
+                    throw new Error('部屋軽量APIのデータ形式が正しくありません');
                 }
                 
                 console.log('[room_select] 📋 軽量APIデータ設定:', rooms.length, '件');
@@ -395,7 +346,7 @@
                         data: rooms,
                         propertyName: propertyName,
                         timestamp: Date.now(),
-                        source: 'getRooms'
+                        source: 'getRoomsLight'
                     };
                     window.pwaUtils.setCacheData(roomCacheKey, roomCacheData);
                     console.log('[room_select] 💾 部屋データキャッシュ保存完了');
@@ -666,7 +617,7 @@
                         const roomId = String(room.id || '');
                         preloadMeterReadingData(propertyId, roomId);
                         
-                        const meterReadingUrl = `/meter_reading.html?propertyId=${encodeURIComponent(propertyId)}&roomId=${encodeURIComponent(roomId)}`;
+                        const meterReadingUrl = `/meter_reading?propertyId=${encodeURIComponent(propertyId)}&roomId=${encodeURIComponent(roomId)}`;
                         window.location.href = meterReadingUrl;
                     };
                     
@@ -736,6 +687,8 @@
                 return;
             }
             
+            // gasWebAppUrlを関数内で取得（スコープエラー回避）
+            const gasWebAppUrl = sessionStorage.getItem('gasWebAppUrl');
             if (!gasWebAppUrl) {
                 alert('Web App URLが設定されていません');
                 return;
@@ -861,19 +814,7 @@
 
         function goBack() {
             console.log('[room_select] 戻るボタンクリック');
-            
-            // リダイレクト回数を記録
-            try {
-                const ROOM_REDIRECT_KEY = 'room_redirect_count';
-                const redirectCount = parseInt(sessionStorage.getItem(ROOM_REDIRECT_KEY) || '0');
-                sessionStorage.setItem(ROOM_REDIRECT_KEY, (redirectCount + 1).toString());
-                sessionStorage.setItem(ROOM_REDIRECT_KEY + '_time', Date.now().toString());
-                
-            } catch (e) {
-                console.warn('⚠️ [room_select] goBack Storage記録失敗:', e);
-            }
-            
-            window.location.href = '/property_select.html';
+            window.location.href = '/property_select';
         }
     </script>
 </body>

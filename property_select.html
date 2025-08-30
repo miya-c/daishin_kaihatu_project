@@ -394,12 +394,12 @@
     // WOFF完全削除済み - 一般ブラウザ専用
     // CSS読み込み完了待機機能追加
     
-    console.log('🚀 Property Select App v20250826b - エラーハンドリング強化版');
+    console.log('🚀 Property Select App v20250830g - バックエンド連携問題修正版');
     console.log('WOFF Status:', typeof woff !== 'undefined' ? '❌ ERROR: WOFF still loaded!' : '✅ WOFF successfully removed');
     console.log('🔧 キャッシュ機能統合: LocalStorage + 差分更新対応');
-    console.log('🔧 標準API使用: getProperties + getRooms');
-    console.log('🔧 パフォーマンス向上: 50-70%データ削減 + 即座表示');
-    console.log('🛡️ エラーハンドリング: ErrorBoundary + Global Handler');
+    console.log('🔧 API修正: getRooms従来API統一 + リトライ機能');
+    console.log('🔧 パフォーマンス向上: キャッシュシステム + 即座表示');
+    console.log('🛡️ エラーハンドリング: リトライ + ユーザーフレンドリーメッセージ');
     
     // Global Error Handler - 未捕捉のJavaScriptエラーをキャッチ
     window.addEventListener('error', (event) => {
@@ -993,65 +993,87 @@ URL: ${window.location.href}
         setSearchTerm(event.target.value);
       };
 
-      // 従来API用フォールバック関数（部屋データ）- handlePropertySelect関数外に移動
-      const fetchRoomsLegacy = async (property) => {
-        console.log('[ReactApp] 🔄 部屋従来API使用 - getRooms (フォールバック)');
+      // リトライ機能付き従来API用フォールバック関数（部屋データ）
+      const fetchRoomsLegacy = async (property, maxRetries = 3) => {
+        console.log('[ReactApp] 🔄 部屋従来API使用 - getRooms (リトライ機能付き)');
         
-        const requestUrl = `${gasWebAppUrl}?action=getRooms&propertyId=${property.id}&cache=${Date.now()}`;
-        const response = await fetch(requestUrl);
-        
-        if (!response.ok) {
-          throw new Error(`部屋情報の取得に失敗しました。ステータス: ${response.status}`);
-        }
-        
-        const roomData = await response.json();
-        console.log('[ReactApp] 部屋従来API Response:', roomData);
-        
-        // 従来形式の処理
-        let rooms = [];
-        if (roomData && roomData.success === true) {
-          if (roomData.data && roomData.data.rooms && Array.isArray(roomData.data.rooms)) {
-            // ネストされた構造: {success: true, data: {rooms: [...]}}
-            rooms = roomData.data.rooms;
-            console.log('[ReactApp] 従来API部屋データ正常抽出:', rooms.length, '件');
-          } else if (Array.isArray(roomData.data)) {
-            // 直接配列: {success: true, data: [...]}
-            rooms = roomData.data;
-            console.log('[ReactApp] 従来API部屋データ直接配列:', rooms.length, '件');
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+          try {
+            const requestUrl = `${gasWebAppUrl}?action=getRooms&propertyId=${property.id}&cache=${Date.now()}`;
+            console.log(`[ReactApp] 🔄 API呼び出し試行 ${attempt}/${maxRetries}:`, requestUrl);
+            
+            const response = await fetch(requestUrl);
+            
+            if (!response.ok) {
+              if (response.status === 503 && attempt < maxRetries) {
+                const delayMs = 1000 * Math.pow(2, attempt - 1); // 指数バックオフ: 1s, 2s, 4s
+                console.warn(`[ReactApp] ⏳ 503エラー - ${delayMs}ms後にリトライ (${attempt}/${maxRetries})`);
+                await new Promise(resolve => setTimeout(resolve, delayMs));
+                continue;
+              }
+              throw new Error(`部屋情報の取得に失敗しました。ステータス: ${response.status}`);
+            }
+            
+            console.log(`[ReactApp] ✅ API呼び出し成功 (${attempt}回目)`);
+            const roomData = await response.json();
+            console.log('[ReactApp] 部屋従来API Response:', roomData);
+            
+            // 従来形式の処理
+            let rooms = [];
+            if (roomData && roomData.success === true) {
+              if (roomData.data && roomData.data.rooms && Array.isArray(roomData.data.rooms)) {
+                // ネストされた構造: {success: true, data: {rooms: [...]}}
+                rooms = roomData.data.rooms;
+                console.log('[ReactApp] 従来API部屋データ正常抽出:', rooms.length, '件');
+              } else if (Array.isArray(roomData.data)) {
+                // 直接配列: {success: true, data: [...]}
+                rooms = roomData.data;
+                console.log('[ReactApp] 従来API部屋データ直接配列:', rooms.length, '件');
+              }
+            } else if (Array.isArray(roomData)) {
+              // 配列のみ: [...]
+              rooms = roomData;
+            } 
+            
+            if (rooms.length === 0) {
+              console.warn('[ReactApp] 予期しない部屋データ形式 - 空配列で継続');
+            }
+            
+            // 正規化
+            const normalizedRooms = rooms.map((room, index) => ({
+              ...room,
+              id: room.id || room.roomId || room['部屋ID'] || `room-${index}`,
+              name: room.name || room.roomName || room['部屋名'] || '部屋名未設定',
+              rawInspectionDate: room.rawInspectionDate || room.inspectionDate || room['検針日時'],
+              hasActualReading: room.hasActualReading || room.hasReading || room['検針済み'] || false,
+            }));
+            
+            console.log('[ReactApp] 📋 部屋従来APIデータ設定:', normalizedRooms.length, '件');
+            
+            // フォールバック時もキャッシュに保存
+            if (window.pwaUtils) {
+              const roomCacheData = {
+                data: normalizedRooms,
+                timestamp: Date.now(),
+                source: 'getRooms'
+              };
+              const roomCacheKey = `rooms_${property.id}`;
+              window.pwaUtils.setCacheData(roomCacheKey, roomCacheData);
+              console.log('[ReactApp] 💾 部屋従来APIデータキャッシュ保存完了');
+            }
+            
+            await storeAndNavigate(property, normalizedRooms);
+            return; // 成功時は関数終了
+            
+          } catch (error) {
+            if (attempt === maxRetries) {
+              // 最終試行でもエラーの場合
+              console.error(`[ReactApp] ❌ 全リトライ失敗 (${maxRetries}回試行):`, error);
+              throw error;
+            }
+            console.warn(`[ReactApp] ⚠️ 試行${attempt}失敗, 次回リトライします:`, error.message);
           }
-        } else if (Array.isArray(roomData)) {
-          // 配列のみ: [...]
-          rooms = roomData;
-        } 
-        
-        if (rooms.length === 0) {
-          console.warn('[ReactApp] 予期しない部屋データ形式 - 空配列で継続');
         }
-        
-        // 正規化
-        const normalizedRooms = rooms.map((room, index) => ({
-          ...room,
-          id: room.id || room.roomId || room['部屋ID'] || `room-${index}`,
-          name: room.name || room.roomName || room['部屋名'] || '部屋名未設定',
-          rawInspectionDate: room.rawInspectionDate || room.inspectionDate || room['検針日時'],
-          hasActualReading: room.hasActualReading || room.hasReading || room['検針済み'] || false,
-        }));
-        
-        console.log('[ReactApp] 📋 部屋従来APIデータ設定:', normalizedRooms.length, '件');
-        
-        // フォールバック時もキャッシュに保存
-        if (window.pwaUtils) {
-          const roomCacheData = {
-            data: normalizedRooms,
-            timestamp: Date.now(),
-            source: 'getRooms'
-          };
-          const roomCacheKey = `rooms_${property.id}`;
-          window.pwaUtils.setCacheData(roomCacheKey, roomCacheData);
-          console.log('[ReactApp] 💾 部屋従来APIデータキャッシュ保存完了');
-        }
-        
-        await storeAndNavigate(property, normalizedRooms);
       };
 
       const handlePropertySelect = async (property) => {
@@ -1110,32 +1132,32 @@ URL: ${window.location.href}
             }
           }
           
-          // Step 2: キャッシュなし or 無効の場合は軽量API使用
-          console.log('[ReactApp] 🚀 部屋標準API使用 - getRooms');
+          // Step 2: キャッシュなし or 無効の場合は従来API使用
+          console.log('[ReactApp] 🚀 部屋従来API使用 - getRooms');
           const requestUrl = `${gasWebAppUrl}?action=getRooms&propertyId=${property.id}&cache=${Date.now()}`;
-          console.log('[ReactApp] Room request URL (Light):', requestUrl);
+          console.log('[ReactApp] Room request URL:', requestUrl);
           
           const roomResponse = await fetch(requestUrl);
-          console.log('[ReactApp] Room Response Status (Light):', roomResponse.status);
+          console.log('[ReactApp] Room Response Status:', roomResponse.status);
           
           if (!roomResponse.ok) {
-            // 軽量API失敗時は従来APIにフォールバック
-            console.warn('[ReactApp] 部屋軽量API失敗 - 従来APIにフォールバック');
+            // API失敗時のエラーハンドリング - リトライ機能付き
+            console.warn('[ReactApp] 部屋API失敗 - リトライ機能付きフォールバック');
             return await fetchRoomsLegacy(property);
           }
           const roomData = await roomResponse.json();
-          console.log('[ReactApp] 部屋軽量API Response:', roomData);
-          console.log('[ReactApp] 部屋圧縮統計:', {
-            success: roomData.success,
-            count: roomData.count,
-            compressionRatio: roomData.compressionRatio,
-            timeSavedMs: roomData.timeSavedMs
-          });
+          console.log('[ReactApp] 部屋API Response:', roomData);
+          if (roomData.count) {
+            console.log('[ReactApp] 部屋データ統計:', {
+              success: roomData.success,
+              count: roomData.count
+            });
+          }
           
           // 統一レスポンス形式の処理
           if (roomData.success === false) {
-            console.error('[ReactApp] 部屋軽量APIエラー:', roomData.error);
-            throw new Error(`部屋軽量APIエラー: ${roomData.error}`);
+            console.error('[ReactApp] 部屋APIエラー:', roomData.error);
+            throw new Error(`部屋APIエラー: ${roomData.error}`);
           }
           
           // GAS APIレスポンス構造: {success: true, data: {property: {...}, rooms: [...]}}
@@ -1160,7 +1182,7 @@ URL: ${window.location.href}
             hasActualReading: room.hasActualReading || room.hasReading || room['検針済み'] || false,
           }));
           
-          console.log('[ReactApp] 📋 部屋軽量APIデータ正規化:', normalizedRooms.length, '件');
+          console.log('[ReactApp] 📋 部屋APIデータ正規化:', normalizedRooms.length, '件');
           
           // 部屋データをキャッシュに保存
           if (window.pwaUtils && normalizedRooms.length > 0) {
@@ -1177,7 +1199,18 @@ URL: ${window.location.href}
           await storeAndNavigate(property, normalizedRooms);
         } catch (error) {
           console.error('[ReactApp] ❌ 部屋取得エラー:', error);
-          setError(`部屋情報の取得に失敗しました: ${error.message}`);
+          
+          // ユーザーフレンドリーなエラーメッセージ
+          let userMessage = '部屋情報の読み込みに失敗しました。';
+          if (error.message.includes('503')) {
+            userMessage = 'サーバーが一時的に利用できません。しばらく待ってから再度お試しください。';
+          } else if (error.message.includes('network') || error.message.includes('fetch')) {
+            userMessage = 'ネットワーク接続に問題があります。インターネット接続を確認してください。';
+          } else if (error.message.includes('timeout')) {
+            userMessage = '通信がタイムアウトしました。しばらく待ってから再度お試しください。';
+          }
+          
+          setError(userMessage + '\n\n問題が継続する場合は、管理者にお問い合わせください。');
           setIsNavigating(false);
         }
         
