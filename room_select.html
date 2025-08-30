@@ -154,15 +154,6 @@
                     sessionStorage.setItem(ROOM_REDIRECT_KEY, (redirectCount + 1).toString());
                     sessionStorage.setItem(ROOM_REDIRECT_KEY + '_time', currentTime.toString());
                     
-                    // グローバルリダイレクト履歴を記録
-                    const redirectHistory = JSON.parse(sessionStorage.getItem('global_redirect_history') || '[]');
-                    redirectHistory.push({
-                        from: 'room_select.html (GAS URL missing)',
-                        to: 'property_select.html',
-                        timestamp: Date.now(),
-                        url: window.location.href
-                    });
-                    sessionStorage.setItem('global_redirect_history', JSON.stringify(redirectHistory));
                 } catch (e) {
                     console.warn('⚠️ Storage記録失敗:', e);
                 }
@@ -196,15 +187,6 @@
                         sessionStorage.setItem(ROOM_REDIRECT_KEY, (redirectCount + 1).toString());
                         sessionStorage.setItem(ROOM_REDIRECT_KEY + '_time', currentTime.toString());
                         
-                        // グローバルリダイレクト履歴を記録
-                        const redirectHistory = JSON.parse(sessionStorage.getItem('global_redirect_history') || '[]');
-                        redirectHistory.push({
-                            from: 'room_select.html (no propertyId)',
-                            to: 'property_select.html',
-                            timestamp: Date.now(),
-                            url: window.location.href
-                        });
-                        sessionStorage.setItem('global_redirect_history', JSON.stringify(redirectHistory));
                     } catch (e) {
                         console.warn('⚠️ Storage記録失敗:', e);
                     }
@@ -877,15 +859,6 @@
                 sessionStorage.setItem(ROOM_REDIRECT_KEY, (redirectCount + 1).toString());
                 sessionStorage.setItem(ROOM_REDIRECT_KEY + '_time', Date.now().toString());
                 
-                // グローバルリダイレクト履歴を記録
-                const redirectHistory = JSON.parse(sessionStorage.getItem('global_redirect_history') || '[]');
-                redirectHistory.push({
-                    from: 'room_select.html (back button)',
-                    to: 'property_select.html',
-                    timestamp: Date.now(),
-                    url: window.location.href
-                });
-                sessionStorage.setItem('global_redirect_history', JSON.stringify(redirectHistory));
             } catch (e) {
                 console.warn('⚠️ [room_select] goBack Storage記録失敗:', e);
             }

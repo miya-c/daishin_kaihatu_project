@@ -1191,30 +1191,31 @@ URL: ${window.location.href}
           const targetUrl = `/room_select?propertyId=${encodeURIComponent(property.id)}`;
           console.log(`[ReactApp] 🚀 画面遷移: ${targetUrl}`);
           
-          // グローバルリダイレクト履歴を記録（index.htmlから継承）
+          // シンプルなリダイレクト制限チェック
           try {
-            if (typeof recordRedirect === 'function') {
-              recordRedirect('property_select.html', 'room_select.html');
+            const redirectKey = 'property_redirect_count';
+            const maxRedirects = 2;
+            const currentCount = parseInt(sessionStorage.getItem(redirectKey) || '0');
+            const now = Date.now();
+            const lastTime = parseInt(sessionStorage.getItem(redirectKey + '_time') || '0');
+            
+            // 5秒以上経過していたらリセット
+            if ((now - lastTime) > 5000) {
+              sessionStorage.setItem(redirectKey, '1');
+              sessionStorage.setItem(redirectKey + '_time', now.toString());
             } else {
-              // recordRedirect関数が存在しない場合は独自実装
-              const redirectHistory = JSON.parse(sessionStorage.getItem('global_redirect_history') || '[]');
-              redirectHistory.push({
-                from: 'property_select.html',
-                to: 'room_select.html',
-                timestamp: Date.now(),
-                url: window.location.href
-              });
-              sessionStorage.setItem('global_redirect_history', JSON.stringify(redirectHistory));
-              
-              // 簡易無限ループ検出
-              if (redirectHistory.length >= 10) {
-                console.error('🚨 [property_select] 大量リダイレクト検出:', redirectHistory.length);
-                alert('多数のリダイレクトが検出されました。手動でページを更新してください。');
+              // 制限チェック
+              if (currentCount >= maxRedirects) {
+                console.error('🚨 [property_select] リダイレクト制限により遷移を停止');
+                alert('リダイレクトの制限回数に達しました。\n\nページを手動で更新してください。');
                 return;
               }
+              
+              sessionStorage.setItem(redirectKey, (currentCount + 1).toString());
+              sessionStorage.setItem(redirectKey + '_time', now.toString());
             }
           } catch (redirectError) {
-            console.warn('⚠️ [property_select] リダイレクト記録エラー:', redirectError);
+            console.warn('⚠️ [property_select] リダイレクト制限チェックエラー:', redirectError);
           }
           
           setTimeout(() => {
