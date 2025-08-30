@@ -113,34 +113,43 @@
             });
         }
 
-        // GAS Web App URL取得（property_select.htmlから継承）
-        const gasWebAppUrl = sessionStorage.getItem('gasWebAppUrl');
-        
-        // URL検証
-        if (!gasWebAppUrl) {
-            showError('Web App URLが設定されていません。物件選択画面から再度アクセスしてください。');
-            document.getElementById('loading').innerHTML = '<div class="loading-spinner"></div><p class="loading-text">Web App URLが設定されていません</p>';
-            setTimeout(() => window.location.href = '/property_select', 3000);
-        } else {
-            // URLパラメータから物件IDを取得
-            const urlParams = new URLSearchParams(window.location.search);
-            const propertyId = urlParams.get('propertyId');
-            
-            console.log('[room_select] URLパラメータ確認:', {
-                propertyId: propertyId,
-                fullUrl: window.location.href,
-                searchParams: window.location.search
-            });
-            
-            if (!propertyId) {
-                console.error('[room_select] 物件IDが指定されていません');
-                if (confirm('物件IDが指定されていません。物件選択画面に戻りますか？')) {
-                    window.location.href = '/property_select';
-                } else {
-                    document.getElementById('loading').innerHTML = '<div class="loading-spinner"></div><p class="loading-text">物件IDが指定されていません</p>';
+        // 初期化処理を関数内に移動（構文エラー回避）
+        function initializeRoomSelect() {
+            try {
+                console.log('[room_select] 初期化処理開始');
+                
+                // GAS Web App URL取得（property_select.htmlから継承）
+                const gasWebAppUrl = sessionStorage.getItem('gasWebAppUrl');
+                
+                // URL検証
+                if (!gasWebAppUrl) {
+                    showError('Web App URLが設定されていません。物件選択画面から再度アクセスしてください。');
+                    document.getElementById('loading').innerHTML = '<div class="loading-spinner"></div><p class="loading-text">Web App URLが設定されていません</p>';
                     setTimeout(() => window.location.href = '/property_select', 3000);
+                    return;
                 }
-            } else {
+                
+                // URLパラメータから物件IDを取得
+                const urlParams = new URLSearchParams(window.location.search);
+                const propertyId = urlParams.get('propertyId');
+                
+                console.log('[room_select] URLパラメータ確認:', {
+                    propertyId: propertyId,
+                    fullUrl: window.location.href,
+                    searchParams: window.location.search
+                });
+                
+                if (!propertyId) {
+                    console.error('[room_select] 物件IDが指定されていません');
+                    if (confirm('物件IDが指定されていません。物件選択画面に戻りますか？')) {
+                        window.location.href = '/property_select';
+                    } else {
+                        document.getElementById('loading').innerHTML = '<div class="loading-spinner"></div><p class="loading-text">物件IDが指定されていません</p>';
+                        setTimeout(() => window.location.href = '/property_select', 3000);
+                    }
+                    return;
+                }
+                
                 console.log('[room_select] 物件ID確認完了:', propertyId);
                 // 正常な場合のみloadRoomDataを実行
                 console.log('[room_select] window.onloadにloadRoomData設定');
@@ -154,7 +163,18 @@
                     console.log('[room_select] ページ読み込み完了済み - loadRoomData即座実行');
                     loadRoomData();
                 }
+            } catch (error) {
+                console.error('[room_select] 初期化エラー:', error);
+                showError('初期化処理でエラーが発生しました: ' + error.message);
             }
+        }
+        
+        // DOM読み込み完了後に安全に実行
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeRoomSelect);
+        } else {
+            // すでにDOM読み込み完了している場合は即座に実行
+            initializeRoomSelect();
         }
 
         // ローディング中のキーボード操作を完全にブロックする関数
