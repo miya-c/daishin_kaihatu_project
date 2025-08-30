@@ -76,7 +76,7 @@
         console.log('🚀 Room Select App v20250826a - Cache+Light API+Preload最適化版');
         console.log('🔧 SessionStorage継続: property_select.html.htmlからの高速遷移対応');
         console.log('🔧 キャッシュ機能統合: LocalStorage + 差分更新対応');
-        console.log('🔧 軽量API使用: getRoomsLight');
+        console.log('🔧 標準API使用: getRooms');
         console.log('🔧 プリロード機能: メーター読み取りデータ事前取得');
         console.log('🔧 パフォーマンス向上: 50-70%データ削減 + 即座表示');
         
@@ -341,8 +341,8 @@
                 }
                 
                 // Step 3: 軽量API使用
-                console.log('[room_select] 🚀 軽量API使用 - getRoomsLight');
-                const fetchUrl = `${gasWebAppUrl}?action=getRoomsLight&propertyId=${encodeURIComponent(propertyId)}&cache=${Date.now()}`;
+                console.log('[room_select] 🚀 標準API使用 - getRooms');
+                const fetchUrl = `${gasWebAppUrl}?action=getRooms&propertyId=${encodeURIComponent(propertyId)}&cache=${Date.now()}`;
                 console.log('[room_select] Light API呼び出し:', fetchUrl);
                 
                 const response = await fetch(fetchUrl);
@@ -385,7 +385,7 @@
                         data: rooms,
                         propertyName: propertyName,
                         timestamp: Date.now(),
-                        source: 'getRoomsLight'
+                        source: 'getRooms'
                     };
                     window.pwaUtils.setCacheData(roomCacheKey, roomCacheData);
                     console.log('[room_select] 💾 部屋データキャッシュ保存完了');

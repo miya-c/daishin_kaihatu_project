@@ -397,7 +397,7 @@
     console.log('🚀 Property Select App v20250826b - エラーハンドリング強化版');
     console.log('WOFF Status:', typeof woff !== 'undefined' ? '❌ ERROR: WOFF still loaded!' : '✅ WOFF successfully removed');
     console.log('🔧 キャッシュ機能統合: LocalStorage + 差分更新対応');
-    console.log('🔧 軽量API使用: getPropertiesLight + getRoomsLight');
+    console.log('🔧 標準API使用: getProperties + getRooms');
     console.log('🔧 パフォーマンス向上: 50-70%データ削減 + 即座表示');
     console.log('🛡️ エラーハンドリング: ErrorBoundary + Global Handler');
     
@@ -719,12 +719,12 @@ URL: ${window.location.href}
             }
             
             // Step 3: キャッシュなし or 無効の場合は軽量API使用
-            console.log('[ReactApp] 🚀 軽量API使用 - getPropertiesLight');
-            const requestUrl = `${gasWebAppUrl}?action=getPropertiesLight&cache=${Date.now()}`;
-            console.log('[ReactApp] Request URL (Light API):', requestUrl);
+            console.log('[ReactApp] 🚀 標準API使用 - getProperties');
+            const requestUrl = `${gasWebAppUrl}?action=getProperties&cache=${Date.now()}`;
+            console.log('[ReactApp] Request URL (Standard API):', requestUrl);
             
             const response = await fetch(requestUrl);
-            console.log('[ReactApp] Response status (Light API):', response.status);
+            console.log('[ReactApp] Response status (Standard API):', response.status);
             
             if (!response.ok) {
               // 軽量API失敗時は従来APIにフォールバック
@@ -733,7 +733,7 @@ URL: ${window.location.href}
             }
             
             const data = await response.json();
-            console.log('[ReactApp] GAS Response (Light API):', data);
+            console.log('[ReactApp] GAS Response (Standard API):', data);
             console.log('[ReactApp] Response compression stats:', {
               success: data.success,
               count: data.count,
@@ -745,8 +745,8 @@ URL: ${window.location.href}
             
             // 統一レスポンス形式の処理
             if (data.success === false) {
-              console.error('[ReactApp] Light API Error:', data.error);
-              throw new Error(`軽量APIエラー: ${data.error}`);
+              console.error('[ReactApp] Standard API Error:', data.error);
+              throw new Error(`標準APIエラー: ${data.error}`);
             }
             
             let actualData = data.data || [];
@@ -771,7 +771,7 @@ URL: ${window.location.href}
               const cacheData = {
                 data: normalizedData,
                 timestamp: Date.now(),
-                source: 'getPropertiesLight'
+                source: 'getProperties'
               };
               const cached = window.pwaUtils.setCacheData('properties', cacheData);
               console.log('[ReactApp] 💾 データキャッシュ保存:', cached ? '成功' : '失敗');
@@ -1050,8 +1050,8 @@ URL: ${window.location.href}
           }
           
           // Step 2: キャッシュなし or 無効の場合は軽量API使用
-          console.log('[ReactApp] 🚀 部屋軽量API使用 - getRoomsLight');
-          const requestUrl = `${gasWebAppUrl}?action=getRoomsLight&propertyId=${property.id}&cache=${Date.now()}`;
+          console.log('[ReactApp] 🚀 部屋標準API使用 - getRooms');
+          const requestUrl = `${gasWebAppUrl}?action=getRooms&propertyId=${property.id}&cache=${Date.now()}`;
           console.log('[ReactApp] Room request URL (Light):', requestUrl);
           
           const roomResponse = await fetch(requestUrl);
@@ -1099,7 +1099,7 @@ URL: ${window.location.href}
             const roomCacheData = {
               data: normalizedRooms,
               timestamp: Date.now(),
-              source: 'getRoomsLight'
+              source: 'getRooms'
             };
             window.pwaUtils.setCacheData(roomCacheKey, roomCacheData);
             console.log('[ReactApp] 💾 部屋データキャッシュ保存完了');
