@@ -9,7 +9,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="revision" content="20250829a-javascript-error-fix">
+  <meta name="revision" content="20250830a-redirects-syntax-fix">
   <link rel="manifest" href="./manifest.json">
   <link rel="stylesheet" href="./css_styles/pwa-materialui.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -27,14 +27,14 @@
 
   <script>
     // デバッグ用: 本番環境の状況をコンソールに記録
-    console.log('🚀 水道検針アプリ v20250829a - JavaScript エラー修正版');
+    console.log('🚀 水道検針アプリ v20250830a - リダイレクト・構文エラー修正版');
     console.log('📍 現在のURL:', window.location.href);
     console.log('📍 pathname:', window.location.pathname);
     console.log('📍 search:', window.location.search);
     console.log('📍 hash:', window.location.hash);
     console.log('📱 User Agent:', navigator.userAgent);
     console.log('🌐 PWA対応:', 'serviceWorker' in navigator);
-    console.log('🔧 JavaScript エラー修正版:', '20250829a-js-error-fixed');
+    console.log('🔧 JavaScript エラー修正版:', '20250830a-redirects-syntax-fixed');
     
     // PWA モード判定の詳細ログ
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
@@ -70,7 +70,9 @@
         
         // 無限ループを完全に停止
         alert('無限リダイレクトが検出されました。\\n\\n原因: Cloudflareキャッシュまたは_redirects設定\\n\\n対処: \\n1. ブラウザキャッシュをクリア\\n2. Cloudflareダッシュボードでキャッシュパージ\\n3. しばらく待ってから再試行');
-        return; // 以降の処理を完全停止
+        
+        // フラグを設定して以降の処理をスキップ
+        window.infiniteLoopDetected = true;
       }
     }
     
@@ -88,7 +90,9 @@
       if (recentLoads >= 3) {
         console.error('🚨 [CRITICAL] 同一ページが5秒以内に3回以上ロード - 無限ループ確定');
         alert('ページの無限ループが検出されました。\\n\\nCloudflareキャッシュをクリアしてください。');
-        return;
+        
+        // フラグを設定して以降の処理をスキップ
+        window.infiniteLoopDetected = true;
       }
       
       // 履歴を記録
@@ -212,6 +216,13 @@
     // アプリ開始関数（デバッグ情報付き・無限ループ防止機能付き）
     function startApp() {
       try {
+        // 無限ループ検出フラグの確認
+        if (window.infiniteLoopDetected) {
+          console.error('🚨 [Index] 無限ループ検出済み - startApp実行を停止');
+          alert('無限ループが検出されているため、アプリを開始できません。\\n\\nページを更新してから再試行してください。');
+          return;
+        }
+        
         console.log('🚀 [Index] アプリ開始ボタンクリック');
         console.log('📍 [Index] 遷移先:', '/property_select.html');
         
