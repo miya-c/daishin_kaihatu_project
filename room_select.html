@@ -27,6 +27,9 @@
     
     <!-- Performance Monitor -->
     <script src="/performance-monitor.js"></script>
+    
+    <!-- Navigation Debug Test (開発用) -->
+    <script src="/navigation-debug-test.js"></script>
 </head>
 <body>
     <!-- Material UI AppBar -->
@@ -861,7 +864,65 @@
 
         function goBack() {
             console.log('[room_select] 戻るボタンクリック');
-            window.location.href = '/property_select.html';
+            
+            try {
+                // 現在のURLとベースURLを確認
+                const currentUrl = window.location.href;
+                const baseUrl = window.location.origin;
+                console.log('[room_select] 現在のURL:', currentUrl);
+                console.log('[room_select] ベースURL:', baseUrl);
+                
+                // 複数のパス形式で試行
+                const possiblePaths = [
+                    '/property_select.html',                    // 絶対パス
+                    'property_select.html',                     // 相対パス
+                    `${baseUrl}/property_select.html`,          // 明示的絶対パス
+                    './property_select.html'                    // 明示的相対パス
+                ];
+                
+                console.log('[room_select] 遷移先候補:', possiblePaths);
+                
+                // 最初の候補で遷移を試行
+                const targetPath = possiblePaths[0];
+                console.log(`[room_select] 🚀 遷移実行: ${targetPath}`);
+                
+                // 遷移前の状態を保存
+                sessionStorage.setItem('navigationSource', 'room_select_back_button');
+                sessionStorage.setItem('navigationTime', new Date().toISOString());
+                
+                // 遷移実行
+                window.location.href = targetPath;
+                
+            } catch (error) {
+                console.error('[room_select] 戻るボタンエラー:', error);
+                
+                // エラー時のフォールバック処理
+                try {
+                    // 直接的な相対パス遷移
+                    console.warn('[room_select] フォールバック: 相対パス遷移実行');
+                    window.location.href = 'property_select.html';
+                } catch (fallbackError) {
+                    console.error('[room_select] フォールバック遷移もエラー:', fallbackError);
+                    
+                    // 最後の手段: ユーザーに手動リンクを提供
+                    const userConfirm = confirm(
+                        '戻るボタンでエラーが発生しました。\n' +
+                        '物件選択画面に手動で移動しますか？\n\n' +
+                        'OK: 手動で移動\n' +
+                        'キャンセル: このまま留まる'
+                    );
+                    
+                    if (userConfirm) {
+                        // 最後の手段として window.open を使用
+                        try {
+                            window.open('property_select.html', '_self');
+                        } catch (finalError) {
+                            alert('申し訳ございません。自動遷移ができませんでした。\nブラウザのアドレスバーに「property_select.html」と入力してください。');
+                            console.error('[room_select] 最終フォールバックもエラー:', finalError);
+                        }
+                    }
+                }
+            }
         }
     </script>
 </body>
