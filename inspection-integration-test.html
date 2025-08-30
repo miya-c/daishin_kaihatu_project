@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>検針機能修正 統合テスト</title>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 24px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 16px;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            background-color: #fafafa;
+        }
+        .test-passed {
+            border-left: 4px solid #4caf50;
+            background-color: #f1f8e9;
+        }
+        .test-failed {
+            border-left: 4px solid #f44336;
+            background-color: #ffebee;
+        }
+        .test-warning {
+            border-left: 4px solid #ff9800;
+            background-color: #fff3e0;
+        }
+        .test-button {
+            background: #1976d2;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 8px;
+            font-size: 14px;
+        }
+        .test-button:hover {
+            background: #1565c0;
+        }
+        .log-output {
+            background: #263238;
+            color: #b0bec5;
+            padding: 16px;
+            border-radius: 4px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            margin: 16px 0;
+        }
+        .summary {
+            font-size: 18px;
+            font-weight: 500;
+            margin: 20px 0;
+            padding: 16px;
+            border-radius: 4px;
+        }
+        .summary.success {
+            background: #4caf50;
+            color: white;
+        }
+        .summary.failure {
+            background: #f44336;
+            color: white;
+        }
+        h1, h2 {
+            color: #1976d2;
+        }
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+            margin-left: 8px;
+        }
+        .badge.success { background: #4caf50; color: white; }
+        .badge.failure { background: #f44336; color: white; }
+        .badge.info { background: #2196f3; color: white; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 検針機能修正 統合テスト</h1>
+        <p>
+            検針日更新とForce Refresh機能の修正が正常に動作することを検証します。
+        </p>
+        
+        <div class="test-section">
+            <h2>🚀 テスト実行</h2>
+            <button class="test-button" onclick="runAllTests()">📋 全テスト実行</button>
+            <button class="test-button" onclick="runInspectionDateTests()">📅 検針日テスト</button>
+            <button class="test-button" onclick="runForceRefreshTests()">🔄 Force Refreshテスト</button>
+            <button class="test-button" onclick="clearLogs()">🧹 ログクリア</button>
+        </div>
+        
+        <div id="test-summary" class="summary" style="display: none;">
+            <span id="summary-text"></span>
+            <span id="summary-badge" class="badge"></span>
+        </div>
+        
+        <div class="test-section">
+            <h2>📊 テスト結果概要</h2>
+            <div id="test-results">
+                <div id="date-test-result">📅 検針日更新ロジック: <span class="badge info">未実行</span></div>
+                <div id="refresh-test-result">🔄 Force Refresh機能: <span class="badge info">未実行</span></div>
+                <div id="storage-test-result">💾 SessionStorage管理: <span class="badge info">未実行</span></div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2>📝 修正内容確認</h2>
+            <ul>
+                <li><strong>検針日更新修正</strong>: handleUpdateReadings関数で常にgetCurrentJSTDateString()を使用</li>
+                <li><strong>Force Refresh実装</strong>: meter_reading.html → room_select.html 間でのフラグ管理</li>
+                <li><strong>キャッシュバイパス</strong>: 強制リフレッシュ時にSessionStorage/LocalStorageをバイパス</li>
+                <li><strong>フラグライフサイクル</strong>: 適切なフラグ設定・検出・クリア処理</li>
+            </ul>
+        </div>
+        
+        <div class="test-section">
+            <h2>📋 詳細ログ</h2>
+            <div id="log-output" class="log-output">テストを実行してください...</div>
+        </div>
+        
+        <div class="test-section">
+            <h2>🔧 手動テスト手順</h2>
+            <ol>
+                <li><strong>検針日更新テスト</strong>:
+                    <ul>
+                        <li>検針情報画面で既存データを更新</li>
+                        <li>保存後、検針日が今日の日付になることを確認</li>
+                    </ul>
+                </li>
+                <li><strong>Force Refreshテスト</strong>:
+                    <ul>
+                        <li>部屋一覧から検針情報画面へ移動</li>
+                        <li>検針データを入力・保存</li>
+                        <li>戻るボタンで部屋一覧に戻る</li>
+                        <li>検針完了日がすぐに反映されることを確認</li>
+                    </ul>
+                </li>
+            </ol>
+        </div>
+    </div>
+
+    <script src="inspection-date-test.js"></script>
+    <script src="force-refresh-test.js"></script>
+    
+    <script>
+        let logOutput = '';
+        
+        // コンソールログをキャプチャ
+        const originalConsoleLog = console.log;
+        const originalConsoleWarn = console.warn;
+        const originalConsoleError = console.error;
+        
+        function captureLog(level, ...args) {
+            const timestamp = new Date().toLocaleTimeString();
+            const message = args.join(' ');
+            logOutput += `[${timestamp}] ${level}: ${message}\n`;
+            updateLogDisplay();
+            
+            // 元のコンソール出力も実行
+            if (level === 'LOG') originalConsoleLog(...args);
+            else if (level === 'WARN') originalConsoleWarn(...args);
+            else if (level === 'ERROR') originalConsoleError(...args);
+        }
+        
+        console.log = (...args) => captureLog('LOG', ...args);
+        console.warn = (...args) => captureLog('WARN', ...args);
+        console.error = (...args) => captureLog('ERROR', ...args);
+        
+        function updateLogDisplay() {
+            document.getElementById('log-output').textContent = logOutput;
+            document.getElementById('log-output').scrollTop = document.getElementById('log-output').scrollHeight;
+        }
+        
+        function clearLogs() {
+            logOutput = '';
+            updateLogDisplay();
+        }
+        
+        function updateTestResult(testId, passed, label) {
+            const element = document.getElementById(testId);
+            if (element) {
+                const badge = passed ? '<span class="badge success">✅ 合格</span>' : '<span class="badge failure">❌ 失敗</span>';
+                element.innerHTML = `${label}: ${badge}`;
+            }
+        }
+        
+        function updateSummary(allPassed, details) {
+            const summaryDiv = document.getElementById('test-summary');
+            const summaryText = document.getElementById('summary-text');
+            const summaryBadge = document.getElementById('summary-badge');
+            
+            summaryDiv.style.display = 'block';
+            
+            if (allPassed) {
+                summaryDiv.className = 'summary success';
+                summaryText.textContent = '🎉 全テスト合格！実装された修正は正常に動作しています。';
+                summaryBadge.textContent = '✅ 成功';
+                summaryBadge.className = 'badge success';
+            } else {
+                summaryDiv.className = 'summary failure';
+                summaryText.textContent = '⚠️ 一部テストが失敗しました。詳細ログを確認してください。';
+                summaryBadge.textContent = '❌ 失敗';
+                summaryBadge.className = 'badge failure';
+            }
+        }
+        
+        function runInspectionDateTests() {
+            clearLogs();
+            console.log('🧪 検針日更新テスト開始...\n');
+            
+            try {
+                if (typeof window.runAllInspectionTests === 'function') {
+                    const result = window.runAllInspectionTests();
+                    updateTestResult('date-test-result', result, '📅 検針日更新ロジック');
+                    return result;
+                } else {
+                    console.error('検針日テスト関数が見つかりません');
+                    return false;
+                }
+            } catch (error) {
+                console.error('検針日テスト実行エラー:', error);
+                return false;
+            }
+        }
+        
+        function runForceRefreshTests() {
+            console.log('\n🧪 Force Refreshテスト開始...\n');
+            
+            try {
+                if (typeof window.runForceRefreshTests === 'function') {
+                    const result = window.runForceRefreshTests();
+                    updateTestResult('refresh-test-result', result, '🔄 Force Refresh機能');
+                    return result;
+                } else {
+                    console.error('Force Refreshテスト関数が見つかりません');
+                    return false;
+                }
+            } catch (error) {
+                console.error('Force Refreshテスト実行エラー:', error);
+                return false;
+            }
+        }
+        
+        function runStorageTests() {
+            console.log('\n🧪 SessionStorageテスト開始...\n');
+            
+            try {
+                if (typeof window.runSessionStorageTests === 'function') {
+                    const result = window.runSessionStorageTests();
+                    const passed = result.setTest && result.clearTest;
+                    updateTestResult('storage-test-result', passed, '💾 SessionStorage管理');
+                    return passed;
+                } else {
+                    console.error('SessionStorageテスト関数が見つかりません');
+                    return false;
+                }
+            } catch (error) {
+                console.error('SessionStorageテスト実行エラー:', error);
+                return false;
+            }
+        }
+        
+        function runAllTests() {
+            clearLogs();
+            console.log('🚀 検針機能修正 統合テスト実行開始');
+            console.log('=' .repeat(50));
+            
+            const dateTestResult = runInspectionDateTests();
+            const refreshTestResult = runForceRefreshTests(); 
+            const storageTestResult = runStorageTests();
+            
+            console.log('\n' + '='.repeat(50));
+            console.log('🎯 統合テスト結果サマリー');
+            console.log('=' .repeat(50));
+            
+            const allPassed = dateTestResult && refreshTestResult && storageTestResult;
+            
+            console.log(`📅 検針日更新ロジック: ${dateTestResult ? '✅ 合格' : '❌ 失敗'}`);
+            console.log(`🔄 Force Refresh機能: ${refreshTestResult ? '✅ 合格' : '❌ 失敗'}`);  
+            console.log(`💾 SessionStorage管理: ${storageTestResult ? '✅ 合格' : '❌ 失敗'}`);
+            
+            console.log(`\n🎉 総合結果: ${allPassed ? '✅ 全テスト合格' : '❌ 一部テスト失敗'}`);
+            
+            updateSummary(allPassed, {
+                dateTest: dateTestResult,
+                refreshTest: refreshTestResult,
+                storageTest: storageTestResult
+            });
+            
+            if (allPassed) {
+                console.log('\n✨ 実装された修正は正常に動作しています！');
+                console.log('📝 修正内容:');
+                console.log('  1. 検針日更新時に常に今日の日付が設定される');
+                console.log('  2. 検針完了後の部屋一覧戻り時にデータが即座に反映される');
+                console.log('  3. SessionStorageフラグが適切に管理される');
+                console.log('  4. キャッシュバイパスが正常に動作する');
+            }
+            
+            return allPassed;
+        }
+        
+        // ページロード時に軽量テスト実行
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                console.log('📋 テストライブラリ初期化完了');
+                console.log('▶️ 右上のボタンからテストを実行してください');
+            }, 500);
+        });
+    </script>
+</body>
+</html>
