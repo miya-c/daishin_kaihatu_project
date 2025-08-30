@@ -18,11 +18,32 @@
 </head>
 <body>
   <div class="container">
-    <h1>水道検針アプリaaaaa</h1>
+    <h1>水道検針アプリ</h1>
     <p>このアプリはPWAとしてインストールできます。</p>
     <button id="install-btn" style="display:none;" onclick="installPWA()">PWAをインストール</button>
     <br><br>
     <button onclick="startApp()" style="padding: 12px 24px; background-color: #1976d2; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px;">アプリを開始</button>
+    
+    <!-- 無限ループ検出時の代替手段 -->
+    <div id="fallback-section" style="display:none; margin-top: 24px; padding: 16px; background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 4px;">
+      <h3 style="color: #856404; margin-top: 0;">⚠️ リダイレクト問題検出</h3>
+      <p style="color: #856404; margin-bottom: 16px;">Cloudflareキャッシュ問題により自動遷移できません。</p>
+      <a href="/property_select.html?v=20250830&direct=1" 
+         style="display: inline-block; padding: 12px 24px; background-color: #28a745; color: white; text-decoration: none; border-radius: 4px; font-weight: bold;">
+        📋 物件選択画面へ（直接リンク）
+      </a>
+      <br><br>
+      <details style="color: #856404;">
+        <summary style="cursor: pointer; font-weight: bold;">🔧 Cloudflareキャッシュクリア手順</summary>
+        <ol style="margin-top: 8px;">
+          <li>Cloudflareダッシュボードにログイン</li>
+          <li>対象ドメインを選択</li>
+          <li>「Caching」→「Configuration」</li>
+          <li>「Purge Cache」→「Purge Everything」</li>
+          <li>ブラウザも完全リフレッシュ (Ctrl+Shift+R)</li>
+        </ol>
+      </details>
+    </div>
   </div>
 
   <script>
@@ -73,6 +94,16 @@
         
         // フラグを設定して以降の処理をスキップ
         window.infiniteLoopDetected = true;
+        
+        // フォールバック画面を表示
+        try {
+          const fallbackSection = document.getElementById('fallback-section');
+          if (fallbackSection) {
+            fallbackSection.style.display = 'block';
+          }
+        } catch (e) {
+          console.warn('⚠️ [Index] フォールバック画面表示エラー:', e);
+        }
       }
     }
     
@@ -93,6 +124,16 @@
         
         // フラグを設定して以降の処理をスキップ
         window.infiniteLoopDetected = true;
+        
+        // フォールバック画面を表示
+        try {
+          const fallbackSection = document.getElementById('fallback-section');
+          if (fallbackSection) {
+            fallbackSection.style.display = 'block';
+          }
+        } catch (e) {
+          console.warn('⚠️ [Index] フォールバック画面表示エラー:', e);
+        }
       }
       
       // 履歴を記録
@@ -274,7 +315,6 @@
         try {
           console.log('🔄 [Index] property_select.html へリダイレクト実行');
           console.log('🔄 [Index] リダイレクト前URL:', window.location.href);
-          console.log('🔄 [Index] 目標URL: /property_select.html');
           console.log('🔄 [Index] Referrer情報:', document.referrer);
           console.log('🔄 [Index] ブラウザ情報:', navigator.userAgent);
           console.log('🔄 [Index] Cloudflareキャッシュ確認: _redirectsファイル無効化済み');
@@ -286,7 +326,12 @@
             return;
           }
           
-          window.location.href = '/property_select.html';
+          // キャッシュバスティング付きURL生成
+          const timestamp = Date.now();
+          const targetUrl = `/property_select.html?v=20250830&nocache=${timestamp}`;
+          console.log('🔄 [Index] キャッシュバイパス目標URL:', targetUrl);
+          
+          window.location.href = targetUrl;
         } catch (error) {
           console.error('❌ [Index] 画面遷移エラー:', error);
           alert('画面遷移でエラーが発生しました: ' + error.message);
