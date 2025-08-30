@@ -931,16 +931,10 @@
               return;
             }
             
-            // JST日付を正規化
-            let inspectionDate;
-            if (date && date !== '') {
-              inspectionDate = normalizeToJSTDate(date);
-            } else {
-              // 新規検針の場合は今日のJST日付を使用
-              inspectionDate = getCurrentJSTDateString();
-            }
+            // JST日付を正規化 - 更新処理では常に今日の日付を使用
+            const inspectionDate = getCurrentJSTDateString();
             
-            console.log(`[meter_reading] JST日付設定: ${date} → ${inspectionDate}`);
+            console.log(`[meter_reading] 更新処理で今日の日付を設定: ${date} → ${inspectionDate}`);
 
             // ✅ 修正: 指示数履歴を取得するための変数初期化
             let previousReading = 0;
