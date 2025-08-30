@@ -1,13 +1,18 @@
 # Cloudflare Pages Redirects for Water Meter Reading App
-# Legacy path redirects to new structure
+# ALL REDIRECTS TEMPORARILY DISABLED TO RESOLVE INFINITE LOOP ISSUE
+# Date: 2025-08-30 - ERR_TOO_MANY_REDIRECTS fix attempt
 
-/html_files/main_app/property_select.html   /property_select.html   301
-/html_files/main_app/room_select.html       /room_select.html       301  
-/html_files/main_app/meter_reading.html     /meter_reading.html     301
+# Legacy path redirects - TEMPORARILY DISABLED for debugging
+# /html_files/main_app/property_select.html   /property_select.html   301
+# /html_files/main_app/room_select.html       /room_select.html       301  
+# /html_files/main_app/meter_reading.html     /meter_reading.html     301
 
-# Clean URL support - REMOVED to prevent parameter loss infinite loops
+# Clean URL support - PERMANENTLY DISABLED to prevent parameter loss infinite loops
 # /property_select    /property_select.html   301  (DISABLED - causes parameter loss)
 # /room_select        /room_select.html       301  (DISABLED - causes parameter loss)
 # /meter_reading      /meter_reading.html     301  (DISABLED - causes parameter loss)
 
 # 404 fallback (removed /* catch-all to prevent infinite redirects)
+
+# NOTE: All redirect rules are disabled to isolate the infinite loop issue.
+# After verification that direct .html URLs work, legacy redirects can be re-enabled selectively.

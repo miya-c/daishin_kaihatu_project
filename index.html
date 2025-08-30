@@ -61,9 +61,44 @@
     // Referer情報の確認（無限ループ検出用）
     if (document.referrer) {
       console.log('🔗 Referrer:', document.referrer);
+      console.log('🔗 Current URL:', window.location.href);
+      console.log('🔗 Referrer matches current?', document.referrer === window.location.href);
+      
       if (document.referrer === window.location.href) {
-        console.error('🚨 [DEBUG] 同一ページからのリダイレクト検出! 無限ループの可能性');
+        console.error('🚨 [CRITICAL] 同一ページからのリダイレクト検出! 無限ループ確定');
+        console.error('🚨 [ANALYSIS] これはCloudflareの_redirectsファイルまたはキャッシュ問題の可能性');
+        
+        // 無限ループを完全に停止
+        alert('無限リダイレクトが検出されました。\\n\\n原因: Cloudflareキャッシュまたは_redirects設定\\n\\n対処: \\n1. ブラウザキャッシュをクリア\\n2. Cloudflareダッシュボードでキャッシュパージ\\n3. しばらく待ってから再試行');
+        return; // 以降の処理を完全停止
       }
+    }
+    
+    // 追加のループ検出: ページロード履歴チェック
+    try {
+      const loadHistory = JSON.parse(sessionStorage.getItem('page_load_history') || '[]');
+      const currentTime = Date.now();
+      const currentUrl = window.location.href;
+      
+      // 直近5秒以内の同一URLロード履歴をチェック
+      const recentLoads = loadHistory.filter(entry => 
+        (currentTime - entry.timestamp) < 5000 && entry.url === currentUrl
+      ).length;
+      
+      if (recentLoads >= 3) {
+        console.error('🚨 [CRITICAL] 同一ページが5秒以内に3回以上ロード - 無限ループ確定');
+        alert('ページの無限ループが検出されました。\\n\\nCloudflareキャッシュをクリアしてください。');
+        return;
+      }
+      
+      // 履歴を記録
+      loadHistory.push({ url: currentUrl, timestamp: currentTime });
+      // 最新10件のみ保持
+      if (loadHistory.length > 10) loadHistory.shift();
+      sessionStorage.setItem('page_load_history', JSON.stringify(loadHistory));
+      
+    } catch (error) {
+      console.warn('⚠️ [DEBUG] ページロード履歴チェックエラー:', error);
     }
     
     // グローバル変数とエラーハンドリング
@@ -227,6 +262,19 @@
         
         try {
           console.log('🔄 [Index] property_select.html へリダイレクト実行');
+          console.log('🔄 [Index] リダイレクト前URL:', window.location.href);
+          console.log('🔄 [Index] 目標URL: /property_select.html');
+          console.log('🔄 [Index] Referrer情報:', document.referrer);
+          console.log('🔄 [Index] ブラウザ情報:', navigator.userAgent);
+          console.log('🔄 [Index] Cloudflareキャッシュ確認: _redirectsファイル無効化済み');
+          
+          // 追加の事前チェック
+          if (window.location.href.includes('property_select')) {
+            console.error('🚨 [CRITICAL] 既にproperty_selectページにいるのにリダイレクト実行 - これは異常');
+            alert('内部エラー: 既に目標ページにいます。ページを更新してください。');
+            return;
+          }
+          
           window.location.href = '/property_select.html';
         } catch (error) {
           console.error('❌ [Index] 画面遷移エラー:', error);

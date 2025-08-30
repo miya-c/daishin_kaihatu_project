@@ -1,7 +1,7 @@
 // Service Worker for PWA - Speed Optimized for Cache+Light API architecture
 // Version 20250829a - JavaScript Error Fix + Enhanced Cache Clear
-const CACHE_NAME = 'meter-reading-app-v4-js-error-fix';
-const DATA_CACHE_NAME = 'meter-reading-data-v4';
+const CACHE_NAME = 'meter-reading-app-v5-redirects-fix-20250830';
+const DATA_CACHE_NAME = 'meter-reading-data-v5';
 
 // Static assets for offline support (Cloudflare Pages compatible paths)
 const CACHE_ASSETS = [
