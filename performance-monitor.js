@@ -250,9 +250,15 @@ class PerformanceMonitor {
 
   // Record error
   recordError(error, context = '') {
+    // Null/undefined チェック
+    if (!error) {
+      console.warn('⚠️ PerformanceMonitor: recordError called with null/undefined error');
+      return;
+    }
+    
     const metrics = {
-      message: error.message || error,
-      stack: error.stack,
+      message: (error && error.message) ? error.message : String(error || 'Unknown error'),
+      stack: (error && error.stack) ? error.stack : null,
       context,
       timestamp: Date.now(),
       page: window.location.pathname,

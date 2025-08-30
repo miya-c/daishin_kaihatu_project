@@ -1077,7 +1077,7 @@ URL: ${window.location.href}
             throw new Error(`部屋軽量APIエラー: ${roomData.error}`);
           }
           
-          let rooms = roomData.data || [];
+          rooms = roomData.data || [];
           if (!Array.isArray(rooms)) {
             console.error('[ReactApp] 部屋軽量APIデータが配列ではない:', rooms);
             throw new Error('部屋軽量APIのデータ形式が正しくありません。');
@@ -1128,7 +1128,7 @@ URL: ${window.location.href}
           console.log('[ReactApp] 部屋従来API Response:', roomData);
           
           // 従来形式の処理
-          let rooms = [];
+          rooms = [];
           if (roomData && roomData.success === true && Array.isArray(roomData.data)) {
             rooms = roomData.data;
           } else if (Array.isArray(roomData)) {
