@@ -993,6 +993,67 @@ URL: ${window.location.href}
         setSearchTerm(event.target.value);
       };
 
+      // 従来API用フォールバック関数（部屋データ）- handlePropertySelect関数外に移動
+      const fetchRoomsLegacy = async (property) => {
+        console.log('[ReactApp] 🔄 部屋従来API使用 - getRooms (フォールバック)');
+        
+        const requestUrl = `${gasWebAppUrl}?action=getRooms&propertyId=${property.id}&cache=${Date.now()}`;
+        const response = await fetch(requestUrl);
+        
+        if (!response.ok) {
+          throw new Error(`部屋情報の取得に失敗しました。ステータス: ${response.status}`);
+        }
+        
+        const roomData = await response.json();
+        console.log('[ReactApp] 部屋従来API Response:', roomData);
+        
+        // 従来形式の処理
+        let rooms = [];
+        if (roomData && roomData.success === true) {
+          if (roomData.data && roomData.data.rooms && Array.isArray(roomData.data.rooms)) {
+            // ネストされた構造: {success: true, data: {rooms: [...]}}
+            rooms = roomData.data.rooms;
+            console.log('[ReactApp] 従来API部屋データ正常抽出:', rooms.length, '件');
+          } else if (Array.isArray(roomData.data)) {
+            // 直接配列: {success: true, data: [...]}
+            rooms = roomData.data;
+            console.log('[ReactApp] 従来API部屋データ直接配列:', rooms.length, '件');
+          }
+        } else if (Array.isArray(roomData)) {
+          // 配列のみ: [...]
+          rooms = roomData;
+        } 
+        
+        if (rooms.length === 0) {
+          console.warn('[ReactApp] 予期しない部屋データ形式 - 空配列で継続');
+        }
+        
+        // 正規化
+        const normalizedRooms = rooms.map((room, index) => ({
+          ...room,
+          id: room.id || room.roomId || room['部屋ID'] || `room-${index}`,
+          name: room.name || room.roomName || room['部屋名'] || '部屋名未設定',
+          rawInspectionDate: room.rawInspectionDate || room.inspectionDate || room['検針日時'],
+          hasActualReading: room.hasActualReading || room.hasReading || room['検針済み'] || false,
+        }));
+        
+        console.log('[ReactApp] 📋 部屋従来APIデータ設定:', normalizedRooms.length, '件');
+        
+        // フォールバック時もキャッシュに保存
+        if (window.pwaUtils) {
+          const roomCacheData = {
+            data: normalizedRooms,
+            timestamp: Date.now(),
+            source: 'getRooms'
+          };
+          const roomCacheKey = `rooms_${property.id}`;
+          window.pwaUtils.setCacheData(roomCacheKey, roomCacheData);
+          console.log('[ReactApp] 💾 部屋従来APIデータキャッシュ保存完了');
+        }
+        
+        await storeAndNavigate(property, normalizedRooms);
+      };
+
       const handlePropertySelect = async (property) => {
         console.log('[ReactApp] 🏠 handlePropertySelect called with:', property);
         
@@ -1119,67 +1180,6 @@ URL: ${window.location.href}
           setError(`部屋情報の取得に失敗しました: ${error.message}`);
           setIsNavigating(false);
         }
-        
-        // 従来API用フォールバック関数（部屋データ）
-        const fetchRoomsLegacy = async (property) => {
-          console.log('[ReactApp] 🔄 部屋従来API使用 - getRooms (フォールバック)');
-          
-          const requestUrl = `${gasWebAppUrl}?action=getRooms&propertyId=${property.id}&cache=${Date.now()}`;
-          const response = await fetch(requestUrl);
-          
-          if (!response.ok) {
-            throw new Error(`部屋情報の取得に失敗しました。ステータス: ${response.status}`);
-          }
-          
-          const roomData = await response.json();
-          console.log('[ReactApp] 部屋従来API Response:', roomData);
-          
-          // 従来形式の処理
-          rooms = [];
-          if (roomData && roomData.success === true) {
-            if (roomData.data && roomData.data.rooms && Array.isArray(roomData.data.rooms)) {
-              // ネストされた構造: {success: true, data: {rooms: [...]}}
-              rooms = roomData.data.rooms;
-              console.log('[ReactApp] 従来API部屋データ正常抽出:', rooms.length, '件');
-            } else if (Array.isArray(roomData.data)) {
-              // 直接配列: {success: true, data: [...]}
-              rooms = roomData.data;
-              console.log('[ReactApp] 従来API部屋データ直接配列:', rooms.length, '件');
-            }
-          } else if (Array.isArray(roomData)) {
-            // 配列のみ: [...]
-            rooms = roomData;
-          } 
-          
-          if (rooms.length === 0) {
-            console.warn('[ReactApp] 予期しない部屋データ形式 - 空配列で継続');
-          }
-          
-          // 正規化
-          const normalizedRooms = rooms.map((room, index) => ({
-            ...room,
-            id: room.id || room.roomId || room['部屋ID'] || `room-${index}`,
-            name: room.name || room.roomName || room['部屋名'] || '部屋名未設定',
-            rawInspectionDate: room.rawInspectionDate || room.inspectionDate || room['検針日時'],
-            hasActualReading: room.hasActualReading || room.hasReading || room['検針済み'] || false,
-          }));
-          
-          console.log('[ReactApp] 📋 部屋従来APIデータ設定:', normalizedRooms.length, '件');
-          
-          // フォールバック時もキャッシュに保存
-          if (window.pwaUtils) {
-            const roomCacheData = {
-              data: normalizedRooms,
-              timestamp: Date.now(),
-              source: 'getRooms'
-            };
-            const roomCacheKey = `rooms_${property.id}`;
-            window.pwaUtils.setCacheData(roomCacheKey, roomCacheData);
-            console.log('[ReactApp] 💾 部屋従来APIデータキャッシュ保存完了');
-          }
-          
-          await storeAndNavigate(property, normalizedRooms);
-        };
         
         // SessionStorage保存と画面遷移の共通関数
         async function storeAndNavigate(property, rooms) {
