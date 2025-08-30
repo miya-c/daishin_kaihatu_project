@@ -154,6 +154,30 @@
                 }
                 
                 console.log('[room_select] 物件ID確認完了:', propertyId);
+                
+                // 検針完了後の戻り用フラグをチェック
+                const forceRefresh = sessionStorage.getItem('forceRefreshRooms');
+                const updatedRoomId = sessionStorage.getItem('updatedRoomId');
+                const lastUpdateTime = sessionStorage.getItem('lastUpdateTime');
+                
+                console.log('[room_select] 戻り用フラグ確認:', {
+                    forceRefresh,
+                    updatedRoomId,
+                    lastUpdateTime: lastUpdateTime ? new Date(parseInt(lastUpdateTime)).toLocaleString() : null
+                });
+                
+                // フラグがある場合はクリアして強制リフレッシュ
+                if (forceRefresh === 'true') {
+                    console.log('[room_select] 🔄 検針完了後の戻り処理 - 強制リフレッシュ実行');
+                    sessionStorage.removeItem('forceRefreshRooms');
+                    sessionStorage.removeItem('updatedRoomId');
+                    sessionStorage.removeItem('lastUpdateTime');
+                    
+                    // 強制リフレッシュフラグを設定
+                    window.forceRefreshData = true;
+                    window.updatedRoomId = updatedRoomId;
+                }
+                
                 // 正常な場合のみloadRoomDataを実行
                 console.log('[room_select] window.onloadにloadRoomData設定');
                 window.onload = function() {
@@ -237,12 +261,18 @@
                     throw new Error('必要なパラメータが不足しています');
                 }
                 
+                // 強制リフレッシュフラグをチェック
+                const forceRefresh = window.forceRefreshData;
+                console.log('[room_select] 強制リフレッシュフラグ:', forceRefresh);
+                
                 // Step 1: SessionStorageから継続データを確認（property_select.htmlからの高速遷移）
-                const sessionRooms = sessionStorage.getItem('selectedRooms');
-                const sessionPropertyName = sessionStorage.getItem('selectedPropertyName');
-                const sessionPropertyId = sessionStorage.getItem('selectedPropertyId');
+                // ただし、強制リフレッシュ時はスキップ
+                const sessionRooms = !forceRefresh ? sessionStorage.getItem('selectedRooms') : null;
+                const sessionPropertyName = !forceRefresh ? sessionStorage.getItem('selectedPropertyName') : null;
+                const sessionPropertyId = !forceRefresh ? sessionStorage.getItem('selectedPropertyId') : null;
                 
                 console.log('[room_select] 🔄 SessionStorage確認:', {
+                    forceRefresh: forceRefresh,
                     hasRooms: !!sessionRooms,
                     hasPropertyName: !!sessionPropertyName,
                     sessionPropertyId: sessionPropertyId,
@@ -250,7 +280,7 @@
                     propertyIdMatch: sessionPropertyId === propertyId
                 });
                 
-                if (sessionRooms && sessionPropertyId === propertyId && sessionPropertyName) {
+                if (!forceRefresh && sessionRooms && sessionPropertyId === propertyId && sessionPropertyName) {
                     // SessionStorageから即座にデータを表示
                     try {
                         const parsedRooms = JSON.parse(sessionRooms);
@@ -274,11 +304,16 @@
                     }
                 }
                 
-                // Step 2: LocalStorageキャッシュ確認
+                // Step 2: LocalStorageキャッシュ確認（強制リフレッシュ時はスキップ）
                 const roomCacheKey = `rooms_${propertyId}`;
-                const isCacheValid = window.pwaUtils?.isCacheValid(roomCacheKey);
+                const isCacheValid = !forceRefresh && window.pwaUtils?.isCacheValid(roomCacheKey);
                 
-                console.log('[room_select] 🗄️ キャッシュ確認:', { key: roomCacheKey, valid: isCacheValid });
+                console.log('[room_select] 🗄️ キャッシュ確認:', { 
+                    key: roomCacheKey, 
+                    valid: isCacheValid,
+                    forceRefresh: forceRefresh,
+                    skipCache: forceRefresh 
+                });
                 
                 if (isCacheValid) {
                     const cachedData = window.pwaUtils.getCacheData(roomCacheKey);
@@ -302,7 +337,11 @@
                 }
                 
                 // Step 3: 軽量API使用
-                console.log('[room_select] 🚀 軽量API使用 - getRoomsLight');
+                if (forceRefresh) {
+                    console.log('[room_select] 🚀 強制リフレッシュ - 最新データをAPIから取得');
+                } else {
+                    console.log('[room_select] 🚀 軽量API使用 - getRoomsLight');
+                }
                 const fetchUrl = `${gasWebAppUrl}?action=getRoomsLight&propertyId=${encodeURIComponent(propertyId)}&cache=${Date.now()}`;
                 console.log('[room_select] Light API呼び出し:', fetchUrl);
                 
@@ -367,6 +406,14 @@
                 console.log('[room_select] 🏁 finally処理開始 - ローディング解除');
                 hideLoadingElement();
                 disableLoadingBlock();
+                
+                // 強制リフレッシュフラグをクリア
+                if (window.forceRefreshData) {
+                    console.log('[room_select] 🧹 強制リフレッシュフラグクリア');
+                    window.forceRefreshData = false;
+                    window.updatedRoomId = null;
+                }
+                
                 console.log('[room_select] ✅ disableLoadingBlock完了');
             }
         }
