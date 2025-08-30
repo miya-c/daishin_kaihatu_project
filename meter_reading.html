@@ -506,23 +506,33 @@
         loadMeterReadings(propId, rId);
       };
 
-      const loadMeterReadings = async (propId, rId) => {
-        try {
-          const currentGasUrl = gasWebAppUrl || sessionStorage.getItem('gasWebAppUrl');
-          if (!currentGasUrl) {
-            throw new Error('gasWebAppURLが設定されていません。物件選択画面から再度アクセスしてください。');
-          }
-          
-          const fetchUrl = `${currentGasUrl}?action=getMeterReadings&propertyId=${propId}&roomId=${rId}`;
-          console.log('[meter_reading] Fetching meter readings from URL:', fetchUrl);
-          
-          const response = await fetch(fetchUrl);
-          if (!response.ok) {
-            throw new Error('ネットワークの応答が正しくありませんでした。ステータス: ' + response.status);
-          }
+      const loadMeterReadings = async (propId, rId, maxRetries = 3) => {
+        const currentGasUrl = gasWebAppUrl || sessionStorage.getItem('gasWebAppUrl');
+        if (!currentGasUrl) {
+          throw new Error('gasWebAppURLが設定されていません。物件選択画面から再度アクセスしてください。');
+        }
 
-          const responseObject = await response.json();
-          console.log('[meter_reading] Received responseObject from server:', responseObject);
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+          try {
+            const fetchUrl = `${currentGasUrl}?action=getMeterReadings&propertyId=${propId}&roomId=${rId}`;
+            console.log(`[meter_reading] 検針データ取得開始 - 試行 ${attempt}/${maxRetries}:`, fetchUrl);
+            
+            const response = await fetch(fetchUrl);
+            
+            if (!response.ok) {
+              if (response.status === 503 && attempt < maxRetries) {
+                const delayMs = 1000 * Math.pow(2, attempt - 1); // 指数バックオフ: 1s, 2s, 4s
+                console.warn(`[meter_reading] ⏳ 503エラー - ${delayMs}ms後にリトライ (${attempt}/${maxRetries})`);
+                await new Promise(resolve => setTimeout(resolve, delayMs));
+                continue;
+              }
+              throw new Error('ネットワークの応答が正しくありませんでした。ステータス: ' + response.status);
+            }
+            
+            console.log(`[meter_reading] ✅ API呼び出し成功 (${attempt}回目)`);
+            
+            const responseObject = await response.json();
+            console.log('[meter_reading] Received responseObject from server:', responseObject);
           
           // 詳細なレスポンス構造の確認
           console.log('[meter_reading] 🔍 レスポンス詳細分析:');
@@ -672,11 +682,30 @@
             setMeterReadings([]);
           }
           setLoading(false);
+          return; // 成功時はリトライループを終了
+          
         } catch (error) {
-          console.error('[meter_reading] fetchMeterReadings error:', error);
-          setError(`検針データの取得に失敗しました: ${error.message}`);
-          setLoading(false);
+          if (attempt === maxRetries) {
+            // 最終試行でもエラーの場合
+            console.error(`[meter_reading] ❌ 検針データ取得失敗 (${maxRetries}回試行):`, error);
+            
+            // ユーザーフレンドリーなエラーメッセージ
+            let userMessage = '検針データの読み込みに失敗しました。';
+            if (error.message.includes('503')) {
+              userMessage = 'サーバーが一時的に利用できません。しばらく待ってから再度お試しください。';
+            } else if (error.message.includes('network') || error.message.includes('fetch')) {
+              userMessage = 'ネットワーク接続に問題があります。インターネット接続を確認してください。';
+            } else if (error.message.includes('timeout')) {
+              userMessage = '通信がタイムアウトしました。しばらく待ってから再度お試しください。';
+            }
+            
+            setError(userMessage + '\n\n問題が継続する場合は、管理者にお問い合わせください。');
+            setLoading(false);
+            return;
+          }
+          console.warn(`[meter_reading] ⚠️ 試行${attempt}失敗, 次回リトライします:`, error.message);
         }
+      }
       };
 
       const handleBackButton = async () => {
@@ -710,7 +739,7 @@
           // ✅ エラー時でも物件IDパラメータを含めて遷移
           const fallbackUrl = propertyId ? 
             `/room_select.html?propertyId=${encodeURIComponent(propertyId)}` : 
-            '/property_select';
+            '/property_select.html';
           
           console.log('[meter_reading] フォールバック遷移:', fallbackUrl);
           window.location.href = fallbackUrl;
@@ -800,22 +829,35 @@
         }, 3000);
       };
 
-      const updateSessionStorageCache = async (propertyId, roomId) => {
-        try {
-          console.log('[meter_reading] sessionStorageキャッシュ更新開始');
-          
-          const currentGasUrl = gasWebAppUrl || sessionStorage.getItem('gasWebAppUrl');
-          if (!currentGasUrl) {
-            console.warn('[meter_reading] gasWebAppURLが見つからないため、キャッシュ更新をスキップします');
-            return;
-          }
+      const updateSessionStorageCache = async (propertyId, roomId, maxRetries = 3) => {
+        const currentGasUrl = gasWebAppUrl || sessionStorage.getItem('gasWebAppUrl');
+        if (!currentGasUrl) {
+          console.warn('[meter_reading] gasWebAppURLが見つからないため、キャッシュ更新をスキップします');
+          return;
+        }
 
-          const fetchUrl = `${currentGasUrl}?action=getRooms&propertyId=${encodeURIComponent(propertyId)}`;
-          console.log('[meter_reading] 部屋一覧再取得URL:', fetchUrl);
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+          try {
+            console.log(`[meter_reading] キャッシュ更新開始 - 試行 ${attempt}/${maxRetries}`);
+
+            const fetchUrl = `${currentGasUrl}?action=getRooms&propertyId=${encodeURIComponent(propertyId)}`;
+            console.log('[meter_reading] 部屋一覧再取得URL:', fetchUrl);
+            
+            const response = await fetch(fetchUrl, { method: 'GET' });
+            
+            if (!response.ok) {
+              if (response.status === 503 && attempt < maxRetries) {
+                const delayMs = 1000 * Math.pow(2, attempt - 1); // 指数バックオフ: 1s, 2s, 4s
+                console.warn(`[meter_reading] ⏳ 503エラー - ${delayMs}ms後にリトライ (${attempt}/${maxRetries})`);
+                await new Promise(resolve => setTimeout(resolve, delayMs));
+                continue;
+              }
+              console.warn(`[meter_reading] 部屋一覧の再取得に失敗: ${response.status}`);
+              return; // リトライ上限に達した場合はグレースフル終了
+            }
           
-          const response = await fetch(fetchUrl, { method: 'GET' });
-          
-          if (response.ok) {
+            console.log(`[meter_reading] ✅ API呼び出し成功 (${attempt}回目)`);
+            
             const result = await response.json();
             console.log('[meter_reading] 部屋一覧レスポンス:', result);
             
@@ -840,11 +882,17 @@
             } else {
               console.warn('[meter_reading] 部屋データが空です');
             }
-          } else {
-            console.warn('[meter_reading] 部屋一覧の再取得に失敗しました:', response.status);
+            
+            return; // 成功時はリトライループを終了
+            
+          } catch (error) {
+            if (attempt === maxRetries) {
+              // 最終試行でもエラーの場合
+              console.error(`[meter_reading] ❌ キャッシュ更新失敗 (${maxRetries}回試行):`, error);
+              return;
+            }
+            console.warn(`[meter_reading] ⚠️ 試行${attempt}失敗, 次回リトライします:`, error.message);
           }
-        } catch (error) {
-          console.error('[meter_reading] キャッシュ更新エラー:', error);
         }
       };
 
@@ -971,11 +1019,27 @@
           console.log('[meter_reading] 更新レスポンス:', result);
           
           if (result.success) {
+            // メイン成功処理を優先
             displayToast('検針データが正常に更新されました');
             setInputErrors({});
             
-            await updateSessionStorageCache(propertyId, roomId);
-            await loadMeterReadings(propertyId, roomId);
+            // バックグラウンドでキャッシュ更新（エラー時も継続）
+            try {
+              await updateSessionStorageCache(propertyId, roomId);
+              console.log('[meter_reading] ✅ キャッシュ更新成功');
+            } catch (cacheError) {
+              console.warn('[meter_reading] ⚠️ キャッシュ更新失敗（継続）:', cacheError.message);
+            }
+            
+            // データ再読み込み（エラー時も継続）
+            try {
+              await loadMeterReadings(propertyId, roomId);
+              console.log('[meter_reading] ✅ データ再読み込み成功');
+            } catch (loadError) {
+              console.warn('[meter_reading] ⚠️ データ再読み込み失敗（継続）:', loadError.message);
+              // データ再読み込み失敗時はユーザーに軽く通知
+              displayToast('データが更新されました。最新情報を確認するにはページを再読み込みしてください。');
+            }
           } else {
             throw new Error(result.error || '指示数の更新に失敗しました。');
           }

@@ -128,7 +128,7 @@
                 if (!gasWebAppUrl) {
                     showError('Web App URLが設定されていません。物件選択画面から再度アクセスしてください。');
                     document.getElementById('loading').innerHTML = '<div class="loading-spinner"></div><p class="loading-text">Web App URLが設定されていません</p>';
-                    setTimeout(() => window.location.href = '/property_select', 3000);
+                    setTimeout(() => window.location.href = '/property_select.html', 3000);
                     return;
                 }
                 
@@ -145,10 +145,10 @@
                 if (!propertyId) {
                     console.error('[room_select] 物件IDが指定されていません');
                     if (confirm('物件IDが指定されていません。物件選択画面に戻りますか？')) {
-                        window.location.href = '/property_select';
+                        window.location.href = '/property_select.html';
                     } else {
                         document.getElementById('loading').innerHTML = '<div class="loading-spinner"></div><p class="loading-text">物件IDが指定されていません</p>';
-                        setTimeout(() => window.location.href = '/property_select', 3000);
+                        setTimeout(() => window.location.href = '/property_select.html', 3000);
                     }
                     return;
                 }
@@ -617,7 +617,7 @@
                         const roomId = String(room.id || '');
                         preloadMeterReadingData(propertyId, roomId);
                         
-                        const meterReadingUrl = `/meter_reading?propertyId=${encodeURIComponent(propertyId)}&roomId=${encodeURIComponent(roomId)}`;
+                        const meterReadingUrl = `/meter_reading.html?propertyId=${encodeURIComponent(propertyId)}&roomId=${encodeURIComponent(roomId)}`;
                         window.location.href = meterReadingUrl;
                     };
                     
@@ -814,7 +814,7 @@
 
         function goBack() {
             console.log('[room_select] 戻るボタンクリック');
-            window.location.href = '/property_select';
+            window.location.href = '/property_select.html';
         }
     </script>
 </body>
