@@ -1182,7 +1182,7 @@ URL: ${window.location.href}
         };
         
         // SessionStorage保存と画面遷移の共通関数
-        const storeAndNavigate = async (property, rooms) => {
+        async function storeAndNavigate(property, rooms) {
           console.log('[ReactApp] 💾 SessionStorage保存開始:', {
             propertyId: property.id,
             propertyName: property.name,
@@ -1238,7 +1238,7 @@ URL: ${window.location.href}
           setTimeout(() => {
             window.location.href = targetUrl;
           }, 300);
-        };
+        }
         
         // 部屋データの差分更新関数
         const performRoomDeltaUpdate = async (propertyId, lastTimestamp) => {
