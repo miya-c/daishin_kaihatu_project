@@ -1226,11 +1226,23 @@ URL: ${window.location.href}
           sessionStorage.setItem('selectedPropertyName', String(property.name));
           sessionStorage.setItem('selectedRooms', JSON.stringify(rooms));
           
-          if (gasWebAppUrl) {
+          // gasWebAppUrl の厳格な検証と保存
+          if (gasWebAppUrl && gasWebAppUrl.includes('script.google.com')) {
             sessionStorage.setItem('gasWebAppUrl', gasWebAppUrl);
+            localStorage.setItem('gasWebAppUrl', gasWebAppUrl); // 永続化バックアップ
+            console.log('[ReactApp] ✅ gasWebAppUrl保存確認:', gasWebAppUrl);
+            
+            // 保存後の検証
+            const savedUrl = sessionStorage.getItem('gasWebAppUrl');
+            if (savedUrl !== gasWebAppUrl) {
+              console.error('[ReactApp] ★CRITICAL: SessionStorage保存検証失敗');
+              alert('SessionStorage保存に失敗しました。ブラウザ設定を確認してください。');
+              setIsNavigating(false);
+              return;
+            }
           } else {
-            console.error('[ReactApp] ★ERROR: gasWebAppUrl is not defined!');
-            alert('アプリケーションの設定にエラーがあります。(code: RP1)');
+            console.error('[ReactApp] ★CRITICAL: Invalid gasWebAppUrl:', gasWebAppUrl);
+            alert('Google Apps Script URLが正しく設定されていません。\\n\\n有効なURL例:\\nhttps://script.google.com/macros/s/YOUR_SCRIPT_ID/exec\\n\\n現在の値: ' + (gasWebAppUrl || '未設定'));
             setIsNavigating(false);
             return;
           }
@@ -1239,7 +1251,13 @@ URL: ${window.location.href}
           setNavigationMessage('');
           
           const targetUrl = `/room_select.html?propertyId=${encodeURIComponent(property.id)}`;
-          console.log(`[ReactApp] 🚀 画面遷移: ${targetUrl}`);
+          console.log(`[ReactApp] 🚀 画面遷移準備完了`);
+          console.log(`[ReactApp] 📍 遷移先URL: ${targetUrl}`);
+          console.log(`[ReactApp] 📦 SessionStorage確認:`);
+          console.log(`  - selectedPropertyId: ${sessionStorage.getItem('selectedPropertyId')}`);
+          console.log(`  - selectedPropertyName: ${sessionStorage.getItem('selectedPropertyName')}`);
+          console.log(`  - selectedRooms: ${sessionStorage.getItem('selectedRooms')?.length || 0} chars`);
+          console.log(`  - gasWebAppUrl: ${sessionStorage.getItem('gasWebAppUrl') ? 'SET' : 'NOT SET'}`);
           
           // シンプルなリダイレクト制限チェック
           try {

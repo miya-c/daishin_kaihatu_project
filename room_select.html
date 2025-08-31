@@ -146,15 +146,45 @@
                     }
                 }
                 
-                // GAS Web App URL取得（property_select.htmlから継承）
-                const gasWebAppUrl = sessionStorage.getItem('gasWebAppUrl');
+                // GAS Web App URL取得（SessionStorage → LocalStorage フォールバック）
+                let gasWebAppUrl = sessionStorage.getItem('gasWebAppUrl');
+                console.log('[room_select] SessionStorage gasWebAppUrl:', gasWebAppUrl);
                 
-                // URL検証
+                // フォールバック: LocalStorageから取得
                 if (!gasWebAppUrl) {
-                    showError('Web App URLが設定されていません。物件選択画面から再度アクセスしてください。');
-                    document.getElementById('loading').innerHTML = '<div class="loading-spinner"></div><p class="loading-text">Web App URLが設定されていません</p>';
-                    setTimeout(() => window.location.href = '/property_select.html', 3000);
-                    return;
+                    gasWebAppUrl = localStorage.getItem('gasWebAppUrl');
+                    console.log('[room_select] LocalStorage フォールバック gasWebAppUrl:', gasWebAppUrl);
+                    
+                    // LocalStorageから取得できた場合はSessionStorageに復元
+                    if (gasWebAppUrl) {
+                        sessionStorage.setItem('gasWebAppUrl', gasWebAppUrl);
+                        console.log('[room_select] ✅ SessionStorage復元完了');
+                    }
+                }
+                
+                // URL検証と手動設定フォールバック
+                if (!gasWebAppUrl || !gasWebAppUrl.includes('script.google.com')) {
+                    console.error('[room_select] ★CRITICAL: Invalid gasWebAppUrl:', gasWebAppUrl);
+                    
+                    // ユーザーに直接入力を求める
+                    const userInput = prompt(
+                        'Google Apps Script Web App URLが設定されていません。\\n\\n' +
+                        'URLを入力してください：\\n\\n' +
+                        '例: https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec',
+                        'https://script.google.com/macros/s/'
+                    );
+                    
+                    if (userInput && userInput.includes('script.google.com')) {
+                        gasWebAppUrl = userInput;
+                        sessionStorage.setItem('gasWebAppUrl', gasWebAppUrl);
+                        localStorage.setItem('gasWebAppUrl', gasWebAppUrl); // 永続化
+                        console.log('[room_select] ✅ ユーザー入力URL設定完了:', gasWebAppUrl);
+                    } else {
+                        showError('有効なGoogle Apps Script URLが必要です。物件選択画面に戻ります。');
+                        document.getElementById('loading').innerHTML = '<div class="loading-spinner"></div><p class="loading-text">Web App URLが設定されていません</p>';
+                        setTimeout(() => window.location.href = '/property_select.html', 3000);
+                        return;
+                    }
                 }
                 
                 // URLパラメータから物件IDを取得
