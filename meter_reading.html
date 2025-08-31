@@ -727,21 +727,21 @@
           sessionStorage.setItem('updatedRoomId', roomId);
           sessionStorage.setItem('lastUpdateTime', Date.now().toString());
           
-          // ✅ 物件IDパラメータを含めて遷移
-          const backUrl = `/room_select.html?propertyId=${encodeURIComponent(propertyId)}`;
-          console.log('[meter_reading] 戻るURL:', backUrl);
+          // ✅ 物件IDパラメータを含めて遷移（相対パス優先）
+          const backUrl = `room_select.html?propertyId=${encodeURIComponent(propertyId)}`;
+          console.log('[meter_reading] 戻るURL (相対パス):', backUrl);
           
           window.location.href = backUrl;
           
         } catch (error) {
           console.error('[meter_reading] 戻るボタン処理エラー:', error);
           
-          // ✅ エラー時でも物件IDパラメータを含めて遷移
+          // ✅ エラー時でも物件IDパラメータを含めて遷移（相対パス優先）
           const fallbackUrl = propertyId ? 
-            `/room_select.html?propertyId=${encodeURIComponent(propertyId)}` : 
-            '/property_select.html';
+            `room_select.html?propertyId=${encodeURIComponent(propertyId)}` : 
+            'property_select.html';
           
-          console.log('[meter_reading] フォールバック遷移:', fallbackUrl);
+          console.log('[meter_reading] フォールバック遷移 (相対パス):', fallbackUrl);
           window.location.href = fallbackUrl;
         }
       };

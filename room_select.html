@@ -28,8 +28,17 @@
     <!-- Performance Monitor -->
     <script src="/performance-monitor.js"></script>
     
+    <!-- Navigation Diagnostics -->
+    <script src="/navigation-diagnostics.js"></script>
+    
     <!-- Navigation Debug Test (開発用) -->
     <script src="/navigation-debug-test.js"></script>
+    
+    <!-- Navigation Fix Test Suite -->
+    <script src="/navigation-fix-test.js"></script>
+    
+    <!-- Force Refresh Validation Test (開発用) -->
+    <script src="/force-refresh-validation-test.js"></script>
 </head>
 <body>
     <!-- Material UI AppBar -->
@@ -268,22 +277,26 @@
                 const forceRefresh = window.forceRefreshData;
                 console.log('[room_select] 強制リフレッシュフラグ:', forceRefresh);
                 
-                // Step 1: SessionStorageから継続データを確認（property_select.htmlからの高速遷移）
-                // ただし、強制リフレッシュ時はスキップ
-                const sessionRooms = !forceRefresh ? sessionStorage.getItem('selectedRooms') : null;
-                const sessionPropertyName = !forceRefresh ? sessionStorage.getItem('selectedPropertyName') : null;
-                const sessionPropertyId = !forceRefresh ? sessionStorage.getItem('selectedPropertyId') : null;
-                
-                console.log('[room_select] 🔄 SessionStorage確認:', {
-                    forceRefresh: forceRefresh,
-                    hasRooms: !!sessionRooms,
-                    hasPropertyName: !!sessionPropertyName,
-                    sessionPropertyId: sessionPropertyId,
-                    currentPropertyId: propertyId,
-                    propertyIdMatch: sessionPropertyId === propertyId
-                });
-                
-                if (!forceRefresh && sessionRooms && sessionPropertyId === propertyId && sessionPropertyName) {
+                // 🔄 強制リフレッシュ時はキャッシュを完全にスキップしてAPI直行
+                if (forceRefresh) {
+                    console.log('[room_select] 🚀 強制リフレッシュモード - キャッシュスキップしてAPI直行');
+                    // Step 3のAPI呼び出しに直行するため、Step 1, 2をスキップ
+                } else {
+                    // Step 1: SessionStorageから継続データを確認（property_select.htmlからの高速遷移）
+                    const sessionRooms = sessionStorage.getItem('selectedRooms');
+                    const sessionPropertyName = sessionStorage.getItem('selectedPropertyName');
+                    const sessionPropertyId = sessionStorage.getItem('selectedPropertyId');
+                    
+                    console.log('[room_select] 🔄 SessionStorage確認:', {
+                        forceRefresh: forceRefresh,
+                        hasRooms: !!sessionRooms,
+                        hasPropertyName: !!sessionPropertyName,
+                        sessionPropertyId: sessionPropertyId,
+                        currentPropertyId: propertyId,
+                        propertyIdMatch: sessionPropertyId === propertyId
+                    });
+                    
+                    if (sessionRooms && sessionPropertyId === propertyId && sessionPropertyName) {
                     // SessionStorageから即座にデータを表示
                     try {
                         const parsedRooms = JSON.parse(sessionRooms);
@@ -305,45 +318,46 @@
                     } catch (parseError) {
                         console.warn('[room_select] SessionStorageデータのパース失敗:', parseError);
                     }
-                }
-                
-                // Step 2: LocalStorageキャッシュ確認（強制リフレッシュ時はスキップ）
-                const roomCacheKey = `rooms_${propertyId}`;
-                const isCacheValid = !forceRefresh && window.pwaUtils?.isCacheValid(roomCacheKey);
-                
-                console.log('[room_select] 🗄️ キャッシュ確認:', { 
-                    key: roomCacheKey, 
-                    valid: isCacheValid,
-                    forceRefresh: forceRefresh,
-                    skipCache: forceRefresh 
-                });
-                
-                if (isCacheValid) {
-                    const cachedData = window.pwaUtils.getCacheData(roomCacheKey);
-                    console.log('[room_select] ⚡ キャッシュヒット:', cachedData?.data?.length || 0, '件');
+                    }
                     
-                    if (cachedData?.data && Array.isArray(cachedData.data)) {
-                        rooms = cachedData.data;
+                    // Step 2: LocalStorageキャッシュ確認
+                    const roomCacheKey = `rooms_${propertyId}`;
+                    const isCacheValid = window.pwaUtils?.isCacheValid(roomCacheKey);
+                    
+                    console.log('[room_select] 🗄️ キャッシュ確認:', { 
+                        key: roomCacheKey, 
+                        valid: isCacheValid,
+                        forceRefresh: false,
+                        skipCache: false 
+                    });
+                    
+                    if (isCacheValid) {
+                        const cachedData = window.pwaUtils.getCacheData(roomCacheKey);
+                        console.log('[room_select] ⚡ キャッシュヒット:', cachedData?.data?.length || 0, '件');
                         
-                        // 物件名をSessionStorageまたはキャッシュから取得
-                        propertyName = sessionPropertyName || '物件名取得中...';
-                        
-                        console.log('[room_select] 🚀 キャッシュから部屋データ使用 - 高速表示');
-                        document.getElementById('propertyName').textContent = propertyName;
-                        displayRooms(rooms);
-                        updateCompleteButton(rooms);
-                        
-                        // バックグラウンドで差分更新
-                        setTimeout(() => performRoomDeltaUpdateBackground(propertyId, cachedData.timestamp), 100);
-                        return;
+                        if (cachedData?.data && Array.isArray(cachedData.data)) {
+                            rooms = cachedData.data;
+                            
+                            // 物件名をSessionStorageまたはキャッシュから取得
+                            propertyName = sessionPropertyName || '物件名取得中...';
+                            
+                            console.log('[room_select] 🚀 キャッシュから部屋データ使用 - 高速表示');
+                            document.getElementById('propertyName').textContent = propertyName;
+                            displayRooms(rooms);
+                            updateCompleteButton(rooms);
+                            
+                            // バックグラウンドで差分更新
+                            setTimeout(() => performRoomDeltaUpdateBackground(propertyId, cachedData.timestamp), 100);
+                            return;
+                        }
                     }
                 }
                 
-                // Step 3: 軽量API使用
+                // Step 3: 軽量API使用（forceRefresh時もしくはキャッシュミス時）
                 if (forceRefresh) {
                     console.log('[room_select] 🚀 強制リフレッシュ - 最新データをAPIから取得');
                 } else {
-                    console.log('[room_select] 🚀 軽量API使用 - getRoomsLight');
+                    console.log('[room_select] 🚀 軽量API使用 - getRoomsLight (キャッシュミス後)');
                 }
                 const fetchUrl = `${gasWebAppUrl}?action=getRoomsLight&propertyId=${encodeURIComponent(propertyId)}&cache=${Date.now()}`;
                 console.log('[room_select] Light API呼び出し:', fetchUrl);
@@ -872,17 +886,17 @@
                 console.log('[room_select] 現在のURL:', currentUrl);
                 console.log('[room_select] ベースURL:', baseUrl);
                 
-                // 複数のパス形式で試行
+                // 相対パス優先で複数のパス形式を試行（Cloudflare Pages対応）
                 const possiblePaths = [
+                    'property_select.html',                     // 相対パス (優先)
+                    './property_select.html',                   // 明示的相対パス
                     '/property_select.html',                    // 絶対パス
-                    'property_select.html',                     // 相対パス
-                    `${baseUrl}/property_select.html`,          // 明示的絶対パス
-                    './property_select.html'                    // 明示的相対パス
+                    `${baseUrl}/property_select.html`           // 明示的絶対パス
                 ];
                 
-                console.log('[room_select] 遷移先候補:', possiblePaths);
+                console.log('[room_select] 遷移先候補 (相対パス優先):', possiblePaths);
                 
-                // 最初の候補で遷移を試行
+                // 相対パス優先で遷移を試行
                 const targetPath = possiblePaths[0];
                 console.log(`[room_select] 🚀 遷移実行: ${targetPath}`);
                 
@@ -904,16 +918,35 @@
                 } catch (fallbackError) {
                     console.error('[room_select] フォールバック遷移もエラー:', fallbackError);
                     
-                    // 最後の手段: ユーザーに手動リンクを提供
-                    const userConfirm = confirm(
-                        '戻るボタンでエラーが発生しました。\n' +
-                        '物件選択画面に手動で移動しますか？\n\n' +
-                        'OK: 手動で移動\n' +
-                        'キャンセル: このまま留まる'
+                    // 🔧 診断情報を収集
+                    if (window.navigationDiagnostics) {
+                        console.log('🔬 ナビゲーション診断実行中...');
+                        window.navigationDiagnostics.testPaths().then(results => {
+                            console.log('📊 パス解決テスト結果:', results);
+                        });
+                    }
+                    
+                    // 最後の手段: ユーザーに詳細オプションを提供
+                    const userAction = confirm(
+                        'ナビゲーションエラーが発生しました。\n\n' +
+                        'OK: キャッシュをクリアして再試行\n' +
+                        'キャンセル: 手動で物件選択画面へ移動'
                     );
                     
-                    if (userConfirm) {
-                        // 最後の手段として window.open を使用
+                    if (userAction) {
+                        // キャッシュクリア後に再試行
+                        if (window.navigationDiagnostics) {
+                            console.log('🧹 キャッシュクリア & 再試行');
+                            window.navigationDiagnostics.clearCache().then(() => {
+                                console.log('✅ キャッシュクリア完了 - 遷移再試行');
+                                window.location.href = 'property_select.html';
+                            });
+                        } else {
+                            // フォールバック: 単純な遷移
+                            window.location.href = 'property_select.html';
+                        }
+                    } else {
+                        // 手動遷移オプション
                         try {
                             window.open('property_select.html', '_self');
                         } catch (finalError) {

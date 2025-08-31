@@ -1,7 +1,7 @@
 // Service Worker for PWA - Speed Optimized for Cache+Light API architecture
-// Version 20250829a - JavaScript Error Fix + Enhanced Cache Clear
-const CACHE_NAME = 'meter-reading-app-v6-babel-fix-20250830b';
-const DATA_CACHE_NAME = 'meter-reading-data-v6';
+// Version 20250831a - Navigation Fix + Network First for HTML
+const CACHE_NAME = 'meter-reading-app-v7-navigation-fix';
+const DATA_CACHE_NAME = 'meter-reading-data-v7';
 
 // Static assets for offline support (Cloudflare Pages compatible paths)
 const CACHE_ASSETS = [
@@ -43,7 +43,7 @@ const LEGACY_CACHE_NAMES = [
 
 // Install event - cache essential assets with performance optimization
 self.addEventListener('install', (event) => {
-  console.log('🚀 Service Worker v20250829a: Install event - JavaScript Error Fix');
+  console.log('🚀 Service Worker v20250831a: Install event - Navigation Fix');
   
   // 即座にアクティベート（古いSWを置き換え）
   self.skipWaiting();
@@ -80,7 +80,7 @@ self.addEventListener('install', (event) => {
 
 // Activate event - clean up old caches with enhanced management
 self.addEventListener('activate', (event) => {
-  console.log('SW: 🔄 Activate event v20250829a - 強制キャッシュクリア実行');
+  console.log('SW: 🔄 Activate event v20250831a - ナビゲーション修正 + 強制キャッシュクリア実行');
   
   event.waitUntil(
     Promise.all([
@@ -241,22 +241,27 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Strategy 2: Static assets with stale-while-revalidate
+  // Strategy 2: HTML files with network first for navigation fix
+  if (url.pathname.includes('.html')) {
+    event.respondWith(handleHTMLRequest(request));
+    return;
+  }
+
+  // Strategy 3: Static assets (CSS/JS) with stale-while-revalidate
   if (CACHE_ASSETS.some(asset => request.url.includes(asset)) || 
       url.pathname.includes('.css') || 
-      url.pathname.includes('.js') ||
-      url.pathname.includes('.html')) {
+      url.pathname.includes('.js')) {
     event.respondWith(handleStaticAssetRequest(request));
     return;
   }
 
-  // Strategy 3: Images and media with cache first
+  // Strategy 4: Images and media with cache first
   if (url.pathname.match(/\.(jpg|jpeg|png|gif|webp|svg|ico)$/)) {
     event.respondWith(handleImageRequest(request));
     return;
   }
 
-  // Strategy 4: Default network first with cache fallback
+  // Strategy 5: Default network first with cache fallback
   event.respondWith(handleDefaultRequest(request));
 });
 
@@ -309,6 +314,45 @@ async function handleGASAPIRequest(request) {
         'Content-Type': 'application/json',
         'sw-cache-status': 'offline'
       },
+      status: 503
+    }
+  );
+}
+
+// Handle HTML requests with network first for navigation fix
+async function handleHTMLRequest(request) {
+  console.log('SW: 🌐 HTML Request (Network First):', request.url);
+  
+  try {
+    // Network first approach for HTML files
+    const networkResponse = await fetchWithTimeout(request, CACHE_STRATEGIES.NETWORK_TIMEOUT);
+    
+    if (networkResponse.ok) {
+      // Update cache with fresh content
+      const cache = await caches.open(CACHE_NAME);
+      cache.put(request, networkResponse.clone());
+      console.log('SW: ✅ HTML取得成功 & キャッシュ更新:', request.url);
+      return networkResponse;
+    }
+  } catch (error) {
+    console.warn('SW: ⚠️ HTMLネットワーク取得失敗:', error.message);
+  }
+  
+  // Fallback to cache if network fails
+  const cache = await caches.open(CACHE_NAME);
+  const cachedResponse = await cache.match(request);
+  
+  if (cachedResponse) {
+    console.log('SW: 🗄️ HTMLキャッシュから提供:', request.url);
+    return cachedResponse;
+  }
+  
+  // No cache available - return error
+  console.error('SW: ❌ HTML取得失敗 (ネットワーク＋キャッシュ):', request.url);
+  return new Response(
+    '<!DOCTYPE html><html><head><title>オフライン</title></head><body><h1>オフライン</h1><p>インターネット接続を確認してください。</p></body></html>',
+    { 
+      headers: { 'Content-Type': 'text/html' },
       status: 503
     }
   );
