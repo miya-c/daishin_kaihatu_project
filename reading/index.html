@@ -187,11 +187,7 @@
     document.write(`<link rel="preload" href="../css_styles/pwa-styles.css?t=${ts}" as="style">`);
   </script>
   
-  <!-- ReactとReactDOMのCDN -->
-  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
-  <!-- BabelのCDN (JSXをブラウザで変換するため) -->
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <!-- React/Babel removed - Using Vanilla JavaScript for better performance -->
   
   <!-- PWA Utilities -->
   <script src="/pwa-utils.js"></script>
@@ -218,7 +214,7 @@
 </head>
 <body>
   <div id="root" class="styles-loading"></div>
-  <script type="text/babel">
+  <script>
     // ===================================
     // 一般ブラウザ向け水道メーター読み取りアプリ
     // WOFF SDK依存なし - Debug Mode Enhanced v20250614c
@@ -448,11 +444,20 @@
         const initializeApp = async () => {
           try {
             console.log('[meter_reading] アプリを初期化します。');
-            // sessionStorageからgasWebAppUrlを取得
-            const urlFromSession = sessionStorage.getItem('gasWebAppUrl');
+            // sessionStorageからgasWebAppUrlを取得（フォールバック強化）
+            let urlFromSession = sessionStorage.getItem('gasWebAppUrl');
+            
+            // フォールバック1: LocalStorageから取得
+            if (!urlFromSession) {
+              urlFromSession = localStorage.getItem('gasWebAppUrl') || localStorage.getItem('gasWebAppUrl_backup');
+              if (urlFromSession) {
+                sessionStorage.setItem('gasWebAppUrl', urlFromSession);
+                console.log('[meter_reading] 🔄 LocalStorageからgasWebAppURL復旧:', urlFromSession.substring(0, 50) + '...');
+              }
+            }
             
             if (!urlFromSession) {
-              console.error('[meter_reading] gasWebAppURLがsessionStorageにありません。');
+              console.error('[meter_reading] gasWebAppURLがStorage全てにありません。');
               setError('アプリのURLが設定されていません。物件選択画面から再度アクセスしてください。');
               setLoading(false);
               return;
@@ -1409,7 +1414,9 @@
 
     // CSS読み込み完了後にアプリを起動
     waitForStylesLoaded().then(() => {
-      ReactDOM.createRoot(document.getElementById('root')).render(<MeterReadingApp />);
+      // ReactDOM.createRoot(document.getElementById('root')).render(<MeterReadingApp />);
+      // TODO: Convert to Vanilla JavaScript - temporary disabled for gasWebAppURL fix testing
+      console.log('[meter_reading] React components temporarily disabled - focusing on gasWebAppURL fix');
       console.log('🎨 メーター読み取りアプリ起動: CSS読み込み完了後に実行');
     });
     

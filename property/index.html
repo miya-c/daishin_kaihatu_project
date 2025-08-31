@@ -1250,6 +1250,15 @@ URL: ${window.location.href}
           console.log('[ReactApp] ✅ SessionStorage保存完了');
           setNavigationMessage('');
           
+          // ✨ gasWebAppURL継承強化（reading画面エラー対策）
+          if (gasWebAppUrl && gasWebAppUrl.includes('script.google.com')) {
+            sessionStorage.setItem('gasWebAppUrl', gasWebAppUrl);
+            localStorage.setItem('gasWebAppUrl', gasWebAppUrl); // 永続化バックアップ
+            localStorage.setItem('gasWebAppUrl_backup', gasWebAppUrl); // 追加バックアップ
+            localStorage.setItem('gasWebAppUrl_timestamp', Date.now().toString());
+            console.log('[ReactApp] 🔐 gasWebAppURL継承強化完了:', gasWebAppUrl);
+          }
+          
           const targetUrl = `/room?propertyId=${encodeURIComponent(property.id)}`;
           console.log(`[ReactApp] 🚀 画面遷移準備完了`);
           console.log(`[ReactApp] 📍 遷移先URL: ${targetUrl}`);
@@ -1257,6 +1266,7 @@ URL: ${window.location.href}
           console.log(`  - selectedPropertyId: ${sessionStorage.getItem('selectedPropertyId')}`);
           console.log(`  - selectedPropertyName: ${sessionStorage.getItem('selectedPropertyName')}`);
           console.log(`  - selectedRooms: ${sessionStorage.getItem('selectedRooms')?.length || 0} chars`);
+          console.log(`  - gasWebAppUrl: ${sessionStorage.getItem('gasWebAppUrl')?.substring(0, 50)}...`);
           console.log(`  - gasWebAppUrl: ${sessionStorage.getItem('gasWebAppUrl') ? 'SET' : 'NOT SET'}`);
           
           // シンプルなリダイレクト制限チェック

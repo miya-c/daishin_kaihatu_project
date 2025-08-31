@@ -724,6 +724,18 @@
                         const roomId = String(room.id || '');
                         preloadMeterReadingData(propertyId, roomId);
                         
+                        // ✨ gasWebAppURL継承強化（reading画面エラー対策）
+                        const currentGasUrl = sessionStorage.getItem('gasWebAppUrl') || localStorage.getItem('gasWebAppUrl') || localStorage.getItem('gasWebAppUrl_backup');
+                        if (currentGasUrl && currentGasUrl.includes('script.google.com')) {
+                            sessionStorage.setItem('gasWebAppUrl', currentGasUrl);
+                            localStorage.setItem('gasWebAppUrl', currentGasUrl);
+                            localStorage.setItem('gasWebAppUrl_backup', currentGasUrl);
+                            localStorage.setItem('gasWebAppUrl_timestamp', Date.now().toString());
+                            console.log('[room_select] 🔐 gasWebAppURL継承強化完了 → reading:', currentGasUrl.substring(0, 50) + '...');
+                        } else {
+                            console.error('[room_select] ⚠️ gasWebAppURL not found - reading画面でエラーになる可能性');
+                        }
+                        
                         const meterReadingUrl = `/reading?propertyId=${encodeURIComponent(propertyId)}&roomId=${encodeURIComponent(roomId)}`;
                         window.location.href = meterReadingUrl;
                     };
