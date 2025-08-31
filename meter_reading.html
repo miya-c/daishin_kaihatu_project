@@ -1673,20 +1673,25 @@
   <!-- PWA初期化スクリプト -->
   <script>
     // PWA機能の初期化
-    document.addEventListener('DOMContentLoaded', () => {
-      console.log('[PWA] Meter Reading page loaded with PWA support (Browser version)');
+    document.addEventListener('DOMContentLoaded', async () => {
+      console.log('🚀 [meter_reading] PWA初期化開始 - Service Worker登録');
       
-      // Service Worker登録
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/service-worker.js')
-            .then(registration => {
-              console.log('[PWA] Service Worker registered from meter reading page');
-            })
-            .catch(error => {
-              console.error('[PWA] Service Worker registration failed:', error);
-            });
-        });
+      // Service Worker登録（pwa-utils使用）
+      if (window.pwaUtils) {
+        try {
+          const registration = await window.pwaUtils.registerServiceWorker();
+          console.log('✅ [meter_reading] Service Worker登録成功:', registration?.scope);
+        } catch (error) {
+          console.error('❌ [meter_reading] Service Worker登録失敗:', error);
+        }
+      } else if ('serviceWorker' in navigator) {
+        // フォールバック: 直接登録
+        try {
+          const registration = await navigator.serviceWorker.register('/service-worker.js');
+          console.log('✅ [meter_reading] Service Worker登録成功 (直接):', registration.scope);
+        } catch (error) {
+          console.error('❌ [meter_reading] Service Worker登録失敗 (直接):', error);
+        }
       }
       
       // PWAインストール状態の確認

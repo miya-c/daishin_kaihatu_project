@@ -132,9 +132,19 @@
         }
 
         // 初期化処理を関数内に移動（構文エラー回避）
-        function initializeRoomSelect() {
+        async function initializeRoomSelect() {
             try {
                 console.log('[room_select] 初期化処理開始');
+                
+                // Service Worker登録
+                if (window.pwaUtils) {
+                    try {
+                        const registration = await window.pwaUtils.registerServiceWorker();
+                        console.log('✅ [room_select] Service Worker登録成功:', registration?.scope);
+                    } catch (error) {
+                        console.error('❌ [room_select] Service Worker登録失敗:', error);
+                    }
+                }
                 
                 // GAS Web App URL取得（property_select.htmlから継承）
                 const gasWebAppUrl = sessionStorage.getItem('gasWebAppUrl');

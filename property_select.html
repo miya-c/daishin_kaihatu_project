@@ -1731,7 +1731,20 @@ URL: ${window.location.href}
   <!-- PWA初期化スクリプト -->
   <script>
     // PWA機能の初期化
-    document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', async () => {
+      console.log('🚀 PWA初期化開始 - Service Worker登録');
+      
+      // Service Worker登録
+      if (window.pwaUtils) {
+        try {
+          const registration = await window.pwaUtils.registerServiceWorker();
+          console.log('✅ Service Worker登録成功:', registration?.scope);
+        } catch (error) {
+          console.error('❌ Service Worker登録失敗:', error);
+        }
+      } else {
+        console.warn('⚠️ pwaUtils が利用できません');
+      }
     });
     
     // ページ表示時にローディングを必ず非表示にする（ブラウザの戻る対応）
