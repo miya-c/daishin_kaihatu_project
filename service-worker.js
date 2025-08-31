@@ -1,6 +1,6 @@
 // Service Worker for PWA - Speed Optimized for Cache+Light API architecture  
-// Version 20250831c - Custom Error Pages Removed + Natural Browser Error Handling
-const CACHE_NAME = 'meter-reading-app-v9-natural-errors';
+// Version 20250831d - Function References Fixed + Complete Natural Error Handling
+const CACHE_NAME = 'meter-reading-app-v10-function-fixed';
 const DATA_CACHE_NAME = 'meter-reading-data-v7';
 
 // Static assets for offline support (Cloudflare Pages compatible paths)
@@ -41,7 +41,7 @@ const LEGACY_CACHE_NAMES = [
 
 // Install event - cache essential assets with performance optimization
 self.addEventListener('install', (event) => {
-  console.log('🚀 Service Worker v20250831c: Install event - Natural Error Handling');
+  console.log('🚀 Service Worker v20250831d: Install event - Function References Fixed');
   
   // 即座にアクティベート（古いSWを置き換え）
   self.skipWaiting();
@@ -78,7 +78,7 @@ self.addEventListener('install', (event) => {
 
 // Activate event - clean up old caches with enhanced management
 self.addEventListener('activate', (event) => {
-  console.log('SW: 🔄 Activate event v20250831c - カスタムエラーページ削除 + 自然エラーハンドリング');
+  console.log('SW: 🔄 Activate event v20250831d - 関数参照修正 + 完全な自然エラーハンドリング');
   
   event.waitUntil(
     Promise.all([
@@ -362,13 +362,7 @@ async function handleHTMLRequest(request) {
     networkError = error;
     networkDuration = Date.now() - startTime;
     
-    const errorInfo = classifyNetworkError(error);
-    console.warn(`SW: ⚠️ HTMLネットワーク取得失敗 (${errorInfo.type}): ${error.message} (${networkDuration}ms)`);
-    
-    // For timeout errors, immediately try cache instead of offline page
-    if (errorInfo.type === 'timeout') {
-      console.log('SW: ⚡ Timeout detected, immediately trying cache...');
-    }
+    console.warn(`SW: ⚠️ HTMLネットワーク取得失敗: ${error.message} (${networkDuration}ms)`);
   }
   
   // Stage 2: Cache Fallback (for network failures or errors)

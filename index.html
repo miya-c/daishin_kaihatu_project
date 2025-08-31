@@ -9,7 +9,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="revision" content="20250830e-navigation-function-fix">
+  <meta name="revision" content="20250831d-clean-urls">
   <link rel="manifest" href="./manifest.json">
   <link rel="stylesheet" href="./css_styles/pwa-materialui.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -28,7 +28,7 @@
     <div id="fallback-section" style="display:none; margin-top: 24px; padding: 16px; background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 4px;">
       <h3 style="color: #856404; margin-top: 0;">⚠️ リダイレクト問題検出</h3>
       <p style="color: #856404; margin-bottom: 16px;">Cloudflareキャッシュ問題により自動遷移できません。</p>
-      <a href="/property_select.html?v=20250830e&direct=1" 
+      <a href="/property_select.html" 
          style="display: inline-block; padding: 12px 24px; background-color: #28a745; color: white; text-decoration: none; border-radius: 4px; font-weight: bold;">
         📋 物件選択画面へ（直接リンク）
       </a>
@@ -48,14 +48,14 @@
 
   <script>
     // デバッグ用: 本番環境の状況をコンソールに記録
-    console.log('🚀 水道検針アプリ v20250830a - リダイレクト・構文エラー修正版');
+    console.log('🚀 水道検針アプリ v20250831d - クリーンURL + Service Worker対応版');
     console.log('📍 現在のURL:', window.location.href);
     console.log('📍 pathname:', window.location.pathname);
     console.log('📍 search:', window.location.search);
     console.log('📍 hash:', window.location.hash);
     console.log('📱 User Agent:', navigator.userAgent);
     console.log('🌐 PWA対応:', 'serviceWorker' in navigator);
-    console.log('🔧 JavaScript エラー修正版:', '20250830a-redirects-syntax-fixed');
+    console.log('🔧 Clean URL + Service Worker対応:', '20250831d-clean-urls-sw-ready');
     
     // PWA モード判定の詳細ログ
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
@@ -311,10 +311,9 @@
             return;
           }
           
-          // キャッシュバスティング付きURL生成
-          const timestamp = Date.now();
-          const targetUrl = `/property_select.html?v=20250830e&nocache=${timestamp}`;
-          console.log('🔄 [Index] キャッシュバイパス目標URL:', targetUrl);
+          // クリーンなURL生成（Service Workerによる適切なキャッシュ制御）
+          const targetUrl = `/property_select.html`;
+          console.log('🔄 [Index] 遷移先URL:', targetUrl);
           
           window.location.href = targetUrl;
         } catch (error) {
