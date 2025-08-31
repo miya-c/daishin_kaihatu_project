@@ -25,8 +25,10 @@ const CACHE_STRATEGIES = {
   API_CACHE_MAX_AGE: 3600000,
   // Static asset cache duration (24 hours)
   STATIC_CACHE_MAX_AGE: 86400000,
-  // Network timeout (5 seconds)
-  NETWORK_TIMEOUT: 5000,
+  // Network timeout (15 seconds - increased for better online experience)
+  NETWORK_TIMEOUT: 15000,
+  // HTML specific timeout (10 seconds for faster fallback)
+  HTML_TIMEOUT: 10000,
   // Background sync retry interval (30 seconds)
   SYNC_RETRY_INTERVAL: 30000
 };
@@ -319,13 +321,19 @@ async function handleGASAPIRequest(request) {
   );
 }
 
-// Handle HTML requests with network first for navigation fix
+// Handle HTML requests with intelligent hybrid strategy
 async function handleHTMLRequest(request) {
-  console.log('SW: 🌐 HTML Request (Network First):', request.url);
+  console.log('SW: 🌐 HTML Request (Hybrid Strategy):', request.url);
   
+  const startTime = Date.now();
+  let networkError = null;
+  let networkDuration = 0;
+  
+  // Stage 1: Network First (with intelligent timeout and error handling)
   try {
-    // Network first approach for HTML files
-    const networkResponse = await fetchWithTimeout(request, CACHE_STRATEGIES.NETWORK_TIMEOUT);
+    console.log('SW: 📡 Stage 1: Attempting network fetch...');
+    const networkResponse = await fetchWithTimeout(request, CACHE_STRATEGIES.HTML_TIMEOUT);
+    networkDuration = Date.now() - startTime;
     
     if (networkResponse.ok) {
       // Update cache with fresh content and preserve encoding headers
@@ -348,31 +356,103 @@ async function handleHTMLRequest(request) {
       }
       
       cache.put(request, responseToCache);
-      console.log('SW: ✅ HTML取得成功 & UTF-8エンコーディング保持キャッシュ更新:', request.url);
+      console.log(`SW: ✅ HTML取得成功 & UTF-8エンコーディング保持キャッシュ更新: ${request.url} (${networkDuration}ms)`);
       return networkResponse;
+    } else {
+      // Server responded but with error status
+      networkError = new Error(`HTTP ${networkResponse.status}: ${networkResponse.statusText}`);
+      console.warn(`SW: ⚠️ サーバーエラー応答: ${networkResponse.status} for ${request.url}`);
     }
   } catch (error) {
-    console.warn('SW: ⚠️ HTMLネットワーク取得失敗:', error.message);
+    networkError = error;
+    networkDuration = Date.now() - startTime;
+    
+    const errorInfo = classifyNetworkError(error);
+    console.warn(`SW: ⚠️ HTMLネットワーク取得失敗 (${errorInfo.type}): ${error.message} (${networkDuration}ms)`);
+    
+    // For timeout errors, immediately try cache instead of offline page
+    if (errorInfo.type === 'timeout') {
+      console.log('SW: ⚡ Timeout detected, immediately trying cache...');
+    }
   }
   
-  // Fallback to cache if network fails
+  // Stage 2: Cache Fallback (for network failures or errors)
+  console.log('SW: 🗄️ Stage 2: Attempting cache fallback...');
   const cache = await caches.open(CACHE_NAME);
   const cachedResponse = await cache.match(request);
   
   if (cachedResponse) {
-    console.log('SW: 🗄️ HTMLキャッシュから提供:', request.url);
-    return cachedResponse;
+    const cacheAge = cachedResponse.headers.get('sw-cache-time');
+    const ageInfo = cacheAge ? `cached ${Math.round((Date.now() - parseInt(cacheAge)) / 1000)}s ago` : 'cache age unknown';
+    console.log(`SW: ✅ HTMLキャッシュから提供: ${request.url} (${ageInfo})`);
+    
+    // Add warning header to indicate cache fallback
+    const responseWithHeaders = new Response(cachedResponse.body, {
+      status: cachedResponse.status,
+      statusText: cachedResponse.statusText,
+      headers: {
+        ...Object.fromEntries(cachedResponse.headers.entries()),
+        'X-Served-From': 'service-worker-cache',
+        'X-Network-Error': networkError?.message || 'Network unavailable'
+      }
+    });
+    
+    return responseWithHeaders;
   }
   
-  // No cache available - return error
-  console.error('SW: ❌ HTML取得失敗 (ネットワーク＋キャッシュ):', request.url);
-  return new Response(
-    '<!DOCTYPE html><html><head><meta charset="utf-8"><title>オフライン</title></head><body><h1>オフライン</h1><p>インターネット接続を確認してください。</p></body></html>',
-    { 
-      headers: { 'Content-Type': 'text/html; charset=utf-8' },
-      status: 503
-    }
-  );
+  // Stage 3: Online State Check (before showing offline page)
+  console.log('SW: 🔍 Stage 3: Checking online connectivity...');
+  const connectivityResult = await isOnlineWithConnectivityCheck();
+  
+  if (connectivityResult.online) {
+    // We're online but both network and cache failed
+    // This might be a server-specific issue, not a general connectivity problem
+    console.error(`SW: ❌ HTML取得失敗 (オンライン状態だがサーバー接続不可): ${request.url}`);
+    console.log('SW: 📊 Connectivity check result:', connectivityResult);
+    
+    return new Response(
+      `<!DOCTYPE html><html><head><meta charset="utf-8"><title>サーバー接続エラー</title></head>
+       <body>
+         <h1>サーバー接続エラー</h1>
+         <p>インターネット接続は正常ですが、サーバーに接続できませんでした。</p>
+         <p>少し時間をおいてから再度お試しください。</p>
+         <details>
+           <summary>技術情報</summary>
+           <p>URL: ${request.url}</p>
+           <p>エラー: ${networkError?.message || 'Unknown error'}</p>
+           <p>接続確認: ${connectivityResult.reason}</p>
+           <p>時刻: ${new Date().toLocaleString('ja-JP')}</p>
+         </details>
+         <button onclick="window.location.reload()">再試行</button>
+       </body></html>`,
+      { 
+        headers: { 'Content-Type': 'text/html; charset=utf-8' },
+        status: 502 // Bad Gateway
+      }
+    );
+  } else {
+    // Truly offline
+    console.error(`SW: ❌ HTML取得失敗 (オフライン状態): ${request.url}`);
+    console.log('SW: 📊 Offline reason:', connectivityResult.reason);
+    
+    return new Response(
+      `<!DOCTYPE html><html><head><meta charset="utf-8"><title>オフライン</title></head>
+       <body>
+         <h1>オフライン</h1>
+         <p>インターネット接続を確認してください。</p>
+         <details>
+           <summary>接続情報</summary>
+           <p>理由: ${connectivityResult.reason}</p>
+           <p>時刻: ${new Date().toLocaleString('ja-JP')}</p>
+         </details>
+         <button onclick="window.location.reload()">再試行</button>
+       </body></html>`,
+      { 
+        headers: { 'Content-Type': 'text/html; charset=utf-8' },
+        status: 503 // Service Unavailable
+      }
+    );
+  }
 }
 
 // Handle static asset requests with stale-while-revalidate
@@ -444,6 +524,75 @@ async function handleDefaultRequest(request) {
     }
     throw error;
   }
+}
+
+// Utility: Online state detection and error classification
+async function isOnlineWithConnectivityCheck() {
+  // Basic navigator.onLine check
+  if (!navigator.onLine) {
+    return { online: false, reason: 'navigator.onLine is false' };
+  }
+
+  // Connectivity test with a simple HEAD request to the origin
+  try {
+    const testUrl = new URL('/', self.location.origin);
+    const response = await fetchWithTimeout(
+      new Request(testUrl.href, { method: 'HEAD' }), 
+      3000 // Short timeout for connectivity test
+    );
+    
+    return { 
+      online: response.ok || response.status < 500,
+      reason: response.ok ? 'connectivity confirmed' : `server responded with ${response.status}`,
+      status: response.status
+    };
+  } catch (error) {
+    return { 
+      online: false, 
+      reason: `connectivity test failed: ${error.name}`,
+      error: error.name
+    };
+  }
+}
+
+// Utility: Classify network errors
+function classifyNetworkError(error) {
+  const errorName = error.name?.toLowerCase() || '';
+  const errorMessage = error.message?.toLowerCase() || '';
+  
+  if (errorName === 'aborterror' || errorMessage.includes('abort')) {
+    return {
+      type: 'timeout',
+      temporary: true,
+      description: 'Request timed out',
+      shouldFallbackToCache: true
+    };
+  }
+  
+  if (errorName === 'typeerror' || errorMessage.includes('failed to fetch')) {
+    return {
+      type: 'network',
+      temporary: true,
+      description: 'Network connection issue',
+      shouldFallbackToCache: true
+    };
+  }
+  
+  if (errorMessage.includes('dns') || errorMessage.includes('resolve')) {
+    return {
+      type: 'dns',
+      temporary: true,
+      description: 'DNS resolution failed',
+      shouldFallbackToCache: true
+    };
+  }
+  
+  return {
+    type: 'unknown',
+    temporary: true,
+    description: error.message || 'Unknown network error',
+    shouldFallbackToCache: true
+  };
 }
 
 // Utility: Fetch with timeout

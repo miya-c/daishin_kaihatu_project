@@ -151,6 +151,93 @@
         return results;
     };
 
+    // タイムアウト・パフォーマンステスト
+    const testNetworkPerformance = async () => {
+        console.log('⏱️ ネットワークパフォーマンステスト開始');
+        
+        const results = {
+            tests: [],
+            avgResponseTime: 0,
+            slowRequests: [],
+            timeouts: []
+        };
+        
+        const testUrls = [
+            window.location.pathname,
+            'property_select.html',
+            'room_select.html'
+        ];
+        
+        let totalTime = 0;
+        let successCount = 0;
+        
+        for (const url of testUrls) {
+            const testResult = {
+                url: url,
+                startTime: Date.now(),
+                duration: 0,
+                success: false,
+                status: null,
+                timeout: false,
+                error: null
+            };
+            
+            try {
+                const startTime = Date.now();
+                
+                // 10秒タイムアウトでテスト（Service Workerと同じ設定）
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 10000);
+                
+                const response = await fetch(url, {
+                    method: 'HEAD',
+                    cache: 'no-cache',
+                    signal: controller.signal
+                });
+                
+                clearTimeout(timeoutId);
+                
+                testResult.duration = Date.now() - startTime;
+                testResult.success = response.ok;
+                testResult.status = response.status;
+                
+                totalTime += testResult.duration;
+                if (response.ok) successCount++;
+                
+                // 5秒以上のレスポンスを遅延として記録
+                if (testResult.duration > 5000) {
+                    results.slowRequests.push({
+                        url: url,
+                        duration: testResult.duration
+                    });
+                }
+                
+                console.log(`⏱️ ${url}: ${testResult.duration}ms (${response.status})`);
+                
+            } catch (error) {
+                testResult.duration = Date.now() - testResult.startTime;
+                testResult.error = error.message;
+                
+                if (error.name === 'AbortError') {
+                    testResult.timeout = true;
+                    results.timeouts.push({
+                        url: url,
+                        duration: testResult.duration
+                    });
+                    console.log(`⏱️ ${url}: TIMEOUT (${testResult.duration}ms)`);
+                } else {
+                    console.log(`⏱️ ${url}: ERROR - ${error.message}`);
+                }
+            }
+            
+            results.tests.push(testResult);
+        }
+        
+        results.avgResponseTime = successCount > 0 ? Math.round(totalTime / successCount) : 0;
+        
+        return results;
+    };
+
     // パス解決テスト
     const testPathResolution = async () => {
         const results = [];
@@ -364,7 +451,8 @@
             cache: await getCacheStats(),
             pathResolution: await testPathResolution(),
             serviceWorker: await testServiceWorkerCommunication(),
-            encoding: await testCharacterEncoding()
+            encoding: await testCharacterEncoding(),
+            performance: await testNetworkPerformance()
         };
 
         // 結果表示
@@ -374,6 +462,7 @@
         console.log('パス解決テスト:', results.pathResolution);
         console.log('Service Worker通信:', results.serviceWorker);
         console.log('文字エンコーディング:', results.encoding);
+        console.log('ネットワークパフォーマンス:', results.performance);
         console.groupEnd();
 
         // 問題の検出と推奨事項
@@ -419,6 +508,25 @@
             }
         }
 
+        // パフォーマンス問題のチェック
+        if (results.performance) {
+            if (results.performance.timeouts.length > 0) {
+                issues.push(`タイムアウトが発生しています: ${results.performance.timeouts.length}件`);
+                recommendations.push('ネットワーク接続速度を確認してください');
+                recommendations.push('Service Workerのタイムアウト設定を延長しました');
+            }
+            
+            if (results.performance.slowRequests.length > 0) {
+                issues.push(`レスポンスが遅いリクエストがあります: ${results.performance.slowRequests.length}件`);
+                recommendations.push('サーバーレスポンス時間の改善またはキャッシュ設定の見直しが必要です');
+            }
+            
+            if (results.performance.avgResponseTime > 3000) {
+                issues.push(`平均レスポンス時間が遅いです: ${results.performance.avgResponseTime}ms`);
+                recommendations.push('Cloudflare Pagesのエッジキャッシュ設定を最適化してください');
+            }
+        }
+
         if (issues.length > 0) {
             console.group('⚠️ 検出された問題');
             issues.forEach(issue => console.warn(issue));
@@ -442,6 +550,7 @@
         completeReset: performCompleteReset,
         testPaths: testPathResolution,
         testEncoding: testCharacterEncoding,
+        testPerformance: testNetworkPerformance,
         collect: collectDiagnostics
     };
 
