@@ -1,6 +1,6 @@
 // Service Worker for PWA - Speed Optimized for Cache+Light API architecture  
-// Version 20250831b - Timeout Removed + Natural Error Handling
-const CACHE_NAME = 'meter-reading-app-v8-no-timeout';
+// Version 20250831c - Custom Error Pages Removed + Natural Browser Error Handling
+const CACHE_NAME = 'meter-reading-app-v9-natural-errors';
 const DATA_CACHE_NAME = 'meter-reading-data-v7';
 
 // Static assets for offline support (Cloudflare Pages compatible paths)
@@ -41,7 +41,7 @@ const LEGACY_CACHE_NAMES = [
 
 // Install event - cache essential assets with performance optimization
 self.addEventListener('install', (event) => {
-  console.log('🚀 Service Worker v20250831b: Install event - No Timeout');
+  console.log('🚀 Service Worker v20250831c: Install event - Natural Error Handling');
   
   // 即座にアクティベート（古いSWを置き換え）
   self.skipWaiting();
@@ -78,7 +78,7 @@ self.addEventListener('install', (event) => {
 
 // Activate event - clean up old caches with enhanced management
 self.addEventListener('activate', (event) => {
-  console.log('SW: 🔄 Activate event v20250831b - タイムアウト除去 + 自然エラーハンドリング');
+  console.log('SW: 🔄 Activate event v20250831c - カスタムエラーページ削除 + 自然エラーハンドリング');
   
   event.waitUntil(
     Promise.all([
@@ -395,59 +395,13 @@ async function handleHTMLRequest(request) {
     return responseWithHeaders;
   }
   
-  // Stage 3: Online State Check (before showing offline page)
-  console.log('SW: 🔍 Stage 3: Checking online connectivity...');
-  const connectivityResult = await isOnlineWithConnectivityCheck();
+  // No custom error pages - let browser handle natural errors
+  console.log('SW: ❌ HTML取得失敗 - ブラウザのネイティブエラーハンドリングに任せる:', request.url);
+  console.log('SW: 📊 Network error details:', networkError?.message);
   
-  if (connectivityResult.online) {
-    // We're online but both network and cache failed
-    // This might be a server-specific issue, not a general connectivity problem
-    console.error(`SW: ❌ HTML取得失敗 (オンライン状態だがサーバー接続不可): ${request.url}`);
-    console.log('SW: 📊 Connectivity check result:', connectivityResult);
-    
-    return new Response(
-      `<!DOCTYPE html><html><head><meta charset="utf-8"><title>サーバー接続エラー</title></head>
-       <body>
-         <h1>サーバー接続エラー</h1>
-         <p>インターネット接続は正常ですが、サーバーに接続できませんでした。</p>
-         <p>少し時間をおいてから再度お試しください。</p>
-         <details>
-           <summary>技術情報</summary>
-           <p>URL: ${request.url}</p>
-           <p>エラー: ${networkError?.message || 'Unknown error'}</p>
-           <p>接続確認: ${connectivityResult.reason}</p>
-           <p>時刻: ${new Date().toLocaleString('ja-JP')}</p>
-         </details>
-         <button onclick="window.location.reload()">再試行</button>
-       </body></html>`,
-      { 
-        headers: { 'Content-Type': 'text/html; charset=utf-8' },
-        status: 502 // Bad Gateway
-      }
-    );
-  } else {
-    // Truly offline
-    console.error(`SW: ❌ HTML取得失敗 (オフライン状態): ${request.url}`);
-    console.log('SW: 📊 Offline reason:', connectivityResult.reason);
-    
-    return new Response(
-      `<!DOCTYPE html><html><head><meta charset="utf-8"><title>オフライン</title></head>
-       <body>
-         <h1>オフライン</h1>
-         <p>インターネット接続を確認してください。</p>
-         <details>
-           <summary>接続情報</summary>
-           <p>理由: ${connectivityResult.reason}</p>
-           <p>時刻: ${new Date().toLocaleString('ja-JP')}</p>
-         </details>
-         <button onclick="window.location.reload()">再試行</button>
-       </body></html>`,
-      { 
-        headers: { 'Content-Type': 'text/html; charset=utf-8' },
-        status: 503 // Service Unavailable
-      }
-    );
-  }
+  // Let the browser handle the error naturally (404, 503, network error, etc.)
+  // This provides better UX than custom error pages
+  throw networkError || new Error('Network request failed');
 }
 
 // Handle static asset requests with stale-while-revalidate
@@ -521,73 +475,7 @@ async function handleDefaultRequest(request) {
   }
 }
 
-// Utility: Online state detection and error classification
-async function isOnlineWithConnectivityCheck() {
-  // Basic navigator.onLine check
-  if (!navigator.onLine) {
-    return { online: false, reason: 'navigator.onLine is false' };
-  }
-
-  // Connectivity test with a simple HEAD request to the origin
-  try {
-    const testUrl = new URL('/', self.location.origin);
-    const response = await fetch(
-      new Request(testUrl.href, { method: 'HEAD' })
-    );
-    
-    return { 
-      online: response.ok || response.status < 500,
-      reason: response.ok ? 'connectivity confirmed' : `server responded with ${response.status}`,
-      status: response.status
-    };
-  } catch (error) {
-    return { 
-      online: false, 
-      reason: `connectivity test failed: ${error.name}`,
-      error: error.name
-    };
-  }
-}
-
-// Utility: Classify network errors
-function classifyNetworkError(error) {
-  const errorName = error.name?.toLowerCase() || '';
-  const errorMessage = error.message?.toLowerCase() || '';
-  
-  if (errorName === 'aborterror' || errorMessage.includes('abort')) {
-    return {
-      type: 'timeout',
-      temporary: true,
-      description: 'Request timed out',
-      shouldFallbackToCache: true
-    };
-  }
-  
-  if (errorName === 'typeerror' || errorMessage.includes('failed to fetch')) {
-    return {
-      type: 'network',
-      temporary: true,
-      description: 'Network connection issue',
-      shouldFallbackToCache: true
-    };
-  }
-  
-  if (errorMessage.includes('dns') || errorMessage.includes('resolve')) {
-    return {
-      type: 'dns',
-      temporary: true,
-      description: 'DNS resolution failed',
-      shouldFallbackToCache: true
-    };
-  }
-  
-  return {
-    type: 'unknown',
-    temporary: true,
-    description: error.message || 'Unknown network error',
-    shouldFallbackToCache: true
-  };
-}
+// Utility functions removed - using native browser error handling for better UX
 
 // Utility functions removed - using native fetch with browser's natural timeout handling
 
