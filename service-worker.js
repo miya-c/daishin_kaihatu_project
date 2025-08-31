@@ -1,6 +1,6 @@
 // Service Worker for PWA - Speed Optimized for Cache+Light API architecture  
-// Version 20250831e - Room Select Path Fix + File Structure Cleanup
-const CACHE_NAME = 'meter-reading-app-v11-room-path-fix';
+// Version 20250831f - ERR_FAILED Fix + Complete Cache Reset
+const CACHE_NAME = 'meter-reading-app-v12-err-failed-fix';
 const DATA_CACHE_NAME = 'meter-reading-data-v7';
 
 // Static assets for offline support (Cloudflare Pages compatible paths)
@@ -29,12 +29,20 @@ const CACHE_STRATEGIES = {
   SYNC_RETRY_INTERVAL: 30000
 };
 
-// Legacy cache names to be deleted
+// Legacy cache names to be deleted - COMPLETE RESET for ERR_FAILED fix
 const LEGACY_CACHE_NAMES = [
+  'meter-reading-app-v11-room-path-fix',   // 追加: ERR_FAILED問題修正前
   'meter-reading-app-v10-function-fixed',  // 追加: ファイルパス問題修正前
   'meter-reading-app-v9-natural-errors',   // 追加: 自然エラーハンドリング版
   'meter-reading-app-v8-no-timeout',       // 追加: タイムアウト削除版
+  'meter-reading-app-v7-no-custom-errors', // 追加: カスタムエラー削除版
+  'meter-reading-app-v6-clean-urls',       // 追加: URL最適化版
+  'meter-reading-app-v5-encoding-fix',     // 追加: エンコーディング修正版
+  'meter-reading-app-v4-performance',      // 追加: 性能向上版
   'meter-reading-app-v3-cloudflare-fixed',
+  'meter-reading-data-v6',                 // データキャッシュも完全クリア
+  'meter-reading-data-v5',
+  'meter-reading-data-v4',
   'meter-reading-data-v3',
   'meter-reading-app-v2-optimized',
   'meter-reading-data-v2',
@@ -44,7 +52,7 @@ const LEGACY_CACHE_NAMES = [
 
 // Install event - cache essential assets with performance optimization
 self.addEventListener('install', (event) => {
-  console.log('🚀 Service Worker v20250831e: Install event - Room Select Path Fix');
+  console.log('🚀 Service Worker v20250831f: Install event - ERR_FAILED Fix + Complete Cache Reset');
   
   // 即座にアクティベート（古いSWを置き換え）
   self.skipWaiting();

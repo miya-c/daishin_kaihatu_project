@@ -15,8 +15,10 @@
 
 /room_select.html
   Content-Type: text/html; charset=utf-8
-  Cache-Control: no-cache, no-store, max-age=0, must-revalidate
+  Cache-Control: public, max-age=86400
   X-Content-Type-Options: nosniff
+  Access-Control-Allow-Origin: *
+  Access-Control-Allow-Methods: GET, HEAD, OPTIONS
 
 /meter_reading.html
   Content-Type: text/html; charset=utf-8
