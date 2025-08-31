@@ -175,16 +175,16 @@
   <script>
     // 動的 CSS キャッシュバスティング
     const timestamp = Date.now();
-    document.write(`<link rel="stylesheet" href="../../css_styles/meter_reading.css?t=${timestamp}">`);
-    document.write(`<link rel="stylesheet" href="../../css_styles/pwa-styles.css?t=${timestamp}">`);
+    document.write(`<link rel="stylesheet" href="../css_styles/meter_reading.css?t=${timestamp}">`);
+    document.write(`<link rel="stylesheet" href="../css_styles/pwa-styles.css?t=${timestamp}">`);
   </script>
   
   <!-- CSS プリロード (パフォーマンス向上) -->
   <script>
     // 動的 CSS プリロード
     const ts = Date.now();
-    document.write(`<link rel="preload" href="../../css_styles/meter_reading.css?t=${ts}" as="style">`);
-    document.write(`<link rel="preload" href="../../css_styles/pwa-styles.css?t=${ts}" as="style">`);
+    document.write(`<link rel="preload" href="../css_styles/meter_reading.css?t=${ts}" as="style">`);
+    document.write(`<link rel="preload" href="../css_styles/pwa-styles.css?t=${ts}" as="style">`);
   </script>
   
   <!-- ReactとReactDOMのCDN -->
