@@ -1,0 +1,1812 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <title>物件選択 - 水道メーター読み取りアプリ</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <!-- キャッシュコントロール メタタグ -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  
+  <!-- PWA メタタグ -->
+  <meta name="description" content="水道メーターの読み取りを管理するアプリケーション">
+  <meta name="theme-color" content="#007bff">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="メーター読み取り">
+  <meta name="msapplication-TileColor" content="#007bff">
+  
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="/manifest.json">
+  
+  <!-- Favicon and Icons -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iNCIgZmlsbD0iIzAwN2JmZiIvPgo8c3ZnIHg9IjgiIHk9IjgiIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJ3aGl0ZSI+CjxwYXRoIGQ9Ik0xMiAyQzYuNDggMiAyIDYuNDggMiAxMnM0LjQ4IDEwIDEwIDEwIDEwLTQuNDggMTAtMTBTMTcuNTIgMiAxMiAyem0tMiAxNWwtNS01IDEuNDEtMS40MUwxMCAxNC4xN2w3LjU5LTcuNTlMMTkgOGwtOSA5eiIvPgo8L3N2Zz4KPC9zdmc+">
+  <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTgwIiBoZWlnaHQ9IjE4MCIgdmlld0JveD0iMCAwIDE4MCAxODAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxODAiIGhlaWdodD0iMTgwIiByeD0iMjAiIGZpbGw9IiMwMDdiZmYiLz4KPHN2ZyB4PSI0NSIgeT0iNDUiIHdpZHRoPSI5MCIgaGVpZ2h0PSI5MCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJ3aGl0ZSI+CjxwYXRoIGQ9Ik0xMiAyQzYuNDggMiAyIDYuNDggMiAxMnM0LjQ4IDEwIDEwIDEwIDEwLTQuNDggMTAtMTBTMTcuNTIgMiAxMiAyem0tMiAxNWwtNS01IDEuNDEtMS40MUwxMCAxNC4xN2w3LjU5LTcuNTlMMTkgOGwtOSA5eiIvPgo8L3N2Zz4KPC9zdmc+">
+  
+  <!-- Material UI Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+  
+  <!-- クリティカルCSS (インライン) - 初回表示の改善 -->
+  <style>
+    /* Material UI Critical CSS */
+    :root {
+      --mui-palette-primary-main: #1976d2;
+      --mui-palette-primary-dark: #1565c0;
+      --mui-palette-primary-light: #42a5f5;
+      --mui-palette-grey-50: #fafafa;
+      --mui-palette-grey-100: #f5f5f5;
+      --mui-palette-grey-900: #212121;
+      --mui-shadows-1: 0px 2px 1px -1px rgba(0,0,0,0.2), 0px 1px 1px 0px rgba(0,0,0,0.14), 0px 1px 3px 0px rgba(0,0,0,0.12);
+      --mui-shadows-2: 0px 3px 1px -2px rgba(0,0,0,0.2), 0px 2px 2px 0px rgba(0,0,0,0.14), 0px 1px 5px 0px rgba(0,0,0,0.12);
+      --mui-shadows-4: 0px 2px 4px -1px rgba(0,0,0,0.2), 0px 4px 5px 0px rgba(0,0,0,0.14), 0px 1px 10px 0px rgba(0,0,0,0.12);
+    }
+    
+    * { box-sizing: border-box; }
+    body { 
+      margin: 0; padding: 0; 
+      font-family: "Roboto", "Helvetica", "Arial", sans-serif;
+      background-color: var(--mui-palette-grey-50);
+      color: var(--mui-palette-grey-900);
+      font-size: 1rem; line-height: 1.5; letter-spacing: 0.00938em;
+      -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+    }
+    
+    /* Material UI AppBar */
+    .MuiAppBar-root {
+      background-color: var(--mui-palette-primary-main);
+      color: #fff; box-shadow: var(--mui-shadows-4);
+      min-height: 64px; border-radius: 0 0 12px 12px;
+    }
+    .MuiToolbar-root {
+      display: flex; align-items: center; justify-content: center;
+      min-height: 64px; padding: 0 16px; gap: 8px;
+    }
+    .app-title {
+      flex-grow: 1; text-align: center; font-size: 1.5rem;
+      font-weight: 500; color: #fff; letter-spacing: 0.0075em;
+    }
+    
+    /* Material UI Container */
+    .MuiContainer-root {
+      max-width: 1200px; margin: 0 auto; padding: 32px 16px;
+    }
+    
+    /* Material UI Cards */
+    .MuiCard-root {
+      background: #fff; border-radius: 16px;
+      box-shadow: var(--mui-shadows-1);
+      transition: box-shadow 0.2s, transform 0.2s;
+      cursor: pointer; margin-bottom: 16px;
+    }
+    .MuiCard-root:hover {
+      box-shadow: var(--mui-shadows-4);
+      transform: translateY(-2px) scale(1.01);
+    }
+    .MuiCardContent-root { padding: 20px; }
+    
+    /* Loading & Error States (ユーザーディスプレイ中央表示) */
+    .loading-container { 
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      display: flex !important; 
+      justify-content: center !important; 
+      align-items: center !important; 
+      flex-direction: column; 
+      gap: 16px;
+      background-color: rgba(255, 255, 255, 0.95) !important;
+      z-index: 9999 !important;
+      /* GPU加速とユーザーディスプレイ中央配置を保証 */
+      transform: translate3d(0, 0, 0);
+      backface-visibility: hidden;
+      margin: 0 !important;
+      padding: 0 !important;
+      box-sizing: border-box !important;
+    }
+    .MuiCircularProgress-root {
+      width: 40px; height: 40px; border: 4px solid #e0e0e0;
+      border-top-color: var(--mui-palette-primary-main);
+      border-radius: 50%; animation: spin 1.4s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    
+    .MuiAlert-root {
+      display: flex; padding: 12px 16px; border-radius: 16px;
+      background: linear-gradient(135deg, #fff5f5 0%, #fed7d7 100%);
+      border: 1px solid #fecaca; color: #b91c1c;
+      box-shadow: 0 4px 12px rgba(185, 28, 28, 0.1); margin-bottom: 16px;
+    }
+    
+    /* Search Input */
+    .MuiTextField-root { margin-bottom: 24px; }
+    .MuiTextField-root input {
+      width: 100%; padding: 18px 20px; border: 2px solid #e0e0e0;
+      border-radius: 16px; font-size: 16px;
+      background: linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .MuiTextField-root input:focus {
+      outline: none; border-color: var(--mui-palette-primary-main);
+      box-shadow: 0 4px 12px rgba(25,118,210,0.1);
+      background: #ffffff; transform: translateY(-1px);
+    }
+    #root { 
+      min-height: 100vh; 
+      background: linear-gradient(135deg, #f0f4f8 0%, #e1e8ed 100%); 
+    }
+    .loading-container { 
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      display: flex !important; 
+      justify-content: center !important; 
+      align-items: center !important; 
+      background-color: rgba(255, 255, 255, 0.95) !important;
+      z-index: 9999 !important;
+      /* GPU加速とユーザーディスプレイ中央配置を保証 */
+      transform: translate3d(0, 0, 0);
+      backface-visibility: hidden;
+      margin: 0 !important;
+      padding: 0 !important;
+      box-sizing: border-box !important;
+    }
+    .loading-spinner { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #007bff; border-radius: 50%; animation: spin 1s linear infinite; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .mantine-container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+    .mantine-stack { display: flex; flex-direction: column; gap: 16px; }
+    .mantine-title { 
+      font-size: 32px; font-weight: 700; margin: 0 0 32px 0; 
+      background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-align: center; 
+      position: relative;
+    }
+    .mantine-title::after {
+      content: '';
+      position: absolute;
+      bottom: -8px; left: 50%; transform: translateX(-50%);
+      width: 60px; height: 3px;
+      background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+      border-radius: 2px;
+    }
+    .mantine-text-input { margin-bottom: 20px; }
+    .mantine-text-input input { 
+      width: 100%; padding: 18px 20px; border: 2px solid #e9ecef; border-radius: 16px; 
+      font-size: 16px; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+      background: linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%);
+      box-shadow: 
+        0 2px 8px rgba(0,0,0,0.04),
+        inset 0 1px 2px rgba(0,0,0,0.02);
+    }
+    .mantine-text-input input:focus { 
+      outline: none; 
+      border-color: #007bff; 
+      box-shadow: 
+        0 0 0 4px rgba(0,123,255,0.15),
+        0 4px 12px rgba(0,123,255,0.1); 
+      background: #ffffff;
+      transform: translateY(-1px);
+    }
+    .mantine-alert { 
+      background: linear-gradient(135deg, #fff5f5 0%, #fed7d7 100%); 
+      border: 1px solid #fecaca; border-radius: 16px; 
+      padding: 20px; color: #b91c1c; 
+      box-shadow: 0 4px 12px rgba(185, 28, 28, 0.1);
+    }
+    .mantine-center { display: flex; justify-content: center; align-items: center; }
+    .mantine-loader { 
+      width: 24px; height: 24px; border: 2px solid #e9ecef; 
+      border-top: 2px solid #007bff; border-radius: 50%; 
+      animation: spin 1s linear infinite; 
+    }
+    /* Property Card Styles */
+    .mantine-paper { 
+      background: linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%); 
+      border-radius: 20px; /* 16px → 20px 丸みを強調 */
+      padding: 20px; 
+      box-shadow: 
+        0 4px 12px rgba(0,0,0,0.08),
+        0 1px 3px rgba(0,0,0,0.05); 
+      border: 1px solid rgba(255,255,255,0.8); 
+      cursor: pointer; 
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+      margin-bottom: 12px;
+      position: relative;
+      overflow: hidden;
+    }
+    .mantine-paper::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: linear-gradient(145deg, rgba(0,123,255,0.03) 0%, rgba(0,123,255,0.01) 100%);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      border-radius: 20px; /* 角丸を一致させる */
+    }
+    .mantine-paper:hover::before {
+      opacity: 1;
+    }
+    .mantine-paper:hover { 
+      transform: translateY(-4px) scale(1.02); 
+      box-shadow: 
+        0 12px 32px rgba(0,123,255,0.15),
+        0 4px 12px rgba(0,0,0,0.1); 
+      border-color: rgba(0,123,255,0.3); 
+    }
+    .mantine-paper.disabled { 
+      opacity: 0.6; cursor: not-allowed; 
+    }
+    .property-card { 
+      display: flex; justify-content: space-between; align-items: flex-start; 
+      gap: 16px; /* 要素間の間隔を追加 */
+    }
+    .property-info { flex: 1; }
+    .property-id { 
+      font-size: 14px; color: #495057; font-weight: 600; 
+      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); 
+      padding: 6px 10px; border-radius: 8px; 
+      display: inline-block; margin-bottom: 10px;
+      border: 1px solid rgba(0,0,0,0.05);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .property-name-row { 
+      display: flex; justify-content: space-between; align-items: flex-start; 
+      flex-wrap: wrap; gap: 8px; 
+      min-height: auto; 
+    }
+    .completion-date { 
+      font-size: 12px; color: #ffffff; font-weight: 600; 
+      background: linear-gradient(135deg, #28a745 0%, #20c997 100%); 
+      padding: 6px 10px; border-radius: 12px; 
+      white-space: nowrap; 
+      box-shadow: 0 2px 8px rgba(40, 167, 69, 0.25);
+      border: 1px solid rgba(255,255,255,0.3);
+    }
+    .property-arrow { 
+      width: 24px; height: 24px; color: #6c757d; 
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+      margin-left: 16px; 
+      flex-shrink: 0; /* アイコンのサイズを固定 */
+      margin-top: 4px; /* 少し上にオフセット */
+    }
+    .mantine-paper:hover .property-arrow { 
+      color: #007bff; 
+      transform: translateX(4px) rotate(5deg);
+    }
+    /* Responsive design */
+    @media (max-width: 768px) { 
+      .mantine-container { padding: 16px; } 
+      .mantine-title { font-size: 32px; margin-bottom: 24px; } /* 28px → 32px */
+      .mantine-paper { padding: 20px; border-radius: 18px; } /* 16px → 20px → 18px */
+      .property-id { font-size: 14px; padding: 6px 10px; } /* 12px → 14px */
+      .completion-date { font-size: 12px; padding: 6px 10px; } /* 11px → 12px */
+      .mantine-text-input input { padding: 18px 20px; } /* 16px → 18px */
+      .property-name-row { flex-direction: column; align-items: flex-start; }
+    }
+    
+    /* Extra small devices - very long property names */
+    @media (max-width: 480px) {
+      .mantine-paper { padding: 16px; border-radius: 14px; } /* 12px → 16px, 丸みも調整 */
+      .property-id { font-size: 13px; padding: 6px 10px; } /* 12px → 13px */
+      .mantine-title { font-size: 28px; } /* 新規追加 */
+    }
+    
+    /* Styles loading state management */
+    .styles-loading { 
+      opacity: 0; 
+      transform: translateY(20px);
+      transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1); 
+    }
+    .styles-loaded { 
+      opacity: 1; 
+      transform: translateY(0);
+    }
+    
+    /* Fade-in animation for cards */
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .mantine-paper {
+      animation: fadeInUp 0.6s ease-out;
+    }
+    
+    .mantine-paper:nth-child(1) { animation-delay: 0.1s; }
+    .mantine-paper:nth-child(2) { animation-delay: 0.2s; }
+    .mantine-paper:nth-child(3) { animation-delay: 0.3s; }
+    .mantine-paper:nth-child(4) { animation-delay: 0.4s; }
+    .mantine-paper:nth-child(5) { animation-delay: 0.5s; }
+  </style>
+  
+  <!-- 重要: CSS ファイルを最初に読み込む (レンダリングブロッキング) -->
+  <script>
+    // 動的 CSS キャッシュバスティング
+    const timestamp = Date.now();
+    document.write(`<link rel="stylesheet" href="../../css_styles/property_select.css?t=${timestamp}">`);
+    document.write(`<link rel="stylesheet" href="../../css_styles/pwa-styles.css?t=${timestamp}">`);
+  </script>
+  
+  <!-- CSS プリロード (パフォーマンス向上) -->
+  <script>
+    // 動的 CSS プリロード
+    const ts = Date.now();
+    document.write(`<link rel="preload" href="../../css_styles/property_select.css?t=${ts}" as="style">`);
+    document.write(`<link rel="preload" href="../../css_styles/pwa-styles.css?t=${ts}" as="style">`);
+  </script>
+  
+  <!-- ReactとReactDOMのCDN (Cache Busting Version) -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <!-- BabelのCDN (JSXをブラウザで変換するため) -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  
+  <!-- PWA Utilities -->
+  <script src="/pwa-utils.js"></script>
+  
+  <!-- Performance Monitor -->
+  <script src="/performance-monitor.js"></script>
+  
+  <!-- 動的CSS読み込みヘルパー -->
+  <script>
+    // 開発用動的CSS読み込み機能
+    window.reloadCSS = function() {
+      const timestamp = Date.now();
+      const cssLinks = document.querySelectorAll('link[rel="stylesheet"]');
+      cssLinks.forEach(link => {
+        const href = link.href.split('?')[0]; // クエリパラメータを除去
+        link.href = `${href}?t=${timestamp}`;
+      });
+      console.log(`[CSS] スタイルシートをリロードしました: ${timestamp}`);
+    };
+    
+    // 開発用: CSSファイル監視（10秒間隔）
+    if (window.location.search.includes('devmode=true')) {
+      setInterval(window.reloadCSS, 10000);
+      console.log('[CSS] 開発モード: 10秒間隔でCSSを自動リロードします');
+    }
+  </script>
+</head>
+<body>
+  <div id="root" class="styles-loading"></div>
+
+  <link rel="stylesheet" href="../../css_styles/property_select.css">
+
+  <script type="text/babel">
+    // 🦁 Brave Browser Cache Busting Version 20250614c
+    // WOFF完全削除済み - 一般ブラウザ専用
+    // CSS読み込み完了待機機能追加
+    
+    console.log('🚀 Property Select App v20250830g - バックエンド連携問題修正版');
+    console.log('WOFF Status:', typeof woff !== 'undefined' ? '❌ ERROR: WOFF still loaded!' : '✅ WOFF successfully removed');
+    console.log('🔧 キャッシュ機能統合: LocalStorage + 差分更新対応');
+    console.log('🔧 API修正: getRooms従来API統一 + リトライ機能');
+    console.log('🔧 パフォーマンス向上: キャッシュシステム + 即座表示');
+    console.log('🛡️ エラーハンドリング: リトライ + ユーザーフレンドリーメッセージ');
+    
+    // Global Error Handler - 未捕捉のJavaScriptエラーをキャッチ
+    window.addEventListener('error', (event) => {
+      console.error('🚨 [GlobalErrorHandler] 未捕捉エラー:', {
+        message: event.message,
+        filename: event.filename,
+        lineno: event.lineno,
+        colno: event.colno,
+        error: event.error,
+        timestamp: new Date().toISOString(),
+        url: window.location.href,
+        userAgent: navigator.userAgent
+      });
+      
+      // 重要: 本番環境では詳細なエラー情報をログに送信（ここではコンソールログのみ）
+      if (event.error && event.error.stack) {
+        console.error('🚨 [GlobalErrorHandler] スタックトレース:', event.error.stack);
+      }
+    });
+    
+    // Promise Rejection Handler - 未処理のPromise拒否をキャッチ
+    window.addEventListener('unhandledrejection', (event) => {
+      console.error('🚨 [GlobalErrorHandler] 未処理Promise拒否:', {
+        reason: event.reason,
+        promise: event.promise,
+        timestamp: new Date().toISOString(),
+        url: window.location.href
+      });
+      
+      // ネットワークエラーやAPI呼び出し失敗の詳細ログ
+      if (event.reason && event.reason.name === 'TypeError' && event.reason.message.includes('fetch')) {
+        console.error('🚨 [GlobalErrorHandler] ネットワーク/API エラー:', event.reason);
+      }
+    });
+    
+    // キャッシュ統計情報の表示
+    try {
+      if (window.pwaUtils) {
+        const cacheStats = window.pwaUtils.getCacheStats();
+        console.log('📊 キャッシュ統計:', cacheStats);
+      }
+    } catch (cacheError) {
+      console.warn('⚠️ キャッシュ統計取得エラー:', cacheError);
+    }
+    
+    // CSS読み込み完了を待機する関数（改良版）
+    function waitForStylesLoaded() {
+      return new Promise((resolve) => {
+        const checkStyles = () => {
+          try {
+            // CSSカスタムプロパティをチェックして読み込み完了を確認
+            const rootStyles = getComputedStyle(document.documentElement);
+            const stylesLoaded = rootStyles.getPropertyValue('--meter-reading-styles-loaded').trim();
+            
+            if (stylesLoaded === "'true'" || stylesLoaded === '"true"') {
+              console.log('✅ CSS読み込み完了確認');
+              
+              // スタイル読み込み完了の視覚的フィードバック
+              const root = document.getElementById('root');
+              if (root) {
+                root.classList.remove('styles-loading');
+                root.classList.add('styles-loaded');
+              }
+              
+              resolve();
+            } else {
+              console.log('⏳ CSS読み込み待機中...', stylesLoaded);
+              setTimeout(checkStyles, 50);
+            }
+          } catch (error) {
+            console.warn('⚠️ CSS読み込みチェックエラー:', error);
+            setTimeout(checkStyles, 100);
+          }
+        };
+        
+        // 初回チェック
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', checkStyles);
+        } else {
+          checkStyles();
+        }
+      });
+    }
+    
+    // React Error Boundary - JavaScript エラーをキャッチ
+    class ErrorBoundary extends React.Component {
+      constructor(props) {
+        super(props);
+        this.state = { hasError: false, error: null, errorInfo: null };
+      }
+
+      static getDerivedStateFromError(error) {
+        return { hasError: true };
+      }
+
+      componentDidCatch(error, errorInfo) {
+        console.error('🚨 [ErrorBoundary] React エラーキャッチ:', error);
+        console.error('🚨 [ErrorBoundary] エラー詳細:', errorInfo);
+        
+        this.setState({
+          error: error,
+          errorInfo: errorInfo
+        });
+        
+        // エラーレポート（開発用）
+        if (window.location.hostname === 'localhost' || window.location.hostname.includes('daishin-kaihatu-project.pages.dev')) {
+          const errorMessage = `
+React エラーが発生しました:
+
+エラー: ${error.message}
+スタック: ${error.stack}
+コンポーネントスタック: ${errorInfo.componentStack}
+時刻: ${new Date().toISOString()}
+URL: ${window.location.href}
+          `;
+          console.group('🚨 詳細エラーレポート');
+          console.error(errorMessage);
+          console.groupEnd();
+        }
+      }
+
+      render() {
+        if (this.state.hasError) {
+          return (
+            React.createElement('div', {
+              style: {
+                padding: '20px',
+                textAlign: 'center',
+                backgroundColor: '#fff3cd',
+                border: '1px solid #ffeaa7',
+                borderRadius: '8px',
+                margin: '20px'
+              }
+            },
+              React.createElement('h2', null, '🚨 アプリでエラーが発生しました'),
+              React.createElement('p', null, 'ページを再読み込みしてください。'),
+              React.createElement('button', {
+                onClick: () => window.location.reload(),
+                style: {
+                  padding: '10px 20px',
+                  backgroundColor: '#007bff',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  marginTop: '10px'
+                }
+              }, 'ページを再読み込み'),
+              window.location.hostname === 'localhost' && React.createElement('details', {
+                style: { marginTop: '20px', textAlign: 'left' }
+              },
+                React.createElement('summary', null, 'エラー詳細（開発用）'),
+                React.createElement('pre', {
+                  style: { 
+                    backgroundColor: '#f8f9fa', 
+                    padding: '10px', 
+                    overflow: 'auto',
+                    fontSize: '12px'
+                  }
+                }, this.state.error && this.state.error.toString())
+              )
+            )
+          );
+        }
+
+        return this.props.children;
+      }
+    }
+
+    const App = () => {
+      // React Hooks の安全な初期化（エラー防止）
+      const [properties, setProperties] = React.useState([]);
+      const [searchTerm, setSearchTerm] = React.useState('');
+      const [loading, setLoading] = React.useState(true);
+      const [error, setError] = React.useState(null);
+      const [isFetched, setIsFetched] = React.useState(false);
+      const [isNavigating, setIsNavigating] = React.useState(false);
+      const [navigationMessage, setNavigationMessage] = React.useState('');
+      
+      // GAS Web App URL設定（本番環境対応・エラーハンドリング強化）
+      const gasWebAppUrl = React.useMemo(() => {
+        try {
+          return sessionStorage.getItem('gasWebAppUrl') || 
+                 localStorage.getItem('gasWebAppUrl') || 
+                 'https://script.google.com/macros/s/AKfycbzWlHl0iAm3m1JXXQLqXKr-5x9YbhmA4P8gv7ErjtzVyfk1XOhSBy_rjgOB8O8Vw5maBw/exec';
+        } catch (storageError) {
+          console.warn('🚨 [App] Storage access error:', storageError);
+          return 'https://script.google.com/macros/s/AKfycbzWlHl0iAm3m1JXXQLqXKr-5x9YbhmA4P8gv7ErjtzVyfk1XOhSBy_rjgOB8O8Vw5maBw/exec';
+        }
+      }, []);
+
+      // ページ復元時のローディング強制解除
+      React.useEffect(() => {
+        const handleForceHideLoading = () => {
+          console.log('[property_select] React - 強制ローディング解除イベント受信');
+          // データ取得完了後は描画完了検知に任せる
+          if (!isFetched) {
+            console.log('[property_select] データ未取得のため強制ローディング解除実行');
+            setLoading(false);
+            setError(null);
+            setIsNavigating(false);
+            setNavigationMessage('');
+          } else {
+            console.log('[property_select] データ取得完了済み - 描画完了検知に任せる');
+          }
+        };
+
+        // ページshow時のグローバルフラグチェック
+        if (window.forceHideLoading) {
+          handleForceHideLoading();
+          window.forceHideLoading = false;
+        }
+
+        // カスタムイベントリスナー
+        window.addEventListener('forceHideLoading', handleForceHideLoading);
+        
+        return () => {
+          window.removeEventListener('forceHideLoading', handleForceHideLoading);
+        };
+      }, [isFetched]);
+
+      // 検針完了日フォーマット関数 - React Error #418 対策
+      const formatCompletionDate = (dateStr) => {
+        // 確実に文字列を返すための安全化
+        if (!dateStr || typeof dateStr !== 'string' || dateStr.trim() === '') {
+          return '';
+        }
+        
+        try {
+          // YYYY-MM-DD形式の文字列をDate型に変換
+          const date = new Date(dateStr);
+          if (isNaN(date.getTime())) {
+            return '';
+          }
+          
+          // 月日のみを取得（1桁の場合はゼロパディングなし）
+          const month = date.getMonth() + 1;
+          const day = date.getDate();
+          return `検針完了日：${month}月${day}日`;
+        } catch (error) {
+          console.error('[ReactApp] formatCompletionDate error:', error);
+          return '';
+        }
+      };
+
+      React.useEffect(() => {
+        // コンポーネントマウント時にスクロール位置をリセット
+        window.scrollTo(0, 0);
+        
+        console.log('[ReactApp] 🚀 物件データ取得開始 - ローディング状態確認');
+        console.log('[ReactApp] 初期状態:', { loading: true, isFetched: false });
+        
+        // キャッシュ統合型プロパティ取得関数（軽量API使用）
+        const fetchProperties = async () => {
+          console.log('[ReactApp] 📡 fetchProperties関数開始 - Cache+Light API対応');
+          console.log('[ReactApp] 設定されたGAS URL:', gasWebAppUrl);
+          setLoading(true);
+          setError(null);
+          setIsFetched(false);
+          
+          // GAS URLの有効性チェック
+          if (!gasWebAppUrl || !gasWebAppUrl.includes('script.google.com')) {
+            console.error('[ReactApp] ★ERROR: 無効なGAS Web App URL:', gasWebAppUrl);
+            
+            // GAS URLの設定を求める
+            const userInput = prompt(
+              'GAS Web App URLが設定されていません。\n\nGoogle Apps ScriptのWeb App URLを入力してください:\n\n例: https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec',
+              'https://script.google.com/macros/s/'
+            );
+            
+            if (userInput && userInput.includes('script.google.com')) {
+              localStorage.setItem('gasWebAppUrl', userInput);
+              sessionStorage.setItem('gasWebAppUrl', userInput);
+              console.log('[ReactApp] ✅ GAS URL設定完了:', userInput);
+              
+              // ページをリロードして新しいURLで再試行
+              window.location.reload();
+              return;
+            } else {
+              setError('正しいGAS Web App URLを設定してください。\n\n設定方法:\n1. Google Apps ScriptでWeb Appとしてデプロイ\n2. 生成されたURLをここで設定');
+              setLoading(false);
+              return;
+            }
+          }
+          
+          console.log('[ReactApp] 📊 状態設定完了:', { loading: true, error: null, isFetched: false });
+          
+          try {
+            // Step 1: キャッシュ確認と即座に表示
+            const cacheKey = 'properties';
+            const isCacheValid = window.pwaUtils?.isCacheValid(cacheKey);
+            
+            console.log('[ReactApp] 🗄️ キャッシュ確認:', { key: cacheKey, valid: isCacheValid });
+            
+            if (isCacheValid) {
+              // キャッシュから即座にデータを表示
+              const cachedData = window.pwaUtils.getCacheData(cacheKey);
+              console.log('[ReactApp] ⚡ キャッシュヒット - 即座に表示:', cachedData?.data?.length || 0, '件');
+              
+              if (cachedData?.data && Array.isArray(cachedData.data)) {
+                const normalizedData = cachedData.data.map(property => ({
+                  ...property,
+                  id: String(property.id || property['物件ID'] || ''),
+                  name: String(property.name || property['物件名'] || '名称未設定'),
+                  completionDate: property.completionDate || property['検針完了日'] || '',
+                }));
+                
+                console.log('[ReactApp] 📋 キャッシュデータ正規化完了:', normalizedData.length, '件');
+                setProperties(normalizedData);
+                setLoading(false); // キャッシュデータは即座に表示
+                
+                // Step 2: バックグラウンドで差分更新を実行
+                console.log('[ReactApp] 🔄 バックグラウンド差分更新開始...');
+                setTimeout(() => performDeltaUpdate(cachedData.timestamp), 100);
+                return; // キャッシュヒット時は初回フェッチをスキップ
+              }
+            }
+            
+            // Step 3: キャッシュなし or 無効の場合は軽量API使用
+            console.log('[ReactApp] 🚀 標準API使用 - getProperties');
+            const requestUrl = `${gasWebAppUrl}?action=getProperties&cache=${Date.now()}`;
+            console.log('[ReactApp] Request URL (Standard API):', requestUrl);
+            
+            const response = await fetch(requestUrl);
+            console.log('[ReactApp] Response status (Standard API):', response.status);
+            
+            if (!response.ok) {
+              // 軽量API失敗時は従来APIにフォールバック
+              console.warn('[ReactApp] Light API失敗 - 従来APIにフォールバック');
+              return await fetchPropertiesLegacy();
+            }
+            
+            const data = await response.json();
+            console.log('[ReactApp] GAS Response (Standard API):', data);
+            console.log('[ReactApp] Response compression stats:', {
+              success: data.success,
+              count: data.count,
+              compressionRatio: data.compressionRatio,
+              originalSize: data.originalSizeKB,
+              compressedSize: data.compressedSizeKB,
+              timeSavedMs: data.timeSavedMs
+            });
+            
+            // 統一レスポンス形式の処理
+            if (data.success === false) {
+              console.error('[ReactApp] Standard API Error:', data.error);
+              throw new Error(`標準APIエラー: ${data.error}`);
+            }
+            
+            let actualData = data.data || [];
+            if (!Array.isArray(actualData)) {
+              console.error('[ReactApp] Light API data is not array:', actualData);
+              throw new Error('軽量APIのデータ形式が正しくありません。');
+            }
+            
+            // データ正規化
+            const normalizedData = actualData.map(property => ({
+              ...property,
+              id: String(property.id || property['物件ID'] || ''),
+              name: String(property.name || property['物件名'] || '名称未設定'),
+              completionDate: property.completionDate || property['検針完了日'] || '',
+            }));
+            
+            console.log('[ReactApp] 📋 軽量APIデータ設定:', normalizedData.length, '件');
+            setProperties(normalizedData);
+            
+            // Step 4: 新しいデータをキャッシュに保存
+            if (window.pwaUtils && normalizedData.length > 0) {
+              const cacheData = {
+                data: normalizedData,
+                timestamp: Date.now(),
+                source: 'getProperties'
+              };
+              const cached = window.pwaUtils.setCacheData('properties', cacheData);
+              console.log('[ReactApp] 💾 データキャッシュ保存:', cached ? '成功' : '失敗');
+            }
+            
+            console.log('[ReactApp] ✅ 軽量API取得完了');
+            setLoading(true); // 描画完了検知用
+            
+          } catch (fetchError) {
+            console.error('[ReactApp] ❌ 物件データ取得エラー:', fetchError);
+            
+            // 詳細なエラー情報を提供
+            let errorMessage = '物件情報の取得に失敗しました。\n\n';
+            
+            if (fetchError.message.includes('Failed to fetch')) {
+              errorMessage += '原因: ネットワークエラーまたはCORS問題\n';
+              errorMessage += '対処法:\n';
+              errorMessage += '1. インターネット接続を確認してください\n';
+              errorMessage += '2. GAS Web App URLが正しく設定されているか確認してください\n';
+              errorMessage += '3. Google Apps ScriptのWeb Appが正しくデプロイされているか確認してください';
+            } else if (fetchError.message.includes('404')) {
+              errorMessage += '原因: APIエンドポイントが見つかりません\n';
+              errorMessage += '対処法: GAS Web App URLを確認してください';
+            } else {
+              errorMessage += `原因: ${fetchError.message}\n`;
+              errorMessage += '対処法: 管理者にお問い合わせください';
+            }
+            
+            setError(errorMessage);
+            setLoading(false);
+          } finally {
+            console.log('[ReactApp] 🏁 データ取得処理完了');
+            setIsFetched(true);
+            console.log('[ReactApp] ✅ finally状態:', { isFetched: true });
+          }
+        };
+
+        // 従来API用のフォールバック関数
+        const fetchPropertiesLegacy = async () => {
+          console.log('[ReactApp] 🔄 従来API使用 - getProperties (フォールバック)');
+          
+          const requestUrl = `${gasWebAppUrl}?action=getProperties&cache=${Date.now()}`;
+          const response = await fetch(requestUrl);
+          
+          if (!response.ok) {
+            throw new Error(`Network response was not ok. Status: ${response.status}`);
+          }
+          
+          const data = await response.json();
+          console.log('[ReactApp] 従来API Response:', data);
+          
+          // 従来形式の処理
+          let actualData = null;
+          if (data.success === true && data.data) {
+            actualData = data.data;
+          } else if (Array.isArray(data)) {
+            actualData = data;
+          } else if (data.properties && Array.isArray(data.properties)) {
+            actualData = data.properties;
+          } else {
+            throw new Error('物件データの形式が正しくありません。');
+          }
+          
+          if (!Array.isArray(actualData)) {
+            throw new Error('物件データが配列形式ではありません。');
+          }
+          
+          const normalizedData = actualData.map(property => ({
+            ...property,
+            id: String(property.id || property['物件ID'] || ''),
+            name: String(property.name || property['物件名'] || '名称未設定'),
+            completionDate: property.completionDate || property['検針完了日'] || '',
+          }));
+          
+          console.log('[ReactApp] 📋 従来APIデータ設定:', normalizedData.length, '件');
+          setProperties(normalizedData);
+          
+          // フォールバック時もキャッシュに保存
+          if (window.pwaUtils && normalizedData.length > 0) {
+            const cacheData = {
+              data: normalizedData,
+              timestamp: Date.now(),
+              source: 'getProperties'
+            };
+            window.pwaUtils.setCacheData('properties', cacheData);
+            console.log('[ReactApp] 💾 従来APIデータキャッシュ保存完了');
+          }
+          
+          setLoading(true); // 描画完了検知用
+        };
+
+        // 差分更新用の関数
+        const performDeltaUpdate = async (lastTimestamp) => {
+          console.log('[ReactApp] 🔄 差分更新開始:', new Date(lastTimestamp).toLocaleString());
+          
+          try {
+            const deltaUrl = `${gasWebAppUrl}?action=getDeltaData&dataType=properties&lastSync=${lastTimestamp}&cache=${Date.now()}`;
+            console.log('[ReactApp] 差分更新URL:', deltaUrl);
+            
+            const response = await fetch(deltaUrl);
+            if (!response.ok) {
+              console.warn('[ReactApp] 差分更新失敗 - スキップ');
+              return;
+            }
+            
+            const deltaData = await response.json();
+            console.log('[ReactApp] 差分データ:', deltaData);
+            
+            if (deltaData.success && deltaData.data && deltaData.data.length > 0) {
+              console.log('[ReactApp] 📊 差分データあり:', deltaData.data.length, '件');
+              
+              // 現在のキャッシュデータを取得
+              const currentCache = window.pwaUtils.getCacheData('properties');
+              if (currentCache && currentCache.data) {
+                // データマージ
+                const mergedData = window.pwaUtils.mergeData(currentCache.data, deltaData.data);
+                
+                // 正規化
+                const normalizedData = mergedData.map(property => ({
+                  ...property,
+                  id: String(property.id || property['物件ID'] || ''),
+                  name: String(property.name || property['物件名'] || '名称未設定'),
+                  completionDate: property.completionDate || property['検針完了日'] || '',
+                }));
+                
+                console.log('[ReactApp] 🔄 差分マージ完了 - 更新件数:', deltaData.data.length);
+                setProperties(normalizedData);
+                
+                // 更新されたデータをキャッシュに保存
+                const updatedCache = {
+                  data: normalizedData,
+                  timestamp: Date.now(),
+                  source: 'delta_update'
+                };
+                window.pwaUtils.setCacheData('properties', updatedCache);
+                console.log('[ReactApp] 💾 差分更新キャッシュ保存完了');
+              }
+            } else {
+              console.log('[ReactApp] 📊 差分データなし - 最新状態を維持');
+            }
+          } catch (deltaError) {
+            console.warn('[ReactApp] ⚠️ 差分更新エラー:', deltaError.message);
+            // 差分更新失敗は致命的ではないため、エラー表示はしない
+          }
+        };
+
+        fetchProperties();
+      }, [gasWebAppUrl]);
+
+      // 描画完了を検知してローディングを解除するuseEffect
+      React.useEffect(() => {
+        console.log('[ReactApp] 📐 描画完了監視useEffect実行:', { isFetched, loading });
+        
+        // データ取得が完了し、ローディング中の場合のみ描画完了を監視
+        if (isFetched && loading) {
+          console.log('[ReactApp] 🎨 描画完了監視開始 - 物件数:', properties.length, 'フィルタ後:', filteredProperties ? filteredProperties.length : 0);
+          
+          // フィルタリング後の物件数を基準に描画を監視
+          const expectedCount = filteredProperties ? filteredProperties.length : 0;
+          
+          if (expectedCount === 0) {
+            // 表示する物件がない場合は即座にローディング解除
+            console.log('[ReactApp] 📭 表示物件0件 - 即座にローディング解除');
+            setLoading(false);
+            return;
+          }
+          
+          // requestAnimationFrameを使用して次の描画フレームまで待機
+          const checkRenderingComplete = () => {
+            console.log('[ReactApp] 🔄 描画フレームチェック開始');
+            requestAnimationFrame(() => {
+              // 物件リストが実際にDOMに描画されているかチェック
+              const propertyElements = document.querySelectorAll('.MuiCard-root, .property-card, [data-property-id]');
+              console.log('[ReactApp] 🔍 描画要素チェック:', {
+                expectedCount: expectedCount,
+                renderedCount: propertyElements.length,
+                elementsFound: propertyElements.length > 0,
+                searchSelectors: '.MuiCard-root, .property-card, [data-property-id]',
+                renderingComplete: propertyElements.length >= expectedCount
+              });
+              
+              // 期待される数の物件要素が描画されている場合
+              if (propertyElements.length >= expectedCount && expectedCount > 0) {
+                // さらにもう1フレーム待って確実に描画を完了させる
+                requestAnimationFrame(() => {
+                  console.log('[ReactApp] ✅ 描画完了確認 - ローディング解除');
+                  setLoading(false);
+                  console.log('[ReactApp] 📊 最終状態:', { 
+                    loading: false, 
+                    isFetched: true, 
+                    renderedElements: propertyElements.length,
+                    expectedElements: expectedCount
+                  });
+                });
+              } else {
+                // 要素がまだ描画されていない場合、短時間後に再チェック
+                console.log('[ReactApp] ⏳ 描画未完了 - 再チェック予約');
+                setTimeout(checkRenderingComplete, 50);
+              }
+            });
+          };
+          
+          // フォールバック: 3秒後に強制的にローディングを解除
+          const fallbackTimeout = setTimeout(() => {
+            console.log('[ReactApp] ⚠️ 描画完了タイムアウト - フォールバックによるローディング解除');
+            setLoading(false);
+          }, 3000);
+          
+          checkRenderingComplete();
+          
+          // クリーンアップ関数でタイムアウトをクリア
+          return () => {
+            clearTimeout(fallbackTimeout);
+          };
+        }
+      }, [isFetched, loading, filteredProperties ? filteredProperties.length : 0]);
+
+      const handleSearchChange = (event) => {
+        setSearchTerm(event.target.value);
+      };
+
+      // リトライ機能付き従来API用フォールバック関数（部屋データ）
+      const fetchRoomsLegacy = async (property, maxRetries = 3) => {
+        console.log('[ReactApp] 🔄 部屋従来API使用 - getRooms (リトライ機能付き)');
+        
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+          try {
+            const requestUrl = `${gasWebAppUrl}?action=getRooms&propertyId=${property.id}&cache=${Date.now()}`;
+            console.log(`[ReactApp] 🔄 API呼び出し試行 ${attempt}/${maxRetries}:`, requestUrl);
+            
+            const response = await fetch(requestUrl);
+            
+            if (!response.ok) {
+              if (response.status === 503 && attempt < maxRetries) {
+                const delayMs = 1000 * Math.pow(2, attempt - 1); // 指数バックオフ: 1s, 2s, 4s
+                console.warn(`[ReactApp] ⏳ 503エラー - ${delayMs}ms後にリトライ (${attempt}/${maxRetries})`);
+                await new Promise(resolve => setTimeout(resolve, delayMs));
+                continue;
+              }
+              throw new Error(`部屋情報の取得に失敗しました。ステータス: ${response.status}`);
+            }
+            
+            console.log(`[ReactApp] ✅ API呼び出し成功 (${attempt}回目)`);
+            const roomData = await response.json();
+            console.log('[ReactApp] 部屋従来API Response:', roomData);
+            
+            // 従来形式の処理
+            let rooms = [];
+            if (roomData && roomData.success === true) {
+              if (roomData.data && roomData.data.rooms && Array.isArray(roomData.data.rooms)) {
+                // ネストされた構造: {success: true, data: {rooms: [...]}}
+                rooms = roomData.data.rooms;
+                console.log('[ReactApp] 従来API部屋データ正常抽出:', rooms.length, '件');
+              } else if (Array.isArray(roomData.data)) {
+                // 直接配列: {success: true, data: [...]}
+                rooms = roomData.data;
+                console.log('[ReactApp] 従来API部屋データ直接配列:', rooms.length, '件');
+              }
+            } else if (Array.isArray(roomData)) {
+              // 配列のみ: [...]
+              rooms = roomData;
+            } 
+            
+            if (rooms.length === 0) {
+              console.warn('[ReactApp] 予期しない部屋データ形式 - 空配列で継続');
+            }
+            
+            // 正規化
+            const normalizedRooms = rooms.map((room, index) => ({
+              ...room,
+              id: room.id || room.roomId || room['部屋ID'] || `room-${index}`,
+              name: room.name || room.roomName || room['部屋名'] || '部屋名未設定',
+              rawInspectionDate: room.rawInspectionDate || room.inspectionDate || room['検針日時'],
+              hasActualReading: room.hasActualReading || room.hasReading || room['検針済み'] || false,
+            }));
+            
+            console.log('[ReactApp] 📋 部屋従来APIデータ設定:', normalizedRooms.length, '件');
+            
+            // フォールバック時もキャッシュに保存
+            if (window.pwaUtils) {
+              const roomCacheData = {
+                data: normalizedRooms,
+                timestamp: Date.now(),
+                source: 'getRooms'
+              };
+              const roomCacheKey = `rooms_${property.id}`;
+              window.pwaUtils.setCacheData(roomCacheKey, roomCacheData);
+              console.log('[ReactApp] 💾 部屋従来APIデータキャッシュ保存完了');
+            }
+            
+            await storeAndNavigate(property, normalizedRooms);
+            return; // 成功時は関数終了
+            
+          } catch (error) {
+            if (attempt === maxRetries) {
+              // 最終試行でもエラーの場合
+              console.error(`[ReactApp] ❌ 全リトライ失敗 (${maxRetries}回試行):`, error);
+              throw error;
+            }
+            console.warn(`[ReactApp] ⚠️ 試行${attempt}失敗, 次回リトライします:`, error.message);
+          }
+        }
+      };
+
+      const handlePropertySelect = async (property) => {
+        console.log('[ReactApp] 🏠 handlePropertySelect called with:', property);
+        
+        if (!property) {
+            console.error('[ReactApp] Property is null or undefined');
+            alert('選択された物件情報が無効です。(property is null)');
+            return;
+        }
+        
+        if (typeof property.id === 'undefined') {
+            console.error('[ReactApp] Property.id is undefined:', property);
+            alert('選択された物件のIDが無効です。(property.id is undefined)');
+            return;
+        }
+        
+        if (typeof property.name === 'undefined') {
+            console.error('[ReactApp] Property.name is undefined:', property);
+            alert('選択された物件の名前が無効です。(property.name is undefined)');
+            return;
+        }
+        
+        console.log('[ReactApp] 🏠 Property selected:', property);
+        
+        // 画面遷移前にページの最上部にスクロール
+        window.scrollTo(0, 0);
+        
+        setIsNavigating(true);
+        setNavigationMessage('部屋情報を取得中...');
+        
+        try {
+          // Step 1: 部屋データのキャッシュ確認
+          const roomCacheKey = `rooms_${property.id}`;
+          const isRoomCacheValid = window.pwaUtils?.isCacheValid(roomCacheKey);
+          
+          console.log('[ReactApp] 🗄️ 部屋キャッシュ確認:', { key: roomCacheKey, valid: isRoomCacheValid });
+          
+          let rooms = [];
+          
+          if (isRoomCacheValid) {
+            // キャッシュから部屋データを取得
+            const cachedRooms = window.pwaUtils.getCacheData(roomCacheKey);
+            console.log('[ReactApp] ⚡ 部屋キャッシュヒット:', cachedRooms?.data?.length || 0, '件');
+            
+            if (cachedRooms?.data && Array.isArray(cachedRooms.data)) {
+              rooms = cachedRooms.data;
+              console.log('[ReactApp] 🚀 キャッシュから部屋データ使用 - 高速遷移');
+              
+              // キャッシュデータで即座に遷移準備
+              await storeAndNavigate(property, rooms);
+              
+              // バックグラウンドで部屋データの差分更新
+              setTimeout(() => performRoomDeltaUpdate(property.id, cachedRooms.timestamp), 100);
+              return;
+            }
+          }
+          
+          // Step 2: キャッシュなし or 無効の場合は従来API使用
+          console.log('[ReactApp] 🚀 部屋従来API使用 - getRooms');
+          const requestUrl = `${gasWebAppUrl}?action=getRooms&propertyId=${property.id}&cache=${Date.now()}`;
+          console.log('[ReactApp] Room request URL:', requestUrl);
+          
+          const roomResponse = await fetch(requestUrl);
+          console.log('[ReactApp] Room Response Status:', roomResponse.status);
+          
+          if (!roomResponse.ok) {
+            // API失敗時のエラーハンドリング - リトライ機能付き
+            console.warn('[ReactApp] 部屋API失敗 - リトライ機能付きフォールバック');
+            return await fetchRoomsLegacy(property);
+          }
+          const roomData = await roomResponse.json();
+          console.log('[ReactApp] 部屋API Response:', roomData);
+          if (roomData.count) {
+            console.log('[ReactApp] 部屋データ統計:', {
+              success: roomData.success,
+              count: roomData.count
+            });
+          }
+          
+          // 統一レスポンス形式の処理
+          if (roomData.success === false) {
+            console.error('[ReactApp] 部屋APIエラー:', roomData.error);
+            throw new Error(`部屋APIエラー: ${roomData.error}`);
+          }
+          
+          // GAS APIレスポンス構造: {success: true, data: {property: {...}, rooms: [...]}}
+          if (roomData.data && roomData.data.rooms && Array.isArray(roomData.data.rooms)) {
+            rooms = roomData.data.rooms;
+            console.log('[ReactApp] 部屋データ正常抽出:', rooms.length, '件');
+          } else if (Array.isArray(roomData.data)) {
+            // フォールバック: dataが直接配列の場合
+            rooms = roomData.data;
+            console.log('[ReactApp] 部屋データ直接配列:', rooms.length, '件');
+          } else {
+            console.error('[ReactApp] 部屋APIデータ構造エラー:', roomData);
+            throw new Error('部屋APIのデータ形式が正しくありません。');
+          }
+          
+          // Step 3: 部屋データの正規化とキャッシュ保存
+          const normalizedRooms = rooms.map((room, index) => ({
+            ...room,
+            id: room.id || room.roomId || room['部屋ID'] || `room-${index}`,
+            name: room.name || room.roomName || room['部屋名'] || '部屋名未設定',
+            rawInspectionDate: room.rawInspectionDate || room.inspectionDate || room['検針日時'],
+            hasActualReading: room.hasActualReading || room.hasReading || room['検針済み'] || false,
+          }));
+          
+          console.log('[ReactApp] 📋 部屋APIデータ正規化:', normalizedRooms.length, '件');
+          
+          // 部屋データをキャッシュに保存
+          if (window.pwaUtils && normalizedRooms.length > 0) {
+            const roomCacheData = {
+              data: normalizedRooms,
+              timestamp: Date.now(),
+              source: 'getRooms'
+            };
+            window.pwaUtils.setCacheData(roomCacheKey, roomCacheData);
+            console.log('[ReactApp] 💾 部屋データキャッシュ保存完了');
+          }
+          
+          // Step 4: SessionStorageに保存して画面遷移
+          await storeAndNavigate(property, normalizedRooms);
+        } catch (error) {
+          console.error('[ReactApp] ❌ 部屋取得エラー:', error);
+          
+          // ユーザーフレンドリーなエラーメッセージ
+          let userMessage = '部屋情報の読み込みに失敗しました。';
+          if (error.message.includes('503')) {
+            userMessage = 'サーバーが一時的に利用できません。しばらく待ってから再度お試しください。';
+          } else if (error.message.includes('network') || error.message.includes('fetch')) {
+            userMessage = 'ネットワーク接続に問題があります。インターネット接続を確認してください。';
+          } else if (error.message.includes('timeout')) {
+            userMessage = '通信がタイムアウトしました。しばらく待ってから再度お試しください。';
+          }
+          
+          setError(userMessage + '\n\n問題が継続する場合は、管理者にお問い合わせください。');
+          setIsNavigating(false);
+        }
+        
+        // SessionStorage保存と画面遷移の共通関数
+        async function storeAndNavigate(property, rooms) {
+          console.log('[ReactApp] 💾 SessionStorage保存開始:', {
+            propertyId: property.id,
+            propertyName: property.name,
+            roomsCount: rooms.length
+          });
+          
+          sessionStorage.setItem('selectedPropertyId', String(property.id));
+          sessionStorage.setItem('selectedPropertyName', String(property.name));
+          sessionStorage.setItem('selectedRooms', JSON.stringify(rooms));
+          
+          // gasWebAppUrl の厳格な検証と保存
+          if (gasWebAppUrl && gasWebAppUrl.includes('script.google.com')) {
+            sessionStorage.setItem('gasWebAppUrl', gasWebAppUrl);
+            localStorage.setItem('gasWebAppUrl', gasWebAppUrl); // 永続化バックアップ
+            console.log('[ReactApp] ✅ gasWebAppUrl保存確認:', gasWebAppUrl);
+            
+            // 保存後の検証
+            const savedUrl = sessionStorage.getItem('gasWebAppUrl');
+            if (savedUrl !== gasWebAppUrl) {
+              console.error('[ReactApp] ★CRITICAL: SessionStorage保存検証失敗');
+              alert('SessionStorage保存に失敗しました。ブラウザ設定を確認してください。');
+              setIsNavigating(false);
+              return;
+            }
+          } else {
+            console.error('[ReactApp] ★CRITICAL: Invalid gasWebAppUrl:', gasWebAppUrl);
+            alert('Google Apps Script URLが正しく設定されていません。\\n\\n有効なURL例:\\nhttps://script.google.com/macros/s/YOUR_SCRIPT_ID/exec\\n\\n現在の値: ' + (gasWebAppUrl || '未設定'));
+            setIsNavigating(false);
+            return;
+          }
+          
+          console.log('[ReactApp] ✅ SessionStorage保存完了');
+          setNavigationMessage('');
+          
+          const targetUrl = `/room?propertyId=${encodeURIComponent(property.id)}`;
+          console.log(`[ReactApp] 🚀 画面遷移準備完了`);
+          console.log(`[ReactApp] 📍 遷移先URL: ${targetUrl}`);
+          console.log(`[ReactApp] 📦 SessionStorage確認:`);
+          console.log(`  - selectedPropertyId: ${sessionStorage.getItem('selectedPropertyId')}`);
+          console.log(`  - selectedPropertyName: ${sessionStorage.getItem('selectedPropertyName')}`);
+          console.log(`  - selectedRooms: ${sessionStorage.getItem('selectedRooms')?.length || 0} chars`);
+          console.log(`  - gasWebAppUrl: ${sessionStorage.getItem('gasWebAppUrl') ? 'SET' : 'NOT SET'}`);
+          
+          // シンプルなリダイレクト制限チェック
+          try {
+            const redirectKey = 'property_redirect_count';
+            const maxRedirects = 2;
+            const currentCount = parseInt(sessionStorage.getItem(redirectKey) || '0');
+            const now = Date.now();
+            const lastTime = parseInt(sessionStorage.getItem(redirectKey + '_time') || '0');
+            
+            // 5秒以上経過していたらリセット
+            if ((now - lastTime) > 5000) {
+              sessionStorage.setItem(redirectKey, '1');
+              sessionStorage.setItem(redirectKey + '_time', now.toString());
+            } else {
+              // 制限チェック
+              if (currentCount >= maxRedirects) {
+                console.error('🚨 [property_select] リダイレクト制限により遷移を停止');
+                alert('リダイレクトの制限回数に達しました。\n\nページを手動で更新してください。');
+                return;
+              }
+              
+              sessionStorage.setItem(redirectKey, (currentCount + 1).toString());
+              sessionStorage.setItem(redirectKey + '_time', now.toString());
+            }
+          } catch (redirectError) {
+            console.warn('⚠️ [property_select] リダイレクト制限チェックエラー:', redirectError);
+          }
+          
+          setTimeout(() => {
+            window.location.href = targetUrl;
+          }, 300);
+        }
+        
+        // 部屋データの差分更新関数
+        const performRoomDeltaUpdate = async (propertyId, lastTimestamp) => {
+          console.log('[ReactApp] 🔄 部屋差分更新開始:', { propertyId, lastTimestamp: new Date(lastTimestamp).toLocaleString() });
+          
+          try {
+            const deltaUrl = `${gasWebAppUrl}?action=getDeltaData&dataType=rooms&propertyId=${propertyId}&lastSync=${lastTimestamp}&cache=${Date.now()}`;
+            console.log('[ReactApp] 部屋差分更新URL:', deltaUrl);
+            
+            const response = await fetch(deltaUrl);
+            if (!response.ok) {
+              console.warn('[ReactApp] 部屋差分更新失敗 - スキップ');
+              return;
+            }
+            
+            const deltaData = await response.json();
+            console.log('[ReactApp] 部屋差分データ:', deltaData);
+            
+            if (deltaData.success && deltaData.data && deltaData.data.length > 0) {
+              console.log('[ReactApp] 📊 部屋差分データあり:', deltaData.data.length, '件');
+              
+              // 現在のキャッシュデータを取得してマージ
+              const roomCacheKey = `rooms_${propertyId}`;
+              const currentCache = window.pwaUtils.getCacheData(roomCacheKey);
+              
+              if (currentCache && currentCache.data) {
+                const mergedData = window.pwaUtils.mergeData(currentCache.data, deltaData.data);
+                const normalizedData = mergedData.map(room => ({
+                  ...room,
+                  id: room.id || room.roomId || room['部屋ID'],
+                  name: room.name || room.roomName || room['部屋名'],
+                }));
+                
+                // 更新されたデータをキャッシュに保存
+                const updatedCache = {
+                  data: normalizedData,
+                  timestamp: Date.now(),
+                  source: 'room_delta_update'
+                };
+                window.pwaUtils.setCacheData(roomCacheKey, updatedCache);
+                console.log('[ReactApp] 💾 部屋差分更新キャッシュ保存完了');
+              }
+            } else {
+              console.log('[ReactApp] 📊 部屋差分データなし - 最新状態を維持');
+            }
+          } catch (deltaError) {
+            console.warn('[ReactApp] ⚠️ 部屋差分更新エラー:', deltaError.message);
+          }
+        };
+      };
+
+      // Material UI LoadingOverlayコンポーネント（ユーザーディスプレイ中央表示&操作完全ブロック）
+      const LoadingOverlay = ({ message }) => {
+        
+        // LoadingOverlay表示時に操作を完全ブロック
+        React.useEffect(() => {
+          document.body.style.overflow = 'hidden';
+          document.body.style.pointerEvents = 'none';
+          
+          const blockAllKeys = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            return false;
+          };
+          
+          document.addEventListener('keydown', blockAllKeys, true);
+          document.addEventListener('keyup', blockAllKeys, true);
+          document.addEventListener('keypress', blockAllKeys, true);
+          
+          return () => {
+            document.body.style.overflow = '';
+            document.body.style.pointerEvents = '';
+            document.removeEventListener('keydown', blockAllKeys, true);
+            document.removeEventListener('keyup', blockAllKeys, true);
+            document.removeEventListener('keypress', blockAllKeys, true);
+          };
+        }, []);
+        
+        return (
+        <div className="MuiBackdrop-root" style={{
+          position: 'fixed',
+          top: '0',
+          left: '0',
+          width: '100vw',
+          height: '100vh',
+          backgroundColor: 'rgba(255, 255, 255, 0.95)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 2147483647,
+          backdropFilter: 'blur(4px)',
+          // ユーザーディスプレイ中央に確実に表示
+          transform: 'translate3d(0, 0, 0)',
+          backfaceVisibility: 'hidden',
+          pointerEvents: 'all'
+        }}>
+          <div className="MuiPaper-root" style={{
+            backgroundColor: '#fff',
+            borderRadius: '16px',
+            padding: '40px 32px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '24px',
+            boxShadow: 'var(--mui-shadows-4)',
+            maxWidth: '320px',
+            textAlign: 'center',
+            // 中央に確実に配置
+            position: 'relative',
+            margin: 'auto'
+          }}>
+            <div className="MuiCircularProgress-root"></div>
+            <div className="MuiTypography-root" style={{
+              fontSize: '1rem',
+              fontWeight: 500,
+              color: 'var(--mui-palette-grey-900)',
+              margin: 0,
+              letterSpacing: '0.00938em'
+            }}>
+              {message || '読み込み中...'}
+            </div>
+          </div>
+        </div>
+        );
+      };
+
+      const filteredProperties = (properties || []).filter(property => {
+        const propertyIdString = String(property.id != null ? property.id : ''); 
+        const propertyNameString = String(property.name != null ? property.name : '');
+        return propertyIdString.toLowerCase().includes(searchTerm.toLowerCase()) ||
+               propertyNameString.toLowerCase().includes(searchTerm.toLowerCase());
+      });
+
+      // 物件データ取得中の初期ローディング（Material UI準拠）
+      if (loading && !isFetched) {
+        console.log('[ReactApp] 🔄 ローディング画面表示中:', { loading, isFetched });
+        return (
+          <div>
+            {/* Material UI AppBar */}
+            <div className="MuiAppBar-root">
+              <div className="MuiToolbar-root">
+                <div className="app-title">物件選択</div>
+              </div>
+            </div>
+            
+            {/* Material UI Container */}
+            <div className="MuiContainer-root">
+              <div style={{ maxWidth: '600px', margin: '0 auto' }}>
+                {/* Material UI Search Field (Disabled during loading) */}
+                <div className="MuiTextField-root">
+                  <input
+                    type="text"
+                    placeholder="物件IDまたは物件名で検索..."
+                    value=""
+                    disabled
+                    style={{ 
+                      opacity: 0.6,
+                      cursor: 'not-allowed'
+                    }}
+                  />
+                </div>
+                
+                {/* Material UI Loading State (Full Screen) */}
+                <div className="loading-container">
+                  <div className="MuiCircularProgress-root"></div>
+                  <div className="MuiTypography-root" style={{
+                    fontSize: '1.1rem',
+                    color: 'var(--mui-palette-grey-900)',
+                    fontWeight: 500,
+                    textAlign: 'center',
+                    margin: '16px 0 0 0'
+                  }}>
+                    物件情報を読み込み中です...
+                  </div>
+                  <div className="MuiTypography-root" style={{
+                    fontSize: '0.875rem',
+                    color: 'var(--mui-palette-grey-600)',
+                    textAlign: 'center',
+                    margin: '8px 0 0 0'
+                  }}>
+                    しばらくお待ちください
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      }
+      
+      // 物件データ取得エラー（Material UI準拠）
+      if (error && isFetched) {
+        return (
+          <div>
+            {/* Material UI AppBar */}
+            <div className="MuiAppBar-root">
+              <div className="MuiToolbar-root">
+                <div className="app-title">物件選択</div>
+              </div>
+            </div>
+            
+            {/* Material UI Container */}
+            <div className="MuiContainer-root">
+              <div style={{ maxWidth: '600px', margin: '0 auto' }}>
+                {/* Material UI Search Field */}
+                <div className="MuiTextField-root">
+                  <input
+                    type="text"
+                    placeholder="物件IDまたは物件名で検索..."
+                    value={searchTerm}
+                    onChange={handleSearchChange}
+                    disabled
+                    style={{ opacity: 0.6 }}
+                  />
+                </div>
+                
+                {/* Material UI Alert */}
+                <div className="MuiAlert-root">
+                  <div className="MuiTypography-root" style={{
+                    fontSize: '1.125rem',
+                    fontWeight: 600,
+                    margin: '0 0 8px 0',
+                    color: '#b91c1c'
+                  }}>
+                    エラー
+                  </div>
+                  <div className="MuiTypography-root" style={{
+                    fontSize: '1rem',
+                    margin: 0,
+                    color: '#b91c1c'
+                  }}>
+                    {String(error || 'エラーが発生しました')}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      }
+      
+      // データ取得完了後のメイン表示
+      console.log('[ReactApp] 🎨 メイン画面レンダリング:', { 
+        loading, 
+        isFetched, 
+        propertiesCount: properties.length, 
+        filteredCount: filteredProperties ? filteredProperties.length : 0 
+      });
+      
+      return (
+        <div style={{ minHeight: '100vh' }}>
+          {isNavigating && <LoadingOverlay message={navigationMessage} />}
+          
+          {/* Material UI AppBar */}
+          <div className="MuiAppBar-root">
+            <div className="MuiToolbar-root">
+              <div className="app-title">物件選択</div>
+            </div>
+          </div>
+          
+          {/* Material UI Container */}
+          <div className="MuiContainer-root">
+            <div style={{ maxWidth: '600px', margin: '0 auto' }}>
+              {/* Material UI Search Field */}
+              <div className="MuiTextField-root">
+                <input
+                  type="text"
+                  placeholder="物件IDまたは物件名で検索..."
+                  value={searchTerm}
+                  onChange={handleSearchChange}
+                  disabled={loading && properties.length === 0}
+                />
+              </div>
+              
+              {/* 処理中表示 */}
+              {loading && isFetched && (
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: '16px',
+                  gap: '12px'
+                }}>
+                  <div className="MuiCircularProgress-root" style={{
+                    width: '24px',
+                    height: '24px'
+                  }}></div>
+                  <div className="MuiTypography-root" style={{
+                    fontSize: '0.875rem',
+                    color: 'var(--mui-palette-grey-900)',
+                    margin: 0
+                  }}>
+                    処理中...
+                  </div>
+                </div>
+              )}
+              
+              {/* Material UI Alert for errors */}
+              {error && (
+                <div className="MuiAlert-root" style={{ marginBottom: '16px' }}>
+                  <div className="MuiTypography-root" style={{
+                    fontSize: '1.125rem',
+                    fontWeight: 600,
+                    margin: '0 0 8px 0',
+                    color: '#b91c1c'
+                  }}>
+                    エラー
+                  </div>
+                  <div className="MuiTypography-root" style={{
+                    fontSize: '1rem',
+                    margin: 0,
+                    color: '#b91c1c'
+                  }}>
+                    {String(error || 'エラーが発生しました')}
+                  </div>
+                </div>
+              )}
+
+              {/* 修正：データ取得完了後かつ物件が0件の場合のみ表示 */}
+              {!loading && isFetched && properties.length === 0 && !error && (
+                <div className="MuiTypography-root" style={{
+                  textAlign: 'center',
+                  color: 'var(--mui-palette-grey-900)',
+                  fontSize: '1rem',
+                  margin: 0
+                }}>
+                  登録されている物件がありません。
+                </div>
+              )}
+              
+              {/* 検索結果が0件の場合 */}
+              {!loading && isFetched && properties.length > 0 && (filteredProperties ? filteredProperties.length === 0 : false) && (
+                <div className="MuiTypography-root" style={{
+                  textAlign: 'center',
+                  color: 'var(--mui-palette-grey-900)',
+                  fontSize: '1rem',
+                  margin: 0
+                }}>
+                  該当する物件が見つかりません。
+                </div>
+              )}
+
+              {/* Material UI Property Cards */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {(filteredProperties || []).map((property, index) => (
+                  <div 
+                    key={property.id} 
+                    data-property-id={property.id}
+                    className={`MuiCard-root ${(loading || isNavigating) ? 'MuiCard-disabled' : ''}`}
+                    onClick={() => !(loading || isNavigating) && handlePropertySelect(property)}
+                    style={{
+                      opacity: (loading || isNavigating) ? 0.6 : 1,
+                      cursor: (loading || isNavigating) ? 'not-allowed' : 'pointer',
+                      animationDelay: `${index * 0.1}s`
+                    }}
+                  >
+                    <div className="MuiCardContent-root">
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'flex-start',
+                        gap: '16px'
+                      }}>
+                        <div style={{ flex: 1 }}>
+                          {/* Property ID and Completion Date Row */}
+                          <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '12px',
+                            marginBottom: '12px',
+                            flexWrap: 'wrap'
+                          }}>
+                            <div className="MuiChip-root" style={{
+                              backgroundColor: 'var(--mui-palette-grey-100)',
+                              color: 'var(--mui-palette-grey-900)',
+                              fontSize: '0.875rem',
+                              fontWeight: 600,
+                              padding: '8px 12px',
+                              borderRadius: '12px',
+                              border: '1px solid rgba(0,0,0,0.08)',
+                              boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+                            }}>
+                              ID: {String(property.id || 'IDなし')}
+                            </div>
+                            
+                            {/* Completion Date Badge - React Error #418対策 */}
+                            {(() => {
+                              const completionText = formatCompletionDate(property.completionDate);
+                              return completionText ? (
+                                <div className="MuiChip-root" style={{
+                                  backgroundColor: '#e8f5e8',
+                                  color: '#2e7d32',
+                                  fontSize: '0.75rem',
+                                  fontWeight: 600,
+                                  padding: '6px 10px',
+                                  borderRadius: '12px',
+                                  border: '1px solid #c8e6c9',
+                                  boxShadow: '0 2px 8px rgba(46, 125, 50, 0.15)'
+                                }}>
+                                  {completionText}
+                                </div>
+                              ) : null;
+                            })()}
+                          </div>
+                          
+                          {/* Property Name - React Error #418対策 */}
+                          <div className="MuiTypography-root" style={{
+                            fontSize: '1.125rem',
+                            fontWeight: 500,
+                            color: 'var(--mui-palette-grey-900)',
+                            lineHeight: 1.4,
+                            margin: 0,
+                            letterSpacing: '0.00938em'
+                          }}>
+                            {String(property.name || '名称なし')}
+                          </div>
+                        </div>
+                        
+                        {/* Material UI Arrow Icon */}
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          width: '32px',
+                          height: '32px',
+                          color: 'var(--mui-palette-primary-main)',
+                          flexShrink: 0,
+                          transition: 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
+                        }}>
+                          <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          </svg>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    // CSS読み込み完了後にアプリを起動
+    waitForStylesLoaded().then(() => {
+      console.log('🎨 物件選択アプリ起動: CSS読み込み完了後に実行');
+      
+      // Use React 18 createRoot API with Error Boundary
+      const root = ReactDOM.createRoot(document.getElementById('root'));
+      root.render(
+        <ErrorBoundary>
+          <App />
+        </ErrorBoundary>
+      );
+    });
+  </script>
+  
+  <!-- PWA初期化スクリプト -->
+  <script>
+    // PWA機能の初期化
+    document.addEventListener('DOMContentLoaded', async () => {
+      console.log('🚀 PWA初期化開始 - Service Worker登録');
+      
+      // Service Worker登録
+      if (window.pwaUtils) {
+        try {
+          const registration = await window.pwaUtils.registerServiceWorker();
+          console.log('✅ Service Worker登録成功:', registration?.scope);
+        } catch (error) {
+          console.error('❌ Service Worker登録失敗:', error);
+        }
+      } else {
+        console.warn('⚠️ pwaUtils が利用できません');
+      }
+    });
+    
+    // ページ表示時にローディングを必ず非表示にする（ブラウザの戻る対応）
+    function hideLoadingOnPageShow() {
+      console.log('[property_select] pageshow イベント - ローディング強制解除開始');
+      
+      // DOM要素の直接操作
+      const loadingElements = document.querySelectorAll('.loading-container, .mantine-loader, .MuiCircularProgress-root');
+      loadingElements.forEach(element => {
+        if (element) {
+          element.style.display = 'none';
+          element.style.visibility = 'hidden';
+          element.style.opacity = '0';
+          element.style.pointerEvents = 'none';
+          element.style.zIndex = '-1';
+        }
+      });
+      
+      // Root要素のローディングクラス削除
+      const rootElement = document.getElementById('root');
+      if (rootElement) {
+        rootElement.classList.remove('styles-loading');
+        rootElement.classList.add('styles-loaded');
+      }
+      
+      // Body操作ブロック解除
+      document.body.style.overflow = '';
+      document.body.style.pointerEvents = '';
+      
+      // React側のローディング状態もリセット（グローバルに設定）
+      window.forceHideLoading = true;
+      
+      console.log('[property_select] pageshow イベント - ローディング強制解除完了');
+    }
+
+    // ページ復元時にも初期化（ブラウザの戻るボタン対応）
+    window.addEventListener('pageshow', function(event) {
+      hideLoadingOnPageShow();
+      
+      // React側にイベント通知
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('forceHideLoading'));
+      }, 100);
+    });
+  </script>
+</body>
+</html>

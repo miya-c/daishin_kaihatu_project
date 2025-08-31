@@ -1,18 +1,32 @@
 # Cloudflare Pages Redirects for Water Meter Reading App
-# ALL REDIRECTS TEMPORARILY DISABLED TO RESOLVE INFINITE LOOP ISSUE
-# Date: 2025-08-30 - ERR_TOO_MANY_REDIRECTS fix attempt
+# Version: 20250831f - New Directory Structure + ERR_FAILED Resolution
+# ベストプラクティス・ディレクトリ構造対応 + 後方互換性
 
-# Legacy path redirects - TEMPORARILY DISABLED for debugging
-# /html_files/main_app/property_select.html   /property_select.html   301
-# /html_files/main_app/room_select.html       /room_select.html       301  
-# /html_files/main_app/meter_reading.html     /meter_reading.html     301
+# 🎯 New URL Structure (Primary Routes) - ERR_FAILED解決
+/property               /property/index.html        200
+/room                   /room/index.html            200
+/reading                /reading/index.html         200
 
-# Clean URL support - PERMANENTLY DISABLED to prevent parameter loss infinite loops
-# /property_select    /property_select.html   301  (DISABLED - causes parameter loss)
-# /room_select        /room_select.html       301  (DISABLED - causes parameter loss)
-# /meter_reading      /meter_reading.html     301  (DISABLED - causes parameter loss)
+# 🔄 Backward Compatibility (Legacy HTML Files to New Structure)
+/property_select.html   /property/index.html        301
+/room_select.html       /room/index.html            301
+/meter_reading.html     /reading/index.html         301
 
-# 404 fallback (removed /* catch-all to prevent infinite redirects)
+# 📱 Alternative URL formats support
+/property-select        /property/index.html        301
+/room-select            /room/index.html            301
+/meter-reading          /reading/index.html         301
 
-# NOTE: All redirect rules are disabled to isolate the infinite loop issue.
-# After verification that direct .html URLs work, legacy redirects can be re-enabled selectively.
+# 🏠 Root-level shorthand redirects
+/property_select        /property/index.html        301
+/room_select            /room/index.html            301
+/meter_reading          /reading/index.html         301
+
+# 🚫 Legacy path cleanup (old html_files structure)
+/html_files/main_app/*  /property/index.html        301
+
+# ✨ Benefits:
+# - Resolves ERR_FAILED by using proper directory structure
+# - Clean, SEO-friendly URLs (/room?propertyId=P000001)
+# - Full backward compatibility with existing bookmarks/links
+# - Cloudflare Pages optimized routing
