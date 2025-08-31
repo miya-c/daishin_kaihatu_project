@@ -1,6 +1,6 @@
 // Service Worker for PWA - Speed Optimized for Cache+Light API architecture  
-// Version 20250831d - Function References Fixed + Complete Natural Error Handling
-const CACHE_NAME = 'meter-reading-app-v10-function-fixed';
+// Version 20250831e - Room Select Path Fix + File Structure Cleanup
+const CACHE_NAME = 'meter-reading-app-v11-room-path-fix';
 const DATA_CACHE_NAME = 'meter-reading-data-v7';
 
 // Static assets for offline support (Cloudflare Pages compatible paths)
@@ -31,6 +31,9 @@ const CACHE_STRATEGIES = {
 
 // Legacy cache names to be deleted
 const LEGACY_CACHE_NAMES = [
+  'meter-reading-app-v10-function-fixed',  // 追加: ファイルパス問題修正前
+  'meter-reading-app-v9-natural-errors',   // 追加: 自然エラーハンドリング版
+  'meter-reading-app-v8-no-timeout',       // 追加: タイムアウト削除版
   'meter-reading-app-v3-cloudflare-fixed',
   'meter-reading-data-v3',
   'meter-reading-app-v2-optimized',
@@ -41,7 +44,7 @@ const LEGACY_CACHE_NAMES = [
 
 // Install event - cache essential assets with performance optimization
 self.addEventListener('install', (event) => {
-  console.log('🚀 Service Worker v20250831d: Install event - Function References Fixed');
+  console.log('🚀 Service Worker v20250831e: Install event - Room Select Path Fix');
   
   // 即座にアクティベート（古いSWを置き換え）
   self.skipWaiting();
@@ -78,7 +81,7 @@ self.addEventListener('install', (event) => {
 
 // Activate event - clean up old caches with enhanced management
 self.addEventListener('activate', (event) => {
-  console.log('SW: 🔄 Activate event v20250831d - 関数参照修正 + 完全な自然エラーハンドリング');
+  console.log('SW: 🔄 Activate event v20250831e - ファイルパス修正 + 旧ファイル構造削除');
   
   event.waitUntil(
     Promise.all([
