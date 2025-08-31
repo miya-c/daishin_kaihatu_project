@@ -1,6 +1,6 @@
-// Service Worker for PWA - Speed Optimized for Cache+Light API architecture
-// Version 20250831a - Navigation Fix + Network First for HTML
-const CACHE_NAME = 'meter-reading-app-v7-navigation-fix';
+// Service Worker for PWA - Speed Optimized for Cache+Light API architecture  
+// Version 20250831b - Timeout Removed + Natural Error Handling
+const CACHE_NAME = 'meter-reading-app-v8-no-timeout';
 const DATA_CACHE_NAME = 'meter-reading-data-v7';
 
 // Static assets for offline support (Cloudflare Pages compatible paths)
@@ -25,10 +25,6 @@ const CACHE_STRATEGIES = {
   API_CACHE_MAX_AGE: 3600000,
   // Static asset cache duration (24 hours)
   STATIC_CACHE_MAX_AGE: 86400000,
-  // Network timeout (15 seconds - increased for better online experience)
-  NETWORK_TIMEOUT: 15000,
-  // HTML specific timeout (10 seconds for faster fallback)
-  HTML_TIMEOUT: 10000,
   // Background sync retry interval (30 seconds)
   SYNC_RETRY_INTERVAL: 30000
 };
@@ -45,7 +41,7 @@ const LEGACY_CACHE_NAMES = [
 
 // Install event - cache essential assets with performance optimization
 self.addEventListener('install', (event) => {
-  console.log('🚀 Service Worker v20250831a: Install event - Navigation Fix');
+  console.log('🚀 Service Worker v20250831b: Install event - No Timeout');
   
   // 即座にアクティベート（古いSWを置き換え）
   self.skipWaiting();
@@ -82,7 +78,7 @@ self.addEventListener('install', (event) => {
 
 // Activate event - clean up old caches with enhanced management
 self.addEventListener('activate', (event) => {
-  console.log('SW: 🔄 Activate event v20250831a - ナビゲーション修正 + 強制キャッシュクリア実行');
+  console.log('SW: 🔄 Activate event v20250831b - タイムアウト除去 + 自然エラーハンドリング');
   
   event.waitUntil(
     Promise.all([
@@ -277,10 +273,9 @@ async function handleGASAPIRequest(request) {
   try {
     // Check for Light API calls and prioritize them
     const isLightAPI = url.searchParams.get('action')?.includes('Light');
-    const timeout = isLightAPI ? CACHE_STRATEGIES.NETWORK_TIMEOUT * 0.7 : CACHE_STRATEGIES.NETWORK_TIMEOUT;
     
-    // Network first with timeout
-    const networkResponse = await fetchWithTimeout(request, timeout);
+    // Network first - let browser handle natural timeouts
+    const networkResponse = await fetch(request);
     
     if (networkResponse.ok) {
       // Cache successful API responses for Light APIs
@@ -329,10 +324,10 @@ async function handleHTMLRequest(request) {
   let networkError = null;
   let networkDuration = 0;
   
-  // Stage 1: Network First (with intelligent timeout and error handling)
+  // Stage 1: Network First (with natural error handling)
   try {
     console.log('SW: 📡 Stage 1: Attempting network fetch...');
-    const networkResponse = await fetchWithTimeout(request, CACHE_STRATEGIES.HTML_TIMEOUT);
+    const networkResponse = await fetch(request);
     networkDuration = Date.now() - startTime;
     
     if (networkResponse.ok) {
@@ -536,9 +531,8 @@ async function isOnlineWithConnectivityCheck() {
   // Connectivity test with a simple HEAD request to the origin
   try {
     const testUrl = new URL('/', self.location.origin);
-    const response = await fetchWithTimeout(
-      new Request(testUrl.href, { method: 'HEAD' }), 
-      3000 // Short timeout for connectivity test
+    const response = await fetch(
+      new Request(testUrl.href, { method: 'HEAD' })
     );
     
     return { 
@@ -595,22 +589,7 @@ function classifyNetworkError(error) {
   };
 }
 
-// Utility: Fetch with timeout
-async function fetchWithTimeout(request, timeout) {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeout);
-  
-  try {
-    const response = await fetch(request, { 
-      signal: controller.signal 
-    });
-    clearTimeout(timeoutId);
-    return response;
-  } catch (error) {
-    clearTimeout(timeoutId);
-    throw error;
-  }
-}
+// Utility functions removed - using native fetch with browser's natural timeout handling
 
 // Utility: Generate cache key for API requests
 function generateAPICacheKey(url) {
