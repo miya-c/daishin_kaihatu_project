@@ -328,10 +328,27 @@ async function handleHTMLRequest(request) {
     const networkResponse = await fetchWithTimeout(request, CACHE_STRATEGIES.NETWORK_TIMEOUT);
     
     if (networkResponse.ok) {
-      // Update cache with fresh content
+      // Update cache with fresh content and preserve encoding headers
       const cache = await caches.open(CACHE_NAME);
-      cache.put(request, networkResponse.clone());
-      console.log('SW: ✅ HTML取得成功 & キャッシュ更新:', request.url);
+      
+      // Ensure UTF-8 encoding is preserved
+      let responseToCache = networkResponse.clone();
+      const contentType = networkResponse.headers.get('Content-Type') || 'text/html; charset=utf-8';
+      if (contentType.includes('text/html') && !contentType.includes('charset')) {
+        // Add charset if missing
+        const body = await networkResponse.clone().text();
+        responseToCache = new Response(body, {
+          status: networkResponse.status,
+          statusText: networkResponse.statusText,
+          headers: {
+            ...Object.fromEntries(networkResponse.headers.entries()),
+            'Content-Type': 'text/html; charset=utf-8'
+          }
+        });
+      }
+      
+      cache.put(request, responseToCache);
+      console.log('SW: ✅ HTML取得成功 & UTF-8エンコーディング保持キャッシュ更新:', request.url);
       return networkResponse;
     }
   } catch (error) {
@@ -350,9 +367,9 @@ async function handleHTMLRequest(request) {
   // No cache available - return error
   console.error('SW: ❌ HTML取得失敗 (ネットワーク＋キャッシュ):', request.url);
   return new Response(
-    '<!DOCTYPE html><html><head><title>オフライン</title></head><body><h1>オフライン</h1><p>インターネット接続を確認してください。</p></body></html>',
+    '<!DOCTYPE html><html><head><meta charset="utf-8"><title>オフライン</title></head><body><h1>オフライン</h1><p>インターネット接続を確認してください。</p></body></html>',
     { 
-      headers: { 'Content-Type': 'text/html' },
+      headers: { 'Content-Type': 'text/html; charset=utf-8' },
       status: 503
     }
   );

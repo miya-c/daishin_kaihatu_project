@@ -100,6 +100,57 @@
         }
     };
 
+    // エンコーディング検証テスト
+    const testCharacterEncoding = async () => {
+        console.log('🔤 文字エンコーディング検証開始');
+        
+        const results = {
+            documentEncoding: document.characterSet || document.charset,
+            metaCharset: null,
+            contentTypeHeader: null,
+            japaneseSample: '日本語テスト文字',
+            encodingTests: []
+        };
+        
+        // HTMLメタタグのcharset確認
+        const metaCharset = document.querySelector('meta[charset]');
+        if (metaCharset) {
+            results.metaCharset = metaCharset.getAttribute('charset');
+        }
+        
+        // 各HTMLファイルのエンコーディングテスト
+        const testUrls = [
+            'property_select.html',
+            'room_select.html', 
+            'meter_reading.html'
+        ];
+        
+        for (const url of testUrls) {
+            try {
+                const response = await fetch(url, { method: 'HEAD', cache: 'no-cache' });
+                const contentType = response.headers.get('Content-Type') || '';
+                
+                results.encodingTests.push({
+                    url: url,
+                    contentType: contentType,
+                    hasCharset: contentType.includes('charset'),
+                    isUtf8: contentType.includes('utf-8'),
+                    accessible: response.ok
+                });
+                
+                console.log(`🔤 ${url}: ${contentType}`);
+            } catch (error) {
+                results.encodingTests.push({
+                    url: url,
+                    error: error.message,
+                    accessible: false
+                });
+            }
+        }
+        
+        return results;
+    };
+
     // パス解決テスト
     const testPathResolution = async () => {
         const results = [];
@@ -312,7 +363,8 @@
             basic: collectDiagnostics(),
             cache: await getCacheStats(),
             pathResolution: await testPathResolution(),
-            serviceWorker: await testServiceWorkerCommunication()
+            serviceWorker: await testServiceWorkerCommunication(),
+            encoding: await testCharacterEncoding()
         };
 
         // 結果表示
@@ -321,6 +373,7 @@
         console.log('キャッシュ統計:', results.cache);
         console.log('パス解決テスト:', results.pathResolution);
         console.log('Service Worker通信:', results.serviceWorker);
+        console.log('文字エンコーディング:', results.encoding);
         console.groupEnd();
 
         // 問題の検出と推奨事項
@@ -339,6 +392,31 @@
         } else if (accessiblePaths.length < results.pathResolution.length) {
             issues.push('一部のパスでアクセスできません');
             recommendations.push('相対パス優先の設定を確認してください');
+        }
+
+        // エンコーディング問題のチェック
+        if (results.encoding) {
+            if (results.encoding.documentEncoding !== 'UTF-8') {
+                issues.push(`文書エンコーディングがUTF-8ではありません: ${results.encoding.documentEncoding}`);
+                recommendations.push('HTMLファイルのmetaタグとContent-Typeヘッダーを確認してください');
+            }
+            
+            if (results.encoding.metaCharset && results.encoding.metaCharset.toLowerCase() !== 'utf-8') {
+                issues.push(`HTMLのmeta charsetがUTF-8ではありません: ${results.encoding.metaCharset}`);
+                recommendations.push('HTMLファイルの<meta charset="utf-8">を確認してください');
+            }
+            
+            const nonUtf8Files = results.encoding.encodingTests.filter(test => 
+                test.accessible && test.hasCharset && !test.isUtf8
+            );
+            
+            if (nonUtf8Files.length > 0) {
+                issues.push(`UTF-8以外のContent-Typeを持つファイルがあります`);
+                recommendations.push('Service WorkerとCloudflare Pagesの設定でUTF-8を強制してください');
+                nonUtf8Files.forEach(file => {
+                    console.warn(`⚠️ ${file.url}: ${file.contentType}`);
+                });
+            }
         }
 
         if (issues.length > 0) {
@@ -363,6 +441,7 @@
         updateServiceWorker: forceServiceWorkerUpdate,
         completeReset: performCompleteReset,
         testPaths: testPathResolution,
+        testEncoding: testCharacterEncoding,
         collect: collectDiagnostics
     };
 
@@ -378,6 +457,7 @@
     console.log('🔧 Navigation Diagnostics Tool 準備完了');
     console.log('使用方法:');
     console.log('  - window.navigationDiagnostics.run() : 完全診断実行');
+    console.log('  - window.navigationDiagnostics.testEncoding() : エンコーディング検証');
     console.log('  - window.navigationDiagnostics.clearCache() : キャッシュクリア');
     console.log('  - window.navigationDiagnostics.completeReset() : 完全リセット');
 

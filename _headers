@@ -1,0 +1,73 @@
+# Cloudflare Pages Headers Configuration
+# UTF-8 Encoding Fix for Japanese Character Display
+
+# HTML files - Force UTF-8 encoding
+/*.html
+  Content-Type: text/html; charset=utf-8
+  Cache-Control: no-cache, no-store, max-age=0, must-revalidate
+  X-Content-Type-Options: nosniff
+
+# Specific HTML files
+/property_select.html
+  Content-Type: text/html; charset=utf-8
+  Cache-Control: no-cache, no-store, max-age=0, must-revalidate
+  X-Content-Type-Options: nosniff
+
+/room_select.html
+  Content-Type: text/html; charset=utf-8
+  Cache-Control: no-cache, no-store, max-age=0, must-revalidate
+  X-Content-Type-Options: nosniff
+
+/meter_reading.html
+  Content-Type: text/html; charset=utf-8
+  Cache-Control: no-cache, no-store, max-age=0, must-revalidate
+  X-Content-Type-Options: nosniff
+
+/index.html
+  Content-Type: text/html; charset=utf-8
+  Cache-Control: no-cache, no-store, max-age=0, must-revalidate
+  X-Content-Type-Options: nosniff
+
+# CSS files
+/*.css
+  Content-Type: text/css; charset=utf-8
+  Cache-Control: public, max-age=31536000
+  X-Content-Type-Options: nosniff
+
+# JavaScript files
+/*.js
+  Content-Type: application/javascript; charset=utf-8
+  Cache-Control: public, max-age=31536000
+  X-Content-Type-Options: nosniff
+
+# JSON files (including manifest)
+/*.json
+  Content-Type: application/json; charset=utf-8
+  Cache-Control: public, max-age=31536000
+  X-Content-Type-Options: nosniff
+
+# Service Worker - Special handling
+/service-worker.js
+  Content-Type: application/javascript; charset=utf-8
+  Cache-Control: no-cache, no-store, max-age=0, must-revalidate
+  Service-Worker-Allowed: /
+
+# PWA Utils and performance scripts
+/pwa-utils.js
+  Content-Type: application/javascript; charset=utf-8
+  Cache-Control: public, max-age=86400
+
+/performance-monitor.js
+  Content-Type: application/javascript; charset=utf-8
+  Cache-Control: public, max-age=86400
+
+/navigation-diagnostics.js
+  Content-Type: application/javascript; charset=utf-8
+  Cache-Control: public, max-age=86400
+
+# Global security headers
+/*
+  X-Frame-Options: DENY
+  X-XSS-Protection: 1; mode=block
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: geolocation=(), microphone=(), camera=()
