@@ -430,7 +430,7 @@
                 
                 // Step 4: データ正規化とキャッシュ保存
                 rooms = data.data?.rooms || data.data || [];
-                propertyName = data.data?.propertyName || sessionPropertyName || '物件名不明';
+                propertyName = data.data?.propertyName || sessionStorage.getItem('selectedPropertyName') || '物件名不明';
                 
                 if (!Array.isArray(rooms)) {
                     console.error('[room_select] 部屋データが配列ではない:', rooms);
