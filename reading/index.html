@@ -187,7 +187,11 @@
     document.write(`<link rel="preload" href="../css_styles/pwa-styles.css?t=${ts}" as="style">`);
   </script>
   
-  <!-- React/Babel removed - Using Vanilla JavaScript for better performance -->
+  <!-- ReactとReactDOMのCDN -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <!-- BabelのCDN (JSXをブラウザで変換するため) -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   
   <!-- PWA Utilities -->
   <script src="/pwa-utils.js"></script>
@@ -214,9 +218,9 @@
 </head>
 <body>
   <div id="root" class="styles-loading"></div>
-  <script>
+  <script type="text/babel">
     // ===================================
-    // 一般ブラウザ向け水道メーター読み取りアプリ
+    // 一般ブラウザ向け水道メーター読み取りアプリ  
     // WOFF SDK依存なし - Debug Mode Enhanced v20250614c
     // CSS読み込み完了待機機能追加
     // ===================================
@@ -420,10 +424,8 @@
       return jstDateString;
     };
     
-    // TEMPORARY: MeterReadingApp コンポーネント無効化 - JSX構文エラー回避
-    const MeterReadingApp_disabled = () => {
-      /*
-      // React Hooks and JSX code temporarily disabled
+    // MeterReadingApp コンポーネント - 復旧完了
+    const MeterReadingApp = () => {
       const [loading, setLoading] = React.useState(true);
       const [error, setError] = React.useState(null);
       const [propertyId, setPropertyId] = React.useState('');
@@ -1412,39 +1414,12 @@
           </div>
         </>
       );
-      */
-      // TEMPORARY: gasWebAppURL継承テスト用の簡易実装
-      console.log('[meter_reading] gasWebAppURL継承テスト実行中...');
-      const gasWebAppUrl = sessionStorage.getItem('gasWebAppUrl') || localStorage.getItem('gasWebAppUrl') || localStorage.getItem('gasWebAppUrl_backup');
-      
-      if (gasWebAppUrl) {
-        console.log('[meter_reading] ✅ gasWebAppURL継承成功:', gasWebAppUrl.substring(0, 50) + '...');
-        document.getElementById('root').innerHTML = '<div style="padding: 20px; text-align: center;"><h2>✅ gasWebAppURL継承成功</h2><p>URL: ' + gasWebAppUrl.substring(0, 80) + '...</p><p>構文エラーが解決されました。</p></div>';
-      } else {
-        console.error('[meter_reading] ❌ gasWebAppURL継承失敗');
-        document.getElementById('root').innerHTML = '<div style="padding: 20px; text-align: center; color: red;"><h2>❌ gasWebAppURL継承失敗</h2><p>物件選択画面から再度アクセスしてください。</p></div>';
-      }
-      
-      return null; // JSX無効化
     };
 
     // CSS読み込み完了後にアプリを起動
     waitForStylesLoaded().then(() => {
-      // ReactDOM.createRoot(document.getElementById('root')).render(<MeterReadingApp />);
-      // TODO: Convert to Vanilla JavaScript - temporary disabled for gasWebAppURL fix testing
-      console.log('[meter_reading] React components temporarily disabled - focusing on gasWebAppURL fix');
+      ReactDOM.createRoot(document.getElementById('root')).render(<MeterReadingApp />);
       console.log('🎨 メーター読み取りアプリ起動: CSS読み込み完了後に実行');
-      
-      // ✨ gasWebAppURL継承テスト用の簡易実装（MeterReadingApp無効化時）
-      const gasWebAppUrl = sessionStorage.getItem('gasWebAppUrl') || localStorage.getItem('gasWebAppUrl') || localStorage.getItem('gasWebAppUrl_backup');
-      
-      if (gasWebAppUrl) {
-        console.log('[meter_reading] ✅ gasWebAppURL継承成功:', gasWebAppUrl.substring(0, 50) + '...');
-        document.getElementById('root').innerHTML = '<div style="padding: 20px; text-align: center; font-family: Arial, sans-serif;"><h2 style="color: green;">✅ gasWebAppURL継承成功</h2><p><strong>URL:</strong> ' + gasWebAppUrl.substring(0, 80) + '...</p><p>構文エラーが解決されました。</p><p style="color: #666; font-size: 0.9em;">※ 検針機能は一時的に無効化されています。</p></div>';
-      } else {
-        console.error('[meter_reading] ❌ gasWebAppURL継承失敗');
-        document.getElementById('root').innerHTML = '<div style="padding: 20px; text-align: center; color: red; font-family: Arial, sans-serif;"><h2>❌ gasWebAppURL継承失敗</h2><p>物件選択画面から再度アクセスしてください。</p><button onclick="window.history.back()" style="padding: 10px 20px; margin: 10px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">戻る</button></div>';
-      }
     });
     
     // 閾値情報を履歴データのみで計算する関数（今回指示数不要）
