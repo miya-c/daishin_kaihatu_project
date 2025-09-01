@@ -973,7 +973,7 @@
         }
       }, [hasNextRoom, isNavigating, findNextReadingRequiredRoom, currentRoomIndex, navigateToRoom]);
 
-      const navigateToRoom = async (targetRoom, direction) => {
+      const navigateToRoom = React.useCallback(async (targetRoom, direction) => {
         try {
           
           // 現在のデータを保存（セッションストレージキャッシュ更新）
@@ -1027,10 +1027,10 @@
           console.error('[room_navigation] 部屋移動エラー:', error);
           throw error;
         }
-      };
+      }, [propertyId, roomId, propertyName, roomList, readingRequiredIndexes, findCurrentReadingIndex, loadMeterReadingsForRoom, updateSessionStorageCache, setRoomId, setRoomName, setCurrentRoomIndex, setCurrentReadingIndex, setHasPrevRoom, setHasNextRoom]);
 
-      // SPA方式での部屋データ読み込み関数
-      const loadMeterReadingsForRoom = async (propId, rId) => {
+      // SPA方式での部屋データ読み込み関数（React最適化）
+      const loadMeterReadingsForRoom = React.useCallback(async (propId, rId) => {
         try {
           setLoading(true);
           setError(null);
@@ -1090,7 +1090,7 @@
           setError('部屋データの読み込みに失敗しました: ' + error.message);
           setLoading(false);
         }
-      };
+      }, [loadMeterReadings, setMeterReadings, setLoading, setError]);
 
       // LoadingOverlayコンポーネント - バニラJavaScript版
       function createLoadingOverlay(message) {
@@ -1210,7 +1210,7 @@
         }, 3000);
       };
 
-      const updateSessionStorageCache = async (propertyId, roomId, maxRetries = 3) => {
+      const updateSessionStorageCache = React.useCallback(async (propertyId, roomId, maxRetries = 3) => {
         const currentGasUrl = gasWebAppUrl || sessionStorage.getItem('gasWebAppUrl');
         if (!currentGasUrl) {
           console.warn('[meter_reading] gasWebAppURLが見つからないため、キャッシュ更新をスキップします');
@@ -1267,7 +1267,7 @@
             console.warn(`[meter_reading] ⚠️ 試行${attempt}失敗, 次回リトライします:`, error.message);
           }
         }
-      };
+      }, [gasWebAppUrl]);
 
       const handleUpdateReadings = async () => {
         if (!propertyId || !roomId) {
