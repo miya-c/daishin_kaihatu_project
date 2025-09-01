@@ -503,6 +503,10 @@
       const [currentRoomIndex, setCurrentRoomIndex] = React.useState(-1);
       const [hasPrevRoom, setHasPrevRoom] = React.useState(false);
       const [hasNextRoom, setHasNextRoom] = React.useState(false);
+      
+      // パフォーマンス最適化: 検針必要部屋のインデックス配列
+      const [readingRequiredIndexes, setReadingRequiredIndexes] = React.useState([]);
+      const [currentReadingIndex, setCurrentReadingIndex] = React.useState(-1);
 
       const [gasWebAppUrl, setGasWebAppUrl] = React.useState('');
 
@@ -552,14 +556,12 @@
       // 部屋ナビゲーション初期化関数
       const initializeRoomNavigation = async (webAppUrl) => {
         try {
-          console.log('[room_navigation] 部屋ナビゲーション機能を初期化中...');
           
           const urlParams = new URLSearchParams(window.location.search);
           const currentPropertyId = urlParams.get('propertyId');
           const currentRoomId = urlParams.get('roomId');
           
           if (!currentPropertyId) {
-            console.log('[room_navigation] 物件IDがないためナビゲーション機能をスキップ');
             return;
           }
 
@@ -567,7 +569,6 @@
           let roomsData = sessionStorage.getItem(`rooms_${currentPropertyId}`);
           
           if (!roomsData) {
-            console.log('[room_navigation] 部屋一覧をAPIから取得中...');
             // 部屋一覧をAPIから取得
             const response = await fetch(`${webAppUrl}?action=getRoomsLight&propertyId=${encodeURIComponent(currentPropertyId)}`, {
               method: 'GET',
@@ -585,7 +586,6 @@
               roomsData = JSON.stringify(result.data.rooms);
               // SessionStorageに保存
               sessionStorage.setItem(`rooms_${currentPropertyId}`, roomsData);
-              console.log('[room_navigation] 部屋一覧をSessionStorageに保存しました');
             } else {
               throw new Error('部屋一覧の取得に失敗しました');
             }
@@ -605,9 +605,6 @@
           // 「検針必要」部屋ベースでナビゲーション状態を更新
           updateNavigationState(currentIndex, rooms);
           
-          console.log('[room_navigation] ナビゲーション状態:');
-          console.log(`- 総部屋数: ${rooms.length}`);
-          console.log(`- 現在のインデックス: ${currentIndex}`);
           
         } catch (error) {
           console.error('[room_navigation] 初期化エラー:', error);
@@ -624,13 +621,6 @@
         const rId = urlParams.get('roomId');
         let rName = urlParams.get('roomName');
 
-        console.log('[meter_reading] 🔍 URLパラメータ詳細:');
-        console.log('[meter_reading] - propertyId:', `"${propId}"`, '型:', typeof propId, 'length:', propId ? propId.length : 'N/A');
-        console.log('[meter_reading] - propertyName:', `"${propName}"`, '型:', typeof propName);
-        console.log('[meter_reading] - roomId:', `"${rId}"`, '型:', typeof rId, 'length:', rId ? rId.length : 'N/A');
-        console.log('[meter_reading] - roomName:', `"${rName}"`, '型:', typeof rName);
-        console.log('[meter_reading] - 完全なURL:', window.location.href);
-        console.log('[meter_reading] - URLSearchParams:', window.location.search);
 
         // 必須パラメータチェック
         if (!propId || !rId) {
@@ -641,7 +631,6 @@
         }
 
         // 統合版getMeterReadings APIから物件名・部屋名・検針データを一括取得
-        console.log('[meter_reading] 🚀 統合API呼び出し開始 - propertyId:', propId, 'roomId:', rId);
         loadMeterReadings(propId, rId);
       };
 
@@ -654,7 +643,6 @@
         for (let attempt = 1; attempt <= maxRetries; attempt++) {
           try {
             const fetchUrl = `${currentGasUrl}?action=getMeterReadings&propertyId=${propId}&roomId=${rId}`;
-            console.log(`[meter_reading] 検針データ取得開始 - 試行 ${attempt}/${maxRetries}:`, fetchUrl);
             
             const response = await fetch(fetchUrl);
             
@@ -668,19 +656,11 @@
               throw new Error('ネットワークの応答が正しくありませんでした。ステータス: ' + response.status);
             }
             
-            console.log(`[meter_reading] ✅ API呼び出し成功 (${attempt}回目)`);
             
             const responseObject = await response.json();
-            console.log('[meter_reading] Received responseObject from server:', responseObject);
           
           // 詳細なレスポンス構造の確認
-          console.log('[meter_reading] 🔍 レスポンス詳細分析:');
-          console.log('[meter_reading] - success:', responseObject.success);
-          console.log('[meter_reading] - data type:', typeof responseObject.data);
-          console.log('[meter_reading] - data isArray:', Array.isArray(responseObject.data));
-          console.log('[meter_reading] - data content:', responseObject.data);
           if (responseObject.data && typeof responseObject.data === 'object') {
-            console.log('[meter_reading] - data keys:', Object.keys(responseObject.data));
           }
           
           // 統合版getMeterReadings APIの応答形式を確認
@@ -697,23 +677,18 @@
 
           // 新しい統合版の応答形式をチェック {propertyName, roomName, readings}
           if (data.hasOwnProperty('propertyName') && data.hasOwnProperty('roomName') && data.hasOwnProperty('readings')) {
-            console.log('[meter_reading] ✅ 統合版形式を検出');
             propertyName = data.propertyName || 'N/A';
             roomName = data.roomName || '部屋名不明';
             readings = data.readings || [];
           }
           // 古い形式への一時的な後方互換性対応 - data が配列の場合
           else if (Array.isArray(data)) {
-            console.log('[meter_reading] ⚠️ 旧形式（配列）を検出 - 後方互換性モード');
             
             // 検針データから物件名・部屋名を抽出
             if (data.length > 0 && data[0]) {
               const firstRecord = data[0];
               propertyName = firstRecord['物件名'] || firstRecord.propertyName || 'N/A';
               roomName = firstRecord['部屋名'] || firstRecord.roomName || '部屋名不明';
-              console.log('[meter_reading] 🔍 データから抽出した名称:');
-              console.log('[meter_reading] - 物件名:', propertyName);
-              console.log('[meter_reading] - 部屋名:', roomName);
             } else {
               propertyName = 'N/A';
               roomName = '部屋名不明';
@@ -726,11 +701,6 @@
             throw new Error('検針データの形式が認識できません');
           }
 
-          console.log('[meter_reading] ✅ 最終的な解析結果:');
-          console.log('[meter_reading] - 物件名:', propertyName);
-          console.log('[meter_reading] - 部屋名:', roomName);
-          console.log('[meter_reading] - 検針データ件数:', readings.length);
-          console.log('[meter_reading] - 検針データ:', readings);
 
           // 状態を更新
           setPropertyId(propId || 'N/A');
@@ -740,12 +710,9 @@
 
           // 検針データ処理
           if (Array.isArray(readings) && readings.length > 0) {
-            console.log('[meter_reading] 第1件目のデータ構造:', readings[0]);
-            console.log('[meter_reading] 第1件目のキー一覧:', Object.keys(readings[0]));
             
             // データマッピング処理
             const mappedReadings = readings.map((rawReading, index) => {
-              console.log(`[meter_reading] 生データ [${index}]:`, rawReading);
               
               // inspection_dataシートの列名を想定したマッピング
               const mapped = {
@@ -814,10 +781,8 @@
               return mapped;
             });
             
-            console.log('[meter_reading] Setting mapped meterReadings state with:', mappedReadings);
             setMeterReadings(mappedReadings);
           } else {
-            console.log('[meter_reading] 検針データが空です');
             setMeterReadings([]);
           }
           setLoading(false);
@@ -868,7 +833,6 @@
           
           // ✅ 物件IDパラメータを含めて遷移（相対パス優先）
           const backUrl = `/room?propertyId=${encodeURIComponent(propertyId)}`;
-          console.log('[meter_reading] 戻るURL (相対パス):', backUrl);
           
           window.location.href = backUrl;
           
@@ -880,91 +844,87 @@
             `/room?propertyId=${encodeURIComponent(propertyId)}` : 
             '/property';
           
-          console.log('[meter_reading] フォールバック遷移 (相対パス):', fallbackUrl);
           window.location.href = fallbackUrl;
         }
       };
 
-      // 「検針不要」部屋スキップ用のヘルパー関数
-      const isRoomReadingRequired = (room) => {
+      // React最適化: ヘルパー関数をメモ化
+      const isRoomReadingRequired = React.useCallback((room) => {
         // room.isNotNeeded が true の場合は検針不要
         return room && room.isNotNeeded !== true;
-      };
+      }, []);
 
-      const findPrevReadingRequiredRoom = (currentIndex) => {
-        console.log('[room_navigation_skip] 前の検針必要部屋を検索中... currentIndex:', currentIndex);
-        
-        for (let i = currentIndex - 1; i >= 0; i--) {
-          if (isRoomReadingRequired(roomList[i])) {
-            console.log('[room_navigation_skip] 前の検針必要部屋を発見:', roomList[i], 'index:', i);
-            return { room: roomList[i], index: i };
-          } else {
-            console.log('[room_navigation_skip] 検針不要部屋をスキップ:', roomList[i], 'index:', i);
+      // React最適化: 検針必要部屋インデックス配列の構築をメモ化
+      const buildReadingRequiredIndexes = React.useCallback((rooms) => {
+        const indexes = [];
+        for (let i = 0; i < rooms.length; i++) {
+          if (isRoomReadingRequired(rooms[i])) {
+            indexes.push(i);
           }
         }
-        
-        console.log('[room_navigation_skip] 前の検針必要部屋が見つかりません');
-        return null;
-      };
+        return indexes;
+      }, [isRoomReadingRequired]);
 
-      const findNextReadingRequiredRoom = (currentIndex) => {
-        console.log('[room_navigation_skip] 次の検針必要部屋を検索中... currentIndex:', currentIndex);
-        
-        for (let i = currentIndex + 1; i < roomList.length; i++) {
-          if (isRoomReadingRequired(roomList[i])) {
-            console.log('[room_navigation_skip] 次の検針必要部屋を発見:', roomList[i], 'index:', i);
-            return { room: roomList[i], index: i };
-          } else {
-            console.log('[room_navigation_skip] 検針不要部屋をスキップ:', roomList[i], 'index:', i);
-          }
-        }
-        
-        console.log('[room_navigation_skip] 次の検針必要部屋が見つかりません');
-        return null;
-      };
+      // 最適化版: 現在の検針インデックス位置を取得
+      const findCurrentReadingIndex = React.useCallback((roomIndex, requiredIndexes) => {
+        return requiredIndexes.indexOf(roomIndex);
+      }, []);
 
-      // ナビゲーション状態の計算（検針必要部屋ベース）
-      const updateNavigationState = (currentIndex, rooms) => {
-        console.log('[room_navigation_state] ナビゲーション状態を更新中... currentIndex:', currentIndex);
+      // React最適化: O(1) 前の検針必要部屋取得をメモ化
+      const findPrevReadingRequiredRoom = React.useCallback(() => {
+        if (currentReadingIndex <= 0) return null;
         
-        // 前の検針必要部屋があるかチェック
-        const hasPrev = findPrevReadingRequiredRoom(currentIndex) !== null;
+        const prevIndex = readingRequiredIndexes[currentReadingIndex - 1];
+        return { room: roomList[prevIndex], index: prevIndex };
+      }, [currentReadingIndex, readingRequiredIndexes, roomList]);
+
+      // React最適化: O(1) 次の検針必要部屋取得をメモ化
+      const findNextReadingRequiredRoom = React.useCallback(() => {
+        if (currentReadingIndex < 0 || currentReadingIndex >= readingRequiredIndexes.length - 1) return null;
         
-        // 次の検針必要部屋があるかチェック  
-        const hasNext = findNextReadingRequiredRoom(currentIndex) !== null;
+        const nextIndex = readingRequiredIndexes[currentReadingIndex + 1];
+        return { room: roomList[nextIndex], index: nextIndex };
+      }, [currentReadingIndex, readingRequiredIndexes, roomList]);
+
+      // React最適化: ナビゲーション状態の計算をメモ化
+      const updateNavigationState = React.useCallback((currentIndex, rooms) => {
+        // 検針必要部屋インデックス配列を更新
+        const requiredIndexes = buildReadingRequiredIndexes(rooms);
+        setReadingRequiredIndexes(requiredIndexes);
+        
+        // 現在の検針インデックス位置を計算
+        const readingIndex = findCurrentReadingIndex(currentIndex, requiredIndexes);
+        setCurrentReadingIndex(readingIndex);
+        
+        // O(1) でナビゲーション状態を計算
+        const hasPrev = readingIndex > 0;
+        const hasNext = readingIndex >= 0 && readingIndex < requiredIndexes.length - 1;
         
         setHasPrevRoom(hasPrev);
         setHasNextRoom(hasNext);
-        
-        console.log('[room_navigation_state] 更新されたナビゲーション状態:');
-        console.log(`- 前の検針必要部屋: ${hasPrev ? 'あり' : 'なし'}`);
-        console.log(`- 次の検針必要部屋: ${hasNext ? 'あり' : 'なし'}`);
-      };
+      }, [buildReadingRequiredIndexes, findCurrentReadingIndex]);
 
-      // 部屋間ナビゲーション関数
-      const navigateToPrevRoom = async () => {
-        if (!hasPrevRoom || isNavigating || currentRoomIndex <= 0) return;
+      // React最適化: 部屋間ナビゲーション関数をメモ化
+      const navigateToPrevRoom = React.useCallback(async () => {
+        if (!hasPrevRoom || isNavigating) return;
         
         try {
           setIsNavigating(true);
           setNavigationMessage('前の部屋に移動しています...');
           
-          // 「検針不要」部屋をスキップして前の検針必要部屋を検索
-          const prevRoomResult = findPrevReadingRequiredRoom(currentRoomIndex);
+          // O(1) で前の検針必要部屋を取得
+          const prevRoomResult = findPrevReadingRequiredRoom();
           
           if (!prevRoomResult) {
-            console.log('[room_navigation_skip] 前の検針必要部屋が見つかりません');
             displayToast('前に検針が必要な部屋がありません');
             return;
           }
           
           const { room: prevRoom, index: prevIndex } = prevRoomResult;
-          console.log('[room_navigation_skip] 前の検針必要部屋に移動:', prevRoom.roomName || prevRoom.name);
           
-          // スキップされた部屋数を計算してユーザーに通知
+          // スキップされた部屋数を計算（2室以上の場合のみ通知）
           const skippedCount = currentRoomIndex - prevIndex - 1;
-          if (skippedCount > 0) {
-            console.log(`[room_navigation_skip] ${skippedCount}室の検針不要部屋をスキップしました`);
+          if (skippedCount >= 2) {
             displayToast(`${skippedCount}室の検針不要部屋をスキップしました`);
           }
           
@@ -977,31 +937,28 @@
           setIsNavigating(false);
           setNavigationMessage('');
         }
-      };
+      }, [hasPrevRoom, isNavigating, findPrevReadingRequiredRoom, currentRoomIndex, navigateToRoom]);
 
-      const navigateToNextRoom = async () => {
-        if (!hasNextRoom || isNavigating || currentRoomIndex < 0 || currentRoomIndex >= roomList.length - 1) return;
+      const navigateToNextRoom = React.useCallback(async () => {
+        if (!hasNextRoom || isNavigating) return;
         
         try {
           setIsNavigating(true);
           setNavigationMessage('次の部屋に移動しています...');
           
-          // 「検針不要」部屋をスキップして次の検針必要部屋を検索
-          const nextRoomResult = findNextReadingRequiredRoom(currentRoomIndex);
+          // O(1) で次の検針必要部屋を取得
+          const nextRoomResult = findNextReadingRequiredRoom();
           
           if (!nextRoomResult) {
-            console.log('[room_navigation_skip] 次の検針必要部屋が見つかりません');
             displayToast('次に検針が必要な部屋がありません');
             return;
           }
           
           const { room: nextRoom, index: nextIndex } = nextRoomResult;
-          console.log('[room_navigation_skip] 次の検針必要部屋に移動:', nextRoom.roomName || nextRoom.name);
           
-          // スキップされた部屋数を計算してユーザーに通知
+          // スキップされた部屋数を計算（2室以上の場合のみ通知）
           const skippedCount = nextIndex - currentRoomIndex - 1;
-          if (skippedCount > 0) {
-            console.log(`[room_navigation_skip] ${skippedCount}室の検針不要部屋をスキップしました`);
+          if (skippedCount >= 2) {
             displayToast(`${skippedCount}室の検針不要部屋をスキップしました`);
           }
           
@@ -1014,16 +971,14 @@
           setIsNavigating(false);
           setNavigationMessage('');
         }
-      };
+      }, [hasNextRoom, isNavigating, findNextReadingRequiredRoom, currentRoomIndex, navigateToRoom]);
 
       const navigateToRoom = async (targetRoom, direction) => {
         try {
-          console.log(`[room_navigation] ${direction === 'next' ? '次' : '前'}の部屋に移動 (SPA方式):`, targetRoom);
           
           // 現在のデータを保存（セッションストレージキャッシュ更新）
           try {
             await updateSessionStorageCache(propertyId, roomId);
-            console.log('[room_navigation] 現在のデータを保存しました');
           } catch (cacheError) {
             console.warn('[room_navigation] データ保存エラー（継続）:', cacheError);
           }
@@ -1043,7 +998,6 @@
           }
 
           const newUrl = `${window.location.pathname}?${urlParams.toString()}`;
-          console.log('[room_navigation] 新URL (SPA):', newUrl);
 
           // history.pushStateでURLを更新（リロード無し）
           window.history.pushState(null, '', newUrl);
@@ -1052,16 +1006,19 @@
           setRoomId(newRoomId);
           setRoomName(newRoomName);
           
-          // 部屋ナビゲーション状態を更新
+          // 部屋ナビゲーション状態を更新（最適化版）
           const newIndex = roomList.findIndex(room => 
             (room.roomId || room.id) === newRoomId
           );
           setCurrentRoomIndex(newIndex);
           
-          // 「検針必要」部屋ベースでナビゲーション状態を更新
-          updateNavigationState(newIndex, roomList);
+          // O(1) で検針インデックス位置を更新
+          const newReadingIndex = findCurrentReadingIndex(newIndex, readingRequiredIndexes);
+          setCurrentReadingIndex(newReadingIndex);
           
-          console.log(`[room_navigation] 新しい部屋インデックス: ${newIndex}`);
+          // O(1) でナビゲーション状態を更新
+          setHasPrevRoom(newReadingIndex > 0);
+          setHasNextRoom(newReadingIndex >= 0 && newReadingIndex < readingRequiredIndexes.length - 1);
           
           // 新しい部屋のデータを読み込み（SPA方式）
           await loadMeterReadingsForRoom(propertyId, newRoomId);
@@ -1078,18 +1035,15 @@
           setLoading(true);
           setError(null);
           
-          console.log('[room_navigation_spa] データ読み込み開始:', propId, rId);
           
           // キャッシュファースト戦略: まずキャッシュから確認
           let cacheData = null;
           if (window.pwaUtils) {
             const meterCacheKey = `meter_${propId}_${rId}`;
             cacheData = window.pwaUtils.getCacheData(meterCacheKey);
-            console.log('[room_navigation_spa] キャッシュデータ:', cacheData);
           }
           
           if (cacheData && cacheData.data) {
-            console.log('[room_navigation_spa] 🚀 キャッシュから即座表示');
             
             // キャッシュデータから即座に表示
             const cachedReadings = Array.isArray(cacheData.data) 
@@ -1129,7 +1083,6 @@
           }
           
           // キャッシュなし or 無効な場合はAPIから取得
-          console.log('[room_navigation_spa] API から新規データ取得');
           await loadMeterReadings(propId, rId);
           
         } catch (error) {
@@ -1266,10 +1219,8 @@
 
         for (let attempt = 1; attempt <= maxRetries; attempt++) {
           try {
-            console.log(`[meter_reading] キャッシュ更新開始 - 試行 ${attempt}/${maxRetries}`);
 
             const fetchUrl = `${currentGasUrl}?action=getRooms&propertyId=${encodeURIComponent(propertyId)}`;
-            console.log('[meter_reading] 部屋一覧再取得URL:', fetchUrl);
             
             const response = await fetch(fetchUrl, { method: 'GET' });
             
@@ -1284,21 +1235,16 @@
               return; // リトライ上限に達した場合はグレースフル終了
             }
           
-            console.log(`[meter_reading] ✅ API呼び出し成功 (${attempt}回目)`);
             
             const result = await response.json();
-            console.log('[meter_reading] 部屋一覧レスポンス:', result);
             
             let roomsArray;
             if (result && result.success === true && Array.isArray(result.data)) {
               roomsArray = result.data;
-              console.log('[meter_reading] ✅ 統一形式のデータを使用');
             } else if (Array.isArray(result)) {
               roomsArray = result;
-              console.log('[meter_reading] ⚠️ 直接配列形式を使用');
             } else if (result && Array.isArray(result.rooms)) {
               roomsArray = result.rooms;
-              console.log('[meter_reading] ⚠️ rooms配列形式を使用');
             } else {
               console.warn('[meter_reading] 予期しないレスポンス形式:', result);
               return;
@@ -1306,7 +1252,6 @@
             
             if (roomsArray && roomsArray.length > 0) {
               sessionStorage.setItem('selectedRooms', JSON.stringify(roomsArray));
-              console.log('[meter_reading] ✅ キャッシュ更新完了 - 部屋数:', roomsArray.length);
             } else {
               console.warn('[meter_reading] 部屋データが空です');
             }
@@ -1362,7 +1307,6 @@
             // JST日付を正規化 - 更新処理では常に今日の日付を使用
             const inspectionDate = getCurrentJSTDateString();
             
-            console.log(`[meter_reading] 更新処理で今日の日付を設定: ${date} → ${inspectionDate}`);
 
             // ✅ 修正: 指示数履歴を取得するための変数初期化
             let previousReading = 0;
@@ -1377,7 +1321,6 @@
               previousPreviousReading = parseFloat(currentReadingData.previousPreviousReading) || 0;
               threeTimesPreviousReading = parseFloat(currentReadingData.threeTimesPrevious) || 0;
               
-              console.log(`[meter_reading] 指示数履歴取得: 前回=${previousReading}, 前々回=${previousPreviousReading}, 前々々回=${threeTimesPreviousReading}`);
             }
 
             // 警告フラグを計算（指示数ベース）
@@ -1392,7 +1335,6 @@
               // standardDeviation: warningResult.standardDeviation || 0  ← 削除
             });
             
-            console.log(`[meter_reading] 更新データ追加: 日付=${inspectionDate}, 指示数=${currentValue}, 警告フラグ=${warningResult.warningFlag}`);
           }
         });
 
@@ -1427,7 +1369,6 @@
           });
           
           const requestUrl = `${currentGasUrl}?${params}`;
-          console.log('[meter_reading] 更新リクエスト送信 (GET方式):', requestUrl);
           
           const response = await fetch(requestUrl, {
             method: 'GET'
@@ -1438,7 +1379,6 @@
           }
           
           const result = await response.json();
-          console.log('[meter_reading] 更新レスポンス:', result);
           
           if (result.success) {
             // メイン成功処理を優先
@@ -1448,7 +1388,6 @@
             // バックグラウンドでキャッシュ更新（エラー時も継続）
             try {
               await updateSessionStorageCache(propertyId, roomId);
-              console.log('[meter_reading] ✅ キャッシュ更新成功');
             } catch (cacheError) {
               console.warn('[meter_reading] ⚠️ キャッシュ更新失敗（継続）:', cacheError.message);
             }
@@ -1456,7 +1395,6 @@
             // データ再読み込み（エラー時も継続）
             try {
               await loadMeterReadings(propertyId, roomId);
-              console.log('[meter_reading] ✅ データ再読み込み成功');
             } catch (loadError) {
               console.warn('[meter_reading] ⚠️ データ再読み込み失敗（継続）:', loadError.message);
               // データ再読み込み失敗時はユーザーに軽く通知
