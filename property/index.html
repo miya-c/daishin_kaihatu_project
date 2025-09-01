@@ -1250,10 +1250,7 @@ URL: ${window.location.href}
           console.log('[ReactApp] ✅ SessionStorage保存完了');
           setNavigationMessage('');
           
-          // ✨ 
-
-
-継承強化（reading画面エラー対策）
+          // ✨ gasWebAppURL継承強化（reading画面エラー対策）
           if (gasWebAppUrl && gasWebAppUrl.includes('script.google.com')) {
             sessionStorage.setItem('gasWebAppUrl', gasWebAppUrl);
             localStorage.setItem('gasWebAppUrl', gasWebAppUrl); // 永続化バックアップ
