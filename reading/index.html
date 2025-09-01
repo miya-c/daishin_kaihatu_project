@@ -169,6 +169,61 @@
     .styles-loaded { 
       opacity: 1; 
     }
+
+    /* 部屋ナビゲーション スタイル */
+    .room-navigation {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin: 0 10px;
+    }
+
+    .nav-button {
+      padding: 6px 12px;
+      font-size: 12px;
+      border: 1px solid #007bff;
+      background-color: #007bff;
+      color: white;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+      min-width: 80px;
+      text-align: center;
+      font-weight: 500;
+    }
+
+    .nav-button:hover:not(.disabled) {
+      background-color: #0056b3;
+      border-color: #0056b3;
+      transform: translateY(-1px);
+    }
+
+    .nav-button.disabled {
+      background-color: #6c757d;
+      border-color: #6c757d;
+      cursor: not-allowed;
+      opacity: 0.65;
+      transform: none;
+    }
+
+    .nav-button.disabled:hover {
+      transform: none;
+    }
+
+    /* レスポンシブ対応 */
+    @media (max-width: 480px) {
+      .room-navigation {
+        margin: 0 5px;
+        gap: 6px;
+      }
+      
+      .nav-button {
+        padding: 4px 8px;
+        font-size: 11px;
+        min-width: 70px;
+      }
+    }
   </style>
   
   <!-- 重要: CSS ファイルを最初に読み込む (レンダリングブロッキング) -->
@@ -443,6 +498,12 @@
       const [isNavigating, setIsNavigating] = React.useState(false);
       const [navigationMessage, setNavigationMessage] = React.useState('');
 
+      // 部屋間ナビゲーション用の新しいstate
+      const [roomList, setRoomList] = React.useState([]);
+      const [currentRoomIndex, setCurrentRoomIndex] = React.useState(-1);
+      const [hasPrevRoom, setHasPrevRoom] = React.useState(false);
+      const [hasNextRoom, setHasNextRoom] = React.useState(false);
+
       const [gasWebAppUrl, setGasWebAppUrl] = React.useState('');
 
       React.useEffect(() => {
@@ -471,6 +532,9 @@
             setGasWebAppUrl(urlFromSession);
             console.log('[meter_reading] gasWebAppUrlを取得しました:', urlFromSession);
 
+            // 部屋一覧情報を取得してナビゲーション機能を初期化
+            await initializeRoomNavigation(urlFromSession);
+
             console.log('[meter_reading] 初期化完了しました。');
 
             // URLパラメータからデータを読み込み開始
@@ -484,6 +548,72 @@
 
         initializeApp();
       }, []);
+
+      // 部屋ナビゲーション初期化関数
+      const initializeRoomNavigation = async (webAppUrl) => {
+        try {
+          console.log('[room_navigation] 部屋ナビゲーション機能を初期化中...');
+          
+          const urlParams = new URLSearchParams(window.location.search);
+          const currentPropertyId = urlParams.get('propertyId');
+          const currentRoomId = urlParams.get('roomId');
+          
+          if (!currentPropertyId) {
+            console.log('[room_navigation] 物件IDがないためナビゲーション機能をスキップ');
+            return;
+          }
+
+          // SessionStorageから部屋一覧を取得
+          let roomsData = sessionStorage.getItem(`rooms_${currentPropertyId}`);
+          
+          if (!roomsData) {
+            console.log('[room_navigation] 部屋一覧をAPIから取得中...');
+            // 部屋一覧をAPIから取得
+            const response = await fetch(`${webAppUrl}?action=getRoomsLight&propertyId=${encodeURIComponent(currentPropertyId)}`, {
+              method: 'GET',
+              headers: {
+                'Accept': 'application/json',
+              }
+            });
+
+            if (!response.ok) {
+              throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            const result = await response.json();
+            if (result.success && result.data && result.data.rooms) {
+              roomsData = JSON.stringify(result.data.rooms);
+              // SessionStorageに保存
+              sessionStorage.setItem(`rooms_${currentPropertyId}`, roomsData);
+              console.log('[room_navigation] 部屋一覧をSessionStorageに保存しました');
+            } else {
+              throw new Error('部屋一覧の取得に失敗しました');
+            }
+          }
+
+          const rooms = JSON.parse(roomsData);
+          setRoomList(rooms);
+          
+          // 現在の部屋のインデックスを特定
+          let currentIndex = -1;
+          if (currentRoomId) {
+            currentIndex = rooms.findIndex(room => room.roomId === currentRoomId || room.id === currentRoomId);
+          }
+          
+          setCurrentRoomIndex(currentIndex);
+          setHasPrevRoom(currentIndex > 0);
+          setHasNextRoom(currentIndex >= 0 && currentIndex < rooms.length - 1);
+          
+          console.log('[room_navigation] ナビゲーション状態:');
+          console.log(`- 総部屋数: ${rooms.length}`);
+          console.log(`- 現在のインデックス: ${currentIndex}`);
+          console.log(`- 前の部屋: ${currentIndex > 0 ? 'あり' : 'なし'}`);
+          console.log(`- 次の部屋: ${currentIndex >= 0 && currentIndex < rooms.length - 1 ? 'あり' : 'なし'}`);
+          
+        } catch (error) {
+          console.error('[room_navigation] 初期化エラー:', error);
+        }
+      };
 
       // コンポーネントマウント時にスクロール位置をリセット
       React.useEffect(() => {
@@ -753,6 +883,80 @@
           
           console.log('[meter_reading] フォールバック遷移 (相対パス):', fallbackUrl);
           window.location.href = fallbackUrl;
+        }
+      };
+
+      // 部屋間ナビゲーション関数
+      const navigateToPrevRoom = async () => {
+        if (!hasPrevRoom || isNavigating || currentRoomIndex <= 0) return;
+        
+        try {
+          setIsNavigating(true);
+          setNavigationMessage('前の部屋に移動しています...');
+          
+          const prevRoom = roomList[currentRoomIndex - 1];
+          await navigateToRoom(prevRoom, 'prev');
+          
+        } catch (error) {
+          console.error('[room_navigation] 前の部屋への移動エラー:', error);
+          displayToast('前の部屋への移動に失敗しました');
+        } finally {
+          setIsNavigating(false);
+          setNavigationMessage('');
+        }
+      };
+
+      const navigateToNextRoom = async () => {
+        if (!hasNextRoom || isNavigating || currentRoomIndex < 0 || currentRoomIndex >= roomList.length - 1) return;
+        
+        try {
+          setIsNavigating(true);
+          setNavigationMessage('次の部屋に移動しています...');
+          
+          const nextRoom = roomList[currentRoomIndex + 1];
+          await navigateToRoom(nextRoom, 'next');
+          
+        } catch (error) {
+          console.error('[room_navigation] 次の部屋への移動エラー:', error);
+          displayToast('次の部屋への移動に失敗しました');
+        } finally {
+          setIsNavigating(false);
+          setNavigationMessage('');
+        }
+      };
+
+      const navigateToRoom = async (targetRoom, direction) => {
+        try {
+          console.log(`[room_navigation] ${direction === 'next' ? '次' : '前'}の部屋に移動:`, targetRoom);
+          
+          // 現在のデータを保存（セッションストレージキャッシュ更新）
+          try {
+            await updateSessionStorageCache(propertyId, roomId);
+            console.log('[room_navigation] 現在のデータを保存しました');
+          } catch (cacheError) {
+            console.warn('[room_navigation] データ保存エラー（継続）:', cacheError);
+          }
+
+          // URLパラメータを構築
+          const urlParams = new URLSearchParams(window.location.search);
+          urlParams.set('propertyId', propertyId);
+          urlParams.set('roomId', targetRoom.roomId || targetRoom.id);
+          urlParams.set('roomName', encodeURIComponent(targetRoom.roomName || targetRoom.name));
+          
+          // プロパティ名も含める
+          if (propertyName) {
+            urlParams.set('propertyName', encodeURIComponent(propertyName));
+          }
+
+          const newUrl = `${window.location.pathname}?${urlParams.toString()}`;
+          console.log('[room_navigation] 移動先URL:', newUrl);
+
+          // ページを再読み込みして新しい部屋に移動
+          window.location.href = newUrl;
+          
+        } catch (error) {
+          console.error('[room_navigation] 部屋移動エラー:', error);
+          throw error;
         }
       };
 
@@ -1098,6 +1302,24 @@
               <button onClick={handleBackButton} className="back-button" aria-label="戻る">
                 &lt;
               </button>
+              <div className="room-navigation">
+                <button 
+                  className="nav-button prev-room-btn disabled"
+                  disabled={true}
+                  aria-label="前の部屋に移動"
+                  title="読み込み中"
+                >
+                  ← 前の部屋
+                </button>
+                <button 
+                  className="nav-button next-room-btn disabled"
+                  disabled={true}
+                  aria-label="次の部屋に移動"
+                  title="読み込み中"
+                >
+                  次の部屋 →
+                </button>
+              </div>
               <h1 className="header-title">検針情報</h1>
             </div>
             <div className="content-area mantine-container">
@@ -1118,6 +1340,24 @@
               <button onClick={handleBackButton} className="back-button" aria-label="戻る">
                 &lt;
               </button>
+              <div className="room-navigation">
+                <button 
+                  className="nav-button prev-room-btn disabled"
+                  disabled={true}
+                  aria-label="前の部屋に移動"
+                  title="エラー発生中"
+                >
+                  ← 前の部屋
+                </button>
+                <button 
+                  className="nav-button next-room-btn disabled"
+                  disabled={true}
+                  aria-label="次の部屋に移動"
+                  title="エラー発生中"
+                >
+                  次の部屋 →
+                </button>
+              </div>
               <h1 className="header-title">検針情報</h1>
             </div>
             <div className="content-area mantine-container">              <div className="mantine-stack">
@@ -1139,6 +1379,26 @@
             <button onClick={handleBackButton} className="back-button" aria-label="戻る">
               &lt;
             </button>
+            <div className="room-navigation">
+              <button 
+                onClick={navigateToPrevRoom} 
+                className={`nav-button prev-room-btn ${!hasPrevRoom ? 'disabled' : ''}`}
+                disabled={!hasPrevRoom || isNavigating}
+                aria-label="前の部屋に移動"
+                title={hasPrevRoom ? '前の部屋' : '最初の部屋です'}
+              >
+                ← 前の部屋
+              </button>
+              <button 
+                onClick={navigateToNextRoom} 
+                className={`nav-button next-room-btn ${!hasNextRoom ? 'disabled' : ''}`}
+                disabled={!hasNextRoom || isNavigating}
+                aria-label="次の部屋に移動"
+                title={hasNextRoom ? '次の部屋' : '最後の部屋です'}
+              >
+                次の部屋 →
+              </button>
+            </div>
             <h1 className="header-title">検針情報</h1>
           </div>
 
