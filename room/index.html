@@ -430,7 +430,7 @@
                 
                 // Step 4: データ正規化とキャッシュ保存
                 rooms = data.data?.rooms || data.data || [];
-                propertyName = data.data?.propertyName || sessionStorage.getItem('selectedPropertyName') || '物件名不明';
+                propertyName = data.data?.property?.name || data.data?.propertyName || sessionStorage.getItem('selectedPropertyName') || '物件名不明';
                 
                 if (!Array.isArray(rooms)) {
                     console.error('[room_select] 部屋データが配列ではない:', rooms);
@@ -452,6 +452,13 @@
                 }
                 
                 console.log('[room_select] 物件名設定:', propertyName);
+                
+                // 取得した物件名をSessionStorageに保存（次回のアクセス用）
+                if (propertyName && propertyName !== '物件名不明') {
+                    sessionStorage.setItem('selectedPropertyName', propertyName);
+                    console.log('[room_select] 物件名をSessionStorageに保存:', propertyName);
+                }
+                
                 document.getElementById('propertyName').textContent = propertyName;
                 
                 console.log('[room_select] displayRooms呼び出し開始');
@@ -525,6 +532,12 @@
                 };
                 window.pwaUtils.setCacheData(roomCacheKey, roomCacheData);
                 console.log('[room_select] 💾 従来API部屋データキャッシュ保存完了');
+            }
+            
+            // 取得した物件名をSessionStorageに保存（次回のアクセス用）
+            if (propertyName && propertyName !== '物件名不明') {
+                sessionStorage.setItem('selectedPropertyName', propertyName);
+                console.log('[room_select] 従来API物件名をSessionStorageに保存:', propertyName);
             }
             
             document.getElementById('propertyName').textContent = propertyName;
