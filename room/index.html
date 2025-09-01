@@ -22,6 +22,42 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap">
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
     
+    <!-- 検針不要部屋の無効化スタイル -->
+    <style>
+        /* 検針不要部屋の視覚的無効化 */
+        .room-card.status-skip {
+            cursor: default !important;
+            opacity: 0.6;
+            filter: grayscale(20%);
+            pointer-events: none;
+            user-select: none;
+        }
+        
+        /* ホバーエフェクトの無効化 */
+        .room-card.status-skip:hover {
+            transform: none !important;
+            box-shadow: inherit !important;
+            background-color: inherit !important;
+        }
+        
+        /* 検針不要部屋のステータス表示強化 */
+        .room-card.status-skip .room-status {
+            font-weight: 500;
+            color: #6c757d;
+        }
+        
+        /* 検針不要アイコンの調整 */
+        .room-card.status-skip .status-icon {
+            opacity: 0.8;
+        }
+        
+        /* フォーカス無効化（アクセシビリティ） */
+        .room-card.status-skip:focus {
+            outline: none;
+            box-shadow: none;
+        }
+    </style>
+    
     <!-- PWA Utilities -->
     <script src="/pwa-utils.js"></script>
     
@@ -761,13 +797,8 @@
                     
                     addRippleEffect(card);
                 } else {
-                    // 検針不要の場合、クリック時に説明を表示
-                    card.onclick = (e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        alert('この部屋は検針不要に設定されています。');
-                        return false;
-                    };
+                    // 検針不要の場合はクリック不可（イベントを設定しない）
+                    // ユーザビリティ向上: モーダル表示ではなく、完全に無効化
                 }
                 
                 roomGrid.appendChild(card);
