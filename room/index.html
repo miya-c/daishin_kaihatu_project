@@ -306,6 +306,7 @@
                 const gasWebAppUrl = sessionStorage.getItem('gasWebAppUrl');
                 const urlParams = new URLSearchParams(window.location.search);
                 const propertyId = urlParams.get('propertyId');
+                const roomCacheKey = `rooms_${propertyId}`;
                 
                 console.log('[room_select] パラメータ確認:', {
                     gasWebAppUrl: gasWebAppUrl ? '設定済み' : '未設定',
@@ -364,7 +365,6 @@
                     }
                     
                     // Step 2: LocalStorageキャッシュ確認
-                    const roomCacheKey = `rooms_${propertyId}`;
                     const isCacheValid = window.pwaUtils?.isCacheValid(roomCacheKey);
                     
                     console.log('[room_select] 🗄️ キャッシュ確認:', { 
@@ -481,6 +481,7 @@
         // 従来API用のフォールバック関数
         async function loadRoomDataLegacy(propertyId, gasWebAppUrl) {
             console.log('[room_select] 🔄 従来API使用 - getRooms (フォールバック)');
+            const roomCacheKey = `rooms_${propertyId}`;
             
             const fetchUrl = `${gasWebAppUrl}?action=getRooms&propertyId=${encodeURIComponent(propertyId)}`;
             const response = await fetch(fetchUrl);
@@ -516,7 +517,6 @@
             
             // フォールバック時もキャッシュに保存
             if (window.pwaUtils && rooms.length > 0) {
-                const roomCacheKey = `rooms_${propertyId}`;
                 const roomCacheData = {
                     data: rooms,
                     propertyName: propertyName,
@@ -538,6 +538,7 @@
                 propertyId, 
                 lastTimestamp: lastTimestamp ? new Date(lastTimestamp).toLocaleString() : '初回' 
             });
+            const roomCacheKey = `rooms_${propertyId}`;
             
             try {
                 const gasWebAppUrl = sessionStorage.getItem('gasWebAppUrl');
@@ -563,7 +564,6 @@
                     console.log('[room_select] 📊 差分データあり:', deltaData.data.length, '件');
                     
                     // 現在のキャッシュデータを取得してマージ
-                    const roomCacheKey = `rooms_${propertyId}`;
                     const currentCache = window.pwaUtils?.getCacheData(roomCacheKey);
                     
                     if (currentCache && currentCache.data) {
