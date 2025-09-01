@@ -917,6 +917,7 @@
 
       // React最適化: 部屋間ナビゲーション関数をメモ化
       const navigateToPrevRoom = React.useCallback(async () => {
+        console.log(`[navigateToPrevRoom] 🔍 デバッグ: hasPrevRoom=${hasPrevRoom}, isNavigating=${isNavigating}, propertyId=${propertyId}`);
         if (!hasPrevRoom || isNavigating) return;
         
         try {
@@ -939,7 +940,7 @@
             displayToast(`${skippedCount}室の検針不要部屋をスキップしました`);
           }
           
-          await navigateToRoom(prevRoom, 'prev');
+          await navigateToRoom(prevRoom, 'prev', propertyId);
           
         } catch (error) {
           console.error('[room_navigation] 前の部屋への移動エラー:', error);
@@ -948,9 +949,10 @@
           setIsNavigating(false);
           setNavigationMessage('');
         }
-      }, [hasPrevRoom, isNavigating, findPrevReadingRequiredRoom, currentRoomIndex, navigateToRoom]);
+      }, [hasPrevRoom, isNavigating, findPrevReadingRequiredRoom, currentRoomIndex, navigateToRoom, propertyId, setIsNavigating, setNavigationMessage, displayToast]);
 
       const navigateToNextRoom = React.useCallback(async () => {
+        console.log(`[navigateToNextRoom] 🔍 デバッグ: hasNextRoom=${hasNextRoom}, isNavigating=${isNavigating}, propertyId=${propertyId}`);
         if (!hasNextRoom || isNavigating) return;
         
         try {
@@ -973,7 +975,7 @@
             displayToast(`${skippedCount}室の検針不要部屋をスキップしました`);
           }
           
-          await navigateToRoom(nextRoom, 'next');
+          await navigateToRoom(nextRoom, 'next', propertyId);
           
         } catch (error) {
           console.error('[room_navigation] 次の部屋への移動エラー:', error);
@@ -982,14 +984,16 @@
           setIsNavigating(false);
           setNavigationMessage('');
         }
-      }, [hasNextRoom, isNavigating, findNextReadingRequiredRoom, currentRoomIndex, navigateToRoom]);
+      }, [hasNextRoom, isNavigating, findNextReadingRequiredRoom, currentRoomIndex, navigateToRoom, propertyId, setIsNavigating, setNavigationMessage, displayToast]);
 
-      const navigateToRoom = React.useCallback(async (targetRoom, direction) => {
+      const navigateToRoom = React.useCallback(async (targetRoom, direction, currentPropertyId) => {
+        console.log(`[navigateToRoom] 🔍 デバッグ: currentPropertyId=${currentPropertyId}, targetRoom=${JSON.stringify(targetRoom)}, direction=${direction}`);
+        
         try {
           
           // 現在のデータを保存（セッションストレージキャッシュ更新）
           try {
-            await updateSessionStorageCache(propertyId, roomId);
+            await updateSessionStorageCache(currentPropertyId, roomId);
           } catch (cacheError) {
             console.warn('[room_navigation] データ保存エラー（継続）:', cacheError);
           }
@@ -1000,7 +1004,7 @@
           
           // URLパラメータを構築（ページリロード無し）
           const urlParams = new URLSearchParams();
-          urlParams.set('propertyId', propertyId);
+          urlParams.set('propertyId', currentPropertyId);
           urlParams.set('roomId', newRoomId);
           urlParams.set('roomName', encodeURIComponent(newRoomName));
           
@@ -1032,13 +1036,13 @@
           setHasNextRoom(newReadingIndex >= 0 && newReadingIndex < readingRequiredIndexes.length - 1);
           
           // 新しい部屋のデータを読み込み（SPA方式）
-          await loadMeterReadingsForRoom(propertyId, newRoomId);
+          await loadMeterReadingsForRoom(currentPropertyId, newRoomId);
           
         } catch (error) {
           console.error('[room_navigation] 部屋移動エラー:', error);
           throw error;
         }
-      }, [propertyId, roomId, propertyName, roomList, readingRequiredIndexes, findCurrentReadingIndex, loadMeterReadingsForRoom, updateSessionStorageCache, setRoomId, setRoomName, setCurrentRoomIndex, setCurrentReadingIndex, setHasPrevRoom, setHasNextRoom]);
+      }, [roomId, propertyName, roomList, readingRequiredIndexes, findCurrentReadingIndex, loadMeterReadingsForRoom, updateSessionStorageCache, setRoomId, setRoomName, setCurrentRoomIndex, setCurrentReadingIndex, setHasPrevRoom, setHasNextRoom]);
 
       // SPA方式での部屋データ読み込み関数（React最適化）
       const loadMeterReadingsForRoom = React.useCallback(async (propId, rId) => {
