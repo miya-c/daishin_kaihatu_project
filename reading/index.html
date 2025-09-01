@@ -614,7 +614,9 @@
       // コンポーネントマウント時にスクロール位置をリセット
       React.useEffect(() => {
         window.scrollTo(0, 0);
-      }, []);      const loadUrlParams = async () => {
+      }, []);
+      
+      const loadUrlParams = async () => {
         const urlParams = new URLSearchParams(window.location.search);
         const propId = urlParams.get('propertyId');
         const propName = urlParams.get('propertyName');
@@ -634,7 +636,16 @@
         loadMeterReadings(propId, rId);
       };
 
-      const loadMeterReadings = async (propId, rId, maxRetries = 3) => {
+      const loadMeterReadings = React.useCallback(async (propId, rId, maxRetries = 3) => {
+        console.log(`[loadMeterReadings] 🔍 デバッグ: propId=${propId}, rId=${rId}`);
+        
+        // パラメータ検証
+        if (!propId || !rId) {
+          const error = `propertyId(${propId})とroomId(${rId})が必要です`;
+          console.error(`[loadMeterReadings] ❌ ${error}`);
+          throw new Error(error);
+        }
+        
         const currentGasUrl = gasWebAppUrl || sessionStorage.getItem('gasWebAppUrl');
         if (!currentGasUrl) {
           throw new Error('gasWebAppURLが設定されていません。物件選択画面から再度アクセスしてください。');
@@ -810,9 +821,9 @@
           console.warn(`[meter_reading] ⚠️ 試行${attempt}失敗, 次回リトライします:`, error.message);
         }
       }
-      };
+      }, [gasWebAppUrl, setPropertyId, setPropertyName, setRoomId, setRoomName, setMeterReadings, setLoading, setError]);
 
-      const handleBackButton = async () => {
+      const handleBackButton = React.useCallback(async () => {
         try {
           setIsNavigating(true);
           setNavigationMessage('画面を切り替えています...');
@@ -846,7 +857,7 @@
           
           window.location.href = fallbackUrl;
         }
-      };
+      }, [propertyId, roomId, updateSessionStorageCache, setIsNavigating, setNavigationMessage]);
 
       // React最適化: ヘルパー関数をメモ化
       const isRoomReadingRequired = React.useCallback((room) => {
@@ -1201,14 +1212,14 @@
         return parts;
       };
 
-      const displayToast = (message) => {
+      const displayToast = React.useCallback((message) => {
         setToastMessage(message);
         setShowToast(true);
         setTimeout(() => {
           setShowToast(false);
           setToastMessage('');
         }, 3000);
-      };
+      }, [setToastMessage, setShowToast]);
 
       const updateSessionStorageCache = React.useCallback(async (propertyId, roomId, maxRetries = 3) => {
         const currentGasUrl = gasWebAppUrl || sessionStorage.getItem('gasWebAppUrl');
@@ -1269,7 +1280,8 @@
         }
       }, [gasWebAppUrl]);
 
-      const handleUpdateReadings = async () => {
+      const handleUpdateReadings = React.useCallback(async () => {
+        console.log(`[handleUpdateReadings] 🔍 デバッグ: propertyId=${propertyId}, roomId=${roomId}`);
         if (!propertyId || !roomId) {
           displayToast('物件IDまたは部屋IDが取得できませんでした。');
           return;
@@ -1409,7 +1421,7 @@
         } finally {
           setUpdating(false);
         }
-      };
+      }, [propertyId, roomId, gasWebAppUrl, loadMeterReadings, updateSessionStorageCache, setInputErrors, setUpdating, displayToast]);
 
       // 初期ローディング
       if (loading) {
