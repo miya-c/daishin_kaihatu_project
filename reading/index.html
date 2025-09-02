@@ -795,6 +795,8 @@
               return mapped;
             });
             
+            // 使用量ステートをクリアしてから新しいデータを設定
+            setUsageStates({});
             setMeterReadings(mappedReadings);
             
             // DOM更新後に初期値を保存
@@ -802,6 +804,7 @@
               saveOriginalInputValues();
             }, 100);
           } else {
+            setUsageStates({});
             setMeterReadings([]);
           }
           setLoading(false);
@@ -829,7 +832,7 @@
           console.warn(`[meter_reading] ⚠️ 試行${attempt}失敗, 次回リトライします:`, error.message);
         }
       }
-      }, [gasWebAppUrl, setPropertyId, setPropertyName, setRoomId, setRoomName, setMeterReadings, setLoading, setError]);
+      }, [gasWebAppUrl, setPropertyId, setPropertyName, setRoomId, setRoomName, setMeterReadings, setLoading, setError, setUsageStates]);
 
       const handleBackButton = React.useCallback(async () => {
         try {
@@ -1061,6 +1064,10 @@
           setRoomId(newRoomId);
           setRoomName(newRoomName);
           
+          // 部屋移動時に使用量ステートをクリア（二重保険）
+          setUsageStates({});
+          console.log('[room_navigation] 🧹 部屋移動時の使用量ステートクリア');
+          
           // 部屋ナビゲーション状態を更新（最適化版）
           const newIndex = roomList.findIndex(room => 
             (room.roomId || room.id) === newRoomId
@@ -1082,7 +1089,7 @@
           console.error('[room_navigation] 部屋移動エラー:', error);
           throw error;
         }
-      }, [roomId, propertyName, roomList, readingRequiredIndexes, findCurrentReadingIndex, loadMeterReadingsForRoom, updateSessionStorageCache, setRoomId, setRoomName, setCurrentRoomIndex, setCurrentReadingIndex, setHasPrevRoom, setHasNextRoom]);
+      }, [roomId, propertyName, roomList, readingRequiredIndexes, findCurrentReadingIndex, loadMeterReadingsForRoom, updateSessionStorageCache, setRoomId, setRoomName, setCurrentRoomIndex, setCurrentReadingIndex, setHasPrevRoom, setHasNextRoom, setUsageStates]);
 
       // SPA方式での部屋データ読み込み関数（React最適化）
       const loadMeterReadingsForRoom = React.useCallback(async (propId, rId) => {
@@ -1090,6 +1097,9 @@
           setLoading(true);
           setError(null);
           
+          // 部屋移動時に前の部屋の使用量表示をクリア
+          setUsageStates({});
+          console.log('[room_navigation_spa] 🧹 使用量ステートをクリア');
           
           // Network-Only高速モード: APIから直接データを取得
           console.log('[room_navigation_spa] 🚀 キャッシュなし高速直接取得モード');
@@ -1102,7 +1112,7 @@
           setError('部屋データの読み込みに失敗しました: ' + error.message);
           setLoading(false);
         }
-      }, [loadMeterReadings, setMeterReadings, setLoading, setError]);
+      }, [loadMeterReadings, setMeterReadings, setLoading, setError, setUsageStates]);
 
       // LoadingOverlayコンポーネント - バニラJavaScript版
       function createLoadingOverlay(message) {
