@@ -1,7 +1,7 @@
-// Service Worker for PWA - Speed Optimized for Cache+Light API architecture  
-// Version 20250831f - ERR_FAILED Fix + Complete Cache Reset
-const CACHE_NAME = 'meter-reading-app-v12-err-failed-fix';
-const DATA_CACHE_NAME = 'meter-reading-data-v7';
+// Service Worker for PWA - No-Cache Strategy for High Performance
+// Version 20250902 - Cache-Free High Speed Architecture
+const CACHE_NAME = 'meter-reading-app-v13-no-cache-fast';
+const DATA_CACHE_NAME = 'meter-reading-data-disabled'; // データキャッシュ無効化
 
 // Static assets for offline support (Cloudflare Pages compatible paths)
 const CACHE_ASSETS = [
@@ -29,25 +29,28 @@ const CACHE_STRATEGIES = {
   SYNC_RETRY_INTERVAL: 30000
 };
 
-// Legacy cache names to be deleted - COMPLETE RESET for ERR_FAILED fix
+// Legacy cache names to be deleted - ALL CACHE VERSIONS (Network-Only戦略)
 const LEGACY_CACHE_NAMES = [
-  'meter-reading-app-v11-room-path-fix',   // 追加: ERR_FAILED問題修正前
-  'meter-reading-app-v10-function-fixed',  // 追加: ファイルパス問題修正前
-  'meter-reading-app-v9-natural-errors',   // 追加: 自然エラーハンドリング版
-  'meter-reading-app-v8-no-timeout',       // 追加: タイムアウト削除版
-  'meter-reading-app-v7-no-custom-errors', // 追加: カスタムエラー削除版
-  'meter-reading-app-v6-clean-urls',       // 追加: URL最適化版
-  'meter-reading-app-v5-encoding-fix',     // 追加: エンコーディング修正版
-  'meter-reading-app-v4-performance',      // 追加: 性能向上版
+  'meter-reading-app-v12-err-failed-fix',  // 前バージョン
+  'meter-reading-app-v11-room-path-fix',   
+  'meter-reading-app-v10-function-fixed',  
+  'meter-reading-app-v9-natural-errors',   
+  'meter-reading-app-v8-no-timeout',       
+  'meter-reading-app-v7-no-custom-errors', 
+  'meter-reading-app-v6-clean-urls',       
+  'meter-reading-app-v5-encoding-fix',     
+  'meter-reading-app-v4-performance',      
   'meter-reading-app-v3-cloudflare-fixed',
-  'meter-reading-data-v6',                 // データキャッシュも完全クリア
+  'meter-reading-data-v7',                 // 全データキャッシュを削除
+  'meter-reading-data-v6',                 
   'meter-reading-data-v5',
   'meter-reading-data-v4',
   'meter-reading-data-v3',
   'meter-reading-app-v2-optimized',
   'meter-reading-data-v2',
   'meter-reading-app-v1',
-  'meter-reading-data-v1'
+  'meter-reading-data-v1',
+  'meter-reading-data-disabled'            // 現在の無効化されたデータキャッシュ
 ];
 
 // Install event - cache essential assets with performance optimization
@@ -274,139 +277,66 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(handleDefaultRequest(request));
 });
 
-// Handle GAS API requests with performance optimization
+// Handle GAS API requests with Network-Only strategy (No Cache)
 async function handleGASAPIRequest(request) {
-  const url = new URL(request.url);
-  const cacheKey = generateAPICacheKey(url);
-  
-  console.log('検針アプリ: データ取得中...');
+  console.log('検針アプリ: 最新データ取得中...');
   
   try {
-    // Check for Light API calls and prioritize them
-    const isLightAPI = url.searchParams.get('action')?.includes('Light');
-    
-    // Network first - let browser handle natural timeouts
+    // Network-Only: Always fetch latest data from server (No Cache)
     const networkResponse = await fetch(request);
     
     if (networkResponse.ok) {
-      // Cache successful API responses for Light APIs
-      if (isLightAPI) {
-        await cacheAPIResponse(cacheKey, networkResponse.clone());
-      }
-      
-      console.log('検針アプリ: データ取得完了');
+      console.log('検針アプリ: 最新データ取得完了');
       return networkResponse;
     }
     
-  } catch (error) {
-    // ネットワークエラー時は保存データを使用
+    // サーバーエラーの場合はそのまま返す（キャッシュフォールバックなし）
+    console.warn('検針アプリ: サーバーエラー応答');
+    return networkResponse;
     
-    // Try to serve from cache for Light APIs
-    const cachedResponse = await getCachedAPIResponse(cacheKey);
-    if (cachedResponse) {
-      console.log('検針アプリ: 保存データを使用中');
-      return cachedResponse;
-    }
+  } catch (error) {
+    // ネットワークエラーの場合：オフライン応答を返す
+    console.error('検針アプリ: ネットワークエラー');
+    return new Response(
+      JSON.stringify({ 
+        success: false, 
+        error: 'インターネット接続を確認してください。',
+        offline: true,
+        timestamp: Date.now()
+      }),
+      { 
+        headers: { 
+          'Content-Type': 'application/json',
+          'sw-cache-status': 'network-error'
+        },
+        status: 503
+      }
+    );
   }
-  
-  // Return offline response
-  return new Response(
-    JSON.stringify({ 
-      success: false, 
-      error: 'オフラインです。インターネット接続を確認してください。',
-      cached: false,
-      timestamp: Date.now()
-    }),
-    { 
-      headers: { 
-        'Content-Type': 'application/json',
-        'sw-cache-status': 'offline'
-      },
-      status: 503
-    }
-  );
 }
 
-// Handle HTML requests with intelligent hybrid strategy
+// Handle HTML requests with Network-Only strategy (No Cache)
 async function handleHTMLRequest(request) {
-  console.log('SW: 🌐 HTML Request (Hybrid Strategy):', request.url);
+  console.log('検針アプリ: HTML取得中...');
   
-  const startTime = Date.now();
-  let networkError = null;
-  let networkDuration = 0;
-  
-  // Stage 1: Network First (with natural error handling)
   try {
-    console.log('SW: 📡 Stage 1: Attempting network fetch...');
+    // Network-Only: Always fetch latest HTML from server (No Cache)
     const networkResponse = await fetch(request);
-    networkDuration = Date.now() - startTime;
     
     if (networkResponse.ok) {
-      // Update cache with fresh content and preserve encoding headers
-      const cache = await caches.open(CACHE_NAME);
-      
-      // Ensure UTF-8 encoding is preserved
-      let responseToCache = networkResponse.clone();
-      const contentType = networkResponse.headers.get('Content-Type') || 'text/html; charset=utf-8';
-      if (contentType.includes('text/html') && !contentType.includes('charset')) {
-        // Add charset if missing
-        const body = await networkResponse.clone().text();
-        responseToCache = new Response(body, {
-          status: networkResponse.status,
-          statusText: networkResponse.statusText,
-          headers: {
-            ...Object.fromEntries(networkResponse.headers.entries()),
-            'Content-Type': 'text/html; charset=utf-8'
-          }
-        });
-      }
-      
-      cache.put(request, responseToCache);
-      console.log(`SW: ✅ HTML取得成功 & UTF-8エンコーディング保持キャッシュ更新: ${request.url} (${networkDuration}ms)`);
+      console.log('検針アプリ: 最新HTML取得完了');
       return networkResponse;
     } else {
-      // Server responded but with error status
-      networkError = new Error(`HTTP ${networkResponse.status}: ${networkResponse.statusText}`);
-      console.warn(`SW: ⚠️ サーバーエラー応答: ${networkResponse.status} for ${request.url}`);
+      // サーバーエラーの場合はそのまま返す
+      console.warn(`検針アプリ: サーバーエラー ${networkResponse.status}`);
+      return networkResponse;
     }
+    
   } catch (error) {
-    networkError = error;
-    networkDuration = Date.now() - startTime;
-    
-    console.warn(`SW: ⚠️ HTMLネットワーク取得失敗: ${error.message} (${networkDuration}ms)`);
+    // ネットワークエラーの場合はエラーを投げる
+    console.error('検針アプリ: HTMLネットワークエラー');
+    throw error;
   }
-  
-  // Stage 2: Cache Fallback (for network failures or errors)
-  console.log('SW: 🗄️ Stage 2: Attempting cache fallback...');
-  const cache = await caches.open(CACHE_NAME);
-  const cachedResponse = await cache.match(request);
-  
-  if (cachedResponse) {
-    const cacheAge = cachedResponse.headers.get('sw-cache-time');
-    const ageInfo = cacheAge ? `cached ${Math.round((Date.now() - parseInt(cacheAge)) / 1000)}s ago` : 'cache age unknown';
-    console.log(`SW: ✅ HTMLキャッシュから提供: ${request.url} (${ageInfo})`);
-    
-    // Add warning header to indicate cache fallback
-    const responseWithHeaders = new Response(cachedResponse.body, {
-      status: cachedResponse.status,
-      statusText: cachedResponse.statusText,
-      headers: {
-        ...Object.fromEntries(cachedResponse.headers.entries()),
-        'X-Served-From': 'service-worker-cache',
-        'X-Network-Error': networkError?.message || 'Network unavailable'
-      }
-    });
-    
-    return responseWithHeaders;
-  }
-  
-  // No custom error pages - let browser handle natural errors
-  console.log('SW: ❌ HTML取得失敗 - ブラウザのネイティブエラーハンドリングに任せる:', request.url);
-  console.log('SW: 📊 Network error details:', networkError?.message);
-  
-  // Let the browser handle the error naturally (404, 503, network error, etc.)
-  // This provides better UX than custom error pages
-  throw networkError || new Error('Network request failed');
 }
 
 // Handle static asset requests with stale-while-revalidate
@@ -484,60 +414,9 @@ async function handleDefaultRequest(request) {
 
 // Utility functions removed - using native fetch with browser's natural timeout handling
 
-// Utility: Generate cache key for API requests
-function generateAPICacheKey(url) {
-  const action = url.searchParams.get('action');
-  const propertyId = url.searchParams.get('propertyId');
-  const roomId = url.searchParams.get('roomId');
-  
-  return `api_${action}_${propertyId || 'all'}_${roomId || 'none'}`;
-}
+// APIキャッシュ関数は削除済み（Network-Only戦略のため不要）
 
-// Utility: Cache API response
-async function cacheAPIResponse(cacheKey, response) {
-  try {
-    const cache = await caches.open(DATA_CACHE_NAME);
-    const responseToCache = new Response(response.body, {
-      status: response.status,
-      statusText: response.statusText,
-      headers: {
-        ...response.headers,
-        'sw-cache-time': Date.now().toString(),
-        'sw-cache-max-age': CACHE_STRATEGIES.API_CACHE_MAX_AGE.toString()
-      }
-    });
-    
-    await cache.put(cacheKey, responseToCache);
-    console.log('SW: 💾 API レスポンスキャッシュ保存:', cacheKey);
-  } catch (error) {
-    console.warn('SW: ⚠️ API キャッシュ保存失敗:', error);
-  }
-}
-
-// Utility: Get cached API response
-async function getCachedAPIResponse(cacheKey) {
-  try {
-    const cache = await caches.open(DATA_CACHE_NAME);
-    const cachedResponse = await cache.match(cacheKey);
-    
-    if (cachedResponse) {
-      const cacheTime = cachedResponse.headers.get('sw-cache-time');
-      const maxAge = cachedResponse.headers.get('sw-cache-max-age') || CACHE_STRATEGIES.API_CACHE_MAX_AGE;
-      
-      if (cacheTime && (Date.now() - parseInt(cacheTime)) < parseInt(maxAge)) {
-        return cachedResponse;
-      } else {
-        // Expired cache
-        await cache.delete(cacheKey);
-        console.log('SW: ⏰ 期限切れAPIキャッシュ削除:', cacheKey);
-      }
-    }
-  } catch (error) {
-    console.warn('SW: ⚠️ キャッシュAPI取得エラー:', error);
-  }
-  
-  return null;
-}
+// キャッシュAPI関数は削除済み（Network-Only戦略により不要）
 
 // Message handling for PWA Utils integration
 self.addEventListener('message', (event) => {

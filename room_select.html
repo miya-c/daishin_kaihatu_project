@@ -363,45 +363,12 @@
                     }
                     }
                     
-                    // Step 2: LocalStorageキャッシュ確認
-                    const roomCacheKey = `rooms_${propertyId}`;
-                    const isCacheValid = window.pwaUtils?.isCacheValid(roomCacheKey);
-                    
-                    console.log('[room_select] 🗄️ キャッシュ確認:', { 
-                        key: roomCacheKey, 
-                        valid: isCacheValid,
-                        forceRefresh: false,
-                        skipCache: false 
-                    });
-                    
-                    if (isCacheValid) {
-                        const cachedData = window.pwaUtils.getCacheData(roomCacheKey);
-                        console.log('[room_select] ⚡ キャッシュヒット:', cachedData?.data?.length || 0, '件');
-                        
-                        if (cachedData?.data && Array.isArray(cachedData.data)) {
-                            rooms = cachedData.data;
-                            
-                            // 物件名をSessionStorageまたはキャッシュから取得
-                            propertyName = sessionPropertyName || '物件名取得中...';
-                            
-                            console.log('[room_select] 🚀 キャッシュから部屋データ使用 - 高速表示');
-                            document.getElementById('propertyName').textContent = propertyName;
-                            displayRooms(rooms);
-                            updateCompleteButton(rooms);
-                            
-                            // バックグラウンドで差分更新
-                            setTimeout(() => performRoomDeltaUpdateBackground(propertyId, cachedData.timestamp), 100);
-                            return;
-                        }
-                    }
+                    // Network-Only高速モード: キャッシュなし直接データ取得
+                    console.log('[room_select] 🚀 高速ダイレクトモード - キャッシュなし処理');
                 }
                 
-                // Step 3: 軽量API使用（forceRefresh時もしくはキャッシュミス時）
-                if (forceRefresh) {
-                    console.log('[room_select] 🚀 強制リフレッシュ - 最新データをAPIから取得');
-                } else {
-                    console.log('[room_select] 🚀 軽量API使用 - getRoomsLight (キャッシュミス後)');
-                }
+                // Network-Only: APIから直接データを取得
+                console.log('[room_select] 🚀 軽量API直接使用 - getRoomsLight (キャッシュなし高速処理)');
                 const fetchUrl = `${gasWebAppUrl}?action=getRoomsLight&propertyId=${encodeURIComponent(propertyId)}&cache=${Date.now()}`;
                 console.log('[room_select] Light API呼び出し:', fetchUrl);
                 
@@ -428,7 +395,7 @@
                     throw new Error(`部屋軽量APIエラー: ${data.error}`);
                 }
                 
-                // Step 4: データ正規化とキャッシュ保存
+                // Network-Only: データ正規化（キャッシュ保存なし）
                 rooms = data.data?.rooms || data.data || [];
                 propertyName = data.data?.propertyName || sessionPropertyName || '物件名不明';
                 
@@ -439,17 +406,8 @@
                 
                 console.log('[room_select] 📋 軽量APIデータ設定:', rooms.length, '件');
                 
-                // 部屋データをキャッシュに保存
-                if (window.pwaUtils && rooms.length > 0) {
-                    const roomCacheData = {
-                        data: rooms,
-                        propertyName: propertyName,
-                        timestamp: Date.now(),
-                        source: 'getRoomsLight'
-                    };
-                    window.pwaUtils.setCacheData(roomCacheKey, roomCacheData);
-                    console.log('[room_select] 💾 部屋データキャッシュ保存完了');
-                }
+                // Network-Only: キャッシュ保存なし（高速化）
+                console.log('[room_select] ✅ 高速処理完了 - キャッシュなし軽量化済み');
                 
                 console.log('[room_select] 物件名設定:', propertyName);
                 document.getElementById('propertyName').textContent = propertyName;
@@ -514,83 +472,16 @@
             
             console.log('[room_select] 📋 従来API部屋データ設定:', rooms.length, '件');
             
-            // フォールバック時もキャッシュに保存
-            if (window.pwaUtils && rooms.length > 0) {
-                const roomCacheKey = `rooms_${propertyId}`;
-                const roomCacheData = {
-                    data: rooms,
-                    propertyName: propertyName,
-                    timestamp: Date.now(),
-                    source: 'getRooms'
-                };
-                window.pwaUtils.setCacheData(roomCacheKey, roomCacheData);
-                console.log('[room_select] 💾 従来API部屋データキャッシュ保存完了');
-            }
+            // Network-Only: キャッシュ保存なし（高速化）
+            console.log('[room_select] ✅ フォールバック処理完了 - キャッシュなし軽量化済み');
             
             document.getElementById('propertyName').textContent = propertyName;
             displayRooms(rooms);
             updateCompleteButton(rooms);
         }
 
-        // 部屋データの差分更新（バックグラウンド実行）
-        async function performRoomDeltaUpdateBackground(propertyId, lastTimestamp = null) {
-            console.log('[room_select] 🔄 バックグラウンド差分更新開始:', { 
-                propertyId, 
-                lastTimestamp: lastTimestamp ? new Date(lastTimestamp).toLocaleString() : '初回' 
-            });
-            
-            try {
-                const gasWebAppUrl = sessionStorage.getItem('gasWebAppUrl');
-                if (!gasWebAppUrl) {
-                    console.warn('[room_select] gasWebAppUrl未設定 - 差分更新スキップ');
-                    return;
-                }
-                
-                const timestamp = lastTimestamp || Date.now() - (24 * 60 * 60 * 1000); // 24時間前をデフォルト
-                const deltaUrl = `${gasWebAppUrl}?action=getDeltaData&dataType=rooms&propertyId=${propertyId}&lastSync=${timestamp}&cache=${Date.now()}`;
-                console.log('[room_select] 差分更新URL:', deltaUrl);
-                
-                const response = await fetch(deltaUrl);
-                if (!response.ok) {
-                    console.warn('[room_select] 差分更新API失敗 - スキップ');
-                    return;
-                }
-                
-                const deltaData = await response.json();
-                console.log('[room_select] 差分データ:', deltaData);
-                
-                if (deltaData.success && deltaData.data && deltaData.data.length > 0) {
-                    console.log('[room_select] 📊 差分データあり:', deltaData.data.length, '件');
-                    
-                    // 現在のキャッシュデータを取得してマージ
-                    const roomCacheKey = `rooms_${propertyId}`;
-                    const currentCache = window.pwaUtils?.getCacheData(roomCacheKey);
-                    
-                    if (currentCache && currentCache.data) {
-                        const mergedData = window.pwaUtils.mergeData(currentCache.data, deltaData.data);
-                        
-                        // 更新されたデータをキャッシュに保存
-                        const updatedCache = {
-                            data: mergedData,
-                            propertyName: currentCache.propertyName,
-                            timestamp: Date.now(),
-                            source: 'room_delta_update'
-                        };
-                        window.pwaUtils.setCacheData(roomCacheKey, updatedCache);
-                        console.log('[room_select] 💾 差分更新キャッシュ保存完了');
-                        
-                        // 表示中の画面も更新（ユーザーが気づかないレベルで）
-                        displayRooms(mergedData);
-                        updateCompleteButton(mergedData);
-                        console.log('[room_select] 🔄 画面表示も更新完了');
-                    }
-                } else {
-                    console.log('[room_select] 📊 差分データなし - 最新状態を維持');
-                }
-            } catch (deltaError) {
-                console.warn('[room_select] ⚠️ 差分更新エラー:', deltaError.message);
-            }
-        }
+        // Network-Only: 差分更新機能は無効化（高速化のため）
+        console.log('[room_select] ✅ キャッシュなし高速モード - 差分更新スキップ');
 
         // ローディング要素の非表示処理を共通化
         function hideLoadingElement() {

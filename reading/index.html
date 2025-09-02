@@ -1091,58 +1091,10 @@
           setError(null);
           
           
-          // キャッシュファースト戦略: まずキャッシュから確認
-          let cacheData = null;
-          if (window.pwaUtils) {
-            const meterCacheKey = `meter_${propId}_${rId}`;
-            cacheData = window.pwaUtils.getCacheData(meterCacheKey);
-          }
+          // Network-Only高速モード: APIから直接データを取得
+          console.log('[room_navigation_spa] 🚀 キャッシュなし高速直接取得モード');
           
-          if (cacheData && cacheData.data) {
-            
-            // キャッシュデータから即座に表示
-            const cachedReadings = Array.isArray(cacheData.data) 
-              ? cacheData.data 
-              : (cacheData.data.readings || []);
-            
-            if (cachedReadings.length > 0) {
-              // データマッピング処理（既存ロジックを使用）
-              const mappedReadings = cachedReadings.map((rawReading, index) => {
-                return {
-                  id: rawReading['記録ID'] || rawReading['recordId'] || rawReading['ID'] || `reading-${index}`,
-                  date: rawReading['検針日時'] || rawReading['date'] || rawReading['記録日'] || '',
-                  currentReading: rawReading['今回の指示数'] || rawReading['今回指示数'] || rawReading['今回指示数（水道）'] || rawReading['currentReading'] || rawReading['指示数'] || '',
-                  previousReading: rawReading['前回指示数'] || rawReading['previousReading'] || rawReading['前回'] || '',
-                  previousPreviousReading: rawReading['前々回指示数'] || rawReading['previousPreviousReading'] || rawReading['前々回'] || '',
-                  threeTimesPrevious: rawReading['前々々回指示数'] || rawReading['threeTimesPrevious'] || rawReading['前々々回'] || '',
-                  usage: rawReading['今回使用量'] || rawReading['usage'] || rawReading['使用量'] || '',
-                  warningFlag: rawReading['警告フラグ'] || rawReading['warningFlag'] || '正常',
-                  standardDeviation: rawReading['標準偏差値'] || rawReading['standardDeviation'] || '',
-                  status: rawReading['警告フラグ'] || rawReading['status'] || rawReading['状態'] || '正常',
-                  _original: rawReading
-                };
-              });
-              
-              setMeterReadings(mappedReadings);
-              setLoading(false);
-              
-              // DOM更新後に初期値を保存
-              setTimeout(() => {
-                saveOriginalInputValues();
-              }, 100);
-              
-              // バックグラウンドで最新データをチェック（非同期）
-              setTimeout(() => {
-                loadMeterReadings(propId, rId, 1).catch(error => {
-                  console.warn('[room_navigation_spa] バックグラウンド更新失敗:', error);
-                });
-              }, 100);
-              
-              return;
-            }
-          }
-          
-          // キャッシュなし or 無効な場合はAPIから取得
+          // 直接APIから最新データを取得
           await loadMeterReadings(propId, rId);
           
         } catch (error) {
