@@ -19,12 +19,12 @@ const CACHE_ASSETS = [
   '/manifest.json'
 ];
 
-// Performance optimization settings
+// Performance optimization settings - ユーザビリティ重視の超短時間設定
 const CACHE_STRATEGIES = {
-  // API cache duration (1 hour)
-  API_CACHE_MAX_AGE: 3600000,
-  // Static asset cache duration (24 hours)
-  STATIC_CACHE_MAX_AGE: 86400000,
+  // API cache duration (2分 - ユーザビリティ重視)
+  API_CACHE_MAX_AGE: 120000,
+  // Static asset cache duration (2分 - 常に最新情報を提供)
+  STATIC_CACHE_MAX_AGE: 120000,
   // Background sync retry interval (30 seconds)
   SYNC_RETRY_INTERVAL: 30000
 };
@@ -52,7 +52,7 @@ const LEGACY_CACHE_NAMES = [
 
 // Install event - cache essential assets with performance optimization
 self.addEventListener('install', (event) => {
-  console.log('🚀 Service Worker v20250831f: Install event - ERR_FAILED Fix + Complete Cache Reset');
+  console.log('検針アプリ: オフライン機能を準備中...');
   
   // 即座にアクティベート（古いSWを置き換え）
   self.skipWaiting();
@@ -62,23 +62,23 @@ self.addEventListener('install', (event) => {
       // Static assets cache
       caches.open(CACHE_NAME)
         .then((cache) => {
-          console.log('SW: 📦 静的アセットキャッシュ開始');
+          console.log('検針アプリ: 画面データを保存中...');
           return cache.addAll(CACHE_ASSETS);
         })
         .then(() => {
-          console.log('SW: ✅ 静的アセットキャッシュ完了');
+          console.log('検針アプリ: オフライン対応完了');
         })
         .catch(error => {
-          console.warn('SW: ⚠️ 静的アセットキャッシュ失敗（継続）:', error);
+          // 開発者診断メッセージを削除（ユーザビリティ重視）
         }),
       
       // Data cache initialization
       caches.open(DATA_CACHE_NAME)
         .then((cache) => {
-          console.log('SW: 🗄️ データキャッシュ初期化完了');
+          console.log('検針アプリ: データ保存準備完了');
         })
         .catch(error => {
-          console.warn('SW: ⚠️ データキャッシュ初期化失敗:', error);
+          // 開発者診断メッセージを削除（ユーザビリティ重視）
         })
     ])
   );
@@ -89,19 +89,19 @@ self.addEventListener('install', (event) => {
 
 // Activate event - clean up old caches with enhanced management
 self.addEventListener('activate', (event) => {
-  console.log('SW: 🔄 Activate event v20250831e - ファイルパス修正 + 旧ファイル構造削除');
+  console.log('検針アプリ: システム更新中...');
   
   event.waitUntil(
     Promise.all([
       // 強制的に古いキャッシュを削除
       caches.keys().then((cacheNames) => {
-        console.log('SW: 📋 既存キャッシュ一覧:', cacheNames);
+        // 開発者診断メッセージを削除（ユーザビリティ重視）
         const validCacheNames = [CACHE_NAME, DATA_CACHE_NAME];
         
         return Promise.all(
           cacheNames.map((cacheName) => {
             if (!validCacheNames.includes(cacheName) || LEGACY_CACHE_NAMES.includes(cacheName)) {
-              console.log('SW: 🗑️ 古いキャッシュ強制削除:', cacheName);
+              // 古いデータを削除中
               return caches.delete(cacheName);
             }
           })
@@ -110,10 +110,10 @@ self.addEventListener('activate', (event) => {
       
       // 全クライアント（ページ）を強制リロード
       self.clients.claim().then(() => {
-        console.log('SW: 🔄 全クライアント制御開始');
+        console.log('検針アプリ: 準備完了');
         return self.clients.matchAll();
       }).then((clients) => {
-        console.log('SW: 📱 アクティブクライアント数:', clients.length);
+        // 開発者診断メッセージを削除（ユーザビリティ重視）
         clients.forEach((client) => {
           console.log('SW: 🔄 クライアント更新通知:', client.url);
           client.postMessage({
@@ -279,7 +279,7 @@ async function handleGASAPIRequest(request) {
   const url = new URL(request.url);
   const cacheKey = generateAPICacheKey(url);
   
-  console.log('SW: 📡 GAS API Request:', url.pathname);
+  console.log('検針アプリ: データ取得中...');
   
   try {
     // Check for Light API calls and prioritize them
@@ -294,17 +294,17 @@ async function handleGASAPIRequest(request) {
         await cacheAPIResponse(cacheKey, networkResponse.clone());
       }
       
-      console.log(`SW: ✅ GAS API成功 (${isLightAPI ? 'Light' : '通常'}):`, url.pathname);
+      console.log('検針アプリ: データ取得完了');
       return networkResponse;
     }
     
   } catch (error) {
-    console.warn('SW: ⚠️ GAS APIネットワークエラー:', error.message);
+    // ネットワークエラー時は保存データを使用
     
     // Try to serve from cache for Light APIs
     const cachedResponse = await getCachedAPIResponse(cacheKey);
     if (cachedResponse) {
-      console.log('SW: 🗄️ キャッシュからGAS APIレスポンス:', url.pathname);
+      console.log('検針アプリ: 保存データを使用中');
       return cachedResponse;
     }
   }
