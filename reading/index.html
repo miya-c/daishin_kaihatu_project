@@ -497,6 +497,9 @@
       const [inputErrors, setInputErrors] = React.useState({});
       const [isNavigating, setIsNavigating] = React.useState(false);
       const [navigationMessage, setNavigationMessage] = React.useState('');
+      
+      // 入力データ変更検知用の状態
+      const [originalInputValues, setOriginalInputValues] = React.useState({});
 
       // 部屋間ナビゲーション用の新しいstate
       const [roomList, setRoomList] = React.useState([]);
@@ -793,6 +796,11 @@
             });
             
             setMeterReadings(mappedReadings);
+            
+            // DOM更新後に初期値を保存
+            setTimeout(() => {
+              saveOriginalInputValues();
+            }, 100);
           } else {
             setMeterReadings([]);
           }
@@ -922,7 +930,23 @@
         
         try {
           setIsNavigating(true);
-          setNavigationMessage('前の部屋に移動しています...');
+          
+          // 入力データの変更をチェックし、変更がある場合は自動保存
+          if (hasInputChanges()) {
+            setNavigationMessage('データを保存して前の部屋に移動中...');
+            console.log('[navigateToPrevRoom] 入力データ変更検知、自動保存を実行');
+            
+            try {
+              await handleUpdateReadings();
+              displayToast('データを保存しました');
+            } catch (saveError) {
+              console.error('[navigateToPrevRoom] 自動保存エラー:', saveError);
+              displayToast('データ保存に失敗しました。移動をキャンセルします。');
+              return;
+            }
+          } else {
+            setNavigationMessage('前の部屋に移動しています...');
+          }
           
           // O(1) で前の検針必要部屋を取得
           const prevRoomResult = findPrevReadingRequiredRoom();
@@ -949,7 +973,7 @@
           setIsNavigating(false);
           setNavigationMessage('');
         }
-      }, [hasPrevRoom, isNavigating, findPrevReadingRequiredRoom, currentRoomIndex, navigateToRoom, propertyId, setIsNavigating, setNavigationMessage, displayToast]);
+      }, [hasPrevRoom, isNavigating, findPrevReadingRequiredRoom, currentRoomIndex, navigateToRoom, propertyId, hasInputChanges, handleUpdateReadings, setIsNavigating, setNavigationMessage, displayToast]);
 
       const navigateToNextRoom = React.useCallback(async () => {
         console.log(`[navigateToNextRoom] 🔍 デバッグ: hasNextRoom=${hasNextRoom}, isNavigating=${isNavigating}, propertyId=${propertyId}`);
@@ -957,7 +981,23 @@
         
         try {
           setIsNavigating(true);
-          setNavigationMessage('次の部屋に移動しています...');
+          
+          // 入力データの変更をチェックし、変更がある場合は自動保存
+          if (hasInputChanges()) {
+            setNavigationMessage('データを保存して次の部屋に移動中...');
+            console.log('[navigateToNextRoom] 入力データ変更検知、自動保存を実行');
+            
+            try {
+              await handleUpdateReadings();
+              displayToast('データを保存しました');
+            } catch (saveError) {
+              console.error('[navigateToNextRoom] 自動保存エラー:', saveError);
+              displayToast('データ保存に失敗しました。移動をキャンセルします。');
+              return;
+            }
+          } else {
+            setNavigationMessage('次の部屋に移動しています...');
+          }
           
           // O(1) で次の検針必要部屋を取得
           const nextRoomResult = findNextReadingRequiredRoom();
@@ -984,7 +1024,7 @@
           setIsNavigating(false);
           setNavigationMessage('');
         }
-      }, [hasNextRoom, isNavigating, findNextReadingRequiredRoom, currentRoomIndex, navigateToRoom, propertyId, setIsNavigating, setNavigationMessage, displayToast]);
+      }, [hasNextRoom, isNavigating, findNextReadingRequiredRoom, currentRoomIndex, navigateToRoom, propertyId, hasInputChanges, handleUpdateReadings, setIsNavigating, setNavigationMessage, displayToast]);
 
       const navigateToRoom = React.useCallback(async (targetRoom, direction, currentPropertyId) => {
         console.log(`[navigateToRoom] 🔍 デバッグ: currentPropertyId=${currentPropertyId}, targetRoom=${JSON.stringify(targetRoom)}, direction=${direction}`);
@@ -1085,6 +1125,11 @@
               
               setMeterReadings(mappedReadings);
               setLoading(false);
+              
+              // DOM更新後に初期値を保存
+              setTimeout(() => {
+                saveOriginalInputValues();
+              }, 100);
               
               // バックグラウンドで最新データをチェック（非同期）
               setTimeout(() => {
@@ -1224,6 +1269,36 @@
           setToastMessage('');
         }, 3000);
       }, [setToastMessage, setShowToast]);
+
+      // 入力データ変更検知機能
+      const saveOriginalInputValues = React.useCallback(() => {
+        const inputs = document.querySelectorAll('input[data-date]');
+        const original = {};
+        inputs.forEach(input => {
+          const date = input.getAttribute('data-date');
+          original[date] = input.value || '';
+        });
+        setOriginalInputValues(original);
+        console.log('[meter_reading] 初期入力値を保存:', original);
+      }, []);
+
+      const hasInputChanges = React.useCallback(() => {
+        const inputs = document.querySelectorAll('input[data-date]');
+        let hasChanges = false;
+        
+        inputs.forEach(input => {
+          const date = input.getAttribute('data-date');
+          const currentValue = input.value || '';
+          const originalValue = originalInputValues[date] || '';
+          
+          if (currentValue !== originalValue) {
+            hasChanges = true;
+          }
+        });
+        
+        console.log('[meter_reading] 入力変更確認:', hasChanges);
+        return hasChanges;
+      }, [originalInputValues]);
 
       const updateSessionStorageCache = React.useCallback(async (propertyId, roomId, maxRetries = 3) => {
         const currentGasUrl = gasWebAppUrl || sessionStorage.getItem('gasWebAppUrl');
@@ -1416,6 +1491,11 @@
               // データ再読み込み失敗時はユーザーに軽く通知
               displayToast('データが更新されました。最新情報を確認するにはページを再読み込みしてください。');
             }
+            
+            // 保存成功後に初期値を更新（変更検知をリセット）
+            setTimeout(() => {
+              saveOriginalInputValues();
+            }, 200);
           } else {
             throw new Error(result.error || '指示数の更新に失敗しました。');
           }
@@ -1425,7 +1505,7 @@
         } finally {
           setUpdating(false);
         }
-      }, [propertyId, roomId, gasWebAppUrl, loadMeterReadings, updateSessionStorageCache, setInputErrors, setUpdating, displayToast]);
+      }, [propertyId, roomId, gasWebAppUrl, loadMeterReadings, updateSessionStorageCache, saveOriginalInputValues, setInputErrors, setUpdating, displayToast]);
 
       // 初期ローディング
       if (loading) {
