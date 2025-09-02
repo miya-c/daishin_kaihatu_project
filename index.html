@@ -413,17 +413,21 @@
             .then(function(registration) {
               console.log('PWA: Service Worker v20250829a 登録成功', registration);
               
-              // Service Workerの更新をチェック
+              // Service Workerの更新をチェック - 自動更新対応
               registration.addEventListener('updatefound', () => {
                 try {
-                  console.log('PWA: 新しいService Worker検出');
+                  console.log('PWA: 新しいService Worker検出 - 自動更新開始');
                   const newWorker = registration.installing;
                   newWorker.addEventListener('statechange', () => {
                     if (newWorker.state === 'activated') {
-                      console.log('PWA: 新しいService Worker有効化 - ページリロード推奨');
-                      if (confirm('アプリが更新されました。変更を反映するためにページを再読み込みしますか？')) {
-                        window.location.reload();
-                      }
+                      console.log('PWA: 新しいService Worker有効化 - 自動リロード実行');
+                      // 確認ダイアログを削除し、即座に自動リロード
+                      console.log('🔄 自動更新：アプリが更新されました。新バージョンを適用します。');
+                      
+                      // 1秒の遅延を設けてログが表示されるのを確認してからリロード
+                      setTimeout(() => {
+                        window.location.reload(true); // 強制リロード
+                      }, 1000);
                     }
                   });
                 } catch (error) {
@@ -446,11 +450,13 @@
             console.log('PWA: Service Workerメッセージ受信:', event.data);
             
             if (event.data && event.data.type === 'CACHE_UPDATED') {
-              console.log('PWA: キャッシュ更新通知');
-              // 強制リロードまたは通知表示
-              if (confirm(event.data.message)) {
-                window.location.reload();
-              }
+              console.log('PWA: キャッシュ更新通知 - 自動リロード実行');
+              console.log('🔄 自動更新：', event.data.message);
+              
+              // 確認ダイアログを削除し、即座に自動リロード
+              setTimeout(() => {
+                window.location.reload(true); // 強制リロード
+              }, 500);
             }
           } catch (error) {
             console.error('❌ [Index] Service Workerメッセージ処理エラー:', error);

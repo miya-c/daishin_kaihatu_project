@@ -1,6 +1,6 @@
 // Service Worker for PWA - No-Cache Strategy for High Performance
-// Version 20250902 - Cache-Free High Speed Architecture
-const CACHE_NAME = 'meter-reading-app-v13-no-cache-fast';
+// Version 20250902a - Auto-Update Feature Added
+const CACHE_NAME = 'meter-reading-app-v13-auto-update';
 const DATA_CACHE_NAME = 'meter-reading-data-disabled'; // データキャッシュ無効化
 
 // Static assets for offline support (Cloudflare Pages compatible paths)
@@ -31,6 +31,7 @@ const CACHE_STRATEGIES = {
 
 // Legacy cache names to be deleted - ALL CACHE VERSIONS (Network-Only戦略)
 const LEGACY_CACHE_NAMES = [
+  'meter-reading-app-v13-no-cache-fast',   // 前バージョン（自動更新前）
   'meter-reading-app-v12-err-failed-fix',  // 前バージョン
   'meter-reading-app-v11-room-path-fix',   
   'meter-reading-app-v10-function-fixed',  
@@ -118,10 +119,10 @@ self.addEventListener('activate', (event) => {
       }).then((clients) => {
         // 開発者診断メッセージを削除（ユーザビリティ重視）
         clients.forEach((client) => {
-          console.log('SW: 🔄 クライアント更新通知:', client.url);
+          console.log('SW: 🔄 クライアント自動更新通知:', client.url);
           client.postMessage({
             type: 'CACHE_UPDATED',
-            message: 'キャッシュが更新されました。ページを再読み込みしてください。'
+            message: 'アプリが新しいバージョンに自動更新されました'
           });
         });
       }),
