@@ -1011,3 +1011,85 @@ body {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
+
+/* ✅ 新しいレイアウト用CSS: 検針履歴ヘッダーとナビゲーションボタン */
+.reading-history-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--mantine-spacing-md);
+  gap: 16px;
+}
+
+/* 大きなナビゲーションボタン */
+.nav-button-large {
+  padding: 12px 20px;
+  font-size: 16px;
+  min-width: 100px;
+  font-weight: 600;
+  border-radius: 8px;
+  transition: all 0.15s ease;
+  position: relative;
+  background-color: #007bff;
+  color: white;
+  border: 1px solid #007bff;
+  cursor: pointer;
+}
+
+.nav-button-large:hover:not(.disabled) {
+  background-color: #0056b3;
+  border-color: #0056b3;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.nav-button-large:active:not(.disabled) {
+  transform: translateY(0px);
+  transition: all 0.1s ease;
+}
+
+.nav-button-large.disabled {
+  background-color: #6c757d;
+  border-color: #6c757d;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.nav-button-large.disabled:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+  .reading-history-header {
+    gap: 8px;
+  }
+  
+  .nav-button-large {
+    padding: 10px 16px;
+    font-size: 14px;
+    min-width: 80px;
+  }
+}
+
+@media (max-width: 480px) {
+  .reading-history-header {
+    flex-direction: column;
+    gap: 12px;
+    align-items: center;
+  }
+  
+  .nav-button-large {
+    padding: 12px 20px;
+    font-size: 16px;
+    min-width: 120px;
+    width: 100%;
+    max-width: 200px;
+  }
+  
+  .reading-history-header h3 {
+    order: -1;
+    margin-bottom: 8px;
+  }
+}

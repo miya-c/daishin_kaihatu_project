@@ -946,19 +946,20 @@
               console.log(`[meter_reading] 指示数履歴取得: 前回=${previousReading}, 前々回=${previousPreviousReading}, 前々々回=${threeTimesPreviousReading}`);
             }
 
-            // 警告フラグを計算（指示数ベース）
-            const currentReadingValue = parseFloat(currentValue) || 0;
-            const warningResult = calculateWarningFlag(currentReadingValue, previousReading, previousPreviousReading, threeTimesPreviousReading);
+            // ✅ 修正: 画面表示中の警告フラグ値を使用（再計算せずに表示値を保持）
+            const displayedWarningFlag = currentReadingData ? currentReadingData.warningFlag : '正常';
             
-            // ✅ 修正: 警告フラグのみ送信、標準偏差は送信しない
+            console.log(`[保存時警告フラグ] 日付=${date}, 表示値=${displayedWarningFlag}, 指示数=${currentValue}`);
+            
+            // ✅ 修正: 表示されている警告フラグ値をそのまま送信（再計算しない）
             updatedReadings.push({
               date: inspectionDate, // JST正規化された日付
               currentReading: currentValue,
-              warningFlag: warningResult.warningFlag || '正常'
-              // standardDeviation: warningResult.standardDeviation || 0  ← 削除
+              warningFlag: displayedWarningFlag
+              // 再計算を削除し、表示値を優先
             });
             
-            console.log(`[meter_reading] 更新データ追加: 日付=${inspectionDate}, 指示数=${currentValue}, 警告フラグ=${warningResult.warningFlag}`);
+            console.log(`[meter_reading] 更新データ追加: 日付=${inspectionDate}, 指示数=${currentValue}, 警告フラグ=${displayedWarningFlag}`);
           }
         });
 
@@ -1105,7 +1106,28 @@
             <div className="mantine-stack">              <div className="property-info-card">
                 <h2 className="property-name">{String(propertyName || '物件名未設定')}</h2>
                 <p className="room-info">部屋: {String(roomName || '部屋名未設定')}</p>
-              </div><div className="mantine-paper reading-history-container" style={{padding: 'var(--mantine-spacing-xs)', margin: '0'}}>                <h3 className="mantine-subtitle desktop-only" style={{ textAlign: 'center', marginBottom: 'var(--mantine-spacing-md)' }}>検針履歴</h3>
+              </div><div className="mantine-paper reading-history-container" style={{padding: 'var(--mantine-spacing-xs)', margin: '0'}}>                
+                <div className="reading-history-header">
+                  <button 
+                    className="nav-button nav-button-large prev-room-btn disabled"
+                    disabled={true}
+                    aria-label="前の部屋に移動"
+                    title="この画面では部屋移動は利用できません"
+                  >
+                    ← 前の部屋
+                  </button>
+                  
+                  <h3 className="mantine-subtitle desktop-only" style={{ textAlign: 'center', margin: '0' }}>検針履歴</h3>
+                  
+                  <button 
+                    className="nav-button nav-button-large next-room-btn disabled"
+                    disabled={true}
+                    aria-label="次の部屋に移動"
+                    title="この画面では部屋移動は利用できません"
+                  >
+                    次の部屋 →
+                  </button>
+                </div>
 
                 {Array.isArray(meterReadings) && meterReadings.length > 0 && 
                  meterReadings.some(reading => reading.previousReading && reading.previousReading !== '' && reading.previousReading !== 0) ? (
