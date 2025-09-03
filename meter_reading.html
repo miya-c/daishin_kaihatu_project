@@ -631,39 +631,33 @@
                 _original: rawReading
               };
               
-              // フロントエンドでも警告フラグを再計算（表示用）
+              // ✅ 修正: フロントエンド警告フラグ計算を常に優先（バックエンド値を無視）
               if (mapped.currentReading && mapped.previousReading) {
-                const warningResult = calculateUsageWithWarning(
-                  mapped.currentReading,
-                  mapped.previousReading,
-                  mapped.previousPreviousReading,
-                  mapped.threeTimesPrevious
+                const warningResult = calculateWarningFlag(
+                  parseFloat(mapped.currentReading),
+                  parseFloat(mapped.previousReading),
+                  parseFloat(mapped.previousPreviousReading),
+                  parseFloat(mapped.threeTimesPrevious)
                 );
                 
-                // バックエンドの値を優先し、なければフロントエンドで計算した値を使用
-                if (!mapped.warningFlag || mapped.warningFlag === '' || mapped.warningFlag === '正常') {
-                  mapped.warningFlag = warningResult.warningFlag;
-                }
-                if (!mapped.standardDeviation || mapped.standardDeviation === '') {
-                  mapped.standardDeviation = warningResult.standardDeviation;
-                }
+                // フロントエンド計算値を常に使用（バックエンド値は無視）
+                mapped.warningFlag = warningResult.warningFlag;
+                mapped.standardDeviation = warningResult.standardDeviation;
+                console.log(`[警告フラグ修正] フロントエンド計算値を適用: ${warningResult.warningFlag}`);
               } else {
                 // 今回指示数が未入力の場合、履歴データから閾値を計算して表示
                 if (!mapped.currentReading || mapped.currentReading === '') {
                   const thresholdResult = calculateWarningFlag(
                     null, // 今回指示数は未入力
-                    mapped.previousReading,
-                    mapped.previousPreviousReading,
-                    mapped.threeTimesPrevious
+                    parseFloat(mapped.previousReading),
+                    parseFloat(mapped.previousPreviousReading),
+                    parseFloat(mapped.threeTimesPrevious)
                   );
                   
-                  // 閾値情報を警告フラグに設定
-                  if (!mapped.warningFlag || mapped.warningFlag === '' || mapped.warningFlag === '正常') {
-                    mapped.warningFlag = thresholdResult.warningFlag;
-                  }
-                  if (!mapped.standardDeviation || mapped.standardDeviation === '') {
-                    mapped.standardDeviation = thresholdResult.standardDeviation;
-                  }
+                  // フロントエンド計算値を常に使用（バックエンド値は無視）
+                  mapped.warningFlag = thresholdResult.warningFlag;
+                  mapped.standardDeviation = thresholdResult.standardDeviation;
+                  console.log(`[警告フラグ修正] 未入力時フロントエンド計算値を適用: ${thresholdResult.warningFlag}`);
                 }
               }
               
@@ -1540,38 +1534,17 @@
       }
     };
 
-    // 使用量計算と警告フラグ判定を含む関数（指示数ベース警告フラグ）
-    const calculateUsageWithWarning = (currentReading, previousReading, previousPreviousReading, threeTimesPreviousReading) => {
+    // ✅ 修正: 使用量計算のみの関数（警告フラグはcalculateWarningFlagで統一）
+    const calculateUsageOnly = (currentReading, previousReading) => {
       const current = parseFloat(currentReading) || 0;
       const previous = parseFloat(previousReading) || 0;
       
       if (current === 0 || isNaN(current) || !currentReading || currentReading === '') {
-        // 今回指示数が未入力の場合、履歴データから閾値を計算
-        const thresholdResult = calculateWarningFlag(null, previous, parseFloat(previousPreviousReading) || 0, parseFloat(threeTimesPreviousReading) || 0);
-        return { 
-          usage: '-', 
-          warningFlag: thresholdResult.warningFlag,
-          standardDeviation: thresholdResult.standardDeviation 
-        };
+        return '-';
       }
       
       const usage = previous > 0 ? current - previous : current;
-      
-      if (usage < 0) {
-        return { usage: `${usage}㎥`, warningFlag: '要確認', standardDeviation: 0 };
-      }
-      
-      // 警告フラグを計算（指示数ベース）
-      const prevPrevious = parseFloat(previousPreviousReading) || 0;
-      const threePrevious = parseFloat(threeTimesPreviousReading) || 0;
-      
-      const warningResult = calculateWarningFlag(current, previous, prevPrevious, threePrevious);
-      
-      return {
-        usage: `${usage}㎥`,
-        warningFlag: warningResult.warningFlag,
-        standardDeviation: warningResult.standardDeviation
-      };
+      return `${usage}㎥`;
     };
     
     // 状態表示の拡張
