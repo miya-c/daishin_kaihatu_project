@@ -986,7 +986,9 @@
           hasWarningFlag: !!r.warningFlag
           // hasStandardDeviation: !!r.standardDeviation  ← 削除
         })));
+        // 🚀 性能最適化: 即座にボタン状態を更新して視覚フィードバック強化
         setUpdating(true);
+        console.log('🚀 [性能最適化] 並列処理開始: GAS API + キャッシュ更新');
         
         try {
           const currentGasUrl = gasWebAppUrl || sessionStorage.getItem('gasWebAppUrl');
@@ -1001,38 +1003,46 @@
           const requestUrl = `${currentGasUrl}?${params}`;
           console.log('[meter_reading] 更新リクエスト送信 (GET方式):', requestUrl);
           
-          const response = await fetch(requestUrl, {
-            method: 'GET'
-          });
+          // 🎯 並列処理最適化: GAS API呼び出しとキャッシュ更新を同時実行
+          const [response, cacheUpdateResult] = await Promise.allSettled([
+            fetch(requestUrl, { method: 'GET' }),
+            updateSessionStorageCache(propertyId, roomId)
+          ]);
 
-          if (!response.ok) {
-            throw new Error('ネットワークの応答が正しくありませんでした。ステータス: ' + response.status);
+          // GAS API結果の処理
+          if (response.status === 'rejected') {
+            throw new Error('ネットワークエラー: ' + response.reason?.message);
           }
           
-          const result = await response.json();
+          if (!response.value.ok) {
+            throw new Error('ネットワークの応答が正しくありませんでした。ステータス: ' + response.value.status);
+          }
+          
+          const result = await response.value.json();
           console.log('[meter_reading] 更新レスポンス:', result);
           
+          // キャッシュ更新の結果をログ出力（エラーでも処理継続）
+          if (cacheUpdateResult.status === 'rejected') {
+            console.warn('[性能最適化] キャッシュ更新失敗:', cacheUpdateResult.reason?.message);
+          } else {
+            console.log('✅ [性能最適化] キャッシュ更新成功');
+          }
+          
           if (result.success) {
-            // メイン成功処理を優先
+            // メイン成功処理
             displayToast('検針データが正常に更新されました');
             setInputErrors({});
             
-            // バックグラウンドでキャッシュ更新（エラー時も継続）
-            try {
-              await updateSessionStorageCache(propertyId, roomId);
-              console.log('[meter_reading] ✅ キャッシュ更新成功');
-            } catch (cacheError) {
-              console.warn('[meter_reading] ⚠️ キャッシュ更新失敗（継続）:', cacheError.message);
-            }
+            // データリロードを並列で実行（レスポンス改善）
+            const [dataReloadResult] = await Promise.allSettled([
+              loadMeterReadings(propertyId, roomId)
+            ]);
             
-            // データ再読み込み（エラー時も継続）
-            try {
-              await loadMeterReadings(propertyId, roomId);
-              console.log('[meter_reading] ✅ データ再読み込み成功');
-            } catch (loadError) {
-              console.warn('[meter_reading] ⚠️ データ再読み込み失敗（継続）:', loadError.message);
-              // データ再読み込み失敗時はユーザーに軽く通知
+            if (dataReloadResult.status === 'rejected') {
+              console.warn('[性能最適化] データ再読み込み失敗:', dataReloadResult.reason?.message);
               displayToast('データが更新されました。最新情報を確認するにはページを再読み込みしてください。');
+            } else {
+              console.log('✅ [性能最適化] データリロード完了');
             }
           } else {
             throw new Error(result.error || '指示数の更新に失敗しました。');

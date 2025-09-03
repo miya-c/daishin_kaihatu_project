@@ -133,6 +133,19 @@ body {
 
 .mantine-button.variant-filled:hover {
   background-color: var(--mantine-color-blue-7);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(34, 139, 230, 0.3);
+}
+
+/* 🚀 性能最適化: ボタンクリック時の視覚フィードバック強化 */
+.mantine-button.variant-filled:active {
+  transform: translateY(0px);
+  transition: all 0.1s ease;
+}
+
+.mantine-button.variant-filled:focus {
+  outline: 2px solid var(--mantine-color-blue-light);
+  outline-offset: 2px;
 }
 
 .mantine-button.variant-outline {
@@ -147,6 +160,61 @@ body {
 
 .mantine-button:disabled {
   opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* 🚀 性能最適化: FABボタン（保存ボタン）の視覚フィードバック強化 */
+.fab-button {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fab-button:hover {
+  transform: scale(1.05) translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 123, 255, 0.4);
+}
+
+.fab-button:active {
+  transform: scale(0.98) translateY(-1px);
+  transition: all 0.1s ease;
+}
+
+.fab-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.fab-button:hover::before {
+  opacity: 1;
+}
+
+/* 🚀 性能最適化: ナビゲーションボタンの視覚フィードバック強化 */
+.nav-button {
+  transition: all 0.15s ease;
+  position: relative;
+}
+
+.nav-button:hover:not(.disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.nav-button:active:not(.disabled) {
+  transform: translateY(0px);
+  transition: all 0.1s ease;
+}
+
+.nav-button.disabled {
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
