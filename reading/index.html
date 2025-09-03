@@ -1619,7 +1619,7 @@
                     ← 前の部屋
                   </button>
                   
-                  <h3 className="mantine-subtitle desktop-only" style={{ textAlign: 'center', margin: '0' }}>検針履歴</h3>
+                  <h3 className="mantine-subtitle desktop-only" style={{ textAlign: 'center', margin: '0', fontSize: 'clamp(1.2rem, 3vw, 1.6rem)', flexShrink: 0, whiteSpace: 'nowrap' }}>検針データ</h3>
                   
                   <button 
                     onClick={navigateToNextRoom} 
@@ -1792,6 +1792,29 @@
                       })}
                     </tbody>
                   </table>
+                  
+                  {/* テーブル下部ナビゲーション */}
+                  <div className="reading-history-footer">
+                    <button 
+                      onClick={navigateToPrevRoom} 
+                      className={`nav-button nav-button-footer prev-room-btn ${!hasPrevRoom ? 'disabled' : ''}`}
+                      disabled={!hasPrevRoom || isNavigating}
+                      aria-label="前の部屋に移動"
+                      title={hasPrevRoom ? '前の部屋' : '最初の部屋です'}
+                    >
+                      ← 前の部屋へ
+                    </button>
+                    
+                    <button 
+                      onClick={navigateToNextRoom} 
+                      className={`nav-button nav-button-footer next-room-btn ${!hasNextRoom ? 'disabled' : ''}`}
+                      disabled={!hasNextRoom || isNavigating}
+                      aria-label="次の部屋に移動"
+                      title={hasNextRoom ? '次の部屋' : '最後の部屋です'}
+                    >
+                      次の部屋へ →
+                    </button>
+                  </div>
                 ) : (
                   <div className="mantine-stack">
                     <div className="mantine-alert info">
