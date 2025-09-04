@@ -946,10 +946,19 @@
               console.log(`[meter_reading] 指示数履歴取得: 前回=${previousReading}, 前々回=${previousPreviousReading}, 前々々回=${threeTimesPreviousReading}`);
             }
 
-            // ✅ 修正: 画面表示中の警告フラグ値を使用（再計算せずに表示値を保持）
-            const displayedWarningFlag = currentReadingData ? currentReadingData.warningFlag : '正常';
+            // 🔧 バグ修正: DOM要素から現在表示中の警告フラグ値を直接取得
+            // currentReadingDataは前の部屋のデータを参照する可能性があるためDOMから取得
+            const statusCell = document.querySelector(`tr:has(input[data-date="${date}"]) td[data-label="状態"] span`);
+            const displayedWarningFlag = statusCell ? statusCell.textContent.trim() : '正常';
             
-            console.log(`[保存時警告フラグ] 日付=${date}, 表示値=${displayedWarningFlag}, 指示数=${currentValue}`);
+            console.log(`[保存時警告フラグ修正] 日付=${date}, DOM表示値=${displayedWarningFlag}, 指示数=${currentValue}, 部屋=${roomId}`);
+            
+            // 🔍 データ整合性検証ログ (バグ検出用)
+            if (currentReadingData && currentReadingData.warningFlag !== displayedWarningFlag) {
+              console.warn(`⚠️ [データ整合性警告] 部屋=${roomId}, 日付=${date}`);
+              console.warn(`   ステート値: ${currentReadingData.warningFlag} vs DOM値: ${displayedWarningFlag}`);
+              console.warn(`   → 前の部屋のデータ混入の可能性を検出`);
+            }
             
             // ✅ 修正: 表示されている警告フラグ値をそのまま送信（再計算しない）
             updatedReadings.push({
