@@ -1634,6 +1634,7 @@
 
                 {Array.isArray(meterReadings) && meterReadings.length > 0 && 
                  meterReadings.some(reading => reading.previousReading && reading.previousReading !== '' && reading.previousReading !== 0) ? (
+                  <>
                   <table className="mantine-table">
                     <thead style={{ display: 'none' }}>
                       <tr>
@@ -1814,6 +1815,7 @@
                       次の部屋へ →
                     </button>
                   </div>
+                  </>
                 ) : (
                   <div className="mantine-stack">
                     <div className="mantine-alert info">
