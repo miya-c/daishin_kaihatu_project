@@ -1066,13 +1066,10 @@
         console.log(`[navigateToRoom] 🔍 デバッグ: currentPropertyId=${currentPropertyId}, targetRoom=${JSON.stringify(targetRoom)}, direction=${direction}`);
         
         try {
-          
-          // 現在のデータを保存（セッションストレージキャッシュ更新）
-          try {
-            await updateSessionStorageCache(currentPropertyId, roomId);
-          } catch (cacheError) {
-            console.warn('[room_navigation] データ保存エラー（継続）:', cacheError);
-          }
+          // 🚀 最適化: キャッシュ更新を非同期バックグラウンド実行（ノンブロッキング）
+          updateSessionStorageCache(currentPropertyId, roomId).catch(cacheError => 
+            console.warn('[room_navigation] バックグラウンドキャッシュ更新エラー:', cacheError)
+          );
 
           // 新しい部屋の情報を設定
           const newRoomId = targetRoom.roomId || targetRoom.id;
@@ -1116,8 +1113,28 @@
           setHasPrevRoom(newReadingIndex > 0);
           setHasNextRoom(newReadingIndex >= 0 && newReadingIndex < readingRequiredIndexes.length - 1);
           
-          // 新しい部屋のデータを読み込み（SPA方式）
-          await loadMeterReadingsForRoom(currentPropertyId, newRoomId);
+          // 🚀 最適化: スマートローディング（短時間移動時は非表示）
+          const loadStartTime = performance.now();
+          let showLoading = false;
+          
+          // 500ms後にローディングを表示（短時間移動時は非表示）
+          const loadingTimeout = setTimeout(() => {
+            showLoading = true;
+            setLoading(true);
+          }, 500);
+
+          try {
+            // 新しい部屋のデータを読み込み（直接API呼び出し）
+            await loadMeterReadingsForRoom(currentPropertyId, newRoomId);
+          } finally {
+            clearTimeout(loadingTimeout);
+            if (showLoading) {
+              setLoading(false);
+            }
+            
+            const loadTime = performance.now() - loadStartTime;
+            console.log(`🚀 [部屋移動最適化] 移動時間: ${loadTime.toFixed(0)}ms${showLoading ? ' (ローディング表示)' : ' (瞬間移動)'}`);
+          }
           
         } catch (error) {
           console.error('[room_navigation] 部屋移動エラー:', error);
@@ -1125,28 +1142,74 @@
         }
       }, [roomId, propertyName, roomList, readingRequiredIndexes, findCurrentReadingIndex, loadMeterReadingsForRoom, updateSessionStorageCache, setRoomId, setRoomName, setCurrentRoomIndex, setCurrentReadingIndex, setHasPrevRoom, setHasNextRoom, setUsageStates]);
 
-      // SPA方式での部屋データ読み込み関数（React最適化）
+      // 🚀 高速化: 直接API呼び出しによるシンプルな部屋データ読み込み
       const loadMeterReadingsForRoom = React.useCallback(async (propId, rId) => {
+        const currentGasUrl = gasWebAppUrl || sessionStorage.getItem('gasWebAppUrl');
+        if (!currentGasUrl) {
+          throw new Error('gasWebAppURLが設定されていません');
+        }
+
         try {
-          setLoading(true);
-          setError(null);
+          // 🔧 最適化: 直接API呼び出しで二重処理を排除
+          const fetchUrl = `${currentGasUrl}?action=getMeterReadings&propertyId=${propId}&roomId=${rId}`;
+          console.log('[room_navigation_spa] 🚀 直接API呼び出し:', fetchUrl);
           
-          // 部屋移動時に前の部屋の使用量表示をクリア
-          setUsageStates({});
-          console.log('[room_navigation_spa] 🧹 使用量ステートをクリア');
+          const response = await fetch(fetchUrl);
+          if (!response.ok) {
+            throw new Error(`API応答エラー: ${response.status}`);
+          }
           
-          // Network-Only高速モード: APIから直接データを取得
-          console.log('[room_navigation_spa] 🚀 キャッシュなし高速直接取得モード');
+          const result = await response.json();
+          if (!result.success) {
+            throw new Error(result.error || '検針データの取得に失敗しました');
+          }
+
+          // データ処理（loadMeterReadingsと同じロジック）
+          const data = result.data;
+          setPropertyName(data.propertyName || '物件名未設定');
+          setRoomName(data.roomName || '部屋名未設定');
+
+          if (data.readings && Array.isArray(data.readings) && data.readings.length > 0) {
+            const mappedReadings = data.readings.map((rawReading, index) => {
+              const mapped = {
+                date: rawReading.date || rawReading['検針年月'] || '',
+                currentReading: rawReading.currentReading || rawReading['今回指示数'] || '',
+                previousReading: rawReading.previousReading || rawReading['前回指示数'] || '',
+                previousPreviousReading: rawReading.previousPreviousReading || rawReading['前々回指示数'] || '',
+                threeTimesPrevious: rawReading.threeTimesPrevious || rawReading['前々々回指示数'] || '',
+                warningFlag: rawReading.warningFlag || rawReading['警告フラグ'] || '',
+                standardDeviation: rawReading.standardDeviation || rawReading['標準偏差値'] || '',
+                status: rawReading.status || rawReading['ステータス'] || '',
+                _original: rawReading
+              };
+
+              if (!mapped.warningFlag) {
+                const warningResult = calculateWarningFlag(
+                  parseFloat(mapped.currentReading) || 0,
+                  parseFloat(mapped.previousReading) || 0,
+                  parseFloat(mapped.previousPreviousReading) || 0,
+                  parseFloat(mapped.threeTimesPrevious) || 0
+                );
+                mapped.warningFlag = warningResult.warningFlag;
+                mapped.standardDeviation = warningResult.standardDeviation;
+              }
+              return mapped;
+            });
+            
+            setUsageStates({});
+            setMeterReadings(mappedReadings);
+          } else {
+            setUsageStates({});
+            setMeterReadings([]);
+          }
           
-          // 直接APIから最新データを取得
-          await loadMeterReadings(propId, rId);
+          console.log('✅ [room_navigation_spa] 直接API取得完了');
           
         } catch (error) {
-          console.error('[room_navigation_spa] データ読み込みエラー:', error);
-          setError('部屋データの読み込みに失敗しました: ' + error.message);
-          setLoading(false);
+          console.error('[room_navigation_spa] エラー:', error);
+          throw error;
         }
-      }, [loadMeterReadings, setMeterReadings, setLoading, setError, setUsageStates]);
+      }, [gasWebAppUrl, calculateWarningFlag, setPropertyName, setRoomName, setUsageStates, setMeterReadings]);
 
       // LoadingOverlayコンポーネント - バニラJavaScript版
       function createLoadingOverlay(message) {

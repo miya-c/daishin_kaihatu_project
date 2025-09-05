@@ -512,6 +512,16 @@
           throw new Error('gasWebAppURLが設定されていません。物件選択画面から再度アクセスしてください。');
         }
 
+        // 🚀 最適化: スマートローディング（短時間移動時は非表示）
+        const loadStartTime = performance.now();
+        let showLoading = false;
+        
+        // 300ms後にローディングを表示（高速レスポンス時は非表示）
+        const loadingTimeout = setTimeout(() => {
+          showLoading = true;
+          setLoading(true);
+        }, 300);
+
         for (let attempt = 1; attempt <= maxRetries; attempt++) {
           try {
             const fetchUrl = `${currentGasUrl}?action=getMeterReadings&propertyId=${propId}&roomId=${rId}`;
@@ -675,7 +685,14 @@
             console.log('[meter_reading] 検針データが空です');
             setMeterReadings([]);
           }
-          setLoading(false);
+          // 🚀 最適化: スマートローディング終了処理
+          clearTimeout(loadingTimeout);
+          if (showLoading) {
+            setLoading(false);
+          }
+          
+          const loadTime = performance.now() - loadStartTime;
+          console.log(`🚀 [データ読み込み最適化] 読み込み時間: ${loadTime.toFixed(0)}ms${showLoading ? ' (ローディング表示)' : ' (瞬間表示)'}`);
           return; // 成功時はリトライループを終了
           
         } catch (error) {
@@ -694,7 +711,12 @@
             }
             
             setError(userMessage + '\n\n問題が継続する場合は、管理者にお問い合わせください。');
-            setLoading(false);
+            
+            // エラー時もスマートローディング終了処理
+            clearTimeout(loadingTimeout);
+            if (showLoading) {
+              setLoading(false);
+            }
             return;
           }
           console.warn(`[meter_reading] ⚠️ 試行${attempt}失敗, 次回リトライします:`, error.message);

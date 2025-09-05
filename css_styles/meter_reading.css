@@ -47,6 +47,9 @@ body {
   color: var(--mantine-color-gray-7);
   background-color: var(--app-bg-color);
   font-size: 24px; /* 20px → 24px に増加 老眼対応 */
+  
+  /* 🚀 高速化: スムーストランジション効果 */
+  transition: opacity 0.2s ease-in-out;
 }
 
 #root {
@@ -272,6 +275,9 @@ body {
   width: 100%;
   border-collapse: collapse;
   border: 1px solid var(--mantine-color-gray-3);
+  
+  /* 🚀 高速化: テーブルのスムーストランジション */
+  transition: opacity 0.3s ease-in-out, transform 0.2s ease-out;
 }
 
 .mantine-table th,
