@@ -1164,13 +1164,51 @@
             throw new Error(result.error || '検針データの取得に失敗しました');
           }
 
-          // データ処理（loadMeterReadingsと同じロジック）
+          // 🔧 修正: APIレスポンス形式に対応したデータ抽出
           const data = result.data;
-          setPropertyName(data.propertyName || '物件名未設定');
-          setRoomName(data.roomName || '部屋名未設定');
+          console.log('[room_navigation_spa] 📊 APIレスポンス詳細:', data);
+          
+          // レスポンス形式チェックとデータ抽出
+          let propertyName, roomName, readings;
+          
+          if (data.property && data.rooms) {
+            // 新形式: {property: {...}, rooms: [...]}
+            propertyName = data.property.propertyName || data.property.name || '物件名未設定';
+            
+            // roomId に一致する部屋の検針データを抽出
+            const targetRoom = data.rooms.find(room => 
+              (room.id === rId || room.roomId === rId || room['部屋ID'] === rId)
+            );
+            
+            if (targetRoom) {
+              roomName = targetRoom.name || targetRoom.roomName || targetRoom['部屋名'] || '部屋名未設定';
+              // 部屋の検針データを抽出（readings配列または直接のデータ）
+              readings = targetRoom.readings || (targetRoom.date ? [targetRoom] : []);
+              console.log('[room_navigation_spa] 🎯 対象部屋発見:', {roomName, readingsCount: readings.length});
+            } else {
+              console.error('[room_navigation_spa] ❌ 対象部屋が見つかりません:', {
+                requestedRoomId: rId,
+                availableRooms: data.rooms.map(r => ({id: r.id, name: r.name}))
+              });
+              throw new Error(`部屋ID "${rId}" の検針データが見つかりません`);
+            }
+          } else if (data.readings) {
+            // 旧形式: {propertyName, roomName, readings: [...]}
+            propertyName = data.propertyName || '物件名未設定';
+            roomName = data.roomName || '部屋名未設定';
+            readings = data.readings;
+          } else {
+            console.warn('[room_navigation_spa] ⚠️ 予期しないレスポンス形式:', data);
+            propertyName = '物件名未設定';
+            roomName = '部屋名未設定';
+            readings = [];
+          }
 
-          if (data.readings && Array.isArray(data.readings) && data.readings.length > 0) {
-            const mappedReadings = data.readings.map((rawReading, index) => {
+          setPropertyName(propertyName);
+          setRoomName(roomName);
+
+          if (readings && Array.isArray(readings) && readings.length > 0) {
+            const mappedReadings = readings.map((rawReading, index) => {
               const mapped = {
                 date: rawReading.date || rawReading['検針年月'] || '',
                 currentReading: rawReading.currentReading || rawReading['今回指示数'] || '',
@@ -1199,11 +1237,20 @@
             setUsageStates({});
             setMeterReadings(mappedReadings);
           } else {
+            console.warn('[room_navigation_spa] ⚠️ 検針データが見つかりません:', {
+              propertyName,
+              roomName,
+              readingsData: readings
+            });
             setUsageStates({});
             setMeterReadings([]);
           }
           
-          console.log('✅ [room_navigation_spa] 直接API取得完了');
+          console.log('✅ [room_navigation_spa] 直接API取得完了:', {
+            propertyName,
+            roomName,
+            readingsCount: readings?.length || 0
+          });
           
         } catch (error) {
           console.error('[room_navigation_spa] エラー:', error);
