@@ -1038,8 +1038,9 @@
           if (readings && Array.isArray(readings) && readings.length > 0) {
             const mappedReadings = readings.map((rawReading, index) => {
               // 🔧 修正: データマッピング強化 - より多くのフィールドパターンに対応
+              // 🔧 修正: 日付フィールドの正しい初期化
               const mapped = {
-                date: rawReading.date || rawReading['検針年月'] || rawReading['検針日時'] || rawReading['記録日'] || '',
+                date: rawReading.date || rawReading['検針年月'] || rawReading['検針日時'] || rawReading['記録日'] || getCurrentJSTDateString(),
                 currentReading: rawReading.currentReading || rawReading['今回指示数'] || rawReading['今回の指示数'] || rawReading['今回指示数（水道）'] || rawReading['指示数'] || '',
                 previousReading: rawReading.previousReading || rawReading['前回指示数'] || rawReading['前回'] || '',
                 previousPreviousReading: rawReading.previousPreviousReading || rawReading['前々回指示数'] || rawReading['前々回'] || '',
@@ -1280,9 +1281,19 @@
             
             const result = await response.json();
             
+            // 🔧 修正: 新形式のAPIレスポンスに対応
             let roomsArray;
-            if (result && result.success === true && Array.isArray(result.data)) {
-              roomsArray = result.data;
+            if (result && result.success === true) {
+              if (result.data && result.data.rooms) {
+                // 新形式: {success: true, data: {property: {...}, rooms: [...]}}
+                roomsArray = result.data.rooms;
+              } else if (Array.isArray(result.data)) {
+                // 旧形式: {success: true, data: [...]}
+                roomsArray = result.data;
+              } else {
+                console.warn('[meter_reading] 予期しないレスポンス形式 (data):', result.data);
+                return;
+              }
             } else if (Array.isArray(result)) {
               roomsArray = result;
             } else if (result && Array.isArray(result.rooms)) {
@@ -1654,29 +1665,37 @@
                                   const previousValue = formatReading(reading.previousReading);
                                   const numericValue = parseFloat(currentValue);
                                   
+                                  // 🔧 修正: 使用量計算の最適化 - 重複計算を統合
+                                  let usageDisplay, warningResult;
+                                  
                                   if (currentValue === '') {
                                     setInputErrors(prev => ({...prev, [dateForDataAttribute]: ''}));
                                     e.target.style.borderColor = '';
-                                    setUsageStates(prev => ({ ...prev, [dateForDataAttribute]: calculateUsageDisplay(currentValue, previousValue) }));
+                                    usageDisplay = calculateUsageDisplay(currentValue, previousValue);
                                   } else if (isNaN(numericValue) || numericValue < 0) {
                                     setInputErrors(prev => ({...prev, [dateForDataAttribute]: '0以上の数値を入力'}));
                                     e.target.style.borderColor = 'var(--mantine-color-red-6)';
-                                    setUsageStates(prev => ({ ...prev, [dateForDataAttribute]: '-' }));
+                                    usageDisplay = '-';
                                   } else {
                                     setInputErrors(prev => ({...prev, [dateForDataAttribute]: ''}));
                                     e.target.style.borderColor = '';
                                     
-                                    // 使用量を計算してリアルタイムで警告フラグを更新
-                                    const usageDisplay = calculateUsageDisplay(currentValue, previousValue);
-                                    setUsageStates(prev => ({ ...prev, [dateForDataAttribute]: usageDisplay }));
+                                    // 一度だけ計算を実行
+                                    usageDisplay = calculateUsageDisplay(currentValue, previousValue);
                                     
-                                    // 警告フラグをリアルタイムで計算（指示数ベース）
+                                    // 警告フラグもこのタイミングで計算
                                     const currentReadingValue = numericValue;
                                     const previousReadingValue = parseFloat(reading.previousReading) || 0;
                                     const previousPreviousReadingValue = parseFloat(reading.previousPreviousReading) || 0;
                                     const threeTimesPreviousReadingValue = parseFloat(reading.threeTimesPrevious) || 0;
                                     
-                                    const warningResult = calculateWarningFlag(currentReadingValue, previousReadingValue, previousPreviousReadingValue, threeTimesPreviousReadingValue);
+                                    warningResult = calculateWarningFlag(currentReadingValue, previousReadingValue, previousPreviousReadingValue, threeTimesPreviousReadingValue);
+                                  }
+                                  
+                                  // 状態を一度に更新
+                                  setUsageStates(prev => ({ ...prev, [dateForDataAttribute]: usageDisplay }));
+                                  
+                                  if (warningResult) {
                                     
                                     // 警告フラグの状態を更新
                                     setMeterReadings(prevReadings => 
