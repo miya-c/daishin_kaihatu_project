@@ -1069,11 +1069,17 @@
             readingsCount: readings?.length || 0
           });
           
+          // 🔧 修正: 読み込み完了処理
+          setLoading(false);
+          setError('');
+          
         } catch (error) {
           console.error('[room_navigation_spa] エラー:', error);
+          setError('検針データの読み込みに失敗しました: ' + error.message);
+          setLoading(false);  // エラー時もローディングを停止
           throw error;
         }
-      }, [gasWebAppUrl, calculateWarningFlag, setPropertyName, setRoomName, setUsageStates, setMeterReadings]);
+      }, [gasWebAppUrl, calculateWarningFlag, setPropertyName, setRoomName, setUsageStates, setMeterReadings, setLoading, setError]);
 
       // LoadingOverlayコンポーネント - バニラJavaScript版
       function createLoadingOverlay(message) {
