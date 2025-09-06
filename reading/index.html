@@ -635,198 +635,15 @@
           return;
         }
 
-        // 統合版getMeterReadings APIから物件名・部屋名・検針データを一括取得
-        loadMeterReadings(propId, rId);
+        // 🔧 修正: 単一API戦略 - loadMeterReadingsForRoomに統一
+        loadMeterReadingsForRoom(propId, rId).catch(error => {
+          console.error('[meter_reading] 初期読み込みエラー:', error);
+          setError('検針データの読み込みに失敗しました: ' + error.message);
+          setLoading(false);
+        });
       };
 
-      const loadMeterReadings = React.useCallback(async (propId, rId, maxRetries = 3) => {
-        console.log(`[loadMeterReadings] 🔍 デバッグ: propId=${propId}, rId=${rId}`);
-        
-        // パラメータ検証
-        if (!propId || !rId) {
-          const error = `propertyId(${propId})とroomId(${rId})が必要です`;
-          console.error(`[loadMeterReadings] ❌ ${error}`);
-          throw new Error(error);
-        }
-        
-        const currentGasUrl = gasWebAppUrl || sessionStorage.getItem('gasWebAppUrl');
-        if (!currentGasUrl) {
-          throw new Error('gasWebAppURLが設定されていません。物件選択画面から再度アクセスしてください。');
-        }
-
-        for (let attempt = 1; attempt <= maxRetries; attempt++) {
-          try {
-            const fetchUrl = `${currentGasUrl}?action=getMeterReadings&propertyId=${propId}&roomId=${rId}`;
-            
-            const response = await fetch(fetchUrl);
-            
-            if (!response.ok) {
-              if (response.status === 503 && attempt < maxRetries) {
-                const delayMs = 1000 * Math.pow(2, attempt - 1); // 指数バックオフ: 1s, 2s, 4s
-                console.warn(`[meter_reading] ⏳ 503エラー - ${delayMs}ms後にリトライ (${attempt}/${maxRetries})`);
-                await new Promise(resolve => setTimeout(resolve, delayMs));
-                continue;
-              }
-              throw new Error('ネットワークの応答が正しくありませんでした。ステータス: ' + response.status);
-            }
-            
-            
-            const responseObject = await response.json();
-          
-          // 詳細なレスポンス構造の確認
-          if (responseObject.data && typeof responseObject.data === 'object') {
-          }
-          
-          // 統合版getMeterReadings APIの応答形式を確認
-          if (!responseObject.success) {
-            throw new Error(responseObject.error || '検針データの取得に失敗しました');
-          }
-
-          const data = responseObject.data;
-          if (!data) {
-            throw new Error('応答データが空です');
-          }
-
-          let propertyName, roomName, readings;
-
-          // 新しい統合版の応答形式をチェック {propertyName, roomName, readings}
-          if (data.hasOwnProperty('propertyName') && data.hasOwnProperty('roomName') && data.hasOwnProperty('readings')) {
-            propertyName = data.propertyName || 'N/A';
-            roomName = data.roomName || '部屋名不明';
-            readings = data.readings || [];
-          }
-          // 古い形式への一時的な後方互換性対応 - data が配列の場合
-          else if (Array.isArray(data)) {
-            
-            // 検針データから物件名・部屋名を抽出
-            if (data.length > 0 && data[0]) {
-              const firstRecord = data[0];
-              propertyName = firstRecord['物件名'] || firstRecord.propertyName || 'N/A';
-              roomName = firstRecord['部屋名'] || firstRecord.roomName || '部屋名不明';
-            } else {
-              propertyName = 'N/A';
-              roomName = '部屋名不明';
-            }
-            readings = data;
-          }
-          // その他の形式
-          else {
-            console.warn('[meter_reading] ⚠️ 予期しないレスポンス形式:', data);
-            throw new Error('検針データの形式が認識できません');
-          }
-
-
-          // 状態を更新
-          setPropertyId(propId || 'N/A');
-          setPropertyName(propertyName);
-          setRoomId(rId || 'N/A');
-          setRoomName(roomName);
-
-          // 検針データ処理
-          if (Array.isArray(readings) && readings.length > 0) {
-            
-            // データマッピング処理
-            const mappedReadings = readings.map((rawReading, index) => {
-              
-              // inspection_dataシートの列名を想定したマッピング
-              const mapped = {
-                // 基本情報
-                id: rawReading['記録ID'] || rawReading['recordId'] || rawReading['ID'] || `reading-${index}`,
-                date: rawReading['検針日時'] || rawReading['date'] || rawReading['記録日'] || '',
-                currentReading: rawReading['今回の指示数'] || rawReading['今回指示数'] || rawReading['今回指示数（水道）'] || rawReading['currentReading'] || rawReading['指示数'] || '',
-                previousReading: rawReading['前回指示数'] || rawReading['previousReading'] || rawReading['前回'] || '',
-                previousPreviousReading: rawReading['前々回指示数'] || rawReading['previousPreviousReading'] || rawReading['前々回'] || '',
-                threeTimesPrevious: rawReading['前々々回指示数'] || rawReading['threeTimesPrevious'] || rawReading['前々々回'] || '',
-                usage: rawReading['今回使用量'] || rawReading['usage'] || rawReading['使用量'] || '',
-                warningFlag: rawReading['警告フラグ'] || rawReading['warningFlag'] || '正常',
-                standardDeviation: rawReading['標準偏差値'] || rawReading['standardDeviation'] || '',
-                status: rawReading['警告フラグ'] || rawReading['status'] || rawReading['状態'] || '正常',
-                // 追加の可能性のあるフィールド
-                recordId: rawReading['記録ID'] || rawReading['recordId'] || rawReading['ID'] || '',
-                propertyId: rawReading['物件ID'] || rawReading['propertyId'] || '',
-                roomId: rawReading['部屋ID'] || rawReading['roomId'] || '',
-                propertyName: rawReading['物件名'] || rawReading['propertyName'] || '',
-                roomName: rawReading['部屋名'] || rawReading['roomName'] || '',
-                // 元データも保持
-                _original: rawReading
-              };
-              
-              // ✅ 修正: フロントエンド警告フラグ計算を常に優先（バックエンド値を無視）
-              if (mapped.currentReading && mapped.previousReading) {
-                const warningResult = calculateWarningFlag(
-                  parseFloat(mapped.currentReading),
-                  parseFloat(mapped.previousReading),
-                  parseFloat(mapped.previousPreviousReading),
-                  parseFloat(mapped.threeTimesPrevious)
-                );
-                
-                // フロントエンド計算値を常に使用（バックエンド値は無視）
-                mapped.warningFlag = warningResult.warningFlag;
-                mapped.standardDeviation = warningResult.standardDeviation;
-                console.log(`[警告フラグ修正] フロントエンド計算値を適用: ${warningResult.warningFlag}`);
-              } else {
-                // 今回指示数が未入力の場合、履歴データから閾値を計算して表示
-                if (!mapped.currentReading || mapped.currentReading === '') {
-                  const thresholdResult = calculateWarningFlag(
-                    null, // 今回指示数は未入力
-                    parseFloat(mapped.previousReading),
-                    parseFloat(mapped.previousPreviousReading),
-                    parseFloat(mapped.threeTimesPrevious)
-                  );
-                  
-                  // フロントエンド計算値を常に使用（バックエンド値は無視）
-                  mapped.warningFlag = thresholdResult.warningFlag;
-                  mapped.standardDeviation = thresholdResult.standardDeviation;
-                  console.log(`[警告フラグ修正] 未入力時フロントエンド計算値を適用: ${thresholdResult.warningFlag}`);
-                }
-              }
-              
-              console.log(`[meter_reading] マッピング後 [${index}]:`, {
-                ...mapped,
-                warningFlagSource: rawReading['警告フラグ'] ? 'backend' : 'frontend',
-                standardDeviationSource: rawReading['標準偏差値'] ? 'backend' : 'frontend'
-              });
-              return mapped;
-            });
-            
-            // 使用量ステートをクリアしてから新しいデータを設定
-            setUsageStates({});
-            setMeterReadings(mappedReadings);
-            
-            // DOM更新後に初期値を保存
-            setTimeout(() => {
-              saveOriginalInputValues();
-            }, 100);
-          } else {
-            setUsageStates({});
-            setMeterReadings([]);
-          }
-          setLoading(false);
-          return; // 成功時はリトライループを終了
-          
-        } catch (error) {
-          if (attempt === maxRetries) {
-            // 最終試行でもエラーの場合
-            console.error(`[meter_reading] ❌ 検針データ取得失敗 (${maxRetries}回試行):`, error);
-            
-            // ユーザーフレンドリーなエラーメッセージ
-            let userMessage = '検針データの読み込みに失敗しました。';
-            if (error.message.includes('503')) {
-              userMessage = 'サーバーが一時的に利用できません。しばらく待ってから再度お試しください。';
-            } else if (error.message.includes('network') || error.message.includes('fetch')) {
-              userMessage = 'ネットワーク接続に問題があります。インターネット接続を確認してください。';
-            } else if (error.message.includes('timeout')) {
-              userMessage = '通信がタイムアウトしました。しばらく待ってから再度お試しください。';
-            }
-            
-            setError(userMessage + '\n\n問題が継続する場合は、管理者にお問い合わせください。');
-            setLoading(false);
-            return;
-          }
-          console.warn(`[meter_reading] ⚠️ 試行${attempt}失敗, 次回リトライします:`, error.message);
-        }
-      }
-      }, [gasWebAppUrl, setPropertyId, setPropertyName, setRoomId, setRoomName, setMeterReadings, setLoading, setError, setUsageStates]);
+      // 🗑️ loadMeterReadings関数は削除 - loadMeterReadingsForRoomに統合済み
 
       const handleBackButton = React.useCallback(async () => {
         try {
@@ -1608,9 +1425,9 @@
             displayToast('検針データが正常に更新されました');
             setInputErrors({});
             
-            // データ再読み込みと初期値更新を並列で実行
+            // 🔧 修正: 二重API呼び出し排除 - 単一API戦略
             const [dataReloadResult] = await Promise.allSettled([
-              loadMeterReadings(propertyId, roomId)
+              loadMeterReadingsForRoom(propertyId, roomId)
             ]);
             
             if (dataReloadResult.status === 'rejected') {
@@ -1633,7 +1450,7 @@
         } finally {
           setUpdating(false);
         }
-      }, [propertyId, roomId, gasWebAppUrl, loadMeterReadings, updateSessionStorageCache, saveOriginalInputValues, setInputErrors, setUpdating, displayToast]);
+      }, [propertyId, roomId, gasWebAppUrl, loadMeterReadingsForRoom, updateSessionStorageCache, saveOriginalInputValues, setInputErrors, setUpdating, displayToast]);
 
       // 初期ローディング
       if (loading) {
