@@ -379,11 +379,22 @@
       if (isNaN(current)) return '';
       
       if (!previousReading || previousReading === '' || previous === 0 || isNaN(previous)) {
-        return current.toString();
+        const result = current.toString();
+        console.log('[calculateUsage] 前回指示数なし:', { currentReading, result, type: typeof result });
+        return result;
       }
       
       const usage = current - previous;
-      return (usage >= 0 ? usage : 0).toString();
+      const result = (usage >= 0 ? usage : 0).toString();
+      console.log('[calculateUsage] 使用量計算:', { current, previous, usage, result, type: typeof result });
+      
+      // 🔧 修正: 戻り値が確実に文字列であることを保証
+      if (typeof result !== 'string') {
+        console.error('[calculateUsage] 予期しない戻り値型:', typeof result, result);
+        return String(result);
+      }
+      
+      return result;
     };
 
     const calculateUsageDisplay = calculateUsage;
@@ -1077,15 +1088,15 @@
               return mapped;
             });
             
-            // 🔧 修正: usageStatesの適切な初期化 - 実計算値を使用
+            // 🔧 修正: usageStatesの適切な初期化 - プリミティブ値のみ保存
             const initialUsageStates = mappedReadings.reduce((states, reading) => {
               if (reading.date) {
-                // 実際の使用量を計算して初期値に設定
+                // 実際の使用量を計算して初期値に設定（プリミティブ値として保存）
                 const calculatedUsage = calculateUsageDisplay(reading.currentReading, reading.previousReading);
-                states[reading.date] = {
-                  calculatedUsage: calculatedUsage, // 0ではなく実計算値
-                  warningFlag: reading.warningFlag || ''
-                };
+                console.log('[usageStates初期化]', { date: reading.date, calculatedUsage, type: typeof calculatedUsage });
+                
+                // 🔧 修正: オブジェクトではなく文字列として直接保存
+                states[reading.date] = calculatedUsage; // オブジェクトではなく直接値を保存
               }
               return states;
             }, {});
@@ -1648,11 +1659,28 @@
                         
                         // 🔧 修正: 使用量表示の優先順位修正 - 0の場合は実計算値を使用
                         const usageFromState = usageStates[dateForDataAttribute];
-                        const usageToDisplay = (usageFromState !== undefined && usageFromState !== 0) 
-                                              ? usageFromState
-                                              : calculateUsageDisplay(reading.currentReading, reading.previousReading);
                         
-                        const usageDisplayString = `${usageToDisplay}${usageToDisplay !== '-' ? '㎥' : ''}`;
+                        // 🔧 修正: 型安全な使用量取得とオブジェクト混入防止
+                        let usageToDisplay;
+                        if (usageFromState !== undefined && usageFromState !== null) {
+                          // usageFromStateがオブジェクトの場合は適切に処理
+                          if (typeof usageFromState === 'object' && usageFromState.calculatedUsage !== undefined) {
+                            usageToDisplay = usageFromState.calculatedUsage;
+                          } else if (typeof usageFromState === 'string' || typeof usageFromState === 'number') {
+                            usageToDisplay = usageFromState;
+                          } else {
+                            console.warn('[usageDisplay] 予期しない型のusageFromState:', typeof usageFromState, usageFromState);
+                            usageToDisplay = calculateUsageDisplay(reading.currentReading, reading.previousReading);
+                          }
+                        } else {
+                          usageToDisplay = calculateUsageDisplay(reading.currentReading, reading.previousReading);
+                        }
+                        
+                        // 🔧 修正: 型安全な表示文字列生成
+                        const safeUsageValue = (typeof usageToDisplay === 'object') 
+                          ? (usageToDisplay?.calculatedUsage || usageToDisplay?.toString() || '-')
+                          : usageToDisplay;
+                        const usageDisplayString = `${safeUsageValue}${safeUsageValue !== '-' ? '㎥' : ''}`;
                         const statusDisplay = formatStatus(reading.status);
                         const previousReadingsInfo = getPreviousReadingsText(reading);
                         
@@ -1709,7 +1737,8 @@
                                     warningResult = calculateWarningFlag(currentReadingValue, previousReadingValue, previousPreviousReadingValue, threeTimesPreviousReadingValue);
                                   }
                                   
-                                  // 状態を一度に更新
+                                  // 🔧 修正: 状態を一度に更新（プリミティブ値のみ保存）
+                                  console.log('[onChange] usageDisplay更新:', { date: dateForDataAttribute, usageDisplay, type: typeof usageDisplay });
                                   setUsageStates(prev => ({ ...prev, [dateForDataAttribute]: usageDisplay }));
                                   
                                   if (warningResult) {
@@ -1864,7 +1893,9 @@
                               } else {
                                   setInputErrors(prev => ({...prev, [dateForDataAttribute]: ''}));
                                   e.target.style.borderColor = '';
-                                  setUsageStates(prev => ({ ...prev, [dateForDataAttribute]: calculateUsageDisplay(e.target.value, '') }));
+                                  const newUsageValue = calculateUsageDisplay(e.target.value, '');
+                                  console.log('[onChange] usageStates更新:', { date: dateForDataAttribute, newUsageValue, type: typeof newUsageValue });
+                                  setUsageStates(prev => ({ ...prev, [dateForDataAttribute]: newUsageValue }));
                               }
                             }}
                           />
