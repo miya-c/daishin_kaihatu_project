@@ -880,11 +880,17 @@
       }, [hasNextRoom, isNavigating, findNextReadingRequiredRoom, currentRoomIndex, navigateToRoom, propertyId, hasInputChanges, handleUpdateReadings, setIsNavigating, setNavigationMessage, displayToast]);
 
       const navigateToRoom = React.useCallback(async (targetRoom, direction, currentPropertyId) => {
-        console.log(`[navigateToRoom] 🔍 デバッグ: currentPropertyId=${currentPropertyId}, targetRoom=${JSON.stringify(targetRoom)}, direction=${direction}`);
+        // 🔧 修正: 部屋移動前に現在のpropertyIdを確実に取得
+        const currentPropId = currentPropertyId || propertyId || new URLSearchParams(window.location.search).get('propertyId');
+        console.log(`[navigateToRoom] 🔍 デバッグ: currentPropId=${currentPropId}, targetRoom=${JSON.stringify(targetRoom)}, direction=${direction}`);
+        
+        if (!currentPropId) {
+          throw new Error('propertyIdが取得できません');
+        }
         
         try {
           // 🚀 最適化: キャッシュ更新を非同期バックグラウンド実行（ノンブロッキング）
-          updateSessionStorageCache(currentPropertyId, roomId).catch(cacheError => 
+          updateSessionStorageCache(currentPropId, roomId).catch(cacheError => 
             console.warn('[room_navigation] バックグラウンドキャッシュ更新エラー:', cacheError)
           );
 
@@ -894,7 +900,7 @@
           
           // URLパラメータを構築（ページリロード無し）
           const urlParams = new URLSearchParams();
-          urlParams.set('propertyId', currentPropertyId);
+          urlParams.set('propertyId', currentPropId);
           urlParams.set('roomId', newRoomId);
           urlParams.set('roomName', encodeURIComponent(newRoomName));
           
@@ -942,7 +948,7 @@
 
           try {
             // 新しい部屋のデータを読み込み（直接API呼び出し）
-            await loadMeterReadingsForRoom(currentPropertyId, newRoomId);
+            await loadMeterReadingsForRoom(currentPropId, newRoomId);
           } finally {
             clearTimeout(loadingTimeout);
             if (showLoading) {
@@ -1021,17 +1027,23 @@
             readings = [];
           }
 
+          // 🔧 修正: propertyId状態が設定されていない場合はAPIから設定
+          if (!propertyId && propId) {
+            setPropertyId(propId);
+          }
+          
           setPropertyName(propertyName);
           setRoomName(roomName);
 
           if (readings && Array.isArray(readings) && readings.length > 0) {
             const mappedReadings = readings.map((rawReading, index) => {
+              // 🔧 修正: データマッピング強化 - より多くのフィールドパターンに対応
               const mapped = {
-                date: rawReading.date || rawReading['検針年月'] || '',
-                currentReading: rawReading.currentReading || rawReading['今回指示数'] || '',
-                previousReading: rawReading.previousReading || rawReading['前回指示数'] || '',
-                previousPreviousReading: rawReading.previousPreviousReading || rawReading['前々回指示数'] || '',
-                threeTimesPrevious: rawReading.threeTimesPrevious || rawReading['前々々回指示数'] || '',
+                date: rawReading.date || rawReading['検針年月'] || rawReading['検針日時'] || rawReading['記録日'] || '',
+                currentReading: rawReading.currentReading || rawReading['今回指示数'] || rawReading['今回の指示数'] || rawReading['今回指示数（水道）'] || rawReading['指示数'] || '',
+                previousReading: rawReading.previousReading || rawReading['前回指示数'] || rawReading['前回'] || '',
+                previousPreviousReading: rawReading.previousPreviousReading || rawReading['前々回指示数'] || rawReading['前々回'] || '',
+                threeTimesPrevious: rawReading.threeTimesPrevious || rawReading['前々々回指示数'] || rawReading['前々々回'] || '',
                 warningFlag: rawReading.warningFlag || rawReading['警告フラグ'] || '',
                 standardDeviation: rawReading.standardDeviation || rawReading['標準偏差値'] || '',
                 status: rawReading.status || rawReading['ステータス'] || '',
@@ -1051,7 +1063,18 @@
               return mapped;
             });
             
-            setUsageStates({});
+            // 🔧 修正: usageStatesの適切な初期化（完全クリアではなく新データに基づく設定）
+            const initialUsageStates = mappedReadings.reduce((states, reading) => {
+              if (reading.date) {
+                states[reading.date] = {
+                  calculatedUsage: 0, // デフォルト値
+                  warningFlag: reading.warningFlag || ''
+                };
+              }
+              return states;
+            }, {});
+            
+            setUsageStates(initialUsageStates);
             setMeterReadings(mappedReadings);
           } else {
             console.warn('[room_navigation_spa] ⚠️ 検針データが見つかりません:', {
@@ -1079,7 +1102,7 @@
           setLoading(false);  // エラー時もローディングを停止
           throw error;
         }
-      }, [gasWebAppUrl, calculateWarningFlag, setPropertyName, setRoomName, setUsageStates, setMeterReadings, setLoading, setError]);
+      }, [gasWebAppUrl, calculateWarningFlag, setPropertyName, setRoomName, setUsageStates, setMeterReadings, setLoading, setError, setPropertyId, propertyId]);
 
       // LoadingOverlayコンポーネント - バニラJavaScript版
       function createLoadingOverlay(message) {
