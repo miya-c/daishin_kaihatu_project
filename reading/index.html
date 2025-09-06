@@ -1038,9 +1038,13 @@
           if (readings && Array.isArray(readings) && readings.length > 0) {
             const mappedReadings = readings.map((rawReading, index) => {
               // 🔧 修正: データマッピング強化 - より多くのフィールドパターンに対応
-              // 🔧 修正: 日付フィールドの正しい初期化
+              // 🔧 修正: 日付フィールドの正しい初期化と統一
+              const rawDate = rawReading.date || rawReading['検針年月'] || rawReading['検針日時'] || rawReading['記録日'];
+              // ISO形式の日付をJST形式に正規化
+              const normalizedDate = rawDate ? (rawDate.includes('T') ? getCurrentJSTDateString() : rawDate) : getCurrentJSTDateString();
+              
               const mapped = {
-                date: rawReading.date || rawReading['検針年月'] || rawReading['検針日時'] || rawReading['記録日'] || getCurrentJSTDateString(),
+                date: normalizedDate,
                 currentReading: rawReading.currentReading || rawReading['今回指示数'] || rawReading['今回の指示数'] || rawReading['今回指示数（水道）'] || rawReading['指示数'] || '',
                 previousReading: rawReading.previousReading || rawReading['前回指示数'] || rawReading['前回'] || '',
                 previousPreviousReading: rawReading.previousPreviousReading || rawReading['前々回指示数'] || rawReading['前々回'] || '',
@@ -1051,24 +1055,35 @@
                 _original: rawReading
               };
 
+              // 🔧 修正: 初期状態での不適切な警告フラグを解消
               if (!mapped.warningFlag) {
-                const warningResult = calculateWarningFlag(
-                  parseFloat(mapped.currentReading) || 0,
-                  parseFloat(mapped.previousReading) || 0,
-                  parseFloat(mapped.previousPreviousReading) || 0,
-                  parseFloat(mapped.threeTimesPrevious) || 0
-                );
-                mapped.warningFlag = warningResult.warningFlag;
-                mapped.standardDeviation = warningResult.standardDeviation;
+                const currentReadingValue = parseFloat(mapped.currentReading);
+                if (mapped.currentReading === '' || isNaN(currentReadingValue)) {
+                  // 今回指示数が未入力の場合は警告フラグを設定しない
+                  mapped.warningFlag = '';
+                  mapped.standardDeviation = '';
+                } else {
+                  // 入力がある場合のみ警告フラグを計算
+                  const warningResult = calculateWarningFlag(
+                    currentReadingValue,
+                    parseFloat(mapped.previousReading) || 0,
+                    parseFloat(mapped.previousPreviousReading) || 0,
+                    parseFloat(mapped.threeTimesPrevious) || 0
+                  );
+                  mapped.warningFlag = warningResult.warningFlag;
+                  mapped.standardDeviation = warningResult.standardDeviation;
+                }
               }
               return mapped;
             });
             
-            // 🔧 修正: usageStatesの適切な初期化（完全クリアではなく新データに基づく設定）
+            // 🔧 修正: usageStatesの適切な初期化 - 実計算値を使用
             const initialUsageStates = mappedReadings.reduce((states, reading) => {
               if (reading.date) {
+                // 実際の使用量を計算して初期値に設定
+                const calculatedUsage = calculateUsageDisplay(reading.currentReading, reading.previousReading);
                 states[reading.date] = {
-                  calculatedUsage: 0, // デフォルト値
+                  calculatedUsage: calculatedUsage, // 0ではなく実計算値
                   warningFlag: reading.warningFlag || ''
                 };
               }
@@ -1631,9 +1646,11 @@
                         const dateForDataAttribute = reading.date;
                         const currentReadingDisplay = formatReading(reading.currentReading);
                         
-                        const usageToDisplay = usageStates[dateForDataAttribute] !== undefined 
-                                            ? usageStates[dateForDataAttribute]
-                                            : calculateUsageDisplay(reading.currentReading, reading.previousReading);
+                        // 🔧 修正: 使用量表示の優先順位修正 - 0の場合は実計算値を使用
+                        const usageFromState = usageStates[dateForDataAttribute];
+                        const usageToDisplay = (usageFromState !== undefined && usageFromState !== 0) 
+                                              ? usageFromState
+                                              : calculateUsageDisplay(reading.currentReading, reading.previousReading);
                         
                         const usageDisplayString = `${usageToDisplay}${usageToDisplay !== '-' ? '㎥' : ''}`;
                         const statusDisplay = formatStatus(reading.status);
