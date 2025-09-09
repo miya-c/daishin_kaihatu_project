@@ -1052,6 +1052,11 @@
             setPropertyId(propId);
           }
           
+          // 🔧 修正: roomId状態が設定されていない場合はAPIから設定
+          if (!roomId && rId) {
+            setRoomId(rId);
+          }
+          
           setPropertyName(propertyName);
           setRoomName(roomName);
 
