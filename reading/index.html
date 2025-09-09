@@ -958,16 +958,16 @@
             // 新しい部屋のデータを読み込み（直接API呼び出し）
             await loadMeterReadingsForRoom(currentPropId, newRoomId);
             
-            // 🔧 修正: API取得完了後に前の部屋のデータをクリア（データ保存が完了してから実行）
-            setUsageStates({});
-            setMeterReadings([]); // ← 重要: 前の部屋の警告フラグ値を確実にクリア
-            console.log('[room_navigation] 🧹 API取得完了後のステートクリア: 使用量・検針データをクリア');
+            // 🔧 修正: データクリア処理を削除
+            // 理由: loadMeterReadingsForRoom内のsetMeterReadings(mappedReadings)により
+            // 新しい部屋のデータが自動的に設定され、前の部屋のデータは上書きされるため
+            // 明示的なクリア処理は不要。むしろ新しいデータまでクリアしてしまう問題があった
             
           } catch (apiError) {
-            // API取得失敗時もデータクリアを実行（不整合状態を避けるため）
-            console.error('[room_navigation] API取得エラー、安全のためデータクリアを実行:', apiError);
-            setUsageStates({});
-            setMeterReadings([]);
+            // API取得失敗時の処理
+            console.error('[room_navigation] API取得エラー:', apiError);
+            // 注意: ここでもデータクリアは行わない。前の部屋のデータを維持して
+            // ユーザーが再試行できるようにする
             throw apiError; // エラーを再スローして上位でハンドリング
           } finally {
             clearTimeout(loadingTimeout);
