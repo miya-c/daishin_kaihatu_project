@@ -1081,6 +1081,95 @@
         }
       };
 
+      // ナビゲーション用のヘルパー関数
+      const getCurrentRoomIndex = () => {
+        try {
+          const selectedRooms = sessionStorage.getItem('selectedRooms');
+          if (!selectedRooms || !roomId) return -1;
+          
+          const roomsArray = JSON.parse(selectedRooms);
+          return roomsArray.findIndex(room => room.id === roomId);
+        } catch (error) {
+          console.error('[meter_reading] getCurrentRoomIndex error:', error);
+          return -1;
+        }
+      };
+
+      const getRoomNavigation = () => {
+        try {
+          const selectedRooms = sessionStorage.getItem('selectedRooms');
+          if (!selectedRooms) return { hasPrevious: false, hasNext: false };
+          
+          const roomsArray = JSON.parse(selectedRooms);
+          const currentIndex = getCurrentRoomIndex();
+          
+          return {
+            hasPrevious: currentIndex > 0,
+            hasNext: currentIndex >= 0 && currentIndex < roomsArray.length - 1,
+            previousRoom: currentIndex > 0 ? roomsArray[currentIndex - 1] : null,
+            nextRoom: currentIndex >= 0 && currentIndex < roomsArray.length - 1 ? roomsArray[currentIndex + 1] : null
+          };
+        } catch (error) {
+          console.error('[meter_reading] getRoomNavigation error:', error);
+          return { hasPrevious: false, hasNext: false };
+        }
+      };
+
+      // 部屋移動を伴うデータ保存機能
+      const handlePreviousRoom = async () => {
+        try {
+          setUpdating(true);
+          
+          // 最初にデータ保存を試行
+          await handleUpdateReadings();
+          
+          // ナビゲーション情報を取得
+          const navigation = getRoomNavigation();
+          if (!navigation.hasPrevious || !navigation.previousRoom) {
+            displayToast('前の部屋がありません。');
+            return;
+          }
+          
+          // 前の部屋に移動
+          const newUrl = `meter_reading.html?propertyId=${propertyId}&roomId=${navigation.previousRoom.id}`;
+          console.log('[meter_reading] 前の部屋へ移動:', navigation.previousRoom.id);
+          window.location.href = newUrl;
+          
+        } catch (error) {
+          console.error('[meter_reading] handlePreviousRoom error:', error);
+          displayToast('前の部屋への移動中にエラーが発生しました。');
+        } finally {
+          setUpdating(false);
+        }
+      };
+
+      const handleNextRoom = async () => {
+        try {
+          setUpdating(true);
+          
+          // 最初にデータ保存を試行
+          await handleUpdateReadings();
+          
+          // ナビゲーション情報を取得
+          const navigation = getRoomNavigation();
+          if (!navigation.hasNext || !navigation.nextRoom) {
+            displayToast('次の部屋がありません。');
+            return;
+          }
+          
+          // 次の部屋に移動
+          const newUrl = `meter_reading.html?propertyId=${propertyId}&roomId=${navigation.nextRoom.id}`;
+          console.log('[meter_reading] 次の部屋へ移動:', navigation.nextRoom.id);
+          window.location.href = newUrl;
+          
+        } catch (error) {
+          console.error('[meter_reading] handleNextRoom error:', error);
+          displayToast('次の部屋への移動中にエラーが発生しました。');
+        } finally {
+          setUpdating(false);
+        }
+      };
+
       // 初期ローディング
       if (loading) {
         return (
@@ -1140,10 +1229,11 @@
               </div><div className="mantine-paper reading-history-container" style={{padding: 'var(--mantine-spacing-xs)', margin: '0'}}>                
                 <div className="reading-history-header">
                   <button 
-                    className="nav-button nav-button-large prev-room-btn disabled"
-                    disabled={true}
+                    className={`nav-button nav-button-large prev-room-btn ${!getRoomNavigation().hasPrevious ? 'disabled' : ''}`}
+                    disabled={!getRoomNavigation().hasPrevious || updating}
+                    onClick={handlePreviousRoom}
                     aria-label="前の部屋に移動"
-                    title="この画面では部屋移動は利用できません"
+                    title={getRoomNavigation().hasPrevious ? '前の部屋に移動（データを保存してから移動します）' : '前の部屋がありません'}
                   >
                     ← 前の部屋
                   </button>
@@ -1151,10 +1241,11 @@
                   <h3 className="mantine-subtitle desktop-only" style={{ textAlign: 'center', margin: '0', fontSize: 'clamp(1.2rem, 3vw, 1.6rem)', flexShrink: 0, whiteSpace: 'nowrap' }}>検針データ</h3>
                   
                   <button 
-                    className="nav-button nav-button-large next-room-btn disabled"
-                    disabled={true}
+                    className={`nav-button nav-button-large next-room-btn ${!getRoomNavigation().hasNext ? 'disabled' : ''}`}
+                    disabled={!getRoomNavigation().hasNext || updating}
+                    onClick={handleNextRoom}
                     aria-label="次の部屋に移動"
-                    title="この画面では部屋移動は利用できません"
+                    title={getRoomNavigation().hasNext ? '次の部屋に移動（データを保存してから移動します）' : '次の部屋がありません'}
                   >
                     次の部屋 →
                   </button>
@@ -1324,19 +1415,21 @@
                   
                   <div className="reading-history-footer">
                     <button 
-                      className="nav-button nav-button-footer prev-room-btn disabled"
-                      disabled={true}
+                      className={`nav-button nav-button-footer prev-room-btn ${!getRoomNavigation().hasPrevious ? 'disabled' : ''}`}
+                      disabled={!getRoomNavigation().hasPrevious || updating}
+                      onClick={handlePreviousRoom}
                       aria-label="前の部屋に移動"
-                      title="この画面では部屋移動は利用できません"
+                      title={getRoomNavigation().hasPrevious ? '前の部屋に移動（データを保存してから移動します）' : '前の部屋がありません'}
                     >
                       ← 前の部屋へ
                     </button>
                     
                     <button 
-                      className="nav-button nav-button-footer next-room-btn disabled"
-                      disabled={true}
+                      className={`nav-button nav-button-footer next-room-btn ${!getRoomNavigation().hasNext ? 'disabled' : ''}`}
+                      disabled={!getRoomNavigation().hasNext || updating}
+                      onClick={handleNextRoom}
                       aria-label="次の部屋に移動"
-                      title="この画面では部屋移動は利用できません"
+                      title={getRoomNavigation().hasNext ? '次の部屋に移動（データを保存してから移動します）' : '次の部屋がありません'}
                     >
                       次の部屋へ →
                     </button>
