@@ -928,10 +928,7 @@
           setRoomId(newRoomId);
           setRoomName(newRoomName);
           
-          // 🔧 バグ修正: 部屋移動時に前の部屋のデータを完全にクリア
-          setUsageStates({});
-          setMeterReadings([]); // ← 重要: 前の部屋の警告フラグ値を確実にクリア
-          console.log('[room_navigation] 🧹 部屋移動時のステートクリア: 使用量・検針データをクリア');
+          // 🔧 修正: データクリアはAPI取得完了後に実行（データ保存完了まで待機）
           
           // 部屋ナビゲーション状態を更新（最適化版）
           const newIndex = roomList.findIndex(room => 
@@ -960,6 +957,18 @@
           try {
             // 新しい部屋のデータを読み込み（直接API呼び出し）
             await loadMeterReadingsForRoom(currentPropId, newRoomId);
+            
+            // 🔧 修正: API取得完了後に前の部屋のデータをクリア（データ保存が完了してから実行）
+            setUsageStates({});
+            setMeterReadings([]); // ← 重要: 前の部屋の警告フラグ値を確実にクリア
+            console.log('[room_navigation] 🧹 API取得完了後のステートクリア: 使用量・検針データをクリア');
+            
+          } catch (apiError) {
+            // API取得失敗時もデータクリアを実行（不整合状態を避けるため）
+            console.error('[room_navigation] API取得エラー、安全のためデータクリアを実行:', apiError);
+            setUsageStates({});
+            setMeterReadings([]);
+            throw apiError; // エラーを再スローして上位でハンドリング
           } finally {
             clearTimeout(loadingTimeout);
             if (showLoading) {
