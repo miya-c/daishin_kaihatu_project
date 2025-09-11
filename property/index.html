@@ -584,10 +584,10 @@ URL: ${window.location.href}
         try {
           return sessionStorage.getItem('gasWebAppUrl') || 
                  localStorage.getItem('gasWebAppUrl') || 
-                 'https://script.google.com/macros/s/AKfycbxo-Zij6If9eSFO-hB2bC_mvYtEGFxaUdwsngqGKcygh2GTHWqHPDrdHSJVC_JTpq2KSw/exec';
+                 'https://script.google.com/macros/s/AKfycbw6HCVZK6U8bp1RqHP_o429KIvhZE2jv1KjEsZTDE9acmwsicRiTF5XIPe0LMawx3fucA/exec';
         } catch (storageError) {
           console.warn('🚨 [App] Storage access error:', storageError);
-          return 'https://script.google.com/macros/s/AKfycbxo-Zij6If9eSFO-hB2bC_mvYtEGFxaUdwsngqGKcygh2GTHWqHPDrdHSJVC_JTpq2KSw/exec';
+          return 'https://script.google.com/macros/s/AKfycbw6HCVZK6U8bp1RqHP_o429KIvhZE2jv1KjEsZTDE9acmwsicRiTF5XIPe0LMawx3fucA/exec';
         }
       }, []);
 
