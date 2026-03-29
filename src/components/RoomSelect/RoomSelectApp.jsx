@@ -9,11 +9,13 @@ const RoomSelectApp = () => {
   const [propertyId, setPropertyId] = useState('');
   const [toastMessage, setToastMessage] = useState('');
   const [showToast, setShowToast] = useState(false);
+  const toastTimerRef = React.useRef(null);
 
   const displayToast = useCallback((message) => {
     setToastMessage(message);
     setShowToast(true);
-    setTimeout(() => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    toastTimerRef.current = setTimeout(() => {
       setShowToast(false);
       setToastMessage('');
     }, 3000);
@@ -225,6 +227,13 @@ const RoomSelectApp = () => {
       displayToast(`検針完了処理でエラーが発生しました: ${err.message}`);
     }
   }, [propertyId]);
+
+  // Cleanup timers on unmount
+  useEffect(() => {
+    return () => {
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    };
+  }, []);
 
   // Loading state
   if (loading) {
