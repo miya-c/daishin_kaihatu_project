@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>物件選択 - 水道メーター読み取りアプリ</title>
+  <meta name="theme-color" content="#007bff">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+  <style>
+  /* Critical CSS - keep inline for first paint */
+  :root {
+    --mui-palette-primary-main: #1976d2;
+    --mui-palette-primary-dark: #1565c0;
+    --mui-palette-primary-light: #42a5f5;
+    --mui-palette-grey-50: #fafafa;
+    --mui-palette-grey-100: #f5f5f5;
+    --mui-palette-grey-900: #212121;
+  }
+  * { box-sizing: border-box; }
+  body { margin:0;padding:0;font-family:"Roboto","Helvetica","Arial",sans-serif;background-color:var(--mui-palette-grey-50);color:var(--mui-palette-grey-900); }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="module" src="./main.jsx"></script>
+</body>
+</html>
