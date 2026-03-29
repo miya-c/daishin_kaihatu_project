@@ -26,7 +26,7 @@ body {
   margin-bottom: 24px;
 }
 
-#install-btn {
+#pwa-install-button {
   padding: 12px 24px;
   background-color: #28a745;
   color: white;
