@@ -100,7 +100,8 @@ const MeterReadingApp = () => {
 
   const collectReadingsFromState = useCallback(() => {
     const readings = [];
-    meterReadings.forEach(reading => {
+
+    for (const reading of meterReadings) {
       const date = reading.date;
       const originalValue = formatReading(reading.currentReading);
       const currentValue = readingValues[date] ?? originalValue;
@@ -108,14 +109,42 @@ const MeterReadingApp = () => {
       if (currentValue && currentValue !== originalValue && currentValue.trim() !== '') {
         const numericValue = parseFloat(currentValue);
         if (!isNaN(numericValue) && numericValue >= 0) {
+          const inspectionDate = new Intl.DateTimeFormat('ja-CA', {
+            timeZone: 'Asia/Tokyo',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+          }).format(new Date());
+
           readings.push({
-            date: date,
+            date: inspectionDate,
             currentReading: currentValue,
             warningFlag: reading.warningFlag || '正常'
           });
         }
       }
-    });
+    }
+
+    // Also check initial reading form (empty date key)
+    const initialValue = readingValues[''] ?? '';
+    if (initialValue && initialValue.trim() !== '') {
+      const numericValue = parseFloat(initialValue);
+      if (!isNaN(numericValue) && numericValue >= 0) {
+        const inspectionDate = new Intl.DateTimeFormat('ja-CA', {
+          timeZone: 'Asia/Tokyo',
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit'
+        }).format(new Date());
+
+        readings.push({
+          date: inspectionDate,
+          currentReading: initialValue,
+          warningFlag: '正常'
+        });
+      }
+    }
+
     return readings;
   }, [meterReadings, readingValues]);
 

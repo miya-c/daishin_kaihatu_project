@@ -122,7 +122,7 @@ export const useRoomNavigation = ({
       const meterReadingsData = collectReadingsFn ? collectReadingsFn() : [];
       const currentGasUrl = gasWebAppUrl || sessionStorage.getItem('gasWebAppUrl');
 
-      // Save readings via updateMeterReadings if there are changes
+      // Save readings using the same format as handleUpdateReadings
       if (meterReadingsData && meterReadingsData.length > 0) {
         const params = new URLSearchParams({
           action: 'updateMeterReadings',
@@ -130,16 +130,18 @@ export const useRoomNavigation = ({
           roomId: roomId,
           readings: JSON.stringify(meterReadingsData)
         });
+
         const saveResponse = await fetch(`${currentGasUrl}?${params}`, { method: 'GET' });
+
         if (saveResponse.ok) {
           const saveResult = await saveResponse.json();
-          if (saveResult.success && saveResult.updatedCount > 0) {
-            displayToast(`${saveResult.updatedCount}件のデータを保存しました`);
+          if (saveResult.success) {
+            displayToast('検針データを保存しました');
           }
         }
       }
 
-      // Navigate to target room
+      // Navigate to target room after save completes
       window.location.href = `/reading/?propertyId=${propertyId}&roomId=${targetRoomId}`;
     } catch (err) {
       // Fallback: navigate even if save fails
