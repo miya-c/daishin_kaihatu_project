@@ -195,5 +195,6 @@ export const useRoomNavigation = ({
     updating, isNavigating, navigationMessage,
     setUpdating, setIsNavigating,
     getRoomNavigation, handlePreviousRoom, handleNextRoom, handleBackButton,
+    updateSessionStorageCache,
   };
 };

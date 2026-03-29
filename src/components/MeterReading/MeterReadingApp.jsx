@@ -13,7 +13,7 @@ const MeterReadingApp = () => {
   const {
     loading, error, propertyId, propertyName, roomId, roomName,
     meterReadings, setMeterReadings, gasWebAppUrl,
-    setError,
+    setError, loadMeterReadings,
   } = useMeterReadings();
 
   const displayToast = useCallback((message) => {
@@ -32,6 +32,7 @@ const MeterReadingApp = () => {
     updating, isNavigating, navigationMessage,
     setUpdating, setIsNavigating,
     getRoomNavigation, handlePreviousRoom, handleNextRoom, handleBackButton,
+    updateSessionStorageCache,
   } = useRoomNavigation({
     propertyId, roomId, gasWebAppUrl, meterReadings, setMeterReadings, displayToast
   });
