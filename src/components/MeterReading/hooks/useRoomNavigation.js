@@ -122,41 +122,32 @@ export const useRoomNavigation = ({
       const meterReadingsData = collectReadingsFn ? collectReadingsFn() : [];
       const currentGasUrl = gasWebAppUrl || sessionStorage.getItem('gasWebAppUrl');
 
-      const requestData = {
-        action: 'saveAndNavigate',
-        propertyId: propertyId,
-        currentRoomId: roomId,
-        targetRoomId: targetRoomId,
-        direction: direction,
-        meterReadingsData: JSON.stringify(meterReadingsData),
-        timeout: 30000
-      };
-
-      const response = await fetch(currentGasUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams(requestData)
-      });
-
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-      const result = await response.json();
-
-      if (result.success) {
-        if (result.saveResult && result.saveResult.updatedCount > 0) {
-          displayToast(`${result.saveResult.updatedCount}件のデータを保存しました`);
+      // Save readings via updateMeterReadings if there are changes
+      if (meterReadingsData && meterReadingsData.length > 0) {
+        const params = new URLSearchParams({
+          action: 'updateMeterReadings',
+          propertyId: propertyId,
+          roomId: roomId,
+          readings: JSON.stringify(meterReadingsData)
+        });
+        const saveResponse = await fetch(`${currentGasUrl}?${params}`, { method: 'GET' });
+        if (saveResponse.ok) {
+          const saveResult = await saveResponse.json();
+          if (saveResult.success && saveResult.updatedCount > 0) {
+            displayToast(`${saveResult.updatedCount}件のデータを保存しました`);
+          }
         }
-        await performSPANavigation(targetRoomId, result.navigationResult);
-      } else {
-        // Fallback: page reload
-        window.location.href = `/reading/?propertyId=${propertyId}&roomId=${targetRoomId}`;
       }
+
+      // Navigate to target room
+      window.location.href = `/reading/?propertyId=${propertyId}&roomId=${targetRoomId}`;
     } catch (err) {
+      // Fallback: navigate even if save fails
       window.location.href = `/reading/?propertyId=${propertyId}&roomId=${targetRoomId}`;
     } finally {
       setUpdating(false);
     }
-  }, [propertyId, roomId, gasWebAppUrl, performSPANavigation, displayToast]);
+  }, [propertyId, roomId, gasWebAppUrl, displayToast]);
 
   const handlePreviousRoom = useCallback((collectReadingsFn) => {
     const navigation = getRoomNavigation();
