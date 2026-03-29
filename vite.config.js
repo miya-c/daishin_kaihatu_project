@@ -16,7 +16,7 @@ export default defineConfig({
         { src: resolve(projectRoot, '_redirects'), dest: '.' },
         { src: resolve(projectRoot, 'csv'), dest: '.' },
         { src: resolve(projectRoot, 'gas_scripts'), dest: '.' },
-        { src: resolve(projectRoot, 'pwa-utils.js'), dest: '.' },
+        { src: resolve(projectRoot, 'src/pwa-utils.js'), dest: '.' },
         { src: resolve(projectRoot, 'src/sw/service-worker.js'), dest: '.' },
       ],
     }),

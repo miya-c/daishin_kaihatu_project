@@ -1,0 +1,142 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import {
+  getGasUrl,
+  fetchProperties,
+  fetchRooms,
+  fetchMeterReadings,
+  updateMeterReadings,
+  completeInspection
+} from '../gasClient';
+
+const MOCK_URL = 'https://example.com/gas';
+
+describe('getGasUrl', () => {
+  beforeEach(() => {
+    sessionStorage.clear();
+    localStorage.clear();
+  });
+
+  it('returns sessionStorage value when set', () => {
+    sessionStorage.setItem('gasWebAppUrl', MOCK_URL);
+    expect(getGasUrl()).toBe(MOCK_URL);
+  });
+
+  it('falls back to localStorage when sessionStorage is empty', () => {
+    localStorage.setItem('gasWebAppUrl', MOCK_URL);
+    expect(getGasUrl()).toBe(MOCK_URL);
+  });
+
+  it('returns default URL when both storages are empty', () => {
+    const result = getGasUrl();
+    expect(result).toContain('script.google.com');
+  });
+
+  it('returns default URL when storage access throws', () => {
+    vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => { throw new Error(); });
+    const result = getGasUrl();
+    expect(result).toContain('script.google.com');
+    vi.restoreAllMocks();
+  });
+});
+
+describe('fetchProperties', () => {
+  beforeEach(() => {
+    sessionStorage.clear();
+    localStorage.clear();
+  });
+
+  it('constructs correct URL with action=getProperties', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ success: true, data: [] })
+    });
+    vi.stubGlobal('fetch', mockFetch);
+
+    await fetchProperties(MOCK_URL);
+
+    const calledUrl = mockFetch.mock.calls[0][0];
+    expect(calledUrl).toContain('action=getProperties');
+    expect(calledUrl).toContain('cache=');
+    expect(calledUrl).toContain(MOCK_URL);
+    vi.restoreAllMocks();
+  });
+
+  it('throws on non-OK response', async () => {
+    vi.stubGlobal('fetch', () => Promise.resolve({ ok: false, status: 500, statusText: 'Server Error' }));
+    await expect(fetchProperties(MOCK_URL)).rejects.toThrow('HTTP 500');
+    vi.restoreAllMocks();
+  });
+});
+
+describe('fetchRooms', () => {
+  it('constructs correct URL with propertyId', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ success: true, data: [] })
+    });
+    vi.stubGlobal('fetch', mockFetch);
+
+    await fetchRooms(MOCK_URL, 'prop-1');
+
+    const calledUrl = mockFetch.mock.calls[0][0];
+    expect(calledUrl).toContain('action=getRooms');
+    expect(calledUrl).toContain('propertyId=prop-1');
+    vi.restoreAllMocks();
+  });
+});
+
+describe('fetchMeterReadings', () => {
+  it('constructs correct URL with propertyId and roomId', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ success: true })
+    });
+    vi.stubGlobal('fetch', mockFetch);
+
+    await fetchMeterReadings(MOCK_URL, 'prop-1', 'room-1');
+
+    const calledUrl = mockFetch.mock.calls[0][0];
+    expect(calledUrl).toContain('action=getMeterReadings');
+    expect(calledUrl).toContain('propertyId=prop-1');
+    expect(calledUrl).toContain('roomId=room-1');
+    vi.restoreAllMocks();
+  });
+});
+
+describe('updateMeterReadings', () => {
+  it('sends readings as JSON-encoded parameter', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ success: true })
+    });
+    vi.stubGlobal('fetch', mockFetch);
+
+    const readings = [{ date: '2025-06-18', currentReading: '100' }];
+    await updateMeterReadings(MOCK_URL, 'prop-1', 'room-1', readings);
+
+    const calledUrl = mockFetch.mock.calls[0][0];
+    expect(calledUrl).toContain('action=updateMeterReadings');
+    expect(calledUrl).toContain('propertyId=prop-1');
+    expect(calledUrl).toContain('roomId=room-1');
+    expect(calledUrl).toContain(encodeURIComponent(JSON.stringify(readings)));
+    vi.restoreAllMocks();
+  });
+});
+
+describe('completeInspection', () => {
+  it('constructs correct URL with propertyId and completionDate', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ success: true })
+    });
+    vi.stubGlobal('fetch', mockFetch);
+
+    await completeInspection(MOCK_URL, 'prop-1', '2025-06-18');
+
+    const calledUrl = mockFetch.mock.calls[0][0];
+    expect(calledUrl).toContain('action=completeInspection');
+    expect(calledUrl).toContain('propertyId=prop-1');
+    expect(calledUrl).toContain('completionDate=2025-06-18');
+    vi.restoreAllMocks();
+  });
+});

@@ -9,6 +9,8 @@ const PropertySelectApp = () => {
   const [isFetched, setIsFetched] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
   const [navigationMessage, setNavigationMessage] = useState('');
+  const [showUrlModal, setShowUrlModal] = useState(false);
+  const [urlInput, setUrlInput] = useState('https://script.google.com/macros/s/');
 
   const gasWebAppUrl = useMemo(() => getGasUrl(), []);
 
@@ -34,17 +36,7 @@ const PropertySelectApp = () => {
       setIsFetched(false);
 
       if (!gasWebAppUrl || !gasWebAppUrl.includes('script.google.com')) {
-        const userInput = prompt(
-          'GAS Web App URLが設定されていません。\n\nGoogle Apps ScriptのWeb App URLを入力してください:\n\n例: https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec',
-          'https://script.google.com/macros/s/'
-        );
-        if (userInput && userInput.includes('script.google.com')) {
-          localStorage.setItem('gasWebAppUrl', userInput);
-          sessionStorage.setItem('gasWebAppUrl', userInput);
-          window.location.reload();
-          return;
-        }
-        setError('正しいGAS Web App URLを設定してください。');
+        setShowUrlModal(true);
         setLoading(false);
         return;
       }
@@ -81,37 +73,20 @@ const PropertySelectApp = () => {
 
   useEffect(() => {
     if (isFetched && loading) {
-      const checkRenderingComplete = () => {
-        requestAnimationFrame(() => {
-          const propertyElements = document.querySelectorAll('.MuiCard-root, .property-card, [data-property-id]');
-          if (propertyElements.length > 0) {
-            requestAnimationFrame(() => setLoading(false));
-          } else {
-            setTimeout(checkRenderingComplete, 50);
-          }
-        });
-      };
-      const fallbackTimeout = setTimeout(() => setLoading(false), 3000);
-      checkRenderingComplete();
-      return () => clearTimeout(fallbackTimeout);
+      setLoading(false);
     }
-  }, [isFetched, loading]);
-
-  useEffect(() => {
-    const handleForceHideLoading = () => {
-      if (!isFetched) {
-        setLoading(false);
-        setError(null);
-        setIsNavigating(false);
-      }
-    };
-    if (window.forceHideLoading) {
-      handleForceHideLoading();
-      window.forceHideLoading = false;
-    }
-    window.addEventListener('forceHideLoading', handleForceHideLoading);
-    return () => window.removeEventListener('forceHideLoading', handleForceHideLoading);
   }, [isFetched]);
+
+  const handleUrlSubmit = useCallback(() => {
+    if (urlInput && urlInput.includes('script.google.com')) {
+      localStorage.setItem('gasWebAppUrl', urlInput);
+      sessionStorage.setItem('gasWebAppUrl', urlInput);
+      window.location.reload();
+    } else {
+      setError('正しいGAS Web App URLを設定してください。');
+      setShowUrlModal(false);
+    }
+  }, [urlInput]);
 
   const handlePropertySelect = useCallback(async (property) => {
     if (!property || typeof property.id === 'undefined' || typeof property.name === 'undefined') return;
@@ -226,6 +201,28 @@ const PropertySelectApp = () => {
   // Main content
   return (
     <div style={{ minHeight: '100vh' }}>
+      {showUrlModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2147483647 }}>
+          <div style={{ backgroundColor: '#fff', borderRadius: '16px', padding: '32px', maxWidth: '480px', width: '90%', boxShadow: '0 8px 32px rgba(0,0,0,0.2)' }}>
+            <h3 style={{ margin: '0 0 16px 0', fontSize: '1.125rem', fontWeight: 600 }}>GAS Web App URL設定</h3>
+            <p style={{ margin: '0 0 16px 0', fontSize: '0.875rem', color: 'var(--mui-palette-grey-900)' }}>
+              GAS Web App URLが設定されていません。Google Apps ScriptのWeb App URLを入力してください。
+            </p>
+            <input
+              type="text"
+              value={urlInput}
+              onChange={(e) => setUrlInput(e.target.value)}
+              style={{ width: '100%', padding: '10px', fontSize: '0.875rem', border: '1px solid #ccc', borderRadius: '8px', boxSizing: 'border-box', marginBottom: '16px' }}
+              placeholder="https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec"
+            />
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+              <button onClick={() => { setShowUrlModal(false); setError('正しいGAS Web App URLを設定してください。'); }} style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid #ccc', backgroundColor: '#fff', cursor: 'pointer' }}>キャンセル</button>
+              <button onClick={handleUrlSubmit} style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', backgroundColor: 'var(--mui-palette-primary-main, #1976d2)', color: '#fff', cursor: 'pointer', fontWeight: 600 }}>保存</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {isNavigating && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(255,255,255,0.95)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2147483647 }}>
           <div style={{ backgroundColor: '#fff', borderRadius: '16px', padding: '40px 32px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '24px', boxShadow: 'var(--mui-shadows-4)', maxWidth: '320px', textAlign: 'center' }}>

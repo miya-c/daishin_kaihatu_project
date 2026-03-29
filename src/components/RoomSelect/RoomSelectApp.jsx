@@ -7,6 +7,17 @@ const RoomSelectApp = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [propertyId, setPropertyId] = useState('');
+  const [toastMessage, setToastMessage] = useState('');
+  const [showToast, setShowToast] = useState(false);
+
+  const displayToast = useCallback((message) => {
+    setToastMessage(message);
+    setShowToast(true);
+    setTimeout(() => {
+      setShowToast(false);
+      setToastMessage('');
+    }, 3000);
+  }, []);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -161,7 +172,7 @@ const RoomSelectApp = () => {
 
   const handleRoomClick = useCallback((room) => {
     if (room.isNotNeeded === true) {
-      alert('この部屋は検針不要に設定されています。');
+      displayToast('この部屋は検針不要に設定されています。');
       return;
     }
 
@@ -179,13 +190,13 @@ const RoomSelectApp = () => {
 
   const handleCompleteInspection = useCallback(async () => {
     if (!propertyId) {
-      alert('物件IDが取得できませんでした');
+      displayToast('物件IDが取得できませんでした');
       return;
     }
 
     const gasUrl = sessionStorage.getItem('gasWebAppUrl');
     if (!gasUrl) {
-      alert('Web App URLが設定されていません');
+      displayToast('Web App URLが設定されていません');
       return;
     }
 
@@ -205,13 +216,13 @@ const RoomSelectApp = () => {
       const result = await response.json();
 
       if (result.success) {
-        alert(`検針完了日を ${completionDate} で保存しました！`);
-        window.location.reload();
+        displayToast(`検針完了日を ${completionDate} で保存しました！`);
+        setTimeout(() => window.location.reload(), 1500);
       } else {
         throw new Error(result.error || '検針完了処理に失敗しました');
       }
     } catch (err) {
-      alert(`検針完了処理でエラーが発生しました: ${err.message}`);
+      displayToast(`検針完了処理でエラーが発生しました: ${err.message}`);
     }
   }, [propertyId]);
 
@@ -351,6 +362,18 @@ const RoomSelectApp = () => {
           </div>
         )}
       </main>
+
+      {showToast && (
+        <div style={{
+          position: 'fixed', bottom: '20px', left: '50%', transform: 'translateX(-50%)',
+          backgroundColor: 'var(--mui-palette-primary-main, #1976d2)', color: 'white',
+          padding: '12px 24px', borderRadius: '8px', fontSize: '0.95rem', fontWeight: 500,
+          boxShadow: '0 4px 12px rgba(0,0,0,0.2)', zIndex: 10000, textAlign: 'center',
+          maxWidth: '90vw', animation: 'fadeIn 0.3s ease'
+        }}>
+          {toastMessage}
+        </div>
+      )}
     </div>
   );
 };
