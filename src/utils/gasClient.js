@@ -4,6 +4,8 @@
  * including property fetching, room management, and meter reading operations.
  */
 
+import { validateId } from './validateParams';
+
 /** Default GAS Web App URL from environment variable */
 const GAS_URL_DEFAULT = import.meta.env.VITE_GAS_WEB_APP_URL || '';
 
@@ -54,6 +56,9 @@ export const fetchProperties = async (gasUrl) => {
  * @throws {Error} If the network request fails or returns a non-OK status
  */
 export const fetchRooms = async (gasUrl, propertyId) => {
+  const validation = validateId(propertyId, 'propertyId');
+  if (!validation.valid) throw new Error(validation.error);
+
   const url = gasUrl || getGasUrl();
   const requestUrl = `${url}?action=getRooms&propertyId=${encodeURIComponent(propertyId)}&cache=${Date.now()}`;
   const response = await fetch(requestUrl);
@@ -75,6 +80,12 @@ export const fetchRooms = async (gasUrl, propertyId) => {
  * @throws {Error} If the network request fails or returns a non-OK status
  */
 export const fetchMeterReadings = async (gasUrl, propertyId, roomId) => {
+  const propValidation = validateId(propertyId, 'propertyId');
+  if (!propValidation.valid) throw new Error(propValidation.error);
+
+  const roomValidation = validateId(roomId, 'roomId');
+  if (!roomValidation.valid) throw new Error(roomValidation.error);
+
   const url = gasUrl || getGasUrl();
   const requestUrl = `${url}?action=getMeterReadings&propertyId=${encodeURIComponent(propertyId)}&roomId=${encodeURIComponent(roomId)}`;
   const response = await fetch(requestUrl);
@@ -98,6 +109,12 @@ export const fetchMeterReadings = async (gasUrl, propertyId, roomId) => {
  * @throws {Error} If the network request fails or returns a non-OK status
  */
 export const updateMeterReadings = async (gasUrl, propertyId, roomId, readings) => {
+  const propValidation = validateId(propertyId, 'propertyId');
+  if (!propValidation.valid) throw new Error(propValidation.error);
+
+  const roomValidation = validateId(roomId, 'roomId');
+  if (!roomValidation.valid) throw new Error(roomValidation.error);
+
   const url = gasUrl || getGasUrl();
   const params = new URLSearchParams({
     action: 'updateMeterReadings',
@@ -127,6 +144,9 @@ export const updateMeterReadings = async (gasUrl, propertyId, roomId, readings) 
  * @throws {Error} If the network request fails or returns a non-OK status
  */
 export const completeInspection = async (gasUrl, propertyId, completionDate) => {
+  const propValidation = validateId(propertyId, 'propertyId');
+  if (!propValidation.valid) throw new Error(propValidation.error);
+
   const url = gasUrl || getGasUrl();
   const params = new URLSearchParams({
     action: 'completeInspection',

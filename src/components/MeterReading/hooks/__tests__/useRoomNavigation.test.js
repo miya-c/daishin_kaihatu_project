@@ -447,4 +447,62 @@ describe('useRoomNavigation', () => {
       setItemSpy.mockRestore();
     });
   });
+
+  describe('saveReadings', () => {
+    it('returns false for empty readings', async () => {
+      const { result } = renderHook(() => useRoomNavigation(createDefaultProps()));
+
+      const res = await result.current.saveReadings([]);
+      expect(res).toBe(false);
+    });
+
+    it('returns false for null readings', async () => {
+      const { result } = renderHook(() => useRoomNavigation(createDefaultProps()));
+
+      const res = await result.current.saveReadings(null);
+      expect(res).toBe(false);
+    });
+
+    it('saves readings and returns true on success', async () => {
+      vi.stubGlobal('fetch', vi.fn().mockReturnValue(createMockFetchResponse({ success: true })));
+
+      const { result } = renderHook(() => useRoomNavigation(createDefaultProps()));
+
+      const readings = [{ date: '2025-06-01', currentReading: '100', warningFlag: '正常' }];
+      const res = await result.current.saveReadings(readings);
+      expect(res).toBe(true);
+      expect(fetch).toHaveBeenCalledTimes(1);
+    });
+
+    it('returns false when API returns success=false', async () => {
+      vi.stubGlobal('fetch', vi.fn().mockReturnValue(createMockFetchResponse({ success: false })));
+
+      const { result } = renderHook(() => useRoomNavigation(createDefaultProps()));
+
+      const readings = [{ date: '2025-06-01', currentReading: '100' }];
+      const res = await result.current.saveReadings(readings);
+      expect(res).toBe(false);
+    });
+
+    it('returns false on network error', async () => {
+      vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('Network error')));
+
+      const { result } = renderHook(() => useRoomNavigation(createDefaultProps()));
+
+      const readings = [{ date: '2025-06-01', currentReading: '100' }];
+      const res = await result.current.saveReadings(readings);
+      expect(res).toBe(false);
+    });
+
+    it('returns false when gasWebAppUrl is missing', async () => {
+      const props = createDefaultProps({ gasWebAppUrl: '' });
+      sessionStorage.removeItem('gasWebAppUrl');
+
+      const { result } = renderHook(() => useRoomNavigation(props));
+
+      const readings = [{ date: '2025-06-01', currentReading: '100' }];
+      const res = await result.current.saveReadings(readings);
+      expect(res).toBe(false);
+    });
+  });
 });

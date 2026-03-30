@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { getGasUrl } from '../../utils/gasClient';
+import { validateId } from '../../utils/validateParams';
 
 const RoomSelectApp = () => {
   const [rooms, setRooms] = useState([]);
@@ -29,6 +30,13 @@ const RoomSelectApp = () => {
 
     if (!propId) {
       setError('物件IDが指定されていません。');
+      setLoading(false);
+      return;
+    }
+
+    const validation = validateId(propId, '物件ID');
+    if (!validation.valid) {
+      setError(validation.error);
       setLoading(false);
       return;
     }

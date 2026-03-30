@@ -76,6 +76,7 @@ function setupMocks(overrides = {}) {
     handleNextRoom: vi.fn(),
     handleBackButton: vi.fn(),
     updateSessionStorageCache: vi.fn(),
+    saveReadings: vi.fn(),
     ...overrides.navigation,
   };
   const updateDefaults = {

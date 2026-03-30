@@ -89,31 +89,44 @@ export const useRoomNavigation = ({
     [gasWebAppUrl]
   );
 
+  const saveReadings = useCallback(
+    async (readings) => {
+      if (!readings || readings.length === 0) return false;
+
+      const currentGasUrl = gasWebAppUrl || sessionStorage.getItem('gasWebAppUrl');
+      if (!currentGasUrl) return false;
+
+      try {
+        const params = new URLSearchParams({
+          action: 'updateMeterReadings',
+          propertyId: propertyId,
+          roomId: roomId,
+          readings: JSON.stringify(readings),
+        });
+
+        const response = await fetch(`${currentGasUrl}?${params}`, { method: 'GET' });
+
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success) {
+            displayToast('検針データを保存しました');
+            return true;
+          }
+        }
+        return false;
+      } catch (err) {
+        return false;
+      }
+    },
+    [propertyId, roomId, gasWebAppUrl, displayToast]
+  );
+
   const saveAndNavigateToRoom = useCallback(
     async (targetRoomId, direction, collectReadingsFn) => {
       try {
         setUpdating(true);
         const meterReadingsData = collectReadingsFn ? collectReadingsFn() : [];
-        const currentGasUrl = gasWebAppUrl || sessionStorage.getItem('gasWebAppUrl');
-
-        // Save readings using the same format as handleUpdateReadings
-        if (meterReadingsData && meterReadingsData.length > 0) {
-          const params = new URLSearchParams({
-            action: 'updateMeterReadings',
-            propertyId: propertyId,
-            roomId: roomId,
-            readings: JSON.stringify(meterReadingsData),
-          });
-
-          const saveResponse = await fetch(`${currentGasUrl}?${params}`, { method: 'GET' });
-
-          if (saveResponse.ok) {
-            const saveResult = await saveResponse.json();
-            if (saveResult.success) {
-              displayToast('検針データを保存しました');
-            }
-          }
-        }
+        await saveReadings(meterReadingsData);
 
         // Navigate to target room after save completes
         window.location.href = `/reading/?propertyId=${propertyId}&roomId=${targetRoomId}`;
@@ -124,7 +137,7 @@ export const useRoomNavigation = ({
         setUpdating(false);
       }
     },
-    [propertyId, roomId, gasWebAppUrl, displayToast]
+    [propertyId, saveReadings]
   );
 
   const handlePreviousRoom = useCallback(
@@ -182,5 +195,6 @@ export const useRoomNavigation = ({
     handleNextRoom,
     handleBackButton,
     updateSessionStorageCache,
+    saveReadings,
   };
 };

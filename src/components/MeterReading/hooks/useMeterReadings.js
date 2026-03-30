@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { calculateWarningFlag } from '../utils/warningFlag';
+import { mapReadingFromApi } from '../utils/readingMapper';
+import { validateId } from '../../../utils/validateParams';
 
 export const useMeterReadings = () => {
   const [loading, setLoading] = useState(true);
@@ -26,18 +28,9 @@ export const useMeterReadings = () => {
   }, []);
 
   const mapNavigationReadingsData = useCallback((targetRoomId, readings) => {
-    return readings.map((reading, index) => ({
-      id: `${targetRoomId}-${reading.date || reading['検針日時'] || index}`,
-      date: reading.date || reading['検針日時'] || '',
-      currentReading:
-        reading.currentReading || reading['今回指示数'] || reading['今回の指示数'] || '',
-      previousReading: reading.previousReading || reading['前回指示数'] || '',
-      previousPreviousReading: reading.previousPreviousReading || reading['前々回指示数'] || '',
-      threeTimesPrevious: reading.threeTimesPreviousReading || reading['前々々回指示数'] || '',
-      warningFlag: reading.warningFlag || reading['警告フラグ'] || '正常',
-      standardDeviation: reading.standardDeviation || reading['標準偏差値'] || '',
-      usage: reading.usage || reading['今回使用量'] || 0,
-    }));
+    return readings.map((reading, index) =>
+      mapReadingFromApi(reading, index, { roomId: targetRoomId })
+    );
   }, []);
 
   const loadMeterReadings = useCallback(
@@ -107,67 +100,9 @@ export const useMeterReadings = () => {
           setRoomName(rName);
 
           if (Array.isArray(readings) && readings.length > 0) {
-            const mappedReadings = readings.map((rawReading, index) => {
-              const mapped = {
-                id:
-                  rawReading['記録ID'] ||
-                  rawReading['recordId'] ||
-                  rawReading['ID'] ||
-                  `reading-${index}`,
-                date: rawReading['検針日時'] || rawReading['date'] || rawReading['記録日'] || '',
-                currentReading:
-                  rawReading['今回の指示数'] ||
-                  rawReading['今回指示数'] ||
-                  rawReading['今回指示数（水道）'] ||
-                  rawReading['currentReading'] ||
-                  rawReading['指示数'] ||
-                  '',
-                previousReading:
-                  rawReading['前回指示数'] ||
-                  rawReading['previousReading'] ||
-                  rawReading['前回'] ||
-                  '',
-                previousPreviousReading:
-                  rawReading['前々回指示数'] ||
-                  rawReading['previousPreviousReading'] ||
-                  rawReading['前々回'] ||
-                  '',
-                threeTimesPrevious:
-                  rawReading['前々々回指示数'] ||
-                  rawReading['threeTimesPrevious'] ||
-                  rawReading['前々々回'] ||
-                  '',
-                usage:
-                  rawReading['今回使用量'] || rawReading['usage'] || rawReading['使用量'] || '',
-                warningFlag: rawReading['警告フラグ'] || rawReading['warningFlag'] || '正常',
-                standardDeviation:
-                  rawReading['標準偏差値'] || rawReading['standardDeviation'] || '',
-                status:
-                  rawReading['警告フラグ'] || rawReading['status'] || rawReading['状態'] || '正常',
-              };
-
-              if (mapped.currentReading && mapped.previousReading) {
-                const warningResult = calculateWarningFlag(
-                  parseFloat(mapped.currentReading),
-                  parseFloat(mapped.previousReading),
-                  parseFloat(mapped.previousPreviousReading),
-                  parseFloat(mapped.threeTimesPrevious)
-                );
-                mapped.warningFlag = warningResult.warningFlag;
-                mapped.standardDeviation = warningResult.standardDeviation;
-              } else if (!mapped.currentReading || mapped.currentReading === '') {
-                const thresholdResult = calculateWarningFlag(
-                  null,
-                  parseFloat(mapped.previousReading),
-                  parseFloat(mapped.previousPreviousReading),
-                  parseFloat(mapped.threeTimesPrevious)
-                );
-                mapped.warningFlag = thresholdResult.warningFlag;
-                mapped.standardDeviation = thresholdResult.standardDeviation;
-              }
-
-              return mapped;
-            });
+            const mappedReadings = readings.map((rawReading, index) =>
+              mapReadingFromApi(rawReading, index, { calculateWarnings: true })
+            );
             setMeterReadings(mappedReadings);
           } else {
             setMeterReadings([]);
@@ -250,6 +185,20 @@ export const useMeterReadings = () => {
 
     if (!propId || !rId) {
       setError('物件情報または部屋情報が不足しているため、検針データを取得できません。');
+      setLoading(false);
+      return;
+    }
+
+    const propValidation = validateId(propId, '物件ID');
+    if (!propValidation.valid) {
+      setError(propValidation.error);
+      setLoading(false);
+      return;
+    }
+
+    const roomValidation = validateId(rId, '部屋ID');
+    if (!roomValidation.valid) {
+      setError(roomValidation.error);
       setLoading(false);
       return;
     }

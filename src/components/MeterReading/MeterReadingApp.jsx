@@ -1,17 +1,16 @@
-import React, { useState, useCallback, useMemo } from 'react';
-import { formatDateForDisplay } from './utils/dateUtils';
-import { formatReading, formatInspectionStatus, calculateUsageDisplay } from './utils/formatUtils';
-import {
-  calculateWarningFlag,
-  getStatusDisplay,
-  getStandardDeviationDisplay,
-} from './utils/warningFlag';
+import React, { useState, useCallback } from 'react';
+import { formatReading, calculateUsageDisplay } from './utils/formatUtils';
+import { calculateWarningFlag } from './utils/warningFlag';
 import { useMeterReadings } from './hooks/useMeterReadings';
 import { useRoomNavigation } from './hooks/useRoomNavigation';
 import { useReadingUpdate } from './hooks/useReadingUpdate';
+import { useToast } from './hooks/useToast';
 import LoadingOverlay from './components/LoadingOverlay';
 import ToastOverlay from './components/ToastOverlay';
 import NavigationButtons from './components/NavigationButtons';
+import PropertyInfoHeader from './components/PropertyInfoHeader';
+import ReadingHistoryTable from './components/ReadingHistoryTable';
+import InitialReadingForm from './components/InitialReadingForm';
 
 const MeterReadingApp = () => {
   const {
@@ -28,33 +27,13 @@ const MeterReadingApp = () => {
     loadMeterReadings,
   } = useMeterReadings();
 
-  const toastTimerRef = React.useRef(null);
-
-  const displayToast = useCallback((message) => {
-    setToastMessage(message);
-    setShowToast(true);
-    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
-    toastTimerRef.current = setTimeout(() => {
-      setShowToast(false);
-      setToastMessage('');
-    }, 3000);
-  }, []);
-
-  React.useEffect(() => {
-    return () => {
-      if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
-    };
-  }, []);
-
-  const [toastMessage, setToastMessage] = useState('');
-  const [showToast, setShowToast] = useState(false);
+  const { toastMessage, showToast, displayToast } = useToast();
 
   const {
     updating,
     isNavigating,
     navigationMessage,
     setUpdating,
-    setIsNavigating,
     getRoomNavigation,
     handlePreviousRoom,
     handleNextRoom,
@@ -84,53 +63,17 @@ const MeterReadingApp = () => {
 
   // Initialize reading values when meterReadings changes
   React.useEffect(() => {
-    const initialValues = {};
-    meterReadings.forEach((reading) => {
-      const date = reading.date;
-      if (!(date in readingValues)) {
-        initialValues[date] = formatReading(reading.currentReading);
-      }
+    setReadingValues((prev) => {
+      const updated = { ...prev };
+      meterReadings.forEach((reading) => {
+        if (!(reading.date in updated)) {
+          updated[reading.date] = formatReading(reading.currentReading);
+        }
+      });
+      if (!('' in updated)) updated[''] = '';
+      return updated;
     });
-    // Also handle initial reading form (empty date key)
-    if (!('' in readingValues)) {
-      initialValues[''] = '';
-    }
-    if (Object.keys(initialValues).length > 0) {
-      setReadingValues((prev) => ({ ...initialValues, ...prev }));
-    }
   }, [meterReadings]);
-
-  const getPreviousReadingsText = useCallback((r) => {
-    let parts = [];
-    if (r.previousReading && r.previousReading !== 'N/A') {
-      let text = `前回: ${r.previousReading}`;
-      if (r.previousPreviousReading && r.previousPreviousReading !== 'N/A') {
-        const prev = parseFloat(r.previousReading);
-        const prevPrev = parseFloat(r.previousPreviousReading);
-        if (!isNaN(prev) && !isNaN(prevPrev)) {
-          const diff = prev - prevPrev;
-          text += ` [${diff >= 0 ? '+' : ''}${diff}]`;
-        }
-      }
-      parts.push(text);
-    }
-    if (r.previousPreviousReading && r.previousPreviousReading !== 'N/A') {
-      let text = `前々回: ${r.previousPreviousReading}`;
-      if (r.threeTimesPrevious && r.threeTimesPrevious !== 'N/A') {
-        const prevPrev = parseFloat(r.previousPreviousReading);
-        const prevPrevPrev = parseFloat(r.threeTimesPrevious);
-        if (!isNaN(prevPrev) && !isNaN(prevPrevPrev)) {
-          const diff = prevPrev - prevPrevPrev;
-          text += ` [${diff >= 0 ? '+' : ''}${diff}]`;
-        }
-      }
-      parts.push(text);
-    }
-    if (r.threeTimesPrevious && r.threeTimesPrevious !== 'N/A') {
-      parts.push(`前々々回: ${r.threeTimesPrevious}`);
-    }
-    return parts;
-  }, []);
 
   const collectReadingsFromState = useCallback(() => {
     const readings = [];
@@ -427,10 +370,7 @@ const MeterReadingApp = () => {
 
       <div className="content-area mantine-container">
         <div className="mantine-stack">
-          <div className="property-info-card">
-            <h2 className="property-name">{String(propertyName || '物件名未設定')}</h2>
-            <p className="room-info">部屋: {String(roomName || '部屋名未設定')}</p>
-          </div>
+          <PropertyInfoHeader propertyName={propertyName} roomName={roomName} />
           <div
             className="mantine-paper reading-history-container"
             style={{ padding: 'var(--mui-spacing-xs)', margin: '0' }}
@@ -448,165 +388,13 @@ const MeterReadingApp = () => {
 
             {hasReadingsWithPrevious ? (
               <>
-                <table className="mantine-table">
-                  <thead style={{ display: 'none' }}>
-                    <tr>
-                      <th>検針日時</th>
-                      <th>今回指示数(㎥)</th>
-                      <th>今回使用量</th>
-                      <th>状態</th>
-                      <th>前回履歴</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {meterReadings
-                      .filter(
-                        (reading) =>
-                          reading.previousReading &&
-                          reading.previousReading !== '' &&
-                          reading.previousReading !== 0
-                      )
-                      .map((reading, index) => {
-                        const formattedDate = formatDateForDisplay(reading.date);
-                        const inspectionStatus = formatInspectionStatus(reading.date);
-                        const dateForDataAttribute = reading.date;
-                        const currentReadingDisplay =
-                          readingValues[dateForDataAttribute] ??
-                          formatReading(reading.currentReading);
-
-                        const usageToDisplay =
-                          usageStates[dateForDataAttribute] !== undefined
-                            ? usageStates[dateForDataAttribute]
-                            : calculateUsageDisplay(
-                                reading.currentReading,
-                                reading.previousReading
-                              );
-
-                        const usageDisplayString = `${usageToDisplay}${usageToDisplay !== '-' ? '㎥' : ''}`;
-                        const previousReadingsInfo = getPreviousReadingsText(reading);
-
-                        return (
-                          <tr key={index}>
-                            <td data-label="検針日時">
-                              <span
-                                style={{
-                                  color:
-                                    inspectionStatus.status === '未検針'
-                                      ? 'var(--mui-palette-red-6)'
-                                      : 'inherit',
-                                  fontWeight:
-                                    inspectionStatus.status === '未検針' ? 'bold' : 'normal',
-                                }}
-                              >
-                                最終検針日時:{' '}
-                                {inspectionStatus.status === '未検針'
-                                  ? '未検針'
-                                  : inspectionStatus.displayDate}
-                              </span>
-                            </td>
-                            <td data-label="今回指示数(㎥)">
-                              <input
-                                type="number"
-                                step="any"
-                                value={currentReadingDisplay}
-                                placeholder="指示数入力"
-                                min="0"
-                                data-date={dateForDataAttribute}
-                                data-original-value={formatReading(reading.currentReading)}
-                                data-previous-reading={formatReading(reading.previousReading)}
-                                className="mantine-input"
-                                aria-label={`${formattedDate || reading.date}の指示数`}
-                                aria-describedby={
-                                  inputErrors[dateForDataAttribute]
-                                    ? `error-${dateForDataAttribute}`
-                                    : undefined
-                                }
-                                onChange={(e) =>
-                                  handleInputChange(dateForDataAttribute, e.target.value, reading)
-                                }
-                              />
-                              {inputErrors[dateForDataAttribute] && (
-                                <div
-                                  id={`error-${dateForDataAttribute}`}
-                                  role="alert"
-                                  style={{
-                                    color: 'var(--mui-palette-red-6)',
-                                    fontSize: '0.9em',
-                                    marginTop: '4px',
-                                  }}
-                                >
-                                  {inputErrors[dateForDataAttribute]}
-                                </div>
-                              )}
-                            </td>
-                            <td data-label="今回使用量">{usageDisplayString}</td>
-                            <td data-label="状態">
-                              {(() => {
-                                const status = getStatusDisplay(reading);
-                                const sigma = getStandardDeviationDisplay(reading);
-                                return (
-                                  <span
-                                    style={{
-                                      display: 'inline-block',
-                                      padding: '3px 9px',
-                                      fontSize: '0.9em',
-                                      fontWeight: 500,
-                                      backgroundColor:
-                                        status === '要確認'
-                                          ? 'var(--mui-palette-red-light)'
-                                          : status === '正常'
-                                            ? 'var(--mui-palette-green-light)'
-                                            : 'var(--mui-palette-grey-2)',
-                                      color:
-                                        status === '要確認'
-                                          ? 'var(--mui-palette-red-8)'
-                                          : status === '正常'
-                                            ? 'var(--mui-palette-green-8)'
-                                            : 'var(--mui-palette-grey-7)',
-                                      borderRadius: 'var(--mui-radius-sm)',
-                                    }}
-                                  >
-                                    {status}
-                                    {sigma && (
-                                      <div
-                                        style={{
-                                          fontSize: '0.7em',
-                                          marginTop: '2px',
-                                          opacity: 0.8,
-                                        }}
-                                      >
-                                        σ: {sigma}
-                                      </div>
-                                    )}
-                                  </span>
-                                );
-                              })()}
-                            </td>
-                            <td data-label="前回履歴">
-                              {previousReadingsInfo && previousReadingsInfo.length > 0 ? (
-                                <div style={{ lineHeight: '1.6' }}>
-                                  {previousReadingsInfo.map((info, infoIndex) => (
-                                    <div
-                                      key={infoIndex}
-                                      className="previous-reading-text"
-                                      style={{
-                                        marginBottom:
-                                          infoIndex < previousReadingsInfo.length - 1 ? '6px' : '0',
-                                      }}
-                                    >
-                                      {info}
-                                    </div>
-                                  ))}
-                                </div>
-                              ) : (
-                                <div>-</div>
-                              )}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                  </tbody>
-                </table>
+                <ReadingHistoryTable
+                  meterReadings={meterReadings}
+                  readingValues={readingValues}
+                  inputErrors={inputErrors}
+                  usageStates={usageStates}
+                  onInputChange={handleInputChange}
+                />
 
                 <NavigationButtons
                   hasPrevious={navigation.hasPrevious}
@@ -618,108 +406,12 @@ const MeterReadingApp = () => {
                 />
               </>
             ) : (
-              <div className="mantine-stack">
-                <div className="mantine-alert info">
-                  <h3 className="mantine-text weight-600">初回検針</h3>
-                </div>
-                <div
-                  className="mantine-paper"
-                  style={{ marginTop: 'var(--mui-spacing-md)', padding: 'var(--mui-spacing-md)' }}
-                >
-                  <h4
-                    className="mantine-subtitle"
-                    style={{ marginBottom: 'var(--mui-spacing-sm)' }}
-                  >
-                    初回データ入力
-                  </h4>
-                  <div className="mantine-stack" style={{ gap: 'var(--mui-spacing-lg)' }}>
-                    <div>
-                      <label
-                        htmlFor="initialReadingDate"
-                        className="mantine-text weight-600"
-                        style={{ fontSize: '0.9rem', marginBottom: '4px', display: 'block' }}
-                      >
-                        検針日時:
-                      </label>
-                      <input
-                        type="text"
-                        id="initialReadingDate"
-                        value="未検針"
-                        readOnly
-                        className="mantine-input"
-                        style={{ fontSize: '1rem', padding: '10px' }}
-                      />
-                    </div>
-                    <div>
-                      <label
-                        htmlFor="initialReadingValue"
-                        className="mantine-text weight-600"
-                        style={{ fontSize: '0.9rem', marginBottom: '4px', display: 'block' }}
-                      >
-                        今回指示数(㎥):
-                      </label>
-                      <input
-                        type="number"
-                        id="initialReadingValue"
-                        className="mantine-input"
-                        placeholder="指示数入力"
-                        min="0"
-                        step="any"
-                        style={{ fontSize: '1rem', padding: '10px' }}
-                        value={readingValues[''] ?? ''}
-                        onChange={(e) => handleInitialInputChange(e.target.value)}
-                      />
-                      {inputErrors[''] && (
-                        <div
-                          role="alert"
-                          style={{
-                            color: 'var(--mui-palette-red-6)',
-                            fontSize: '0.9em',
-                            marginTop: '4px',
-                          }}
-                        >
-                          {inputErrors['']}
-                        </div>
-                      )}
-                    </div>
-                    <div>
-                      <label
-                        className="mantine-text weight-600"
-                        style={{ fontSize: '0.9rem', marginBottom: '4px', display: 'block' }}
-                      >
-                        今回使用量:
-                      </label>
-                      <div
-                        style={{
-                          backgroundColor: '#e3f2fd',
-                          border: '1px solid var(--mui-palette-grey-3)',
-                          borderRadius: 'var(--mui-radius-sm)',
-                          padding: '10px',
-                          fontSize: '1.2rem',
-                          fontWeight: 'bold',
-                          color: 'var(--mui-palette-blue-7)',
-                          minHeight: '44px',
-                          display: 'flex',
-                          alignItems: 'center',
-                        }}
-                      >
-                        {usageStates[''] !== undefined
-                          ? `${usageStates['']}${usageStates[''] !== '-' ? '㎥' : ''}`
-                          : '-'}
-                      </div>
-                      <div
-                        style={{
-                          fontSize: '0.85em',
-                          color: 'var(--mui-palette-grey-6)',
-                          marginTop: '4px',
-                        }}
-                      >
-                        ※初回検針では、指示数がそのまま使用量になります
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <InitialReadingForm
+                readingValue={readingValues['']}
+                inputError={inputErrors['']}
+                usageState={usageStates['']}
+                onInputChange={handleInitialInputChange}
+              />
             )}
           </div>
         </div>
