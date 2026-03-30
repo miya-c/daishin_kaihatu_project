@@ -113,6 +113,90 @@ describe('useRoomNavigation', () => {
       expect(nav.hasPrevious).toBe(false);
       expect(nav.hasNext).toBe(false);
     });
+
+    it('skips isNotNeeded rooms when finding previous room', () => {
+      const roomsWithSkip = [
+        { id: 'room-100', name: '100号室' },
+        { id: 'room-101', name: '101号室', isNotNeeded: true },
+        { id: 'room-102', name: '102号室' },
+      ];
+      sessionStorage.setItem('selectedRooms', JSON.stringify(roomsWithSkip));
+
+      // Current room is room-102; previous is room-101 (skip) → room-100
+      const { result } = renderHook(() =>
+        useRoomNavigation(createDefaultProps({ roomId: 'room-102' }))
+      );
+
+      const nav = result.current.getRoomNavigation();
+      expect(nav.hasPrevious).toBe(true);
+      expect(nav.previousRoom.id).toBe('room-100'); // skips room-101
+    });
+
+    it('skips isNotNeeded rooms when finding next room', () => {
+      const roomsWithSkip = [
+        { id: 'room-100', name: '100号室' },
+        { id: 'room-101', name: '101号室', isNotNeeded: true },
+        { id: 'room-102', name: '102号室' },
+      ];
+      sessionStorage.setItem('selectedRooms', JSON.stringify(roomsWithSkip));
+
+      const { result } = renderHook(() =>
+        useRoomNavigation(createDefaultProps({ roomId: 'room-100' }))
+      );
+
+      const nav = result.current.getRoomNavigation();
+      expect(nav.hasPrevious).toBe(false);
+      expect(nav.hasNext).toBe(true);
+      expect(nav.nextRoom.id).toBe('room-102'); // skips room-101
+    });
+
+    it('returns hasPrevious=false when all previous rooms are isNotNeeded', () => {
+      const roomsWithSkip = [
+        { id: 'room-100', name: '100号室', isNotNeeded: true },
+        { id: 'room-101', name: '101号室' },
+        { id: 'room-102', name: '102号室' },
+      ];
+      sessionStorage.setItem('selectedRooms', JSON.stringify(roomsWithSkip));
+
+      const { result } = renderHook(() => useRoomNavigation(createDefaultProps()));
+
+      const nav = result.current.getRoomNavigation();
+      expect(nav.hasPrevious).toBe(false);
+      expect(nav.hasNext).toBe(true);
+    });
+
+    it('returns hasNext=false when all next rooms are isNotNeeded', () => {
+      const roomsWithSkip = [
+        { id: 'room-100', name: '100号室' },
+        { id: 'room-101', name: '101号室' },
+        { id: 'room-102', name: '102号室', isNotNeeded: true },
+      ];
+      sessionStorage.setItem('selectedRooms', JSON.stringify(roomsWithSkip));
+
+      const { result } = renderHook(() =>
+        useRoomNavigation(createDefaultProps({ roomId: 'room-101' }))
+      );
+
+      const nav = result.current.getRoomNavigation();
+      expect(nav.hasPrevious).toBe(true);
+      expect(nav.hasNext).toBe(false);
+    });
+
+    it('skips multiple consecutive isNotNeeded rooms', () => {
+      const roomsWithSkip = [
+        { id: 'room-100', name: '100号室' },
+        { id: 'room-101', name: '101号室', isNotNeeded: true },
+        { id: 'room-102', name: '102号室', isNotNeeded: true },
+        { id: 'room-103', name: '103号室' },
+      ];
+      sessionStorage.setItem('selectedRooms', JSON.stringify(roomsWithSkip));
+
+      const { result } = renderHook(() => useRoomNavigation(createDefaultProps()));
+
+      const nav = result.current.getRoomNavigation();
+      expect(nav.previousRoom.id).toBe('room-100');
+      expect(nav.nextRoom.id).toBe('room-103');
+    });
   });
 
   describe('handlePreviousRoom / handleNextRoom', () => {

@@ -16,11 +16,29 @@ export const useRoomNavigation = ({
       const roomsArray = JSON.parse(selectedRooms);
       const currentIndex = roomsArray.findIndex(room => room.id === roomId);
 
+      // Find previous room that needs inspection (skip isNotNeeded rooms)
+      let previousRoom = null;
+      for (let i = currentIndex - 1; i >= 0; i--) {
+        if (roomsArray[i].isNotNeeded !== true) {
+          previousRoom = roomsArray[i];
+          break;
+        }
+      }
+
+      // Find next room that needs inspection (skip isNotNeeded rooms)
+      let nextRoom = null;
+      for (let i = currentIndex + 1; i < roomsArray.length; i++) {
+        if (roomsArray[i].isNotNeeded !== true) {
+          nextRoom = roomsArray[i];
+          break;
+        }
+      }
+
       return {
-        hasPrevious: currentIndex > 0,
-        hasNext: currentIndex >= 0 && currentIndex < roomsArray.length - 1,
-        previousRoom: currentIndex > 0 ? roomsArray[currentIndex - 1] : null,
-        nextRoom: currentIndex >= 0 && currentIndex < roomsArray.length - 1 ? roomsArray[currentIndex + 1] : null
+        hasPrevious: previousRoom !== null,
+        hasNext: nextRoom !== null,
+        previousRoom,
+        nextRoom
       };
     } catch (err) {
       return { hasPrevious: false, hasNext: false };
