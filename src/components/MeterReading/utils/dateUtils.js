@@ -24,7 +24,7 @@ export const formatDateForDisplay = (rawDate) => {
     const formatted = new Intl.DateTimeFormat('ja-JP', {
       timeZone: 'Asia/Tokyo',
       month: 'long',
-      day: 'numeric'
+      day: 'numeric',
     }).format(date);
 
     return formatted;
@@ -46,7 +46,7 @@ export const getCurrentJSTDateString = () => {
     timeZone: 'Asia/Tokyo',
     year: 'numeric',
     month: '2-digit',
-    day: '2-digit'
+    day: '2-digit',
   }).format(now);
 
   return jstDateString;
@@ -77,7 +77,7 @@ export const normalizeToJSTDate = (dateValue) => {
       timeZone: 'Asia/Tokyo',
       year: 'numeric',
       month: '2-digit',
-      day: '2-digit'
+      day: '2-digit',
     }).format(date);
 
     return jstDate;
@@ -96,8 +96,8 @@ export const normalizeToJSTDate = (dateValue) => {
 export const getJSTDateString = () => {
   const now = new Date();
   const jstOffset = 9 * 60;
-  const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
-  const jstTime = new Date(utc + (jstOffset * 60000));
+  const utc = now.getTime() + now.getTimezoneOffset() * 60000;
+  const jstTime = new Date(utc + jstOffset * 60000);
 
   const year = jstTime.getFullYear();
   const month = String(jstTime.getMonth() + 1).padStart(2, '0');

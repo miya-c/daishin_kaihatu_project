@@ -202,9 +202,7 @@ describe('useRoomNavigation', () => {
   describe('handlePreviousRoom / handleNextRoom', () => {
     it('shows toast when no previous room', () => {
       const displayToast = vi.fn();
-      const { result } = renderHook(() =>
-        useRoomNavigation(createDefaultProps({ displayToast }))
-      );
+      const { result } = renderHook(() => useRoomNavigation(createDefaultProps({ displayToast })));
 
       act(() => {
         result.current.handlePreviousRoom(() => []);
@@ -215,9 +213,7 @@ describe('useRoomNavigation', () => {
 
     it('shows toast when no next room', () => {
       const displayToast = vi.fn();
-      const { result } = renderHook(() =>
-        useRoomNavigation(createDefaultProps({ displayToast }))
-      );
+      const { result } = renderHook(() => useRoomNavigation(createDefaultProps({ displayToast })));
 
       act(() => {
         result.current.handleNextRoom(() => []);
@@ -228,9 +224,7 @@ describe('useRoomNavigation', () => {
 
     it('navigates to previous room on handlePreviousRoom', async () => {
       sessionStorage.setItem('selectedRooms', JSON.stringify(ROOMS));
-      vi.stubGlobal('fetch', vi.fn().mockReturnValue(
-        createMockFetchResponse({ success: true })
-      ));
+      vi.stubGlobal('fetch', vi.fn().mockReturnValue(createMockFetchResponse({ success: true })));
 
       const { result } = renderHook(() =>
         useRoomNavigation(createDefaultProps({ roomId: 'room-101' }))
@@ -247,9 +241,7 @@ describe('useRoomNavigation', () => {
 
     it('navigates to next room on handleNextRoom', async () => {
       sessionStorage.setItem('selectedRooms', JSON.stringify(ROOMS));
-      vi.stubGlobal('fetch', vi.fn().mockReturnValue(
-        createMockFetchResponse({ success: true })
-      ));
+      vi.stubGlobal('fetch', vi.fn().mockReturnValue(createMockFetchResponse({ success: true })));
 
       const { result } = renderHook(() =>
         useRoomNavigation(createDefaultProps({ roomId: 'room-101' }))
@@ -268,14 +260,10 @@ describe('useRoomNavigation', () => {
   describe('saveAndNavigateToRoom', () => {
     it('saves readings and navigates on success', async () => {
       const displayToast = vi.fn();
-      const mockFetch = vi.fn().mockReturnValue(
-        createMockFetchResponse({ success: true })
-      );
+      const mockFetch = vi.fn().mockReturnValue(createMockFetchResponse({ success: true }));
       vi.stubGlobal('fetch', mockFetch);
 
-      const { result } = renderHook(() =>
-        useRoomNavigation(createDefaultProps({ displayToast }))
-      );
+      const { result } = renderHook(() => useRoomNavigation(createDefaultProps({ displayToast })));
 
       const collectFn = () => [{ date: '2025/06/15', currentReading: '150', warningFlag: '正常' }];
 
@@ -311,13 +299,12 @@ describe('useRoomNavigation', () => {
 
   describe('handleBackButton', () => {
     it('sets sessionStorage flags and navigates to room page', async () => {
-      vi.stubGlobal('fetch', vi.fn().mockReturnValue(
-        createMockFetchResponse({ success: true, data: [] })
-      ));
-
-      const { result } = renderHook(() =>
-        useRoomNavigation(createDefaultProps())
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockReturnValue(createMockFetchResponse({ success: true, data: [] }))
       );
+
+      const { result } = renderHook(() => useRoomNavigation(createDefaultProps()));
 
       await act(async () => {
         await result.current.handleBackButton(MOCK_PROPERTY_ID, MOCK_ROOM_ID);
@@ -331,9 +318,7 @@ describe('useRoomNavigation', () => {
     it('navigates to property page on error', async () => {
       vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('fail')));
 
-      const { result } = renderHook(() =>
-        useRoomNavigation(createDefaultProps())
-      );
+      const { result } = renderHook(() => useRoomNavigation(createDefaultProps()));
 
       await act(async () => {
         await result.current.handleBackButton(MOCK_PROPERTY_ID, MOCK_ROOM_ID);
@@ -346,13 +331,12 @@ describe('useRoomNavigation', () => {
   describe('updateSessionStorageCache', () => {
     it('refreshes room list in sessionStorage', async () => {
       const newRooms = [{ id: 'room-1' }, { id: 'room-2' }];
-      vi.stubGlobal('fetch', vi.fn().mockReturnValue(
-        createMockFetchResponse({ success: true, data: newRooms })
-      ));
-
-      const { result } = renderHook(() =>
-        useRoomNavigation(createDefaultProps())
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockReturnValue(createMockFetchResponse({ success: true, data: newRooms }))
       );
+
+      const { result } = renderHook(() => useRoomNavigation(createDefaultProps()));
 
       await act(async () => {
         await result.current.updateSessionStorageCache(MOCK_PROPERTY_ID, MOCK_ROOM_ID);
@@ -364,13 +348,12 @@ describe('useRoomNavigation', () => {
 
     it('handles non-standard response format', async () => {
       const newRooms = [{ id: 'room-1' }];
-      vi.stubGlobal('fetch', vi.fn().mockReturnValue(
-        createMockFetchResponse({ success: true, rooms: newRooms })
-      ));
-
-      const { result } = renderHook(() =>
-        useRoomNavigation(createDefaultProps())
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockReturnValue(createMockFetchResponse({ success: true, rooms: newRooms }))
       );
+
+      const { result } = renderHook(() => useRoomNavigation(createDefaultProps()));
 
       await act(async () => {
         await result.current.updateSessionStorageCache(MOCK_PROPERTY_ID, MOCK_ROOM_ID);
@@ -403,9 +386,7 @@ describe('useRoomNavigation', () => {
     it('shows toast on successful save', async () => {
       const displayToast = vi.fn();
       sessionStorage.setItem('selectedRooms', JSON.stringify(ROOMS));
-      vi.stubGlobal('fetch', vi.fn().mockReturnValue(
-        createMockFetchResponse({ success: true })
-      ));
+      vi.stubGlobal('fetch', vi.fn().mockReturnValue(createMockFetchResponse({ success: true })));
 
       const { result } = renderHook(() =>
         useRoomNavigation(createDefaultProps({ displayToast, roomId: 'room-101' }))
@@ -454,9 +435,7 @@ describe('useRoomNavigation', () => {
         if (key === 'forceRefreshRooms') throw new Error('QuotaExceededError');
       });
 
-      const { result } = renderHook(() =>
-        useRoomNavigation(createDefaultProps())
-      );
+      const { result } = renderHook(() => useRoomNavigation(createDefaultProps()));
 
       await act(async () => {
         await result.current.handleBackButton('', MOCK_ROOM_ID);

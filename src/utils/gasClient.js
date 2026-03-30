@@ -16,9 +16,11 @@ const GAS_URL_DEFAULT = import.meta.env.VITE_GAS_WEB_APP_URL || '';
  */
 export const getGasUrl = () => {
   try {
-    return sessionStorage.getItem('gasWebAppUrl') ||
-           localStorage.getItem('gasWebAppUrl') ||
-           GAS_URL_DEFAULT;
+    return (
+      sessionStorage.getItem('gasWebAppUrl') ||
+      localStorage.getItem('gasWebAppUrl') ||
+      GAS_URL_DEFAULT
+    );
   } catch (storageError) {
     return GAS_URL_DEFAULT;
   }
@@ -101,7 +103,7 @@ export const updateMeterReadings = async (gasUrl, propertyId, roomId, readings) 
     action: 'updateMeterReadings',
     propertyId,
     roomId,
-    readings: JSON.stringify(readings)
+    readings: JSON.stringify(readings),
   });
 
   const requestUrl = `${url}?${params}`;
@@ -129,7 +131,7 @@ export const completeInspection = async (gasUrl, propertyId, completionDate) => 
   const params = new URLSearchParams({
     action: 'completeInspection',
     propertyId,
-    completionDate
+    completionDate,
   });
 
   const requestUrl = `${url}?${params}`;

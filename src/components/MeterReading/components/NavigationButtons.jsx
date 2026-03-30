@@ -1,17 +1,27 @@
 import React from 'react';
 
-const NavigationButtons = ({ hasPrevious, hasNext, disabled, onPrevious, onNext, variant = 'header' }) => {
-  const className = variant === 'footer'
-    ? `nav-button nav-button-footer ${!hasPrevious && !hasNext ? 'disabled' : ''}`
-    : `nav-button nav-button-large ${!hasPrevious && !hasNext ? 'disabled' : ''}`;
+const NavigationButtons = ({
+  hasPrevious,
+  hasNext,
+  disabled,
+  onPrevious,
+  onNext,
+  variant = 'header',
+}) => {
+  const className =
+    variant === 'footer'
+      ? `nav-button nav-button-footer ${!hasPrevious && !hasNext ? 'disabled' : ''}`
+      : `nav-button nav-button-large ${!hasPrevious && !hasNext ? 'disabled' : ''}`;
 
-  const prevClassName = variant === 'footer'
-    ? `nav-button nav-button-footer prev-room-btn ${!hasPrevious ? 'disabled' : ''}`
-    : `nav-button nav-button-large prev-room-btn ${!hasPrevious ? 'disabled' : ''}`;
+  const prevClassName =
+    variant === 'footer'
+      ? `nav-button nav-button-footer prev-room-btn ${!hasPrevious ? 'disabled' : ''}`
+      : `nav-button nav-button-large prev-room-btn ${!hasPrevious ? 'disabled' : ''}`;
 
-  const nextClassName = variant === 'footer'
-    ? `nav-button nav-button-footer next-room-btn ${!hasNext ? 'disabled' : ''}`
-    : `nav-button nav-button-large next-room-btn ${!hasNext ? 'disabled' : ''}`;
+  const nextClassName =
+    variant === 'footer'
+      ? `nav-button nav-button-footer next-room-btn ${!hasNext ? 'disabled' : ''}`
+      : `nav-button nav-button-large next-room-btn ${!hasNext ? 'disabled' : ''}`;
 
   if (variant === 'footer') {
     return (
@@ -21,7 +31,11 @@ const NavigationButtons = ({ hasPrevious, hasNext, disabled, onPrevious, onNext,
           disabled={!hasPrevious || disabled}
           onClick={onPrevious}
           aria-label="前の部屋に移動"
-          title={hasPrevious ? '前の部屋に移動（データを保存してから移動します）' : '前の部屋がありません'}
+          title={
+            hasPrevious
+              ? '前の部屋に移動（データを保存してから移動します）'
+              : '前の部屋がありません'
+          }
         >
           ← 前の部屋へ
         </button>
@@ -30,7 +44,9 @@ const NavigationButtons = ({ hasPrevious, hasNext, disabled, onPrevious, onNext,
           disabled={!hasNext || disabled}
           onClick={onNext}
           aria-label="次の部屋に移動"
-          title={hasNext ? '次の部屋に移動（データを保存してから移動します）' : '次の部屋がありません'}
+          title={
+            hasNext ? '次の部屋に移動（データを保存してから移動します）' : '次の部屋がありません'
+          }
         >
           次の部屋へ →
         </button>
@@ -45,19 +61,34 @@ const NavigationButtons = ({ hasPrevious, hasNext, disabled, onPrevious, onNext,
         disabled={!hasPrevious || disabled}
         onClick={onPrevious}
         aria-label="前の部屋に移動"
-        title={hasPrevious ? '前の部屋に移動（データを保存してから移動します）' : '前の部屋がありません'}
+        title={
+          hasPrevious ? '前の部屋に移動（データを保存してから移動します）' : '前の部屋がありません'
+        }
       >
         ← 前の部屋
       </button>
 
-      <h3 className="mantine-subtitle desktop-only" style={{ textAlign: 'center', margin: '0', fontSize: 'clamp(1.2rem, 3vw, 1.6rem)', flexShrink: 0, whiteSpace: 'nowrap' }}>検針データ</h3>
+      <h3
+        className="mantine-subtitle desktop-only"
+        style={{
+          textAlign: 'center',
+          margin: '0',
+          fontSize: 'clamp(1.2rem, 3vw, 1.6rem)',
+          flexShrink: 0,
+          whiteSpace: 'nowrap',
+        }}
+      >
+        検針データ
+      </h3>
 
       <button
         className={nextClassName}
         disabled={!hasNext || disabled}
         onClick={onNext}
         aria-label="次の部屋に移動"
-        title={hasNext ? '次の部屋に移動（データを保存してから移動します）' : '次の部屋がありません'}
+        title={
+          hasNext ? '次の部屋に移動（データを保存してから移動します）' : '次の部屋がありません'
+        }
       >
         次の部屋 →
       </button>

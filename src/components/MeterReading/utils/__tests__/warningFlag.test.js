@@ -4,7 +4,7 @@ import {
   calculateAVERAGE,
   calculateThreshold,
   calculateWarningFlag,
-  getStatusDisplay
+  getStatusDisplay,
 } from '../warningFlag';
 
 describe('calculateSTDEV_S', () => {
@@ -152,7 +152,7 @@ describe('getStatusDisplay', () => {
     const result = getStatusDisplay({
       previousReading: 100,
       previousPreviousReading: 90,
-      threeTimesPrevious: 80
+      threeTimesPrevious: 80,
     });
     expect(result).toBe('入力待ち');
   });
@@ -160,7 +160,7 @@ describe('getStatusDisplay', () => {
   it('returns existing warningFlag when set', () => {
     const result = getStatusDisplay({
       currentReading: '',
-      warningFlag: '要確認'
+      warningFlag: '要確認',
     });
     expect(result).toBe('要確認');
   });
@@ -169,7 +169,7 @@ describe('getStatusDisplay', () => {
     const result = getStatusDisplay({
       currentReading: 50,
       previousReading: 100,
-      warningFlag: ''
+      warningFlag: '',
     });
     expect(result).toBe('要確認');
   });
@@ -178,7 +178,7 @@ describe('getStatusDisplay', () => {
     const result = getStatusDisplay({
       currentReading: 150,
       previousReading: 100,
-      warningFlag: ''
+      warningFlag: '',
     });
     expect(result).toBe('正常');
   });

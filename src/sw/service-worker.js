@@ -3,18 +3,15 @@
 
 const CACHE_NAME = 'meter-reading-v1';
 
-const STATIC_ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-];
+const STATIC_ASSETS = ['/', '/index.html', '/manifest.json'];
 
 // Install: cache essential static assets
 self.addEventListener('install', (event) => {
   self.skipWaiting();
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(STATIC_ASSETS))
+    caches
+      .open(CACHE_NAME)
+      .then((cache) => cache.addAll(STATIC_ASSETS))
       .catch(() => {})
   );
 });
@@ -22,11 +19,12 @@ self.addEventListener('install', (event) => {
 // Activate: delete all old caches, take control immediately
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then(names =>
-      Promise.all(
-        names.filter(name => name !== CACHE_NAME).map(name => caches.delete(name))
+    caches
+      .keys()
+      .then((names) =>
+        Promise.all(names.filter((name) => name !== CACHE_NAME).map((name) => caches.delete(name)))
       )
-    ).then(() => self.clients.claim())
+      .then(() => self.clients.claim())
   );
 });
 
@@ -40,11 +38,16 @@ self.addEventListener('fetch', (event) => {
   // GAS API: Network only (always fresh data)
   if (url.hostname.includes('script.google.com')) {
     event.respondWith(
-      fetch(request).catch(() =>
-        new Response(
-          JSON.stringify({ success: false, error: 'インターネット接続を確認してください。', offline: true }),
-          { headers: { 'Content-Type': 'application/json' }, status: 503 }
-        )
+      fetch(request).catch(
+        () =>
+          new Response(
+            JSON.stringify({
+              success: false,
+              error: 'インターネット接続を確認してください。',
+              offline: true,
+            }),
+            { headers: { 'Content-Type': 'application/json' }, status: 503 }
+          )
       )
     );
     return;
@@ -55,10 +58,12 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       caches.open(CACHE_NAME).then(async (cache) => {
         const cached = await cache.match(request);
-        const fetchPromise = fetch(request).then(response => {
-          if (response.ok) cache.put(request, response.clone());
-          return response;
-        }).catch(() => cached);
+        const fetchPromise = fetch(request)
+          .then((response) => {
+            if (response.ok) cache.put(request, response.clone());
+            return response;
+          })
+          .catch(() => cached);
         return cached || fetchPromise;
       })
     );
@@ -69,9 +74,9 @@ self.addEventListener('fetch', (event) => {
   if (url.pathname.endsWith('.html') || url.pathname === '/' || url.pathname.endsWith('/')) {
     event.respondWith(
       fetch(request)
-        .then(response => {
+        .then((response) => {
           const clone = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(request, clone));
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
           return response;
         })
         .catch(() => caches.match(request))
@@ -82,23 +87,23 @@ self.addEventListener('fetch', (event) => {
   // Images: Cache first
   if (url.pathname.match(/\.(jpg|jpeg|png|gif|webp|svg|ico)$/)) {
     event.respondWith(
-      caches.match(request).then(cached =>
-        cached || fetch(request).then(response => {
-          if (response.ok) {
-            const clone = response.clone();
-            caches.open(CACHE_NAME).then(cache => cache.put(request, clone));
-          }
-          return response;
-        })
+      caches.match(request).then(
+        (cached) =>
+          cached ||
+          fetch(request).then((response) => {
+            if (response.ok) {
+              const clone = response.clone();
+              caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+            }
+            return response;
+          })
       )
     );
     return;
   }
 
   // Default: Network first with cache fallback
-  event.respondWith(
-    fetch(request).catch(() => caches.match(request))
-  );
+  event.respondWith(fetch(request).catch(() => caches.match(request)));
 });
 
 // Message handler: only skip waiting for updates

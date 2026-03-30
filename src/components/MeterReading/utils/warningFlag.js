@@ -15,7 +15,8 @@ export const calculateSTDEV_S = (values) => {
   if (!values || values.length < 2) return 0;
 
   const mean = values.reduce((sum, val) => sum + val, 0) / values.length;
-  const variance = values.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / (values.length - 1);
+  const variance =
+    values.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / (values.length - 1);
   return Math.sqrt(variance);
 };
 
@@ -40,17 +41,29 @@ export const calculateAVERAGE = (values) => {
  * @returns {{ standardDeviation: number, threshold: number, reason: string, isCalculable: boolean }}
  *   Threshold calculation result with metadata
  */
-export const calculateThreshold = (previousReading, previousPreviousReading, threeTimesPreviousReading) => {
+export const calculateThreshold = (
+  previousReading,
+  previousPreviousReading,
+  threeTimesPreviousReading
+) => {
   try {
     const readingHistory = [];
 
     if (typeof previousReading === 'number' && !isNaN(previousReading) && previousReading >= 0) {
       readingHistory.push(previousReading);
     }
-    if (typeof previousPreviousReading === 'number' && !isNaN(previousPreviousReading) && previousPreviousReading >= 0) {
+    if (
+      typeof previousPreviousReading === 'number' &&
+      !isNaN(previousPreviousReading) &&
+      previousPreviousReading >= 0
+    ) {
       readingHistory.push(previousPreviousReading);
     }
-    if (typeof threeTimesPreviousReading === 'number' && !isNaN(threeTimesPreviousReading) && threeTimesPreviousReading >= 0) {
+    if (
+      typeof threeTimesPreviousReading === 'number' &&
+      !isNaN(threeTimesPreviousReading) &&
+      threeTimesPreviousReading >= 0
+    ) {
       readingHistory.push(threeTimesPreviousReading);
     }
 
@@ -59,7 +72,7 @@ export const calculateThreshold = (previousReading, previousPreviousReading, thr
         standardDeviation: 0,
         threshold: 0,
         reason: '履歴データ不足',
-        isCalculable: false
+        isCalculable: false,
       };
     }
 
@@ -72,14 +85,14 @@ export const calculateThreshold = (previousReading, previousPreviousReading, thr
       standardDeviation: Math.floor(standardDeviation),
       threshold: threshold,
       reason: `前回値${previousReading} + σ${Math.floor(standardDeviation)} + 10`,
-      isCalculable: true
+      isCalculable: true,
     };
   } catch (error) {
     return {
       standardDeviation: 0,
       threshold: 0,
       reason: 'エラー',
-      isCalculable: false
+      isCalculable: false,
     };
   }
 };
@@ -101,17 +114,32 @@ export const calculateThreshold = (previousReading, previousPreviousReading, thr
  * @returns {{ warningFlag: string, standardDeviation: number, threshold: number, reason: string }}
  *   Warning flag result with statistical metadata
  */
-export const calculateWarningFlag = (currentReading, previousReading, previousPreviousReading, threeTimesPreviousReading) => {
+export const calculateWarningFlag = (
+  currentReading,
+  previousReading,
+  previousPreviousReading,
+  threeTimesPreviousReading
+) => {
   try {
-    const thresholdInfo = calculateThreshold(previousReading, previousPreviousReading, threeTimesPreviousReading);
+    const thresholdInfo = calculateThreshold(
+      previousReading,
+      previousPreviousReading,
+      threeTimesPreviousReading
+    );
 
-    if (currentReading === null || currentReading === undefined || currentReading === '' ||
-        typeof currentReading !== 'number' || isNaN(currentReading) || currentReading < 0) {
+    if (
+      currentReading === null ||
+      currentReading === undefined ||
+      currentReading === '' ||
+      typeof currentReading !== 'number' ||
+      isNaN(currentReading) ||
+      currentReading < 0
+    ) {
       return {
         warningFlag: thresholdInfo.isCalculable ? '入力待ち' : '判定不可',
         standardDeviation: thresholdInfo.standardDeviation,
         threshold: thresholdInfo.threshold,
-        reason: thresholdInfo.reason
+        reason: thresholdInfo.reason,
       };
     }
 
@@ -121,7 +149,7 @@ export const calculateWarningFlag = (currentReading, previousReading, previousPr
           warningFlag: '要確認',
           standardDeviation: thresholdInfo.standardDeviation,
           threshold: thresholdInfo.threshold,
-          reason: '前回値未満'
+          reason: '前回値未満',
         };
       }
     }
@@ -131,24 +159,24 @@ export const calculateWarningFlag = (currentReading, previousReading, previousPr
         warningFlag: '正常',
         standardDeviation: 0,
         threshold: 0,
-        reason: thresholdInfo.reason
+        reason: thresholdInfo.reason,
       };
     }
 
-    const warningFlag = (currentReading > thresholdInfo.threshold) ? '要確認' : '正常';
+    const warningFlag = currentReading > thresholdInfo.threshold ? '要確認' : '正常';
 
     return {
       warningFlag: warningFlag,
       standardDeviation: thresholdInfo.standardDeviation,
       threshold: thresholdInfo.threshold,
-      reason: thresholdInfo.reason
+      reason: thresholdInfo.reason,
     };
   } catch (error) {
     return {
       warningFlag: 'エラー',
       standardDeviation: 0,
       threshold: 0,
-      reason: 'エラー'
+      reason: 'エラー',
     };
   }
 };
@@ -176,7 +204,12 @@ export const getStatusDisplay = (reading) => {
     const previousPreviousReading = parseFloat(reading.previousPreviousReading) || 0;
     const threeTimesPreviousReading = parseFloat(reading.threeTimesPrevious) || 0;
 
-    const thresholdResult = calculateWarningFlag(null, previousReading, previousPreviousReading, threeTimesPreviousReading);
+    const thresholdResult = calculateWarningFlag(
+      null,
+      previousReading,
+      previousPreviousReading,
+      threeTimesPreviousReading
+    );
     return thresholdResult.warningFlag;
   }
 

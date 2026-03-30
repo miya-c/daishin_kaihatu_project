@@ -1,7 +1,11 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { formatDateForDisplay } from './utils/dateUtils';
 import { formatReading, formatInspectionStatus, calculateUsageDisplay } from './utils/formatUtils';
-import { calculateWarningFlag, getStatusDisplay, getStandardDeviationDisplay } from './utils/warningFlag';
+import {
+  calculateWarningFlag,
+  getStatusDisplay,
+  getStandardDeviationDisplay,
+} from './utils/warningFlag';
 import { useMeterReadings } from './hooks/useMeterReadings';
 import { useRoomNavigation } from './hooks/useRoomNavigation';
 import { useReadingUpdate } from './hooks/useReadingUpdate';
@@ -11,9 +15,17 @@ import NavigationButtons from './components/NavigationButtons';
 
 const MeterReadingApp = () => {
   const {
-    loading, error, propertyId, propertyName, roomId, roomName,
-    meterReadings, setMeterReadings, gasWebAppUrl,
-    setError, loadMeterReadings,
+    loading,
+    error,
+    propertyId,
+    propertyName,
+    roomId,
+    roomName,
+    meterReadings,
+    setMeterReadings,
+    gasWebAppUrl,
+    setError,
+    loadMeterReadings,
   } = useMeterReadings();
 
   const toastTimerRef = React.useRef(null);
@@ -38,20 +50,33 @@ const MeterReadingApp = () => {
   const [showToast, setShowToast] = useState(false);
 
   const {
-    updating, isNavigating, navigationMessage,
-    setUpdating, setIsNavigating,
-    getRoomNavigation, handlePreviousRoom, handleNextRoom, handleBackButton,
+    updating,
+    isNavigating,
+    navigationMessage,
+    setUpdating,
+    setIsNavigating,
+    getRoomNavigation,
+    handlePreviousRoom,
+    handleNextRoom,
+    handleBackButton,
     updateSessionStorageCache,
   } = useRoomNavigation({
-    propertyId, roomId, gasWebAppUrl, meterReadings, setMeterReadings, displayToast
+    propertyId,
+    roomId,
+    gasWebAppUrl,
+    meterReadings,
+    setMeterReadings,
+    displayToast,
   });
 
-  const {
-    inputErrors, setInputErrors,
-    usageStates, setUsageStates,
-  } = useReadingUpdate({
-    propertyId, roomId, gasWebAppUrl, meterReadings, setMeterReadings,
-    displayToast, setUpdating
+  const { inputErrors, setInputErrors, usageStates, setUsageStates } = useReadingUpdate({
+    propertyId,
+    roomId,
+    gasWebAppUrl,
+    meterReadings,
+    setMeterReadings,
+    displayToast,
+    setUpdating,
   });
 
   // Controlled input values for each reading date
@@ -60,7 +85,7 @@ const MeterReadingApp = () => {
   // Initialize reading values when meterReadings changes
   React.useEffect(() => {
     const initialValues = {};
-    meterReadings.forEach(reading => {
+    meterReadings.forEach((reading) => {
       const date = reading.date;
       if (!(date in readingValues)) {
         initialValues[date] = formatReading(reading.currentReading);
@@ -71,7 +96,7 @@ const MeterReadingApp = () => {
       initialValues[''] = '';
     }
     if (Object.keys(initialValues).length > 0) {
-      setReadingValues(prev => ({ ...initialValues, ...prev }));
+      setReadingValues((prev) => ({ ...initialValues, ...prev }));
     }
   }, [meterReadings]);
 
@@ -122,13 +147,13 @@ const MeterReadingApp = () => {
             timeZone: 'Asia/Tokyo',
             year: 'numeric',
             month: '2-digit',
-            day: '2-digit'
+            day: '2-digit',
           }).format(new Date());
 
           readings.push({
             date: inspectionDate,
             currentReading: currentValue,
-            warningFlag: reading.warningFlag || '正常'
+            warningFlag: reading.warningFlag || '正常',
           });
         }
       }
@@ -143,13 +168,13 @@ const MeterReadingApp = () => {
           timeZone: 'Asia/Tokyo',
           year: 'numeric',
           month: '2-digit',
-          day: '2-digit'
+          day: '2-digit',
         }).format(new Date());
 
         readings.push({
           date: inspectionDate,
           currentReading: initialValue,
-          warningFlag: '正常'
+          warningFlag: '正常',
         });
       }
     }
@@ -157,57 +182,82 @@ const MeterReadingApp = () => {
     return readings;
   }, [meterReadings, readingValues]);
 
-  const handleInputChange = useCallback((date, value, reading) => {
-    setReadingValues(prev => ({ ...prev, [date]: value }));
-    const previousValue = formatReading(reading.previousReading);
-    const numericValue = parseFloat(value);
+  const handleInputChange = useCallback(
+    (date, value, reading) => {
+      setReadingValues((prev) => ({ ...prev, [date]: value }));
+      const previousValue = formatReading(reading.previousReading);
+      const numericValue = parseFloat(value);
 
-    if (value === '') {
-      setInputErrors(prev => ({ ...prev, [date]: '' }));
-      setUsageStates(prev => ({ ...prev, [date]: calculateUsageDisplay(value, previousValue) }));
-    } else if (isNaN(numericValue) || numericValue < 0) {
-      setInputErrors(prev => ({ ...prev, [date]: '0以上の数値を入力' }));
-      setUsageStates(prev => ({ ...prev, [date]: '-' }));
-    } else {
-      setInputErrors(prev => ({ ...prev, [date]: '' }));
-      const usageDisplay = calculateUsageDisplay(value, previousValue);
-      setUsageStates(prev => ({ ...prev, [date]: usageDisplay }));
+      if (value === '') {
+        setInputErrors((prev) => ({ ...prev, [date]: '' }));
+        setUsageStates((prev) => ({
+          ...prev,
+          [date]: calculateUsageDisplay(value, previousValue),
+        }));
+      } else if (isNaN(numericValue) || numericValue < 0) {
+        setInputErrors((prev) => ({ ...prev, [date]: '0以上の数値を入力' }));
+        setUsageStates((prev) => ({ ...prev, [date]: '-' }));
+      } else {
+        setInputErrors((prev) => ({ ...prev, [date]: '' }));
+        const usageDisplay = calculateUsageDisplay(value, previousValue);
+        setUsageStates((prev) => ({ ...prev, [date]: usageDisplay }));
 
-      // Real-time warning flag calculation
-      const previousReadingValue = parseFloat(reading.previousReading) || 0;
-      const previousPreviousReadingValue = parseFloat(reading.previousPreviousReading) || 0;
-      const threeTimesPreviousReadingValue = parseFloat(reading.threeTimesPrevious) || 0;
+        // Real-time warning flag calculation
+        const previousReadingValue = parseFloat(reading.previousReading) || 0;
+        const previousPreviousReadingValue = parseFloat(reading.previousPreviousReading) || 0;
+        const threeTimesPreviousReadingValue = parseFloat(reading.threeTimesPrevious) || 0;
 
-      const warningResult = calculateWarningFlag(numericValue, previousReadingValue, previousPreviousReadingValue, threeTimesPreviousReadingValue);
+        const warningResult = calculateWarningFlag(
+          numericValue,
+          previousReadingValue,
+          previousPreviousReadingValue,
+          threeTimesPreviousReadingValue
+        );
 
-      setMeterReadings(prevReadings =>
-        prevReadings.map(r =>
-          r.date === date ? {
-            ...r,
-            warningFlag: warningResult.warningFlag,
-            standardDeviation: warningResult.standardDeviation
-          } : r
-        )
-      );
-    }
-  }, [setInputErrors, setUsageStates, setMeterReadings]);
+        setMeterReadings((prevReadings) =>
+          prevReadings.map((r) =>
+            r.date === date
+              ? {
+                  ...r,
+                  warningFlag: warningResult.warningFlag,
+                  standardDeviation: warningResult.standardDeviation,
+                }
+              : r
+          )
+        );
+      }
+    },
+    [setInputErrors, setUsageStates, setMeterReadings]
+  );
 
-  const handleInitialInputChange = useCallback((value) => {
-    const dateForDataAttribute = "";
-    setReadingValues(prev => ({ ...prev, '': value }));
-    const numericValue = parseFloat(value);
+  const handleInitialInputChange = useCallback(
+    (value) => {
+      const dateForDataAttribute = '';
+      setReadingValues((prev) => ({ ...prev, '': value }));
+      const numericValue = parseFloat(value);
 
-    if (value === '') {
-      setInputErrors(prev => ({ ...prev, [dateForDataAttribute]: '初回検針では指示数の入力が必須です。' }));
-      setUsageStates(prev => ({ ...prev, [dateForDataAttribute]: '-' }));
-    } else if (isNaN(numericValue) || numericValue < 0) {
-      setInputErrors(prev => ({ ...prev, [dateForDataAttribute]: '0以上の数値を入力してください。' }));
-      setUsageStates(prev => ({ ...prev, [dateForDataAttribute]: '-' }));
-    } else {
-      setInputErrors(prev => ({ ...prev, [dateForDataAttribute]: '' }));
-      setUsageStates(prev => ({ ...prev, [dateForDataAttribute]: calculateUsageDisplay(value, '') }));
-    }
-  }, [setInputErrors, setUsageStates]);
+      if (value === '') {
+        setInputErrors((prev) => ({
+          ...prev,
+          [dateForDataAttribute]: '初回検針では指示数の入力が必須です。',
+        }));
+        setUsageStates((prev) => ({ ...prev, [dateForDataAttribute]: '-' }));
+      } else if (isNaN(numericValue) || numericValue < 0) {
+        setInputErrors((prev) => ({
+          ...prev,
+          [dateForDataAttribute]: '0以上の数値を入力してください。',
+        }));
+        setUsageStates((prev) => ({ ...prev, [dateForDataAttribute]: '-' }));
+      } else {
+        setInputErrors((prev) => ({ ...prev, [dateForDataAttribute]: '' }));
+        setUsageStates((prev) => ({
+          ...prev,
+          [dateForDataAttribute]: calculateUsageDisplay(value, ''),
+        }));
+      }
+    },
+    [setInputErrors, setUsageStates]
+  );
 
   const handleUpdateReadings = useCallback(async () => {
     if (!propertyId || !roomId) {
@@ -223,7 +273,7 @@ const MeterReadingApp = () => {
       const currentValue = readingValues[date] ?? originalValue;
 
       if (originalValue === '' && (!currentValue || currentValue.trim() === '')) {
-        setInputErrors(prev => ({ ...prev, [date]: '初回検針では指示数の入力が必須です。' }));
+        setInputErrors((prev) => ({ ...prev, [date]: '初回検針では指示数の入力が必須です。' }));
         hasValidationErrors = true;
       }
     }
@@ -248,20 +298,22 @@ const MeterReadingApp = () => {
         action: 'updateMeterReadings',
         propertyId,
         roomId,
-        readings: JSON.stringify(updatedReadings)
+        readings: JSON.stringify(updatedReadings),
       });
       const requestUrl = `${currentGasUrl}?${params}`;
 
       const [response, cacheUpdateResult] = await Promise.allSettled([
         fetch(requestUrl, { method: 'GET' }),
-        updateSessionStorageCache(propertyId, roomId)
+        updateSessionStorageCache(propertyId, roomId),
       ]);
 
       if (response.status === 'rejected') {
         throw new Error('ネットワークエラー: ' + response.reason?.message);
       }
       if (!response.value.ok) {
-        throw new Error('ネットワークの応答が正しくありませんでした。ステータス: ' + response.value.status);
+        throw new Error(
+          'ネットワークの応答が正しくありませんでした。ステータス: ' + response.value.status
+        );
       }
 
       const result = await response.value.json();
@@ -272,10 +324,12 @@ const MeterReadingApp = () => {
 
         // Reload data
         const [dataReloadResult] = await Promise.allSettled([
-          loadMeterReadings(propertyId, roomId)
+          loadMeterReadings(propertyId, roomId),
         ]);
         if (dataReloadResult.status === 'rejected') {
-          displayToast('データが更新されました。最新情報を確認するにはページを再読み込みしてください。');
+          displayToast(
+            'データが更新されました。最新情報を確認するにはページを再読み込みしてください。'
+          );
         }
       } else {
         throw new Error(result.error || '指示数の更新に失敗しました。');
@@ -285,7 +339,16 @@ const MeterReadingApp = () => {
     } finally {
       setUpdating(false);
     }
-  }, [propertyId, roomId, gasWebAppUrl, meterReadings, readingValues, displayToast, setUpdating, collectReadingsFromState]);
+  }, [
+    propertyId,
+    roomId,
+    gasWebAppUrl,
+    meterReadings,
+    readingValues,
+    displayToast,
+    setUpdating,
+    collectReadingsFromState,
+  ]);
 
   const navigation = getRoomNavigation();
 
@@ -294,7 +357,11 @@ const MeterReadingApp = () => {
     return (
       <>
         <div className="app-header">
-          <button onClick={() => handleBackButton(propertyId, roomId)} className="back-button" aria-label="戻る">
+          <button
+            onClick={() => handleBackButton(propertyId, roomId)}
+            className="back-button"
+            aria-label="戻る"
+          >
             &lt;
           </button>
           <h1 className="header-title">検針情報</h1>
@@ -314,7 +381,11 @@ const MeterReadingApp = () => {
     return (
       <>
         <div className="app-header">
-          <button onClick={() => handleBackButton(propertyId, roomId)} className="back-button" aria-label="戻る">
+          <button
+            onClick={() => handleBackButton(propertyId, roomId)}
+            className="back-button"
+            aria-label="戻る"
+          >
             &lt;
           </button>
           <h1 className="header-title">検針情報</h1>
@@ -331,15 +402,24 @@ const MeterReadingApp = () => {
     );
   }
 
-  const hasReadingsWithPrevious = Array.isArray(meterReadings) && meterReadings.length > 0 &&
-    meterReadings.some(reading => reading.previousReading && reading.previousReading !== '' && reading.previousReading !== 0);
+  const hasReadingsWithPrevious =
+    Array.isArray(meterReadings) &&
+    meterReadings.length > 0 &&
+    meterReadings.some(
+      (reading) =>
+        reading.previousReading && reading.previousReading !== '' && reading.previousReading !== 0
+    );
 
   // Main content
   return (
     <>
       {isNavigating && <LoadingOverlay message={navigationMessage} />}
       <div className="app-header">
-        <button onClick={() => handleBackButton(propertyId, roomId)} className="back-button" aria-label="戻る">
+        <button
+          onClick={() => handleBackButton(propertyId, roomId)}
+          className="back-button"
+          aria-label="戻る"
+        >
           &lt;
         </button>
         <h1 className="header-title">検針情報</h1>
@@ -351,7 +431,10 @@ const MeterReadingApp = () => {
             <h2 className="property-name">{String(propertyName || '物件名未設定')}</h2>
             <p className="room-info">部屋: {String(roomName || '部屋名未設定')}</p>
           </div>
-          <div className="mantine-paper reading-history-container" style={{ padding: 'var(--mui-spacing-xs)', margin: '0' }}>
+          <div
+            className="mantine-paper reading-history-container"
+            style={{ padding: 'var(--mui-spacing-xs)', margin: '0' }}
+          >
             <div className="reading-history-header">
               <NavigationButtons
                 hasPrevious={navigation.hasPrevious}
@@ -377,16 +460,27 @@ const MeterReadingApp = () => {
                   </thead>
                   <tbody>
                     {meterReadings
-                      .filter(reading => reading.previousReading && reading.previousReading !== '' && reading.previousReading !== 0)
+                      .filter(
+                        (reading) =>
+                          reading.previousReading &&
+                          reading.previousReading !== '' &&
+                          reading.previousReading !== 0
+                      )
                       .map((reading, index) => {
                         const formattedDate = formatDateForDisplay(reading.date);
                         const inspectionStatus = formatInspectionStatus(reading.date);
                         const dateForDataAttribute = reading.date;
-                        const currentReadingDisplay = readingValues[dateForDataAttribute] ?? formatReading(reading.currentReading);
+                        const currentReadingDisplay =
+                          readingValues[dateForDataAttribute] ??
+                          formatReading(reading.currentReading);
 
-                        const usageToDisplay = usageStates[dateForDataAttribute] !== undefined
-                          ? usageStates[dateForDataAttribute]
-                          : calculateUsageDisplay(reading.currentReading, reading.previousReading);
+                        const usageToDisplay =
+                          usageStates[dateForDataAttribute] !== undefined
+                            ? usageStates[dateForDataAttribute]
+                            : calculateUsageDisplay(
+                                reading.currentReading,
+                                reading.previousReading
+                              );
 
                         const usageDisplayString = `${usageToDisplay}${usageToDisplay !== '-' ? '㎥' : ''}`;
                         const previousReadingsInfo = getPreviousReadingsText(reading);
@@ -394,11 +488,20 @@ const MeterReadingApp = () => {
                         return (
                           <tr key={index}>
                             <td data-label="検針日時">
-                              <span style={{
-                                color: inspectionStatus.status === '未検針' ? 'var(--mui-palette-red-6)' : 'inherit',
-                                fontWeight: inspectionStatus.status === '未検針' ? 'bold' : 'normal'
-                              }}>
-                                最終検針日時: {inspectionStatus.status === '未検針' ? '未検針' : inspectionStatus.displayDate}
+                              <span
+                                style={{
+                                  color:
+                                    inspectionStatus.status === '未検針'
+                                      ? 'var(--mui-palette-red-6)'
+                                      : 'inherit',
+                                  fontWeight:
+                                    inspectionStatus.status === '未検針' ? 'bold' : 'normal',
+                                }}
+                              >
+                                最終検針日時:{' '}
+                                {inspectionStatus.status === '未検針'
+                                  ? '未検針'
+                                  : inspectionStatus.displayDate}
                               </span>
                             </td>
                             <td data-label="今回指示数(㎥)">
@@ -413,39 +516,65 @@ const MeterReadingApp = () => {
                                 data-previous-reading={formatReading(reading.previousReading)}
                                 className="mantine-input"
                                 aria-label={`${formattedDate || reading.date}の指示数`}
-                                aria-describedby={inputErrors[dateForDataAttribute] ? `error-${dateForDataAttribute}` : undefined}
-                                onChange={(e) => handleInputChange(dateForDataAttribute, e.target.value, reading)}
+                                aria-describedby={
+                                  inputErrors[dateForDataAttribute]
+                                    ? `error-${dateForDataAttribute}`
+                                    : undefined
+                                }
+                                onChange={(e) =>
+                                  handleInputChange(dateForDataAttribute, e.target.value, reading)
+                                }
                               />
                               {inputErrors[dateForDataAttribute] && (
-                                <div id={`error-${dateForDataAttribute}`} role="alert" style={{
-                                  color: 'var(--mui-palette-red-6)',
-                                  fontSize: '0.9em',
-                                  marginTop: '4px'
-                                }}>
+                                <div
+                                  id={`error-${dateForDataAttribute}`}
+                                  role="alert"
+                                  style={{
+                                    color: 'var(--mui-palette-red-6)',
+                                    fontSize: '0.9em',
+                                    marginTop: '4px',
+                                  }}
+                                >
                                   {inputErrors[dateForDataAttribute]}
                                 </div>
                               )}
                             </td>
-                            <td data-label="今回使用量">
-                              {usageDisplayString}
-                            </td>
+                            <td data-label="今回使用量">{usageDisplayString}</td>
                             <td data-label="状態">
                               {(() => {
                                 const status = getStatusDisplay(reading);
                                 const sigma = getStandardDeviationDisplay(reading);
                                 return (
-                                  <span style={{
-                                    display: 'inline-block',
-                                    padding: '3px 9px',
-                                    fontSize: '0.9em',
-                                    fontWeight: 500,
-                                    backgroundColor: status === '要確認' ? 'var(--mui-palette-red-light)' : status === '正常' ? 'var(--mui-palette-green-light)' : 'var(--mui-palette-grey-2)',
-                                    color: status === '要確認' ? 'var(--mui-palette-red-8)' : status === '正常' ? 'var(--mui-palette-green-8)' : 'var(--mui-palette-grey-7)',
-                                    borderRadius: 'var(--mui-radius-sm)'
-                                  }}>
+                                  <span
+                                    style={{
+                                      display: 'inline-block',
+                                      padding: '3px 9px',
+                                      fontSize: '0.9em',
+                                      fontWeight: 500,
+                                      backgroundColor:
+                                        status === '要確認'
+                                          ? 'var(--mui-palette-red-light)'
+                                          : status === '正常'
+                                            ? 'var(--mui-palette-green-light)'
+                                            : 'var(--mui-palette-grey-2)',
+                                      color:
+                                        status === '要確認'
+                                          ? 'var(--mui-palette-red-8)'
+                                          : status === '正常'
+                                            ? 'var(--mui-palette-green-8)'
+                                            : 'var(--mui-palette-grey-7)',
+                                      borderRadius: 'var(--mui-radius-sm)',
+                                    }}
+                                  >
                                     {status}
                                     {sigma && (
-                                      <div style={{ fontSize: '0.7em', marginTop: '2px', opacity: 0.8 }}>
+                                      <div
+                                        style={{
+                                          fontSize: '0.7em',
+                                          marginTop: '2px',
+                                          opacity: 0.8,
+                                        }}
+                                      >
                                         σ: {sigma}
                                       </div>
                                     )}
@@ -461,7 +590,8 @@ const MeterReadingApp = () => {
                                       key={infoIndex}
                                       className="previous-reading-text"
                                       style={{
-                                        marginBottom: infoIndex < previousReadingsInfo.length - 1 ? '6px' : '0'
+                                        marginBottom:
+                                          infoIndex < previousReadingsInfo.length - 1 ? '6px' : '0',
                                       }}
                                     >
                                       {info}
@@ -492,11 +622,25 @@ const MeterReadingApp = () => {
                 <div className="mantine-alert info">
                   <h3 className="mantine-text weight-600">初回検針</h3>
                 </div>
-                <div className="mantine-paper" style={{ marginTop: 'var(--mui-spacing-md)', padding: 'var(--mui-spacing-md)' }}>
-                  <h4 className="mantine-subtitle" style={{ marginBottom: 'var(--mui-spacing-sm)' }}>初回データ入力</h4>
+                <div
+                  className="mantine-paper"
+                  style={{ marginTop: 'var(--mui-spacing-md)', padding: 'var(--mui-spacing-md)' }}
+                >
+                  <h4
+                    className="mantine-subtitle"
+                    style={{ marginBottom: 'var(--mui-spacing-sm)' }}
+                  >
+                    初回データ入力
+                  </h4>
                   <div className="mantine-stack" style={{ gap: 'var(--mui-spacing-lg)' }}>
                     <div>
-                      <label htmlFor="initialReadingDate" className="mantine-text weight-600" style={{ fontSize: '0.9rem', marginBottom: '4px', display: 'block' }}>検針日時:</label>
+                      <label
+                        htmlFor="initialReadingDate"
+                        className="mantine-text weight-600"
+                        style={{ fontSize: '0.9rem', marginBottom: '4px', display: 'block' }}
+                      >
+                        検針日時:
+                      </label>
                       <input
                         type="text"
                         id="initialReadingDate"
@@ -507,7 +651,13 @@ const MeterReadingApp = () => {
                       />
                     </div>
                     <div>
-                      <label htmlFor="initialReadingValue" className="mantine-text weight-600" style={{ fontSize: '0.9rem', marginBottom: '4px', display: 'block' }}>今回指示数(㎥):</label>
+                      <label
+                        htmlFor="initialReadingValue"
+                        className="mantine-text weight-600"
+                        style={{ fontSize: '0.9rem', marginBottom: '4px', display: 'block' }}
+                      >
+                        今回指示数(㎥):
+                      </label>
                       <input
                         type="number"
                         id="initialReadingValue"
@@ -519,31 +669,51 @@ const MeterReadingApp = () => {
                         value={readingValues[''] ?? ''}
                         onChange={(e) => handleInitialInputChange(e.target.value)}
                       />
-                      {inputErrors[""] && (
-                        <div role="alert" style={{ color: 'var(--mui-palette-red-6)', fontSize: '0.9em', marginTop: '4px' }}>
-                          {inputErrors[""]}
+                      {inputErrors[''] && (
+                        <div
+                          role="alert"
+                          style={{
+                            color: 'var(--mui-palette-red-6)',
+                            fontSize: '0.9em',
+                            marginTop: '4px',
+                          }}
+                        >
+                          {inputErrors['']}
                         </div>
                       )}
                     </div>
                     <div>
-                      <label className="mantine-text weight-600" style={{ fontSize: '0.9rem', marginBottom: '4px', display: 'block' }}>今回使用量:</label>
-                      <div style={{
-                        backgroundColor: '#e3f2fd',
-                        border: '1px solid var(--mui-palette-grey-3)',
-                        borderRadius: 'var(--mui-radius-sm)',
-                        padding: '10px',
-                        fontSize: '1.2rem',
-                        fontWeight: 'bold',
-                        color: 'var(--mui-palette-blue-7)',
-                        minHeight: '44px',
-                        display: 'flex',
-                        alignItems: 'center'
-                      }}>
-                        {usageStates[""] !== undefined
-                          ? `${usageStates[""]}${usageStates[""] !== '-' ? '㎥' : ''}`
+                      <label
+                        className="mantine-text weight-600"
+                        style={{ fontSize: '0.9rem', marginBottom: '4px', display: 'block' }}
+                      >
+                        今回使用量:
+                      </label>
+                      <div
+                        style={{
+                          backgroundColor: '#e3f2fd',
+                          border: '1px solid var(--mui-palette-grey-3)',
+                          borderRadius: 'var(--mui-radius-sm)',
+                          padding: '10px',
+                          fontSize: '1.2rem',
+                          fontWeight: 'bold',
+                          color: 'var(--mui-palette-blue-7)',
+                          minHeight: '44px',
+                          display: 'flex',
+                          alignItems: 'center',
+                        }}
+                      >
+                        {usageStates[''] !== undefined
+                          ? `${usageStates['']}${usageStates[''] !== '-' ? '㎥' : ''}`
                           : '-'}
                       </div>
-                      <div style={{ fontSize: '0.85em', color: 'var(--mui-palette-grey-6)', marginTop: '4px' }}>
+                      <div
+                        style={{
+                          fontSize: '0.85em',
+                          color: 'var(--mui-palette-grey-6)',
+                          marginTop: '4px',
+                        }}
+                      >
                         ※初回検針では、指示数がそのまま使用量になります
                       </div>
                     </div>
@@ -554,13 +724,16 @@ const MeterReadingApp = () => {
           </div>
         </div>
 
-        {(!loading && !error) && (
-          <div className="fab-container" style={{ position: 'fixed', bottom: '20px', right: '20px', zIndex: 1001 }}>
+        {!loading && !error && (
+          <div
+            className="fab-container"
+            style={{ position: 'fixed', bottom: '20px', right: '20px', zIndex: 1001 }}
+          >
             <button
               className="fab-button mantine-button variant-filled"
               onClick={handleUpdateReadings}
               disabled={updating || isNavigating}
-              title={hasReadingsWithPrevious ? "指示数を更新" : "初回検針データを保存"}
+              title={hasReadingsWithPrevious ? '指示数を更新' : '初回検針データを保存'}
               style={{
                 width: '72px',
                 height: '72px',
@@ -569,10 +742,17 @@ const MeterReadingApp = () => {
                 boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center'
+                justifyContent: 'center',
               }}
             >
-              {updating ? <div className="mantine-loader" style={{ width: '32px', height: '32px', borderTopColor: 'white' }}></div> : '💾'}
+              {updating ? (
+                <div
+                  className="mantine-loader"
+                  style={{ width: '32px', height: '32px', borderTopColor: 'white' }}
+                ></div>
+              ) : (
+                '💾'
+              )}
             </button>
           </div>
         )}

@@ -392,10 +392,13 @@ describe('MeterReadingApp', () => {
 
     it('shows error toast when fetch fails after FAB click', async () => {
       const user = userEvent.setup();
-      vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-        ok: false,
-        status: 500,
-      }));
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue({
+          ok: false,
+          status: 500,
+        })
+      );
 
       setupMocks({
         meterReadings: {

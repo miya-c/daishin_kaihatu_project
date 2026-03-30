@@ -15,7 +15,12 @@ const MOCK_GAS_URL = 'https://script.google.com/macros/s/ABC123/exec';
 const MOCK_PROPERTY_ID = 'prop-001';
 
 const ROOMS = [
-  { id: 'room-101', name: '101号室', readingStatus: 'completed', readingDateFormatted: '2025/06/15' },
+  {
+    id: 'room-101',
+    name: '101号室',
+    readingStatus: 'completed',
+    readingDateFormatted: '2025/06/15',
+  },
   { id: 'room-102', name: '102号室' },
   { id: 'room-103', name: '103号室', isNotNeeded: true },
   { id: 'room-104', name: '104号室', isCompleted: true },
@@ -42,9 +47,7 @@ describe('RoomSelectApp', () => {
     vi.stubGlobal('scrollTo', vi.fn());
 
     // Default: getGasUrl returns from sessionStorage
-    getGasUrl.mockImplementation(() =>
-      sessionStorage.getItem('gasWebAppUrl') || ''
-    );
+    getGasUrl.mockImplementation(() => sessionStorage.getItem('gasWebAppUrl') || '');
   });
 
   afterEach(() => {
@@ -112,9 +115,10 @@ describe('RoomSelectApp', () => {
       sessionStorage.setItem('selectedRooms', JSON.stringify(ROOMS));
 
       // Background update fetch
-      vi.stubGlobal('fetch', vi.fn().mockReturnValue(
-        createMockFetchResponse({ success: true, data: { rooms: ROOMS } })
-      ));
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockReturnValue(createMockFetchResponse({ success: true, data: { rooms: ROOMS } }))
+      );
 
       render(<RoomSelectApp />);
 
@@ -129,15 +133,18 @@ describe('RoomSelectApp', () => {
       mockLocationSearch(`?propertyId=${MOCK_PROPERTY_ID}`);
       sessionStorage.setItem('gasWebAppUrl', MOCK_GAS_URL);
 
-      vi.stubGlobal('fetch', vi.fn().mockReturnValue(
-        createMockFetchResponse({
-          success: true,
-          data: {
-            rooms: ROOMS,
-            propertyName: 'API物件',
-          },
-        })
-      ));
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockReturnValue(
+          createMockFetchResponse({
+            success: true,
+            data: {
+              rooms: ROOMS,
+              propertyName: 'API物件',
+            },
+          })
+        )
+      );
 
       render(<RoomSelectApp />);
 
@@ -151,9 +158,10 @@ describe('RoomSelectApp', () => {
       mockLocationSearch(`?propertyId=${MOCK_PROPERTY_ID}`);
       sessionStorage.setItem('gasWebAppUrl', MOCK_GAS_URL);
 
-      vi.stubGlobal('fetch', vi.fn().mockReturnValue(
-        createMockFetchResponse({ success: true, data: ROOMS })
-      ));
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockReturnValue(createMockFetchResponse({ success: true, data: ROOMS }))
+      );
 
       render(<RoomSelectApp />);
 
@@ -166,9 +174,14 @@ describe('RoomSelectApp', () => {
       mockLocationSearch(`?propertyId=${MOCK_PROPERTY_ID}`);
       sessionStorage.setItem('gasWebAppUrl', MOCK_GAS_URL);
 
-      vi.stubGlobal('fetch', vi.fn().mockReturnValue(
-        createMockFetchResponse({ success: true, data: { rooms: [], propertyName: '空物件' } })
-      ));
+      vi.stubGlobal(
+        'fetch',
+        vi
+          .fn()
+          .mockReturnValue(
+            createMockFetchResponse({ success: true, data: { rooms: [], propertyName: '空物件' } })
+          )
+      );
 
       render(<RoomSelectApp />);
 
@@ -184,9 +197,10 @@ describe('RoomSelectApp', () => {
       sessionStorage.setItem('selectedPropertyName', 'テスト物件');
       sessionStorage.setItem('selectedRooms', JSON.stringify(ROOMS));
 
-      vi.stubGlobal('fetch', vi.fn().mockReturnValue(
-        createMockFetchResponse({ success: true, data: { rooms: ROOMS } })
-      ));
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockReturnValue(createMockFetchResponse({ success: true, data: { rooms: ROOMS } }))
+      );
 
       render(<RoomSelectApp />);
 
@@ -202,9 +216,10 @@ describe('RoomSelectApp', () => {
       sessionStorage.setItem('selectedPropertyName', 'テスト物件');
       sessionStorage.setItem('selectedRooms', JSON.stringify(ROOMS));
 
-      vi.stubGlobal('fetch', vi.fn().mockReturnValue(
-        createMockFetchResponse({ success: true, data: { rooms: ROOMS } })
-      ));
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockReturnValue(createMockFetchResponse({ success: true, data: { rooms: ROOMS } }))
+      );
 
       render(<RoomSelectApp />);
 
@@ -222,9 +237,10 @@ describe('RoomSelectApp', () => {
       sessionStorage.setItem('selectedPropertyName', 'テスト物件');
       sessionStorage.setItem('selectedRooms', JSON.stringify(ROOMS));
 
-      vi.stubGlobal('fetch', vi.fn().mockReturnValue(
-        createMockFetchResponse({ success: true, data: { rooms: ROOMS } })
-      ));
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockReturnValue(createMockFetchResponse({ success: true, data: { rooms: ROOMS } }))
+      );
 
       render(<RoomSelectApp />);
 
@@ -242,13 +258,20 @@ describe('RoomSelectApp', () => {
       sessionStorage.setItem('gasWebAppUrl', MOCK_GAS_URL);
       sessionStorage.setItem('selectedPropertyId', MOCK_PROPERTY_ID);
       sessionStorage.setItem('selectedPropertyName', 'テスト物件');
-      sessionStorage.setItem('selectedRooms', JSON.stringify([
-        { id: 'room-101', name: '101号室' },
-      ]));
+      sessionStorage.setItem(
+        'selectedRooms',
+        JSON.stringify([{ id: 'room-101', name: '101号室' }])
+      );
 
-      vi.stubGlobal('fetch', vi.fn().mockReturnValue(
-        createMockFetchResponse({ success: true, data: { rooms: [{ id: 'room-101', name: '101号室' }] } })
-      ));
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockReturnValue(
+          createMockFetchResponse({
+            success: true,
+            data: { rooms: [{ id: 'room-101', name: '101号室' }] },
+          })
+        )
+      );
 
       render(<RoomSelectApp />);
 
@@ -267,13 +290,15 @@ describe('RoomSelectApp', () => {
       sessionStorage.setItem('gasWebAppUrl', MOCK_GAS_URL);
       sessionStorage.setItem('selectedPropertyId', MOCK_PROPERTY_ID);
       sessionStorage.setItem('selectedPropertyName', 'テスト物件');
-      sessionStorage.setItem('selectedRooms', JSON.stringify([
-        { id: 'room-103', name: '103号室', isNotNeeded: true },
-      ]));
+      sessionStorage.setItem(
+        'selectedRooms',
+        JSON.stringify([{ id: 'room-103', name: '103号室', isNotNeeded: true }])
+      );
 
-      vi.stubGlobal('fetch', vi.fn().mockReturnValue(
-        createMockFetchResponse({ success: true, data: { rooms: [] } })
-      ));
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockReturnValue(createMockFetchResponse({ success: true, data: { rooms: [] } }))
+      );
 
       render(<RoomSelectApp />);
 
@@ -293,13 +318,15 @@ describe('RoomSelectApp', () => {
       sessionStorage.setItem('gasWebAppUrl', MOCK_GAS_URL);
       sessionStorage.setItem('selectedPropertyId', MOCK_PROPERTY_ID);
       sessionStorage.setItem('selectedPropertyName', 'テスト物件');
-      sessionStorage.setItem('selectedRooms', JSON.stringify([
-        { id: 'room-103', name: '103号室', isNotNeeded: true },
-      ]));
+      sessionStorage.setItem(
+        'selectedRooms',
+        JSON.stringify([{ id: 'room-103', name: '103号室', isNotNeeded: true }])
+      );
 
-      vi.stubGlobal('fetch', vi.fn().mockReturnValue(
-        createMockFetchResponse({ success: true, data: { rooms: [] } })
-      ));
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockReturnValue(createMockFetchResponse({ success: true, data: { rooms: [] } }))
+      );
 
       render(<RoomSelectApp />);
 
@@ -321,9 +348,10 @@ describe('RoomSelectApp', () => {
       sessionStorage.setItem('selectedPropertyName', 'テスト物件');
       sessionStorage.setItem('selectedRooms', JSON.stringify(ROOMS));
 
-      vi.stubGlobal('fetch', vi.fn().mockReturnValue(
-        createMockFetchResponse({ success: true, data: { rooms: ROOMS } })
-      ));
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockReturnValue(createMockFetchResponse({ success: true, data: { rooms: ROOMS } }))
+      );
 
       render(<RoomSelectApp />);
 
@@ -346,12 +374,15 @@ describe('RoomSelectApp', () => {
       sessionStorage.setItem('selectedPropertyName', 'テスト物件');
       sessionStorage.setItem('selectedRooms', JSON.stringify(ROOMS));
 
-      vi.stubGlobal('fetch', vi.fn().mockImplementation((url) => {
-        if (url.includes('completeInspection')) {
-          return createMockFetchResponse({ success: true });
-        }
-        return createMockFetchResponse({ success: true, data: { rooms: ROOMS } });
-      }));
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockImplementation((url) => {
+          if (url.includes('completeInspection')) {
+            return createMockFetchResponse({ success: true });
+          }
+          return createMockFetchResponse({ success: true, data: { rooms: ROOMS } });
+        })
+      );
 
       render(<RoomSelectApp />);
 
@@ -374,12 +405,15 @@ describe('RoomSelectApp', () => {
       sessionStorage.setItem('selectedRooms', JSON.stringify(ROOMS));
 
       // Background update returns success, completeInspection returns error
-      vi.stubGlobal('fetch', vi.fn().mockImplementation((url) => {
-        if (url.includes('completeInspection')) {
-          return createMockFetchResponse({}, { ok: false, status: 500 });
-        }
-        return createMockFetchResponse({ success: true, data: { rooms: ROOMS } });
-      }));
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockImplementation((url) => {
+          if (url.includes('completeInspection')) {
+            return createMockFetchResponse({}, { ok: false, status: 500 });
+          }
+          return createMockFetchResponse({ success: true, data: { rooms: ROOMS } });
+        })
+      );
 
       render(<RoomSelectApp />);
 
@@ -401,9 +435,10 @@ describe('RoomSelectApp', () => {
       sessionStorage.setItem('selectedPropertyName', 'テスト物件');
       sessionStorage.setItem('selectedRooms', JSON.stringify(ROOMS));
 
-      vi.stubGlobal('fetch', vi.fn().mockReturnValue(
-        createMockFetchResponse({ success: true, data: { rooms: ROOMS } })
-      ));
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockReturnValue(createMockFetchResponse({ success: true, data: { rooms: ROOMS } }))
+      );
 
       render(<RoomSelectApp />);
 
@@ -427,12 +462,15 @@ describe('RoomSelectApp', () => {
       sessionStorage.setItem('selectedPropertyName', 'テスト物件');
       sessionStorage.setItem('selectedRooms', JSON.stringify(ROOMS));
 
-      vi.stubGlobal('fetch', vi.fn().mockImplementation((url) => {
-        if (url.includes('completeInspection')) {
-          return createMockFetchResponse({ success: false, error: 'サーバーエラー' });
-        }
-        return createMockFetchResponse({ success: true, data: { rooms: ROOMS } });
-      }));
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockImplementation((url) => {
+          if (url.includes('completeInspection')) {
+            return createMockFetchResponse({ success: false, error: 'サーバーエラー' });
+          }
+          return createMockFetchResponse({ success: true, data: { rooms: ROOMS } });
+        })
+      );
 
       render(<RoomSelectApp />);
 
@@ -458,9 +496,15 @@ describe('RoomSelectApp', () => {
       sessionStorage.setItem('selectedRooms', JSON.stringify(ROOMS));
 
       const freshRooms = [{ id: 'room-201', name: '201号室' }];
-      vi.stubGlobal('fetch', vi.fn().mockReturnValue(
-        createMockFetchResponse({ success: true, data: { rooms: freshRooms, propertyName: '新規物件' } })
-      ));
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockReturnValue(
+          createMockFetchResponse({
+            success: true,
+            data: { rooms: freshRooms, propertyName: '新規物件' },
+          })
+        )
+      );
 
       render(<RoomSelectApp />);
 
@@ -479,9 +523,15 @@ describe('RoomSelectApp', () => {
       sessionStorage.setItem('selectedPropertyName', '別物件');
       sessionStorage.setItem('selectedRooms', JSON.stringify(ROOMS));
 
-      vi.stubGlobal('fetch', vi.fn().mockReturnValue(
-        createMockFetchResponse({ success: true, data: { rooms: [{ id: 'r1', name: '部屋1' }], propertyName: 'API物件' } })
-      ));
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockReturnValue(
+          createMockFetchResponse({
+            success: true,
+            data: { rooms: [{ id: 'r1', name: '部屋1' }], propertyName: 'API物件' },
+          })
+        )
+      );
 
       render(<RoomSelectApp />);
 
@@ -497,9 +547,15 @@ describe('RoomSelectApp', () => {
       sessionStorage.setItem('selectedPropertyName', 'テスト物件');
       sessionStorage.setItem('selectedRooms', 'not-json');
 
-      vi.stubGlobal('fetch', vi.fn().mockReturnValue(
-        createMockFetchResponse({ success: true, data: { rooms: [{ id: 'r1', name: '部屋1' }], propertyName: 'API物件' } })
-      ));
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockReturnValue(
+          createMockFetchResponse({
+            success: true,
+            data: { rooms: [{ id: 'r1', name: '部屋1' }], propertyName: 'API物件' },
+          })
+        )
+      );
 
       render(<RoomSelectApp />);
 
@@ -514,18 +570,21 @@ describe('RoomSelectApp', () => {
       mockLocationSearch(`?propertyId=${MOCK_PROPERTY_ID}`);
       sessionStorage.setItem('gasWebAppUrl', MOCK_GAS_URL);
 
-      vi.stubGlobal('fetch', vi.fn().mockImplementation((url) => {
-        if (url.includes('getRoomsLight')) {
-          return Promise.reject(new Error('Light API failed'));
-        }
-        return createMockFetchResponse({
-          success: true,
-          data: {
-            rooms: [{ id: 'r1', name: 'レガシー部屋' }],
-            propertyName: 'レガシー物件',
-          },
-        });
-      }));
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockImplementation((url) => {
+          if (url.includes('getRoomsLight')) {
+            return Promise.reject(new Error('Light API failed'));
+          }
+          return createMockFetchResponse({
+            success: true,
+            data: {
+              rooms: [{ id: 'r1', name: 'レガシー部屋' }],
+              propertyName: 'レガシー物件',
+            },
+          });
+        })
+      );
 
       render(<RoomSelectApp />);
 
@@ -539,18 +598,21 @@ describe('RoomSelectApp', () => {
       mockLocationSearch(`?propertyId=${MOCK_PROPERTY_ID}`);
       sessionStorage.setItem('gasWebAppUrl', MOCK_GAS_URL);
 
-      vi.stubGlobal('fetch', vi.fn().mockImplementation((url) => {
-        if (url.includes('getRoomsLight')) {
-          return createMockFetchResponse({}, { ok: false, status: 503 });
-        }
-        return createMockFetchResponse({
-          success: true,
-          data: {
-            rooms: [{ id: 'r1', name: 'フォールバック部屋' }],
-            property: { name: 'フォールバック物件' },
-          },
-        });
-      }));
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockImplementation((url) => {
+          if (url.includes('getRoomsLight')) {
+            return createMockFetchResponse({}, { ok: false, status: 503 });
+          }
+          return createMockFetchResponse({
+            success: true,
+            data: {
+              rooms: [{ id: 'r1', name: 'フォールバック部屋' }],
+              property: { name: 'フォールバック物件' },
+            },
+          });
+        })
+      );
 
       render(<RoomSelectApp />);
 
@@ -563,18 +625,21 @@ describe('RoomSelectApp', () => {
       mockLocationSearch(`?propertyId=${MOCK_PROPERTY_ID}`);
       sessionStorage.setItem('gasWebAppUrl', MOCK_GAS_URL);
 
-      vi.stubGlobal('fetch', vi.fn().mockImplementation((url) => {
-        if (url.includes('getRoomsLight')) {
-          return createMockFetchResponse({ success: false, error: 'Light error' });
-        }
-        return createMockFetchResponse({
-          success: true,
-          data: {
-            rooms: [{ id: 'r1', name: 'レガシー部屋' }],
-            propertyName: 'レガシー物件',
-          },
-        });
-      }));
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockImplementation((url) => {
+          if (url.includes('getRoomsLight')) {
+            return createMockFetchResponse({ success: false, error: 'Light error' });
+          }
+          return createMockFetchResponse({
+            success: true,
+            data: {
+              rooms: [{ id: 'r1', name: 'レガシー部屋' }],
+              propertyName: 'レガシー物件',
+            },
+          });
+        })
+      );
 
       render(<RoomSelectApp />);
 
@@ -590,13 +655,15 @@ describe('RoomSelectApp', () => {
       sessionStorage.setItem('gasWebAppUrl', MOCK_GAS_URL);
       sessionStorage.setItem('selectedPropertyId', MOCK_PROPERTY_ID);
       sessionStorage.setItem('selectedPropertyName', 'テスト物件');
-      sessionStorage.setItem('selectedRooms', JSON.stringify([
-        { id: 'room-103', name: '103号室', isNotNeeded: true },
-      ]));
+      sessionStorage.setItem(
+        'selectedRooms',
+        JSON.stringify([{ id: 'room-103', name: '103号室', isNotNeeded: true }])
+      );
 
-      vi.stubGlobal('fetch', vi.fn().mockReturnValue(
-        createMockFetchResponse({ success: true, data: { rooms: [] } })
-      ));
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockReturnValue(createMockFetchResponse({ success: true, data: { rooms: [] } }))
+      );
 
       render(<RoomSelectApp />);
 
@@ -615,7 +682,9 @@ describe('RoomSelectApp', () => {
       });
 
       await waitFor(() => {
-        expect(screen.queryByText('この部屋は検針不要に設定されています。')).not.toBeInTheDocument();
+        expect(
+          screen.queryByText('この部屋は検針不要に設定されています。')
+        ).not.toBeInTheDocument();
       });
     });
   });
@@ -625,9 +694,15 @@ describe('RoomSelectApp', () => {
       mockLocationSearch(`?propertyId=${MOCK_PROPERTY_ID}`);
       localStorage.setItem('gasWebAppUrl', MOCK_GAS_URL);
 
-      vi.stubGlobal('fetch', vi.fn().mockReturnValue(
-        createMockFetchResponse({ success: true, data: { rooms: [{ id: 'r1', name: '部屋1' }], propertyName: 'テスト物件' } })
-      ));
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockReturnValue(
+          createMockFetchResponse({
+            success: true,
+            data: { rooms: [{ id: 'r1', name: '部屋1' }], propertyName: 'テスト物件' },
+          })
+        )
+      );
 
       render(<RoomSelectApp />);
 
@@ -645,13 +720,12 @@ describe('RoomSelectApp', () => {
       sessionStorage.setItem('gasWebAppUrl', MOCK_GAS_URL);
       sessionStorage.setItem('selectedPropertyId', MOCK_PROPERTY_ID);
       sessionStorage.setItem('selectedPropertyName', 'テスト物件');
-      sessionStorage.setItem('selectedRooms', JSON.stringify([
-        { id: 'room-999' },
-      ]));
+      sessionStorage.setItem('selectedRooms', JSON.stringify([{ id: 'room-999' }]));
 
-      vi.stubGlobal('fetch', vi.fn().mockReturnValue(
-        createMockFetchResponse({ success: true, data: { rooms: [] } })
-      ));
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockReturnValue(createMockFetchResponse({ success: true, data: { rooms: [] } }))
+      );
 
       render(<RoomSelectApp />);
 
@@ -666,9 +740,14 @@ describe('RoomSelectApp', () => {
       mockLocationSearch(`?propertyId=${MOCK_PROPERTY_ID}`);
       sessionStorage.setItem('gasWebAppUrl', MOCK_GAS_URL);
 
-      vi.stubGlobal('fetch', vi.fn().mockReturnValue(
-        createMockFetchResponse({ success: true, data: { rooms: [], propertyName: '空物件' } })
-      ));
+      vi.stubGlobal(
+        'fetch',
+        vi
+          .fn()
+          .mockReturnValue(
+            createMockFetchResponse({ success: true, data: { rooms: [], propertyName: '空物件' } })
+          )
+      );
 
       render(<RoomSelectApp />);
 

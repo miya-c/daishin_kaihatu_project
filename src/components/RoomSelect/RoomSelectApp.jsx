@@ -98,7 +98,8 @@ const RoomSelectApp = () => {
         }
 
         const fetchedRooms = data.data?.rooms || data.data || [];
-        const fetchedPropertyName = data.data?.propertyName || sessionStorage.getItem('selectedPropertyName') || '物件名不明';
+        const fetchedPropertyName =
+          data.data?.propertyName || sessionStorage.getItem('selectedPropertyName') || '物件名不明';
 
         if (!Array.isArray(fetchedRooms)) {
           throw new Error('Invalid data format');
@@ -109,7 +110,6 @@ const RoomSelectApp = () => {
         sessionStorage.setItem('selectedRooms', JSON.stringify(fetchedRooms));
         sessionStorage.setItem('selectedPropertyName', fetchedPropertyName);
         sessionStorage.setItem('selectedPropertyId', propId);
-
       } catch (lightError) {
         // Fallback to legacy API
         const fetchUrl = `${gasWebAppUrl}?action=getRooms&propertyId=${encodeURIComponent(propId)}`;
@@ -126,15 +126,16 @@ const RoomSelectApp = () => {
 
         let fetchedPropertyName = '物件名不明';
         if (data.data) {
-          fetchedPropertyName = data.data.propertyName
-            || (data.data.property && data.data.property.name)
-            || data.data.property_name
-            || data.data.name
-            || sessionStorage.getItem('selectedPropertyName')
-            || '物件名不明';
+          fetchedPropertyName =
+            data.data.propertyName ||
+            (data.data.property && data.data.property.name) ||
+            data.data.property_name ||
+            data.data.name ||
+            sessionStorage.getItem('selectedPropertyName') ||
+            '物件名不明';
         }
 
-        const fetchedRooms = (data.data && Array.isArray(data.data.rooms)) ? data.data.rooms : [];
+        const fetchedRooms = data.data && Array.isArray(data.data.rooms) ? data.data.rooms : [];
         if (!Array.isArray(fetchedRooms)) {
           throw new Error('部屋データの取得に失敗しました');
         }
@@ -145,7 +146,6 @@ const RoomSelectApp = () => {
         sessionStorage.setItem('selectedPropertyName', fetchedPropertyName);
         sessionStorage.setItem('selectedPropertyId', propId);
       }
-
     } catch (err) {
       setError(err.message);
     } finally {
@@ -172,19 +172,22 @@ const RoomSelectApp = () => {
     }
   };
 
-  const handleRoomClick = useCallback((room) => {
-    if (room.isNotNeeded === true) {
-      displayToast('この部屋は検針不要に設定されています。');
-      return;
-    }
+  const handleRoomClick = useCallback(
+    (room) => {
+      if (room.isNotNeeded === true) {
+        displayToast('この部屋は検針不要に設定されています。');
+        return;
+      }
 
-    const roomId = String(room.id || room.roomId || '');
-    const gasUrl = getGasUrl();
-    if (gasUrl) {
-      sessionStorage.setItem('gasWebAppUrl', gasUrl);
-    }
-    window.location.href = `/reading/?propertyId=${encodeURIComponent(propertyId)}&roomId=${encodeURIComponent(roomId)}`;
-  }, [propertyId]);
+      const roomId = String(room.id || room.roomId || '');
+      const gasUrl = getGasUrl();
+      if (gasUrl) {
+        sessionStorage.setItem('gasWebAppUrl', gasUrl);
+      }
+      window.location.href = `/reading/?propertyId=${encodeURIComponent(propertyId)}&roomId=${encodeURIComponent(roomId)}`;
+    },
+    [propertyId]
+  );
 
   const handleBackButton = useCallback(() => {
     window.location.href = '/property/';
@@ -204,14 +207,20 @@ const RoomSelectApp = () => {
 
     try {
       const today = new Date();
-      const completionDate = today.getFullYear() + '-' +
-        String(today.getMonth() + 1).padStart(2, '0') + '-' +
+      const completionDate =
+        today.getFullYear() +
+        '-' +
+        String(today.getMonth() + 1).padStart(2, '0') +
+        '-' +
         String(today.getDate()).padStart(2, '0');
 
-      const response = await fetch(`${gasUrl}?action=completeInspection&propertyId=${propertyId}&completionDate=${completionDate}`, {
-        method: 'GET',
-        headers: { 'Accept': 'application/json' }
-      });
+      const response = await fetch(
+        `${gasUrl}?action=completeInspection&propertyId=${propertyId}&completionDate=${completionDate}`,
+        {
+          method: 'GET',
+          headers: { Accept: 'application/json' },
+        }
+      );
 
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
@@ -239,9 +248,16 @@ const RoomSelectApp = () => {
   if (loading) {
     return (
       <div>
-        <header className="MuiAppBar-root MuiAppBar-colorPrimary MuiAppBar-positionStatic mui-elevation-4" role="banner">
+        <header
+          className="MuiAppBar-root MuiAppBar-colorPrimary MuiAppBar-positionStatic mui-elevation-4"
+          role="banner"
+        >
           <nav className="MuiToolbar-root MuiToolbar-regular" aria-label="部屋選択ナビゲーション">
-            <button className="MuiIconButton-root MuiIconButton-colorInherit" onClick={handleBackButton} aria-label="戻る">
+            <button
+              className="MuiIconButton-root MuiIconButton-colorInherit"
+              onClick={handleBackButton}
+              aria-label="戻る"
+            >
               <span className="material-icons MuiSvgIcon-root">arrow_back</span>
             </button>
             <span className="MuiTypography-root MuiTypography-h6 app-title">部屋選択</span>
@@ -250,7 +266,9 @@ const RoomSelectApp = () => {
         <main className="MuiContainer-root MuiContainer-maxWidthLg" style={{ paddingTop: '32px' }}>
           <div className="loading-container">
             <span className="MuiCircularProgress-root" aria-label="読み込み中"></span>
-            <span className="MuiTypography-root MuiTypography-body1">部屋データを読み込み中...</span>
+            <span className="MuiTypography-root MuiTypography-body1">
+              部屋データを読み込み中...
+            </span>
           </div>
         </main>
       </div>
@@ -261,9 +279,16 @@ const RoomSelectApp = () => {
   if (error) {
     return (
       <div>
-        <header className="MuiAppBar-root MuiAppBar-colorPrimary MuiAppBar-positionStatic mui-elevation-4" role="banner">
+        <header
+          className="MuiAppBar-root MuiAppBar-colorPrimary MuiAppBar-positionStatic mui-elevation-4"
+          role="banner"
+        >
           <nav className="MuiToolbar-root MuiToolbar-regular" aria-label="部屋選択ナビゲーション">
-            <button className="MuiIconButton-root MuiIconButton-colorInherit" onClick={handleBackButton} aria-label="戻る">
+            <button
+              className="MuiIconButton-root MuiIconButton-colorInherit"
+              onClick={handleBackButton}
+              aria-label="戻る"
+            >
               <span className="material-icons MuiSvgIcon-root">arrow_back</span>
             </button>
             <span className="MuiTypography-root MuiTypography-h6 app-title">部屋選択</span>
@@ -281,9 +306,16 @@ const RoomSelectApp = () => {
   // Main content
   return (
     <div>
-      <header className="MuiAppBar-root MuiAppBar-colorPrimary MuiAppBar-positionStatic mui-elevation-4" role="banner">
+      <header
+        className="MuiAppBar-root MuiAppBar-colorPrimary MuiAppBar-positionStatic mui-elevation-4"
+        role="banner"
+      >
         <nav className="MuiToolbar-root MuiToolbar-regular" aria-label="部屋選択ナビゲーション">
-          <button className="MuiIconButton-root MuiIconButton-colorInherit" onClick={handleBackButton} aria-label="戻る">
+          <button
+            className="MuiIconButton-root MuiIconButton-colorInherit"
+            onClick={handleBackButton}
+            aria-label="戻る"
+          >
             <span className="material-icons MuiSvgIcon-root">arrow_back</span>
           </button>
           <span className="MuiTypography-root MuiTypography-h6 app-title">部屋選択</span>
@@ -292,9 +324,14 @@ const RoomSelectApp = () => {
 
       <main className="MuiContainer-root MuiContainer-maxWidthLg" style={{ paddingTop: '32px' }}>
         {/* Property name card */}
-        <section className="MuiCard-root MuiPaper-root MuiPaper-elevation1 property-card" aria-label="物件情報">
+        <section
+          className="MuiCard-root MuiPaper-root MuiPaper-elevation1 property-card"
+          aria-label="物件情報"
+        >
           <div className="MuiCardHeader-root property-header">
-            <span className="material-icons MuiSvgIcon-root property-icon" aria-hidden="true">home</span>
+            <span className="material-icons MuiSvgIcon-root property-icon" aria-hidden="true">
+              home
+            </span>
             <span className="MuiTypography-root MuiTypography-h5">{propertyName}</span>
           </div>
         </section>
@@ -316,14 +353,17 @@ const RoomSelectApp = () => {
               } else if (isCompleted) {
                 statusIcon = 'check_circle';
                 statusColor = '#2e7d32';
-                statusText = room.readingDateFormatted ? `検針済み：${String(room.readingDateFormatted)}` : '検針済み';
+                statusText = room.readingDateFormatted
+                  ? `検針済み：${String(room.readingDateFormatted)}`
+                  : '検針済み';
               } else {
                 statusIcon = 'warning';
                 statusColor = '#ed6c02';
                 statusText = '未検針';
               }
 
-              let cardClasses = 'MuiCard-root MuiPaper-root MuiPaper-elevation1 MuiCardActionArea-root room-card';
+              let cardClasses =
+                'MuiCard-root MuiPaper-root MuiPaper-elevation1 MuiCardActionArea-root room-card';
               if (isSkipInspection) {
                 cardClasses += ' status-skip';
               } else if (isCompleted) {
@@ -338,18 +378,26 @@ const RoomSelectApp = () => {
                   className={cardClasses}
                   tabIndex={isSkipInspection ? -1 : 0}
                   role={isSkipInspection ? 'presentation' : 'button'}
-                  aria-label={String(room.name || room['部屋名'] || room.id || '不明') +
-                    (isSkipInspection ? ' 検針不要' : isCompleted ? ' 検針済み' : ' 未検針')}
+                  aria-label={
+                    String(room.name || room['部屋名'] || room.id || '不明') +
+                    (isSkipInspection ? ' 検針不要' : isCompleted ? ' 検針済み' : ' 未検針')
+                  }
                   onClick={() => handleRoomClick(room)}
                 >
                   <div className="MuiCardContent-root room-info-row">
-                    <span className="material-icons MuiSvgIcon-root status-icon" aria-hidden="true" style={{ color: statusColor }}>
+                    <span
+                      className="material-icons MuiSvgIcon-root status-icon"
+                      aria-hidden="true"
+                      style={{ color: statusColor }}
+                    >
                       {statusIcon}
                     </span>
                     <span className="MuiTypography-root MuiTypography-h6 room-name">
                       {String(room.name || room['部屋名'] || room.id || '不明')}
                     </span>
-                    <span className="MuiTypography-root MuiTypography-body2 room-status">{statusText}</span>
+                    <span className="MuiTypography-root MuiTypography-body2 room-status">
+                      {statusText}
+                    </span>
                   </div>
                 </div>
               );
@@ -365,7 +413,9 @@ const RoomSelectApp = () => {
               onClick={handleCompleteInspection}
               aria-label="この物件の検針を完了する"
             >
-              <span className="material-icons MuiSvgIcon-root" aria-hidden="true">check_circle</span>
+              <span className="material-icons MuiSvgIcon-root" aria-hidden="true">
+                check_circle
+              </span>
               <span className="MuiButton-label">この物件の検針を完了する</span>
             </button>
           </div>
@@ -373,13 +423,25 @@ const RoomSelectApp = () => {
       </main>
 
       {showToast && (
-        <div style={{
-          position: 'fixed', bottom: '20px', left: '50%', transform: 'translateX(-50%)',
-          backgroundColor: 'var(--mui-palette-primary-main, #1976d2)', color: 'white',
-          padding: '12px 24px', borderRadius: '8px', fontSize: '0.95rem', fontWeight: 500,
-          boxShadow: '0 4px 12px rgba(0,0,0,0.2)', zIndex: 10000, textAlign: 'center',
-          maxWidth: '90vw', animation: 'fadeIn 0.3s ease'
-        }}>
+        <div
+          style={{
+            position: 'fixed',
+            bottom: '20px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            backgroundColor: 'var(--mui-palette-primary-main, #1976d2)',
+            color: 'white',
+            padding: '12px 24px',
+            borderRadius: '8px',
+            fontSize: '0.95rem',
+            fontWeight: 500,
+            boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+            zIndex: 10000,
+            textAlign: 'center',
+            maxWidth: '90vw',
+            animation: 'fadeIn 0.3s ease',
+          }}
+        >
           {toastMessage}
         </div>
       )}

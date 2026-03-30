@@ -66,7 +66,10 @@ class PWAUtils {
   }
 
   checkInstallStatus() {
-    if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
+    if (
+      window.matchMedia('(display-mode: standalone)').matches ||
+      window.navigator.standalone === true
+    ) {
       this.isInstalled = true;
       this.hideInstallButton();
     }

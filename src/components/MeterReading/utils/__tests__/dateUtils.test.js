@@ -3,7 +3,7 @@ import {
   formatDateForDisplay,
   getCurrentJSTDateString,
   normalizeToJSTDate,
-  getJSTDateString
+  getJSTDateString,
 } from '../dateUtils';
 
 describe('formatDateForDisplay', () => {
@@ -50,12 +50,12 @@ describe('normalizeToJSTDate', () => {
   it('returns current date for null', () => {
     const result = normalizeToJSTDate(null);
     // Falls back to getCurrentJSTDateString which uses Intl (YYYY/MM/DD)
-    expect(result).toMatch(/^\d{4}[\/-]\d{2}[\/-]\d{2}$/);
+    expect(result).toMatch(/^\d{4}[/-]\d{2}[/-]\d{2}$/);
   });
 
   it('returns current date for empty string', () => {
     const result = normalizeToJSTDate('');
-    expect(result).toMatch(/^\d{4}[\/-]\d{2}[\/-]\d{2}$/);
+    expect(result).toMatch(/^\d{4}[/-]\d{2}[/-]\d{2}$/);
   });
 
   it('returns YYYY-MM-DD string as-is', () => {
@@ -70,7 +70,7 @@ describe('normalizeToJSTDate', () => {
 
   it('returns current date for invalid input', () => {
     const result = normalizeToJSTDate('invalid');
-    expect(result).toMatch(/^\d{4}[\/-]\d{2}[\/-]\d{2}$/);
+    expect(result).toMatch(/^\d{4}[/-]\d{2}[/-]\d{2}$/);
   });
 });
 

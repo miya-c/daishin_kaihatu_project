@@ -81,9 +81,7 @@ describe('useReadingUpdate', () => {
       await result.current.handleUpdateReadings({});
     });
 
-    expect(displayToast).toHaveBeenCalledWith(
-      '物件IDまたは部屋IDが取得できませんでした。'
-    );
+    expect(displayToast).toHaveBeenCalledWith('物件IDまたは部屋IDが取得できませんでした。');
   });
 
   it('handleUpdateReadings shows error when roomId is missing', async () => {
@@ -96,9 +94,7 @@ describe('useReadingUpdate', () => {
       await result.current.handleUpdateReadings({});
     });
 
-    expect(displayToast).toHaveBeenCalledWith(
-      '物件IDまたは部屋IDが取得できませんでした。'
-    );
+    expect(displayToast).toHaveBeenCalledWith('物件IDまたは部屋IDが取得できませんでした。');
   });
 
   it('validates first-time reading with empty value', async () => {
@@ -141,9 +137,7 @@ describe('useReadingUpdate', () => {
 
   it('shows toast when no changes detected', async () => {
     const displayToast = vi.fn();
-    const { result } = renderHook(() =>
-      useReadingUpdate(createDefaultProps({ displayToast }))
-    );
+    const { result } = renderHook(() => useReadingUpdate(createDefaultProps({ displayToast })));
 
     // readingValues matches original → no changes
     await act(async () => {
@@ -156,9 +150,7 @@ describe('useReadingUpdate', () => {
   it('successfully updates readings', async () => {
     const displayToast = vi.fn();
     const setUpdating = vi.fn();
-    vi.stubGlobal('fetch', vi.fn().mockReturnValue(
-      createMockFetchResponse({ success: true })
-    ));
+    vi.stubGlobal('fetch', vi.fn().mockReturnValue(createMockFetchResponse({ success: true })));
 
     const { result } = renderHook(() =>
       useReadingUpdate(createDefaultProps({ displayToast, setUpdating }))
@@ -177,9 +169,10 @@ describe('useReadingUpdate', () => {
   it('handles API failure response', async () => {
     const displayToast = vi.fn();
     const setUpdating = vi.fn();
-    vi.stubGlobal('fetch', vi.fn().mockReturnValue(
-      createMockFetchResponse({ success: false, error: 'Server error' })
-    ));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockReturnValue(createMockFetchResponse({ success: false, error: 'Server error' }))
+    );
 
     const { result } = renderHook(() =>
       useReadingUpdate(createDefaultProps({ displayToast, setUpdating }))
@@ -215,9 +208,10 @@ describe('useReadingUpdate', () => {
   it('handles non-ok HTTP response', async () => {
     const displayToast = vi.fn();
     const setUpdating = vi.fn();
-    vi.stubGlobal('fetch', vi.fn().mockReturnValue(
-      createMockFetchResponse({}, { ok: false, status: 500 })
-    ));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockReturnValue(createMockFetchResponse({}, { ok: false, status: 500 }))
+    );
 
     const { result } = renderHook(() =>
       useReadingUpdate(createDefaultProps({ displayToast, setUpdating }))

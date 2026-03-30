@@ -5,7 +5,7 @@ import {
   fetchRooms,
   fetchMeterReadings,
   updateMeterReadings,
-  completeInspection
+  completeInspection,
 } from '../gasClient';
 
 const MOCK_URL = 'https://example.com/gas';
@@ -37,7 +37,9 @@ describe('getGasUrl', () => {
   });
 
   it('returns default URL when storage access throws', () => {
-    vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => { throw new Error(); });
+    vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+      throw new Error();
+    });
     const result = getGasUrl();
     expect(result).toContain('script.google.com');
     vi.restoreAllMocks();
@@ -53,7 +55,7 @@ describe('fetchProperties', () => {
   it('constructs correct URL with action=getProperties', async () => {
     const mockFetch = vi.fn().mockResolvedValue({
       ok: true,
-      json: () => Promise.resolve({ success: true, data: [] })
+      json: () => Promise.resolve({ success: true, data: [] }),
     });
     vi.stubGlobal('fetch', mockFetch);
 
@@ -67,7 +69,9 @@ describe('fetchProperties', () => {
   });
 
   it('throws on non-OK response', async () => {
-    vi.stubGlobal('fetch', () => Promise.resolve({ ok: false, status: 500, statusText: 'Server Error' }));
+    vi.stubGlobal('fetch', () =>
+      Promise.resolve({ ok: false, status: 500, statusText: 'Server Error' })
+    );
     await expect(fetchProperties(MOCK_URL)).rejects.toThrow('HTTP 500');
     vi.restoreAllMocks();
   });
@@ -77,7 +81,7 @@ describe('fetchRooms', () => {
   it('constructs correct URL with propertyId', async () => {
     const mockFetch = vi.fn().mockResolvedValue({
       ok: true,
-      json: () => Promise.resolve({ success: true, data: [] })
+      json: () => Promise.resolve({ success: true, data: [] }),
     });
     vi.stubGlobal('fetch', mockFetch);
 
@@ -94,7 +98,7 @@ describe('fetchMeterReadings', () => {
   it('constructs correct URL with propertyId and roomId', async () => {
     const mockFetch = vi.fn().mockResolvedValue({
       ok: true,
-      json: () => Promise.resolve({ success: true })
+      json: () => Promise.resolve({ success: true }),
     });
     vi.stubGlobal('fetch', mockFetch);
 
@@ -112,7 +116,7 @@ describe('updateMeterReadings', () => {
   it('sends readings as JSON-encoded parameter', async () => {
     const mockFetch = vi.fn().mockResolvedValue({
       ok: true,
-      json: () => Promise.resolve({ success: true })
+      json: () => Promise.resolve({ success: true }),
     });
     vi.stubGlobal('fetch', mockFetch);
 
@@ -132,7 +136,7 @@ describe('completeInspection', () => {
   it('constructs correct URL with propertyId and completionDate', async () => {
     const mockFetch = vi.fn().mockResolvedValue({
       ok: true,
-      json: () => Promise.resolve({ success: true })
+      json: () => Promise.resolve({ success: true }),
     });
     vi.stubGlobal('fetch', mockFetch);
 

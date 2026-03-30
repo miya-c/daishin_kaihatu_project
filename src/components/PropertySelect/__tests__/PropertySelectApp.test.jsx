@@ -30,8 +30,8 @@ function createMockFetchResponse(data, options = {}) {
 
 function setupMocks(options = {}) {
   // Default getGasUrl returns value from sessionStorage
-  getGasUrl.mockImplementation(() =>
-    sessionStorage.getItem('gasWebAppUrl') || localStorage.getItem('gasWebAppUrl') || ''
+  getGasUrl.mockImplementation(
+    () => sessionStorage.getItem('gasWebAppUrl') || localStorage.getItem('gasWebAppUrl') || ''
   );
   // Default fetchProperties returns provided data
   if (options.fetchPropertiesResponse !== undefined) {
@@ -141,9 +141,7 @@ describe('PropertySelectApp', () => {
 
     it('normalizes Japanese key names', async () => {
       sessionStorage.setItem('gasWebAppUrl', MOCK_GAS_URL);
-      const jpData = [
-        { '物件ID': 'jp-001', '物件名': '日本語物件', '検針完了日': '2025-07-01' },
-      ];
+      const jpData = [{ 物件ID: 'jp-001', 物件名: '日本語物件', 検針完了日: '2025-07-01' }];
       setupMocks({ fetchPropertiesResponse: { data: jpData } });
 
       render(<PropertySelectApp />);
@@ -305,7 +303,9 @@ describe('PropertySelectApp', () => {
         expect(screen.getByText('保存')).toBeInTheDocument();
       });
 
-      const input = screen.getByPlaceholderText('https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec');
+      const input = screen.getByPlaceholderText(
+        'https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec'
+      );
       fireEvent.change(input, { target: { value: MOCK_GAS_URL } });
       fireEvent.click(screen.getByText('保存'));
 
@@ -323,7 +323,9 @@ describe('PropertySelectApp', () => {
         expect(screen.getByText('保存')).toBeInTheDocument();
       });
 
-      const input = screen.getByPlaceholderText('https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec');
+      const input = screen.getByPlaceholderText(
+        'https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec'
+      );
       fireEvent.change(input, { target: { value: 'https://example.com/invalid' } });
       fireEvent.click(screen.getByText('保存'));
 
@@ -348,9 +350,7 @@ describe('PropertySelectApp', () => {
       sessionStorage.setItem('gasWebAppUrl', MOCK_GAS_URL);
       setupMocks({ fetchPropertiesResponse: { data: PROPERTIES } });
       // Mock global fetch for room fetch
-      vi.stubGlobal('fetch', vi.fn().mockReturnValue(
-        createMockFetchResponse(ROOMS_DATA)
-      ));
+      vi.stubGlobal('fetch', vi.fn().mockReturnValue(createMockFetchResponse(ROOMS_DATA)));
 
       render(<PropertySelectApp />);
 
@@ -369,9 +369,7 @@ describe('PropertySelectApp', () => {
     it('sets sessionStorage values on navigation', async () => {
       sessionStorage.setItem('gasWebAppUrl', MOCK_GAS_URL);
       setupMocks({ fetchPropertiesResponse: { data: PROPERTIES } });
-      vi.stubGlobal('fetch', vi.fn().mockReturnValue(
-        createMockFetchResponse(ROOMS_DATA)
-      ));
+      vi.stubGlobal('fetch', vi.fn().mockReturnValue(createMockFetchResponse(ROOMS_DATA)));
 
       render(<PropertySelectApp />);
 
@@ -390,9 +388,10 @@ describe('PropertySelectApp', () => {
     it('shows error when room fetch fails', async () => {
       sessionStorage.setItem('gasWebAppUrl', MOCK_GAS_URL);
       setupMocks({ fetchPropertiesResponse: { data: PROPERTIES } });
-      vi.stubGlobal('fetch', vi.fn().mockReturnValue(
-        createMockFetchResponse({}, { ok: false, status: 500 })
-      ));
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockReturnValue(createMockFetchResponse({}, { ok: false, status: 500 }))
+      );
 
       render(<PropertySelectApp />);
 
@@ -410,9 +409,10 @@ describe('PropertySelectApp', () => {
     it('shows error when room data format is invalid', async () => {
       sessionStorage.setItem('gasWebAppUrl', MOCK_GAS_URL);
       setupMocks({ fetchPropertiesResponse: { data: PROPERTIES } });
-      vi.stubGlobal('fetch', vi.fn().mockReturnValue(
-        createMockFetchResponse({ success: true, data: {} })
-      ));
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockReturnValue(createMockFetchResponse({ success: true, data: {} }))
+      );
 
       render(<PropertySelectApp />);
 
@@ -434,9 +434,7 @@ describe('PropertySelectApp', () => {
         success: true,
         data: [{ id: 'room-201', name: '201号室' }],
       };
-      vi.stubGlobal('fetch', vi.fn().mockReturnValue(
-        createMockFetchResponse(roomsArrayData)
-      ));
+      vi.stubGlobal('fetch', vi.fn().mockReturnValue(createMockFetchResponse(roomsArrayData)));
 
       render(<PropertySelectApp />);
 
@@ -454,9 +452,10 @@ describe('PropertySelectApp', () => {
     it('shows error when API returns success=false', async () => {
       sessionStorage.setItem('gasWebAppUrl', MOCK_GAS_URL);
       setupMocks({ fetchPropertiesResponse: { data: PROPERTIES } });
-      vi.stubGlobal('fetch', vi.fn().mockReturnValue(
-        createMockFetchResponse({ success: false, error: 'API error' })
-      ));
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockReturnValue(createMockFetchResponse({ success: false, error: 'API error' }))
+      );
 
       render(<PropertySelectApp />);
 
