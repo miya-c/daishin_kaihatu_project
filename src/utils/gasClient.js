@@ -4,8 +4,8 @@
  * including property fetching, room management, and meter reading operations.
  */
 
-/** Default GAS Web App URL used as a fallback when not found in storage */
-const GAS_URL_DEFAULT = 'https://script.google.com/macros/s/AKfycbw6HCVZK6U8bp1RqHP_o429KIvhZE2jv1KjEsZTDE9acmwsicRiTF5XIPe0LMawx3fucA/exec';
+/** Default GAS Web App URL from environment variable */
+const GAS_URL_DEFAULT = import.meta.env.VITE_GAS_WEB_APP_URL || '';
 
 /**
  * Retrieves the GAS Web App URL from browser storage.

@@ -10,7 +10,7 @@ const PropertySelectApp = () => {
   const [isNavigating, setIsNavigating] = useState(false);
   const [navigationMessage, setNavigationMessage] = useState('');
   const [showUrlModal, setShowUrlModal] = useState(false);
-  const [urlInput, setUrlInput] = useState('https://script.google.com/macros/s/');
+  const [urlInput, setUrlInput] = useState(import.meta.env.VITE_GAS_WEB_APP_URL || 'https://script.google.com/macros/s/');
 
   const gasWebAppUrl = useMemo(() => getGasUrl(), []);
 

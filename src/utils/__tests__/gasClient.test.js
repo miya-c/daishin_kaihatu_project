@@ -31,6 +31,11 @@ describe('getGasUrl', () => {
     expect(result).toContain('script.google.com');
   });
 
+  it('uses import.meta.env.VITE_GAS_WEB_APP_URL as default', () => {
+    const result = getGasUrl();
+    expect(result).toBe(import.meta.env.VITE_GAS_WEB_APP_URL);
+  });
+
   it('returns default URL when storage access throws', () => {
     vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => { throw new Error(); });
     const result = getGasUrl();
