@@ -312,4 +312,76 @@ describe('useRoomNavigation', () => {
       expect(mockFetch).not.toHaveBeenCalled();
     });
   });
+
+  // === Phase S: Coverage deepening tests ===
+
+  describe('saveAndNavigateToRoom', () => {
+    it('shows toast on successful save', async () => {
+      const displayToast = vi.fn();
+      sessionStorage.setItem('selectedRooms', JSON.stringify(ROOMS));
+      vi.stubGlobal('fetch', vi.fn().mockReturnValue(
+        createMockFetchResponse({ success: true })
+      ));
+
+      const { result } = renderHook(() =>
+        useRoomNavigation(createDefaultProps({ displayToast, roomId: 'room-101' }))
+      );
+
+      const collectFn = () => [{ date: '2025/06/15', currentReading: '150', warningFlag: '正常' }];
+
+      await act(async () => {
+        await result.current.handlePreviousRoom(collectFn);
+      });
+
+      // On successful save, displayToast should be called
+      expect(displayToast).toHaveBeenCalledWith('検針データを保存しました');
+    });
+
+    it('navigates directly when no readings to save', async () => {
+      sessionStorage.setItem('selectedRooms', JSON.stringify(ROOMS));
+      const mockFetch = vi.fn();
+      vi.stubGlobal('fetch', mockFetch);
+
+      const { result } = renderHook(() =>
+        useRoomNavigation(createDefaultProps({ roomId: 'room-101' }))
+      );
+
+      const collectFn = () => []; // No readings
+
+      await act(async () => {
+        await result.current.handlePreviousRoom(collectFn);
+      });
+
+      // Should navigate without calling fetch for save
+      expect(mockFetch).not.toHaveBeenCalled();
+      await waitFor(() => {
+        expect(mockLocation.href).toContain('room-100');
+      });
+    });
+  });
+
+  describe('handleBackButton edge cases', () => {
+    it('navigates to /property/ on error with empty propId', async () => {
+      vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('fail')));
+
+      // Force sessionStorage.setItem to throw for forceRefreshRooms
+      const setItemSpy = vi.spyOn(Storage.prototype, 'setItem');
+      setItemSpy.mockImplementation((key) => {
+        if (key === 'forceRefreshRooms') throw new Error('QuotaExceededError');
+      });
+
+      const { result } = renderHook(() =>
+        useRoomNavigation(createDefaultProps())
+      );
+
+      await act(async () => {
+        await result.current.handleBackButton('', MOCK_ROOM_ID);
+      });
+
+      // Empty propId + error → fallback to '/property/'
+      expect(mockLocation.href).toBe('/property/');
+
+      setItemSpy.mockRestore();
+    });
+  });
 });

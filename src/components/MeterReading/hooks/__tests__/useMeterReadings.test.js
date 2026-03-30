@@ -341,4 +341,184 @@ describe('useMeterReadings', () => {
       expect(result.current.error).toContain('検針データの読み込みに失敗');
     });
   });
+
+  // === Phase T: loadRoomDataForSPA and popstate tests ===
+
+  describe('loadRoomDataForSPA', () => {
+    it('loads room data successfully', async () => {
+      sessionStorage.setItem('gasWebAppUrl', MOCK_GAS_URL);
+      let fetchCallCount = 0;
+      vi.stubGlobal('fetch', vi.fn().mockImplementation(() => {
+        fetchCallCount++;
+        if (fetchCallCount === 1) {
+          return createMockFetchResponse(MOCK_STRUCTURED_RESPONSE);
+        }
+        return createMockFetchResponse({
+          success: true,
+          data: { propertyName: '物件B', roomName: '201号室', readings: [
+            { date: '2025/07/01', currentReading: 200, previousReading: 150, usage: 50, warningFlag: '正常' },
+          ] },
+        });
+      }));
+      restoreLocation = mockLocationSearch(`?propertyId=${MOCK_PROPERTY_ID}&roomId=${MOCK_ROOM_ID}`);
+
+      const { result } = renderHook(() => useMeterReadings());
+
+      await waitFor(() => {
+        expect(result.current.propertyName).toBe('テスト物件');
+      });
+
+      await act(async () => {
+        await result.current.loadRoomDataForSPA('prop-002', 'room-201');
+      });
+
+      expect(result.current.propertyName).toBe('物件B');
+      expect(result.current.roomName).toBe('201号室');
+      expect(result.current.meterReadings.length).toBe(1);
+    });
+
+    it('sets empty meterReadings when response has no readings', async () => {
+      sessionStorage.setItem('gasWebAppUrl', MOCK_GAS_URL);
+      let fetchCallCount = 0;
+      vi.stubGlobal('fetch', vi.fn().mockImplementation(() => {
+        fetchCallCount++;
+        if (fetchCallCount === 1) {
+          return createMockFetchResponse(MOCK_STRUCTURED_RESPONSE);
+        }
+        return createMockFetchResponse({
+          success: true,
+          data: { propertyName: 'P2', roomName: 'R2', readings: [] },
+        });
+      }));
+      restoreLocation = mockLocationSearch(`?propertyId=${MOCK_PROPERTY_ID}&roomId=${MOCK_ROOM_ID}`);
+
+      const { result } = renderHook(() => useMeterReadings());
+
+      await waitFor(() => {
+        expect(result.current.propertyName).toBe('テスト物件');
+      });
+
+      await act(async () => {
+        await result.current.loadRoomDataForSPA('prop-002', 'room-201');
+      });
+
+      expect(result.current.propertyName).toBe('P2');
+      expect(result.current.roomName).toBe('R2');
+      expect(result.current.meterReadings).toEqual([]);
+    });
+
+    it('reloads page on API error', async () => {
+      sessionStorage.setItem('gasWebAppUrl', MOCK_GAS_URL);
+      restoreLocation = mockLocationSearch(`?propertyId=${MOCK_PROPERTY_ID}&roomId=${MOCK_ROOM_ID}`);
+
+      // Override reload after mockLocationSearch sets window.location
+      const mockReload = vi.fn();
+      window.location.reload = mockReload;
+
+      let fetchCallCount = 0;
+      vi.stubGlobal('fetch', vi.fn().mockImplementation(() => {
+        fetchCallCount++;
+        if (fetchCallCount === 1) {
+          return createMockFetchResponse(MOCK_STRUCTURED_RESPONSE);
+        }
+        return createMockFetchResponse({}, { ok: false, status: 500 });
+      }));
+
+      const { result } = renderHook(() => useMeterReadings());
+
+      await waitFor(() => {
+        expect(result.current.propertyName).toBe('テスト物件');
+      });
+
+      await act(async () => {
+        await result.current.loadRoomDataForSPA('prop-002', 'room-201');
+      });
+
+      expect(mockReload).toHaveBeenCalled();
+    });
+
+    it('reloads page when API returns success=false', async () => {
+      sessionStorage.setItem('gasWebAppUrl', MOCK_GAS_URL);
+      restoreLocation = mockLocationSearch(`?propertyId=${MOCK_PROPERTY_ID}&roomId=${MOCK_ROOM_ID}`);
+
+      const mockReload = vi.fn();
+      window.location.reload = mockReload;
+
+      let fetchCallCount = 0;
+      vi.stubGlobal('fetch', vi.fn().mockImplementation(() => {
+        fetchCallCount++;
+        if (fetchCallCount === 1) {
+          return createMockFetchResponse(MOCK_STRUCTURED_RESPONSE);
+        }
+        return createMockFetchResponse({ success: false, error: 'fail' });
+      }));
+
+      const { result } = renderHook(() => useMeterReadings());
+
+      await waitFor(() => {
+        expect(result.current.propertyName).toBe('テスト物件');
+      });
+
+      await act(async () => {
+        await result.current.loadRoomDataForSPA('prop-002', 'room-201');
+      });
+
+      expect(mockReload).toHaveBeenCalled();
+    });
+  });
+
+  describe('popstate event handling', () => {
+    it('calls loadRoomDataForSPA on popstate with valid state', async () => {
+      sessionStorage.setItem('gasWebAppUrl', MOCK_GAS_URL);
+      let fetchCallCount = 0;
+      vi.stubGlobal('fetch', vi.fn().mockImplementation(() => {
+        fetchCallCount++;
+        if (fetchCallCount === 1) {
+          return createMockFetchResponse(MOCK_STRUCTURED_RESPONSE);
+        }
+        return createMockFetchResponse({
+          success: true,
+          data: { propertyName: '物件B', roomName: '201号室', readings: [] },
+        });
+      }));
+      restoreLocation = mockLocationSearch(`?propertyId=${MOCK_PROPERTY_ID}&roomId=${MOCK_ROOM_ID}`);
+
+      const { result } = renderHook(() => useMeterReadings());
+
+      await waitFor(() => {
+        expect(result.current.propertyName).toBe('テスト物件');
+      });
+
+      await act(async () => {
+        window.dispatchEvent(new PopStateEvent('popstate', {
+          state: { propertyId: 'prop-002', roomId: 'room-201' },
+        }));
+      });
+
+      expect(result.current.propertyName).toBe('物件B');
+    });
+
+    it('reloads page on popstate without state', async () => {
+      sessionStorage.setItem('gasWebAppUrl', MOCK_GAS_URL);
+      vi.stubGlobal('fetch', vi.fn().mockReturnValue(
+        createMockFetchResponse(MOCK_STRUCTURED_RESPONSE)
+      ));
+      restoreLocation = mockLocationSearch(`?propertyId=${MOCK_PROPERTY_ID}&roomId=${MOCK_ROOM_ID}`);
+
+      const mockReload = vi.fn();
+      window.location.reload = mockReload;
+
+      renderHook(() => useMeterReadings());
+
+      await waitFor(() => {
+        // Initial load completes - just verify the hook renders
+      });
+
+      await act(async () => {
+        window.dispatchEvent(new PopStateEvent('popstate', { state: null }));
+      });
+
+      expect(mockReload).toHaveBeenCalled();
+    });
+  });
 });
