@@ -11,6 +11,7 @@ class PWAUtils {
     this.registerServiceWorker();
     this.setupInstallPrompt();
     this.checkInstallStatus();
+    this.setupPeriodicUpdate();
   }
 
   async registerServiceWorker() {
@@ -92,7 +93,18 @@ class PWAUtils {
   }
 
   showNetworkStatus(_message, _level) {
-    // Placeholder for network status display
+    // Network status is now handled by NetworkStatusBar React component
+  }
+
+  setupPeriodicUpdate() {
+    if ('serviceWorker' in navigator) {
+      setInterval(async () => {
+        const registration = await navigator.serviceWorker.getRegistration();
+        if (registration) {
+          registration.update();
+        }
+      }, 60 * 60 * 1000); // Check for updates every hour
+    }
   }
 }
 

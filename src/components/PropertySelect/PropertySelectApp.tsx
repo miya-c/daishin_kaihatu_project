@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { getGasUrl, fetchProperties } from '../../utils/gasClient';
+import NetworkStatusBar from '../NetworkStatusBar';
 
 import type { Property } from '../../types';
 
@@ -249,6 +250,7 @@ const PropertySelectApp = () => {
   // Main content
   return (
     <div style={{ minHeight: '100vh' }}>
+      <NetworkStatusBar />
       <a href="#main-content" className="skip-link">メインコンテンツへ</a>
       {showUrlModal && (
         <div

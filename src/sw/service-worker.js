@@ -1,7 +1,8 @@
 // Service Worker for Water Meter Reading PWA
-// Slim version - focused caching strategies
+// Version: 2.0.0 - Phase 6 PWA improvements
 
-const CACHE_NAME = 'meter-reading-v1';
+const CACHE_VERSION = 'v2';
+const CACHE_NAME = `meter-reading-${CACHE_VERSION}`;
 
 const STATIC_ASSETS = ['/', '/index.html', '/manifest.json'];
 

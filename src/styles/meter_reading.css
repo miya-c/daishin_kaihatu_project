@@ -1215,3 +1215,36 @@ body {
 .skip-link:focus {
   top: 0;
 }
+
+/* Network status bar */
+.network-status-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  padding: 8px 16px;
+  text-align: center;
+  font-size: 0.9rem;
+  font-weight: 600;
+  z-index: 10001;
+  animation: slideDown 0.3s ease-out;
+}
+
+.network-status-offline {
+  background-color: #d32f2f;
+  color: white;
+}
+
+.network-status-online {
+  background-color: #2e7d32;
+  color: white;
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(-100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}

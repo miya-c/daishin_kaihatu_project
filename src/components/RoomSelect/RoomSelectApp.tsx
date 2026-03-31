@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { getGasUrl } from '../../utils/gasClient';
+import NetworkStatusBar from '../NetworkStatusBar';
 import { validateId } from '../../utils/validateParams';
 
 import type { Room } from '../../types';
@@ -255,6 +256,7 @@ const RoomSelectApp = () => {
   if (loading) {
     return (
       <div>
+        <NetworkStatusBar />
         <a href="#main-content" className="skip-link">メインコンテンツへ</a>
         <header
           className="MuiAppBar-root MuiAppBar-colorPrimary MuiAppBar-positionStatic mui-elevation-4"
@@ -287,6 +289,7 @@ const RoomSelectApp = () => {
   if (error) {
     return (
       <div>
+        <NetworkStatusBar />
         <a href="#main-content" className="skip-link">メインコンテンツへ</a>
         <header
           className="MuiAppBar-root MuiAppBar-colorPrimary MuiAppBar-positionStatic mui-elevation-4"

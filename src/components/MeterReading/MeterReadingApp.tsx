@@ -11,10 +11,13 @@ import NavigationButtons from './components/NavigationButtons';
 import PropertyInfoHeader from './components/PropertyInfoHeader';
 import ReadingHistoryTable from './components/ReadingHistoryTable';
 import InitialReadingForm from './components/InitialReadingForm';
+import NetworkStatusBar from '../NetworkStatusBar';
+import useNetworkStatus from '../../hooks/useNetworkStatus';
 
 import type { MeterReading } from '../../types';
 
 const MeterReadingApp = () => {
+  const { isOnline } = useNetworkStatus();
   const {
     loading,
     error,
@@ -301,6 +304,7 @@ const MeterReadingApp = () => {
   if (loading) {
     return (
       <>
+        <NetworkStatusBar />
         <a href="#main-content" className="skip-link">メインコンテンツへ</a>
         <div className="app-header">
           <button
@@ -326,6 +330,7 @@ const MeterReadingApp = () => {
   if (error) {
     return (
       <>
+        <NetworkStatusBar />
         <a href="#main-content" className="skip-link">メインコンテンツへ</a>
         <div className="app-header">
           <button
@@ -361,6 +366,7 @@ const MeterReadingApp = () => {
   return (
     <>
       {isNavigating && <LoadingOverlay message={navigationMessage} />}
+      <NetworkStatusBar />
       <a href="#main-content" className="skip-link">メインコンテンツへ</a>
       <div className="app-header">
         <button
@@ -429,7 +435,7 @@ const MeterReadingApp = () => {
             <button
               className="fab-button mantine-button variant-filled"
               onClick={handleUpdateReadings}
-              disabled={updating || isNavigating}
+              disabled={updating || isNavigating || !isOnline}
               title={hasReadingsWithPrevious ? '指示数を更新' : '初回検針データを保存'}
               style={{
                 width: '72px',
