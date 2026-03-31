@@ -388,6 +388,12 @@ const RoomSelectApp = () => {
                     (isSkipInspection ? ' 検針不要' : isCompleted ? ' 検針済み' : ' 未検針')
                   }
                   onClick={() => handleRoomClick(room)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      handleRoomClick(room);
+                    }
+                  }}
                 >
                   <div className="MuiCardContent-root room-info-row">
                     <span
@@ -428,6 +434,8 @@ const RoomSelectApp = () => {
 
       {showToast && (
         <div
+          role="status"
+          aria-live="polite"
           style={{
             position: 'fixed',
             bottom: '20px',

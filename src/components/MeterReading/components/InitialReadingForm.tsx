@@ -52,10 +52,14 @@ const InitialReadingForm = ({ readingValue, inputError, usageState, onInputChang
             step="any"
             style={{ fontSize: '1rem', padding: '10px' }}
             value={readingValue ?? ''}
+            aria-required="true"
+            aria-invalid={!!inputError}
+            aria-describedby={inputError ? 'initial-reading-error' : undefined}
             onChange={(e) => onInputChange(e.target.value)}
           />
           {inputError && (
             <div
+              id="initial-reading-error"
               role="alert"
               style={{
                 color: 'var(--mui-palette-red-6)',

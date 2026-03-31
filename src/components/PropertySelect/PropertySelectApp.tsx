@@ -274,7 +274,7 @@ const PropertySelectApp = () => {
               boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
             }}
           >
-            <h3 style={{ margin: '0 0 16px 0', fontSize: '1.125rem', fontWeight: 600 }}>
+            <h3 id="url-modal-title" style={{ margin: '0 0 16px 0', fontSize: '1.125rem', fontWeight: 600 }}>
               GAS Web App URL設定
             </h3>
             <p
@@ -339,6 +339,8 @@ const PropertySelectApp = () => {
 
       {isNavigating && (
         <div
+          role="status"
+          aria-live="polite"
           style={{
             position: 'fixed',
             top: 0,
@@ -460,7 +462,16 @@ const PropertySelectApp = () => {
                 key={property.id}
                 data-property-id={String(property.id)}
                 className={`MuiCard-root ${loading || isNavigating ? 'MuiCard-disabled' : ''}`}
+                tabIndex={loading || isNavigating ? -1 : 0}
+                role="button"
+                aria-label={`${String(property.name || '名称なし')}を選択`}
                 onClick={() => !(loading || isNavigating) && handlePropertySelect(property)}
+                onKeyDown={(e) => {
+                  if ((e.key === 'Enter' || e.key === ' ') && !(loading || isNavigating)) {
+                    e.preventDefault();
+                    handlePropertySelect(property);
+                  }
+                }}
                 style={{
                   opacity: loading || isNavigating ? 0.6 : 1,
                   cursor: loading || isNavigating ? 'not-allowed' : 'pointer',

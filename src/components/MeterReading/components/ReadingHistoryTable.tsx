@@ -110,6 +110,8 @@ const ReadingHistoryTable = ({
                   data-previous-reading={formatReading(reading.previousReading)}
                   className="mantine-input"
                   aria-label={`${formattedDate || reading.date}の指示数`}
+                  aria-required="true"
+                  aria-invalid={!!inputErrors[dateForDataAttribute]}
                   aria-describedby={
                     inputErrors[dateForDataAttribute] ? `error-${dateForDataAttribute}` : undefined
                   }

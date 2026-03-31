@@ -8,6 +8,8 @@ const ToastOverlay = ({ show, message }: ToastOverlayProps) => {
 
   return (
     <div
+      role="status"
+      aria-live="polite"
       style={{
         position: 'fixed',
         top: 0,
