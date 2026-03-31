@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">96.42% </span>
+                <span class="strong">93.91% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>108/112</span>
+                <span class='fraction'>108/115</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">84.82% </span>
+                <span class="strong">81.01% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>123/145</span>
+                <span class='fraction'>128/158</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">95% </span>
+                <span class="strong">90.47% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>19/20</span>
+                <span class='fraction'>19/21</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">97.14% </span>
+                <span class="strong">94.44% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>102/105</span>
+                <span class='fraction'>102/108</span>
             </div>
         
             
@@ -635,7 +635,25 @@
 <a name='L570'></a><a href='#L570'>570</a>
 <a name='L571'></a><a href='#L571'>571</a>
 <a name='L572'></a><a href='#L572'>572</a>
-<a name='L573'></a><a href='#L573'>573</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L573'></a><a href='#L573'>573</a>
+<a name='L574'></a><a href='#L574'>574</a>
+<a name='L575'></a><a href='#L575'>575</a>
+<a name='L576'></a><a href='#L576'>576</a>
+<a name='L577'></a><a href='#L577'>577</a>
+<a name='L578'></a><a href='#L578'>578</a>
+<a name='L579'></a><a href='#L579'>579</a>
+<a name='L580'></a><a href='#L580'>580</a>
+<a name='L581'></a><a href='#L581'>581</a>
+<a name='L582'></a><a href='#L582'>582</a>
+<a name='L583'></a><a href='#L583'>583</a>
+<a name='L584'></a><a href='#L584'>584</a>
+<a name='L585'></a><a href='#L585'>585</a>
+<a name='L586'></a><a href='#L586'>586</a>
+<a name='L587'></a><a href='#L587'>587</a>
+<a name='L588'></a><a href='#L588'>588</a>
+<a name='L589'></a><a href='#L589'>589</a>
+<a name='L590'></a><a href='#L590'>590</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -927,6 +945,11 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -944,6 +967,8 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1097,7 +1122,16 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1209,6 +1243,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { useState, useEffect, useMemo, useCallback } from 'react';
 import { getGasUrl, fetchProperties } from '../../utils/gasClient';
+import NetworkStatusBar from '../NetworkStatusBar';
 &nbsp;
 import type { Property } from '../../types';
 &nbsp;
@@ -1458,8 +1493,13 @@ const PropertySelectApp = () =&gt; {
   // Main content
   return (
     &lt;div style={{ minHeight: '100vh' }}&gt;
+      &lt;NetworkStatusBar /&gt;
+      &lt;a href="#main-content" className="skip-link"&gt;メインコンテンツへ&lt;/a&gt;
       {showUrlModal &amp;&amp; (
         &lt;div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="url-modal-title"
           style={{
             position: 'fixed',
             top: 0,
@@ -1483,7 +1523,7 @@ const PropertySelectApp = () =&gt; {
               boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
             }}
           &gt;
-            &lt;h3 style={{ margin: '0 0 16px 0', fontSize: '1.125rem', fontWeight: 600 }}&gt;
+            &lt;h3 id="url-modal-title" style={{ margin: '0 0 16px 0', fontSize: '1.125rem', fontWeight: 600 }}&gt;
               GAS Web App URL設定
             &lt;/h3&gt;
             &lt;p
@@ -1548,6 +1588,8 @@ const PropertySelectApp = () =&gt; {
 &nbsp;
       {isNavigating &amp;&amp; (
         &lt;div
+          role="status"
+          aria-live="polite"
           style={{
             position: 'fixed',
             top: 0,
@@ -1591,7 +1633,7 @@ const PropertySelectApp = () =&gt; {
         &lt;/div&gt;
       &lt;/div&gt;
 &nbsp;
-      &lt;div className="MuiContainer-root"&gt;
+      &lt;div id="main-content" className="MuiContainer-root"&gt;
         &lt;div style={{ maxWidth: '600px', margin: '0 auto' }}&gt;
           &lt;div className="MuiTextField-root"&gt;
             &lt;input
@@ -1669,7 +1711,16 @@ const PropertySelectApp = () =&gt; {
                 key={property.id}
                 data-property-id={String(property.id)}
                 className={`MuiCard-root ${loading || isNavigating ? 'MuiCard-disabled' : ''}`}
+                tabIndex={loading || isNavigating ? -1 : 0}
+                role="button"
+                aria-label={`${String(property.name || <span class="branch-1 cbranch-no" title="branch not covered" >'名称なし')</span>}を選択`}
                 onClick={() =&gt; !(loading || isNavigating) &amp;&amp; handlePropertySelect(property)}
+                onKeyDown={<span class="fstat-no" title="function not covered" >(e</span>) =&gt; {
+<span class="cstat-no" title="statement not covered" >                  if ((e.key === 'Enter' || e.key === ' ') &amp;&amp; !(loading || isNavigating)) {</span>
+<span class="cstat-no" title="statement not covered" >                    e.preventDefault();</span>
+<span class="cstat-no" title="statement not covered" >                    handlePropertySelect(property);</span>
+                  }
+                }}
                 style={{
                   opacity: loading || isNavigating ? 0.6 : 1,
                   cursor: loading || isNavigating ? 'not-allowed' : 'pointer',
@@ -1786,7 +1837,7 @@ export default PropertySelectApp;
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-03-31T13:00:04.644Z
+                at 2026-03-31T22:42:15.976Z
             </div>
         <script src="../../prettify.js"></script>
         <script>
