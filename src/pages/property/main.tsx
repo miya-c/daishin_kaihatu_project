@@ -3,6 +3,12 @@ import ErrorBoundary from '../../components/shared/ErrorBoundary';
 import PropertySelectApp from '../../components/PropertySelect/PropertySelectApp';
 import '../../styles/property_select.css';
 
+// Prefetch next page
+const prefetchLink = document.createElement('link');
+prefetchLink.rel = 'prefetch';
+prefetchLink.href = '/room/';
+document.head.appendChild(prefetchLink);
+
 // Register Service Worker
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {

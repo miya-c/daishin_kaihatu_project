@@ -48,10 +48,19 @@
   }
   .styles-loading { opacity:0.3;transition:opacity 0.3s ease-in-out; }
   .styles-loaded { opacity:1; }
+  /* Skeleton screen */
+  .skeleton-header { height:64px;background:linear-gradient(90deg,#1976d2 25%,#1565c0 50%,#1976d2 75%);background-size:200% 100%;animation:shimmer 1.5s infinite; }
+  .skeleton-card { height:80px;margin:16px;border-radius:8px;background:linear-gradient(90deg,#e0e0e0 25%,#eeeeee 50%,#e0e0e0 75%);background-size:200% 100%;animation:shimmer 1.5s infinite; }
+  .skeleton-card:nth-child(2) { height:60px;margin-top:12px; }
+  @keyframes shimmer { 0%{background-position:200% 0}100%{background-position:-200% 0} }
   </style>
 </head>
 <body>
-  <div id="root" class="styles-loading"></div>
+  <div id="root" class="styles-loading">
+    <div class="skeleton-header"></div>
+    <div class="skeleton-card"></div>
+    <div class="skeleton-card"></div>
+  </div>
   <script type="module" src="./main.jsx"></script>
 </body>
 </html>
