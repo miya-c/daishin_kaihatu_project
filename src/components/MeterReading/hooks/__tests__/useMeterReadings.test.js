@@ -322,7 +322,7 @@ describe('useMeterReadings', () => {
 
     expect(mapped.length).toBe(1);
     expect(mapped[0].date).toBe('2025/06/01');
-    expect(mapped[0].currentReading).toBe(100);
+    expect(mapped[0].currentReading).toBe('100');
     expect(mapped[0].warningFlag).toBe('要確認');
     expect(mapped[0].standardDeviation).toBe('1.5');
   });

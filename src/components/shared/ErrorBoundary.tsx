@@ -1,20 +1,31 @@
 import React from 'react';
 
-class ErrorBoundary extends React.Component {
-  constructor(props) {
+interface ErrorBoundaryState {
+  hasError: boolean;
+  error: Error | null;
+  errorInfo: React.ErrorInfo | null;
+  retryCount: number;
+}
+
+interface ErrorBoundaryProps {
+  children: React.ReactNode;
+}
+
+class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = { hasError: false, error: null, errorInfo: null, retryCount: 0 };
   }
 
-  static getDerivedStateFromError(error) {
+  static getDerivedStateFromError(error: Error): Partial<ErrorBoundaryState> {
     return { hasError: true, error };
   }
 
-  componentDidCatch(error, errorInfo) {
+  componentDidCatch(_error: Error, errorInfo: React.ErrorInfo): void {
     this.setState({ errorInfo });
   }
 
-  handleRetry = () => {
+  handleRetry = (): void => {
     this.setState((prev) => ({
       hasError: false,
       error: null,
@@ -23,11 +34,11 @@ class ErrorBoundary extends React.Component {
     }));
   };
 
-  handleReload = () => {
+  handleReload = (): void => {
     window.location.reload();
   };
 
-  render() {
+  render(): React.ReactNode {
     if (this.state.hasError) {
       const errorMessage =
         this.state.error instanceof Error

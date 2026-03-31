@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { formatReading, calculateUsageDisplay } from './utils/formatUtils';
 import { calculateWarningFlag } from './utils/warningFlag';
 import { useMeterReadings } from './hooks/useMeterReadings';
@@ -12,6 +12,8 @@ import PropertyInfoHeader from './components/PropertyInfoHeader';
 import ReadingHistoryTable from './components/ReadingHistoryTable';
 import InitialReadingForm from './components/InitialReadingForm';
 
+import type { MeterReading } from '../../types';
+
 const MeterReadingApp = () => {
   const {
     loading,
@@ -23,7 +25,6 @@ const MeterReadingApp = () => {
     meterReadings,
     setMeterReadings,
     gasWebAppUrl,
-    setError,
     loadMeterReadings,
   } = useMeterReadings();
 
@@ -43,8 +44,6 @@ const MeterReadingApp = () => {
     propertyId,
     roomId,
     gasWebAppUrl,
-    meterReadings,
-    setMeterReadings,
     displayToast,
   });
 
@@ -53,16 +52,15 @@ const MeterReadingApp = () => {
     roomId,
     gasWebAppUrl,
     meterReadings,
-    setMeterReadings,
     displayToast,
     setUpdating,
   });
 
   // Controlled input values for each reading date
-  const [readingValues, setReadingValues] = useState({});
+  const [readingValues, setReadingValues] = useState<Record<string, string>>({});
 
   // Initialize reading values when meterReadings changes
-  React.useEffect(() => {
+  useEffect(() => {
     setReadingValues((prev) => {
       const updated = { ...prev };
       meterReadings.forEach((reading) => {
@@ -76,7 +74,7 @@ const MeterReadingApp = () => {
   }, [meterReadings]);
 
   const collectReadingsFromState = useCallback(() => {
-    const readings = [];
+    const readings: Record<string, unknown>[] = [];
 
     for (const reading of meterReadings) {
       const date = reading.date;
@@ -126,7 +124,7 @@ const MeterReadingApp = () => {
   }, [meterReadings, readingValues]);
 
   const handleInputChange = useCallback(
-    (date, value, reading) => {
+    (date: string, value: string, reading: MeterReading) => {
       setReadingValues((prev) => ({ ...prev, [date]: value }));
       const previousValue = formatReading(reading.previousReading);
       const numericValue = parseFloat(value);
@@ -146,9 +144,9 @@ const MeterReadingApp = () => {
         setUsageStates((prev) => ({ ...prev, [date]: usageDisplay }));
 
         // Real-time warning flag calculation
-        const previousReadingValue = parseFloat(reading.previousReading) || 0;
-        const previousPreviousReadingValue = parseFloat(reading.previousPreviousReading) || 0;
-        const threeTimesPreviousReadingValue = parseFloat(reading.threeTimesPrevious) || 0;
+        const previousReadingValue = parseFloat(String(reading.previousReading)) || 0;
+        const previousPreviousReadingValue = parseFloat(String(reading.previousPreviousReading)) || 0;
+        const threeTimesPreviousReadingValue = parseFloat(String(reading.threeTimesPrevious)) || 0;
 
         const warningResult = calculateWarningFlag(
           numericValue,
@@ -174,7 +172,7 @@ const MeterReadingApp = () => {
   );
 
   const handleInitialInputChange = useCallback(
-    (value) => {
+    (value: string) => {
       const dateForDataAttribute = '';
       setReadingValues((prev) => ({ ...prev, '': value }));
       const numericValue = parseFloat(value);
@@ -245,13 +243,13 @@ const MeterReadingApp = () => {
       });
       const requestUrl = `${currentGasUrl}?${params}`;
 
-      const [response, cacheUpdateResult] = await Promise.allSettled([
+      const [response, _cacheUpdateResult] = await Promise.allSettled([
         fetch(requestUrl, { method: 'GET' }),
         updateSessionStorageCache(propertyId, roomId),
       ]);
 
       if (response.status === 'rejected') {
-        throw new Error('ネットワークエラー: ' + response.reason?.message);
+        throw new Error('ネットワークエラー: ' + (response.reason instanceof Error ? response.reason.message : String(response.reason)));
       }
       if (!response.value.ok) {
         throw new Error(
@@ -278,7 +276,8 @@ const MeterReadingApp = () => {
         throw new Error(result.error || '指示数の更新に失敗しました。');
       }
     } catch (err) {
-      displayToast('更新エラー: ' + err.message);
+      const message = err instanceof Error ? err.message : String(err);
+      displayToast('更新エラー: ' + message);
     } finally {
       setUpdating(false);
     }
@@ -291,6 +290,9 @@ const MeterReadingApp = () => {
     displayToast,
     setUpdating,
     collectReadingsFromState,
+    loadMeterReadings,
+    setInputErrors,
+    updateSessionStorageCache,
   ]);
 
   const navigation = getRoomNavigation();
@@ -407,9 +409,9 @@ const MeterReadingApp = () => {
               </>
             ) : (
               <InitialReadingForm
-                readingValue={readingValues['']}
-                inputError={inputErrors['']}
-                usageState={usageStates['']}
+                readingValue={readingValues[''] ?? ''}
+                inputError={inputErrors[''] ?? ''}
+                usageState={usageStates[''] ?? ''}
                 onInputChange={handleInitialInputChange}
               />
             )}

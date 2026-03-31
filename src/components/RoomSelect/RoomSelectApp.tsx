@@ -2,17 +2,19 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { getGasUrl } from '../../utils/gasClient';
 import { validateId } from '../../utils/validateParams';
 
+import type { Room } from '../../types';
+
 const RoomSelectApp = () => {
-  const [rooms, setRooms] = useState([]);
+  const [rooms, setRooms] = useState<Room[]>([]);
   const [propertyName, setPropertyName] = useState('物件名読み込み中...');
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const [propertyId, setPropertyId] = useState('');
   const [toastMessage, setToastMessage] = useState('');
   const [showToast, setShowToast] = useState(false);
-  const toastTimerRef = React.useRef(null);
+  const toastTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const displayToast = useCallback((message) => {
+  const displayToast = useCallback((message: string) => {
     setToastMessage(message);
     setShowToast(true);
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
@@ -22,30 +24,7 @@ const RoomSelectApp = () => {
     }, 3000);
   }, []);
 
-  useEffect(() => {
-    window.scrollTo(0, 0);
-
-    const urlParams = new URLSearchParams(window.location.search);
-    const propId = urlParams.get('propertyId');
-
-    if (!propId) {
-      setError('物件IDが指定されていません。');
-      setLoading(false);
-      return;
-    }
-
-    const validation = validateId(propId, '物件ID');
-    if (!validation.valid) {
-      setError(validation.error);
-      setLoading(false);
-      return;
-    }
-
-    setPropertyId(propId);
-    loadRoomData(propId);
-  }, []);
-
-  const loadRoomData = async (propId) => {
+  const loadRoomData = async (propId: string): Promise<void> => {
     let gasWebAppUrl = sessionStorage.getItem('gasWebAppUrl');
     if (!gasWebAppUrl) {
       gasWebAppUrl = localStorage.getItem('gasWebAppUrl');
@@ -61,7 +40,6 @@ const RoomSelectApp = () => {
     }
 
     try {
-      // Check session storage for fast display (from property select navigation)
       const forceRefresh = sessionStorage.getItem('forceRefreshRooms') === 'true';
       if (forceRefresh) {
         sessionStorage.removeItem('forceRefreshRooms');
@@ -81,17 +59,15 @@ const RoomSelectApp = () => {
               setRooms(parsedRooms);
               setPropertyName(sessionPropertyName);
               setLoading(false);
-              // Background delta update
-              setTimeout(() => performBackgroundUpdate(propId, gasWebAppUrl, parsedRooms), 100);
+              setTimeout(() => performBackgroundUpdate(propId, gasWebAppUrl!, parsedRooms), 100);
               return;
             }
-          } catch (parseError) {
+          } catch (_) {
             // Continue to API fetch
           }
         }
       }
 
-      // Try light API first, fallback to legacy
       try {
         const fetchUrl = `${gasWebAppUrl}?action=getRoomsLight&propertyId=${encodeURIComponent(propId)}&cache=${Date.now()}`;
         const response = await fetch(fetchUrl);
@@ -118,8 +94,7 @@ const RoomSelectApp = () => {
         sessionStorage.setItem('selectedRooms', JSON.stringify(fetchedRooms));
         sessionStorage.setItem('selectedPropertyName', fetchedPropertyName);
         sessionStorage.setItem('selectedPropertyId', propId);
-      } catch (lightError) {
-        // Fallback to legacy API
+      } catch (_) {
         const fetchUrl = `${gasWebAppUrl}?action=getRooms&propertyId=${encodeURIComponent(propId)}`;
         const response = await fetch(fetchUrl);
 
@@ -155,13 +130,14 @@ const RoomSelectApp = () => {
         sessionStorage.setItem('selectedPropertyId', propId);
       }
     } catch (err) {
-      setError(err.message);
+      const message = err instanceof Error ? err.message : String(err);
+      setError(message);
     } finally {
       setLoading(false);
     }
   };
 
-  const performBackgroundUpdate = async (propId, gasWebAppUrl, currentRooms) => {
+  const performBackgroundUpdate = async (propId: string, gasWebAppUrl: string, _currentRooms: Room[]): Promise<void> => {
     try {
       const fetchUrl = `${gasWebAppUrl}?action=getRoomsLight&propertyId=${encodeURIComponent(propId)}&cache=${Date.now()}`;
       const response = await fetch(fetchUrl);
@@ -175,13 +151,36 @@ const RoomSelectApp = () => {
           sessionStorage.setItem('selectedRooms', JSON.stringify(updatedRooms));
         }
       }
-    } catch (err) {
+    } catch (_) {
       // Background update failure is non-critical
     }
   };
 
+  useEffect(() => {
+    window.scrollTo(0, 0);
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const propId = urlParams.get('propertyId');
+
+    if (!propId) {
+      setError('物件IDが指定されていません。');
+      setLoading(false);
+      return;
+    }
+
+    const validation = validateId(propId, '物件ID');
+    if (!validation.valid) {
+      setError(validation.error ?? '物件IDが無効です');
+      setLoading(false);
+      return;
+    }
+
+    setPropertyId(propId);
+    loadRoomData(propId);
+  }, []);
+
   const handleRoomClick = useCallback(
-    (room) => {
+    (room: Room) => {
       if (room.isNotNeeded === true) {
         displayToast('この部屋は検針不要に設定されています。');
         return;
@@ -194,7 +193,7 @@ const RoomSelectApp = () => {
       }
       window.location.href = `/reading/?propertyId=${encodeURIComponent(propertyId)}&roomId=${encodeURIComponent(roomId)}`;
     },
-    [propertyId]
+    [propertyId, displayToast]
   );
 
   const handleBackButton = useCallback(() => {
@@ -241,11 +240,11 @@ const RoomSelectApp = () => {
         throw new Error(result.error || '検針完了処理に失敗しました');
       }
     } catch (err) {
-      displayToast(`検針完了処理でエラーが発生しました: ${err.message}`);
+      const message = err instanceof Error ? err.message : String(err);
+      displayToast(`検針完了処理でエラーが発生しました: ${message}`);
     }
-  }, [propertyId]);
+  }, [propertyId, displayToast]);
 
-  // Cleanup timers on unmount
   useEffect(() => {
     return () => {
       if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
@@ -331,7 +330,6 @@ const RoomSelectApp = () => {
       </header>
 
       <main className="MuiContainer-root MuiContainer-maxWidthLg" style={{ paddingTop: '32px' }}>
-        {/* Property name card */}
         <section
           className="MuiCard-root MuiPaper-root MuiPaper-elevation1 property-card"
           aria-label="物件情報"
@@ -344,7 +342,6 @@ const RoomSelectApp = () => {
           </div>
         </section>
 
-        {/* Room grid */}
         <section className="room-grid" aria-label="部屋一覧" role="list">
           {rooms.length === 0 ? (
             <div className="no-rooms-message">部屋データがありません</div>
@@ -353,7 +350,7 @@ const RoomSelectApp = () => {
               const isSkipInspection = room.isNotNeeded === true;
               const isCompleted = room.readingStatus === 'completed' || room.isCompleted;
 
-              let statusIcon, statusColor, statusText;
+              let statusIcon: string, statusColor: string, statusText: string;
               if (isSkipInspection) {
                 statusIcon = 'block';
                 statusColor = '#9e9e9e';
@@ -413,7 +410,6 @@ const RoomSelectApp = () => {
           )}
         </section>
 
-        {/* Complete inspection button */}
         {rooms.length > 0 && (
           <div className="complete-button-container">
             <button

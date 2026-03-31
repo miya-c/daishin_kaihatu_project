@@ -1,40 +1,63 @@
 import { useState, useCallback } from 'react';
-import { getCurrentJSTDateString } from '../utils/dateUtils';
+
+import type { MeterReading, RoomNavigation } from '../../../types';
+
+interface UseRoomNavigationParams {
+  propertyId: string;
+  roomId: string;
+  gasWebAppUrl: string;
+  _meterReadings: MeterReading[];
+  _setMeterReadings: React.Dispatch<React.SetStateAction<MeterReading[]>>;
+  displayToast: (message: string) => void;
+}
+
+interface NavigationRoom {
+  id: string;
+  isNotNeeded?: boolean;
+  [key: string]: unknown;
+}
+
+interface GasApiResponse {
+  success?: boolean;
+  data?: unknown[];
+  rooms?: unknown[];
+  [key: string]: unknown;
+}
 
 export const useRoomNavigation = ({
   propertyId,
   roomId,
   gasWebAppUrl,
-  meterReadings,
-  setMeterReadings,
   displayToast,
-}) => {
+}: Omit<UseRoomNavigationParams, '_meterReadings' | '_setMeterReadings'>) => {
   const [updating, setUpdating] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
   const [navigationMessage, setNavigationMessage] = useState('');
 
-  const getRoomNavigation = useCallback(() => {
+  const getRoomNavigation = useCallback((): RoomNavigation => {
     try {
       const selectedRooms = sessionStorage.getItem('selectedRooms');
-      if (!selectedRooms || !roomId) return { hasPrevious: false, hasNext: false };
+      if (!selectedRooms || !roomId) return { hasPrevious: false, hasNext: false, previousRoom: null, nextRoom: null };
 
-      const roomsArray = JSON.parse(selectedRooms);
+      const roomsArray: NavigationRoom[] = JSON.parse(selectedRooms);
       const currentIndex = roomsArray.findIndex((room) => room.id === roomId);
 
       // Find previous room that needs inspection (skip isNotNeeded rooms)
-      let previousRoom = null;
+      let previousRoom: NavigationRoom | null = null;
       for (let i = currentIndex - 1; i >= 0; i--) {
-        if (roomsArray[i].isNotNeeded !== true) {
-          previousRoom = roomsArray[i];
+        const room = roomsArray[i];
+        if (room && room.isNotNeeded !== true) {
+          previousRoom = room;
           break;
         }
       }
 
       // Find next room that needs inspection (skip isNotNeeded rooms)
-      let nextRoom = null;
+      let nextRoom: NavigationRoom | null = null;
       for (let i = currentIndex + 1; i < roomsArray.length; i++) {
-        if (roomsArray[i].isNotNeeded !== true) {
-          nextRoom = roomsArray[i];
+        const room = roomsArray[i];
+        if (room && room.isNotNeeded !== true) {
+          nextRoom = room;
           break;
         }
       }
@@ -42,16 +65,16 @@ export const useRoomNavigation = ({
       return {
         hasPrevious: previousRoom !== null,
         hasNext: nextRoom !== null,
-        previousRoom,
-        nextRoom,
+        previousRoom: previousRoom as RoomNavigation['previousRoom'],
+        nextRoom: nextRoom as RoomNavigation['nextRoom'],
       };
-    } catch (err) {
-      return { hasPrevious: false, hasNext: false };
+    } catch (_) {
+      return { hasPrevious: false, hasNext: false, previousRoom: null, nextRoom: null };
     }
   }, [roomId]);
 
   const updateSessionStorageCache = useCallback(
-    async (propId, rId, maxRetries = 3) => {
+    async (propId: string, _rId: string, maxRetries: number = 3): Promise<void> => {
       const currentGasUrl = gasWebAppUrl || sessionStorage.getItem('gasWebAppUrl');
       if (!currentGasUrl) return;
 
@@ -66,12 +89,12 @@ export const useRoomNavigation = ({
             }
             return;
           }
-          const result = await response.json();
-          let roomsArray;
+          const result: GasApiResponse = await response.json();
+          let roomsArray: unknown[];
           if (result && result.success === true && Array.isArray(result.data)) {
             roomsArray = result.data;
           } else if (Array.isArray(result)) {
-            roomsArray = result;
+            roomsArray = result as unknown[];
           } else if (result && Array.isArray(result.rooms)) {
             roomsArray = result.rooms;
           } else {
@@ -81,7 +104,7 @@ export const useRoomNavigation = ({
             sessionStorage.setItem('selectedRooms', JSON.stringify(roomsArray));
           }
           return;
-        } catch (err) {
+        } catch (_) {
           if (attempt === maxRetries) return;
         }
       }
@@ -90,7 +113,7 @@ export const useRoomNavigation = ({
   );
 
   const saveReadings = useCallback(
-    async (readings) => {
+    async (readings: Record<string, unknown>[]): Promise<boolean> => {
       if (!readings || readings.length === 0) return false;
 
       const currentGasUrl = gasWebAppUrl || sessionStorage.getItem('gasWebAppUrl');
@@ -114,7 +137,7 @@ export const useRoomNavigation = ({
           }
         }
         return false;
-      } catch (err) {
+      } catch (_) {
         return false;
       }
     },
@@ -122,7 +145,7 @@ export const useRoomNavigation = ({
   );
 
   const saveAndNavigateToRoom = useCallback(
-    async (targetRoomId, direction, collectReadingsFn) => {
+    async (targetRoomId: string, _direction: string, collectReadingsFn: (() => Record<string, unknown>[]) | undefined): Promise<void> => {
       try {
         setUpdating(true);
         const meterReadingsData = collectReadingsFn ? collectReadingsFn() : [];
@@ -130,7 +153,7 @@ export const useRoomNavigation = ({
 
         // Navigate to target room after save completes
         window.location.href = `/reading/?propertyId=${propertyId}&roomId=${targetRoomId}`;
-      } catch (err) {
+      } catch (_) {
         // Fallback: navigate even if save fails
         window.location.href = `/reading/?propertyId=${propertyId}&roomId=${targetRoomId}`;
       } finally {
@@ -141,7 +164,7 @@ export const useRoomNavigation = ({
   );
 
   const handlePreviousRoom = useCallback(
-    (collectReadingsFn) => {
+    (collectReadingsFn: (() => Record<string, unknown>[]) | undefined) => {
       const navigation = getRoomNavigation();
       if (!navigation.hasPrevious || !navigation.previousRoom) {
         displayToast('前の部屋がありません。');
@@ -153,7 +176,7 @@ export const useRoomNavigation = ({
   );
 
   const handleNextRoom = useCallback(
-    (collectReadingsFn) => {
+    (collectReadingsFn: (() => Record<string, unknown>[]) | undefined) => {
       const navigation = getRoomNavigation();
       if (!navigation.hasNext || !navigation.nextRoom) {
         displayToast('次の部屋がありません。');
@@ -165,7 +188,7 @@ export const useRoomNavigation = ({
   );
 
   const handleBackButton = useCallback(
-    async (propId, rId) => {
+    async (propId: string, rId: string): Promise<void> => {
       try {
         setIsNavigating(true);
         setNavigationMessage('画面を切り替えています...');
@@ -175,7 +198,7 @@ export const useRoomNavigation = ({
         sessionStorage.setItem('updatedRoomId', rId);
         sessionStorage.setItem('lastUpdateTime', Date.now().toString());
         window.location.href = `/room/?propertyId=${encodeURIComponent(propId)}`;
-      } catch (err) {
+      } catch (_) {
         window.location.href = propId
           ? `/room/?propertyId=${encodeURIComponent(propId)}`
           : '/property/';

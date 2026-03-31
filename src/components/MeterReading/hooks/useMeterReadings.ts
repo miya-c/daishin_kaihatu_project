@@ -1,16 +1,17 @@
 import { useState, useEffect, useCallback } from 'react';
-import { calculateWarningFlag } from '../utils/warningFlag';
 import { mapReadingFromApi } from '../utils/readingMapper';
 import { validateId } from '../../../utils/validateParams';
 
+import type { MeterReading } from '../../../types';
+
 export const useMeterReadings = () => {
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const [propertyId, setPropertyId] = useState('');
   const [propertyName, setPropertyName] = useState('');
   const [roomId, setRoomId] = useState('');
   const [roomName, setRoomName] = useState('');
-  const [meterReadings, setMeterReadings] = useState([]);
+  const [meterReadings, setMeterReadings] = useState<MeterReading[]>([]);
   const [gasWebAppUrl, setGasWebAppUrl] = useState('');
 
   useEffect(() => {
@@ -27,14 +28,14 @@ export const useMeterReadings = () => {
     setGasWebAppUrl(urlFromSession);
   }, []);
 
-  const mapNavigationReadingsData = useCallback((targetRoomId, readings) => {
+  const mapNavigationReadingsData = useCallback((targetRoomId: string, readings: Record<string, unknown>[]) => {
     return readings.map((reading, index) =>
       mapReadingFromApi(reading, index, { roomId: targetRoomId })
     );
   }, []);
 
   const loadMeterReadings = useCallback(
-    async (propId, rId, maxRetries = 3) => {
+    async (propId: string, rId: string, maxRetries: number = 3): Promise<void> => {
       const currentGasUrl = gasWebAppUrl || sessionStorage.getItem('gasWebAppUrl');
       if (!currentGasUrl) {
         setError('gasWebAppURLが設定されていません。物件選択画面から再度アクセスしてください。');
@@ -72,7 +73,7 @@ export const useMeterReadings = () => {
           const data = responseObject.data;
           if (!data) throw new Error('応答データが空です');
 
-          let pName, rName, readings;
+          let pName: string, rName: string, readings: Record<string, unknown>[];
           if (
             Object.prototype.hasOwnProperty.call(data, 'propertyName') &&
             Object.prototype.hasOwnProperty.call(data, 'roomName') &&
@@ -100,7 +101,7 @@ export const useMeterReadings = () => {
           setRoomName(rName);
 
           if (Array.isArray(readings) && readings.length > 0) {
-            const mappedReadings = readings.map((rawReading, index) =>
+            const mappedReadings = readings.map((rawReading: Record<string, unknown>, index: number) =>
               mapReadingFromApi(rawReading, index, { calculateWarnings: true })
             );
             setMeterReadings(mappedReadings);
@@ -111,13 +112,14 @@ export const useMeterReadings = () => {
           clearTimeout(loadingTimeout);
           if (showLoading) setLoading(false);
           return;
-        } catch (err) {
+        } catch (err: unknown) {
           if (attempt === maxRetries) {
+            const message = err instanceof Error ? err.message : String(err);
             let userMessage = '検針データの読み込みに失敗しました。';
-            if (err.message.includes('503')) {
+            if (message.includes('503')) {
               userMessage =
                 'サーバーが一時的に利用できません。しばらく待ってから再度お試しください。';
-            } else if (err.message.includes('network') || err.message.includes('fetch')) {
+            } else if (message.includes('network') || message.includes('fetch')) {
               userMessage =
                 'ネットワーク接続に問題があります。インターネット接続を確認してください。';
             }
@@ -133,7 +135,7 @@ export const useMeterReadings = () => {
   );
 
   const loadRoomDataForSPA = useCallback(
-    async (propId, rId) => {
+    async (propId: string, rId: string): Promise<void> => {
       try {
         const currentGasUrl = gasWebAppUrl || sessionStorage.getItem('gasWebAppUrl');
         const fetchUrl = `${currentGasUrl}?action=getMeterReadings&propertyId=${propId}&roomId=${rId}`;
@@ -155,7 +157,7 @@ export const useMeterReadings = () => {
         } else {
           throw new Error('データ読み込み失敗');
         }
-      } catch (err) {
+      } catch (_) {
         window.location.reload();
       }
     },
@@ -164,7 +166,7 @@ export const useMeterReadings = () => {
 
   // Browser history management
   useEffect(() => {
-    const handlePopState = (event) => {
+    const handlePopState = (event: PopStateEvent) => {
       if (event.state && event.state.roomId && event.state.propertyId) {
         loadRoomDataForSPA(event.state.propertyId, event.state.roomId);
       } else {
@@ -191,14 +193,14 @@ export const useMeterReadings = () => {
 
     const propValidation = validateId(propId, '物件ID');
     if (!propValidation.valid) {
-      setError(propValidation.error);
+      setError(propValidation.error ?? '物件IDが無効です');
       setLoading(false);
       return;
     }
 
     const roomValidation = validateId(rId, '部屋ID');
     if (!roomValidation.valid) {
-      setError(roomValidation.error);
+      setError(roomValidation.error ?? '部屋IDが無効です');
       setLoading(false);
       return;
     }

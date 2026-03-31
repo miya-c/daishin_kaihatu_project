@@ -24,7 +24,7 @@ describe('mapReadingFromApi', () => {
       expect(result.previousReading).toBe('80');
       expect(result.previousPreviousReading).toBe('60');
       expect(result.threeTimesPrevious).toBe('40');
-      expect(result.usage).toBe('20');
+      expect(result.usage).toBe(20);
       expect(result.warningFlag).toBe('正常');
       expect(result.standardDeviation).toBe('0.5');
       expect(result.status).toBe('正常');
@@ -59,7 +59,7 @@ describe('mapReadingFromApi', () => {
       expect(result.previousReading).toBe('150');
       expect(result.previousPreviousReading).toBe('100');
       expect(result.threeTimesPrevious).toBe('50');
-      expect(result.usage).toBe('50');
+      expect(result.usage).toBe(50);
       expect(result.warningFlag).toBe('要確認');
       expect(result.standardDeviation).toBe('1.2');
     });
@@ -82,7 +82,7 @@ describe('mapReadingFromApi', () => {
       expect(result.previousReading).toBe('250');
       expect(result.previousPreviousReading).toBe('200');
       expect(result.threeTimesPrevious).toBe('150');
-      expect(result.usage).toBe('50');
+      expect(result.usage).toBe(50);
     });
   });
 

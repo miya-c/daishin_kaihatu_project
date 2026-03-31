@@ -1,6 +1,8 @@
-import React from 'react';
+interface LoadingOverlayProps {
+  message?: string;
+}
 
-const LoadingOverlay = ({ message = '読み込み中...' }) => (
+const LoadingOverlay = ({ message = '読み込み中...' }: LoadingOverlayProps) => (
   <div
     style={{
       position: 'fixed',

@@ -4,14 +4,34 @@
  * based on historical meter reading data.
  */
 
+import type { WarningResult } from '../../../types';
+
+/**
+ * Result of the threshold calculation.
+ */
+interface ThresholdResult {
+  standardDeviation: number;
+  threshold: number;
+  reason: string;
+  isCalculable: boolean;
+}
+
+/**
+ * Extended warning result that includes threshold metadata.
+ */
+interface WarningFlagResult extends WarningResult {
+  threshold: number;
+  reason: string;
+}
+
 /**
  * Calculates the sample standard deviation (STDEV.S) of a set of values.
  * Uses n-1 denominator (Bessel's correction) for unbiased estimation.
  *
- * @param {number[]} values - Array of numeric values
- * @returns {number} Sample standard deviation, or 0 if fewer than 2 values
+ * @param values - Array of numeric values
+ * @returns Sample standard deviation, or 0 if fewer than 2 values
  */
-export const calculateSTDEV_S = (values) => {
+export const calculateSTDEV_S = (values: number[]): number => {
   if (!values || values.length < 2) return 0;
 
   const mean = values.reduce((sum, val) => sum + val, 0) / values.length;
@@ -23,10 +43,10 @@ export const calculateSTDEV_S = (values) => {
 /**
  * Calculates the arithmetic mean (average) of a set of values.
  *
- * @param {number[]} values - Array of numeric values
- * @returns {number} Average value, or 0 if the array is empty
+ * @param values - Array of numeric values
+ * @returns Average value, or 0 if the array is empty
  */
-export const calculateAVERAGE = (values) => {
+export const calculateAVERAGE = (values: number[]): number => {
   if (!values || values.length === 0) return 0;
   return values.reduce((sum, val) => sum + val, 0) / values.length;
 };
@@ -35,19 +55,18 @@ export const calculateAVERAGE = (values) => {
  * Calculates the warning threshold based on historical meter readings.
  * Threshold formula: previousReading + floor(standardDeviation) + 10
  *
- * @param {number} previousReading - The previous meter reading
- * @param {number} previousPreviousReading - The reading before the previous one
- * @param {number} threeTimesPreviousReading - The reading three periods ago
- * @returns {{ standardDeviation: number, threshold: number, reason: string, isCalculable: boolean }}
- *   Threshold calculation result with metadata
+ * @param previousReading - The previous meter reading
+ * @param previousPreviousReading - The reading before the previous one
+ * @param threeTimesPreviousReading - The reading three periods ago
+ * @returns Threshold calculation result with metadata
  */
 export const calculateThreshold = (
-  previousReading,
-  previousPreviousReading,
-  threeTimesPreviousReading
-) => {
+  previousReading: number | null | undefined,
+  previousPreviousReading: number | null | undefined,
+  threeTimesPreviousReading: number | null | undefined
+): ThresholdResult => {
   try {
-    const readingHistory = [];
+    const readingHistory: number[] = [];
 
     if (typeof previousReading === 'number' && !isNaN(previousReading) && previousReading >= 0) {
       readingHistory.push(previousReading);
@@ -76,10 +95,10 @@ export const calculateThreshold = (
       };
     }
 
-    const average = calculateAVERAGE(readingHistory);
+    calculateAVERAGE(readingHistory);
     const standardDeviation = calculateSTDEV_S(readingHistory);
 
-    const threshold = previousReading + Math.floor(standardDeviation) + 10;
+    const threshold = previousReading! + Math.floor(standardDeviation) + 10;
 
     return {
       standardDeviation: Math.floor(standardDeviation),
@@ -87,7 +106,7 @@ export const calculateThreshold = (
       reason: `前回値${previousReading} + σ${Math.floor(standardDeviation)} + 10`,
       isCalculable: true,
     };
-  } catch (error) {
+  } catch (_error: unknown) {
     return {
       standardDeviation: 0,
       threshold: 0,
@@ -107,19 +126,18 @@ export const calculateThreshold = (
  * - '要確認' (needs review): Current reading is below previous or exceeds threshold
  * - '正常' (normal): Reading is within expected range
  *
- * @param {number|null|undefined} currentReading - The current meter reading value
- * @param {number|null|undefined} previousReading - The previous meter reading value
- * @param {number|null|undefined} previousPreviousReading - The reading from two periods ago
- * @param {number|null|undefined} threeTimesPreviousReading - The reading from three periods ago
- * @returns {{ warningFlag: string, standardDeviation: number, threshold: number, reason: string }}
- *   Warning flag result with statistical metadata
+ * @param currentReading - The current meter reading value
+ * @param previousReading - The previous meter reading value
+ * @param previousPreviousReading - The reading from two periods ago
+ * @param threeTimesPreviousReading - The reading from three periods ago
+ * @returns Warning flag result with statistical metadata
  */
 export const calculateWarningFlag = (
-  currentReading,
-  previousReading,
-  previousPreviousReading,
-  threeTimesPreviousReading
-) => {
+  currentReading: number | string | null | undefined,
+  previousReading: number | null | undefined,
+  previousPreviousReading: number | null | undefined,
+  threeTimesPreviousReading: number | null | undefined
+): WarningFlagResult => {
   try {
     const thresholdInfo = calculateThreshold(
       previousReading,
@@ -171,7 +189,7 @@ export const calculateWarningFlag = (
       threshold: thresholdInfo.threshold,
       reason: thresholdInfo.reason,
     };
-  } catch (error) {
+  } catch (_error: unknown) {
     return {
       warningFlag: 'エラー',
       standardDeviation: 0,
@@ -182,27 +200,33 @@ export const calculateWarningFlag = (
 };
 
 /**
+ * Reading object shape expected by getStatusDisplay and getStandardDeviationDisplay.
+ */
+interface ReadingInput {
+  currentReading: string | number | null;
+  warningFlag?: string;
+  previousReading: string | number | null;
+  previousPreviousReading: string | number | null;
+  threeTimesPrevious: string | number | null;
+}
+
+/**
  * Gets the display status for a meter reading entry.
  * Evaluates the warning flag, reading values, and historical data to determine
  * the appropriate status label.
  *
- * @param {Object} reading - The reading object containing reading data
- * @param {string|number|null} reading.currentReading - Current meter reading value
- * @param {string} [reading.warningFlag] - Pre-calculated warning flag
- * @param {string|number|null} reading.previousReading - Previous meter reading
- * @param {string|number|null} reading.previousPreviousReading - Reading from two periods ago
- * @param {string|number|null} reading.threeTimesPrevious - Reading from three periods ago
- * @returns {string} Status display string ('要確認', '正常', '入力待ち', or '判定不可')
+ * @param reading - The reading object containing reading data
+ * @returns Status display string ('要確認', '正常', '入力待ち', or '判定不可')
  */
-export const getStatusDisplay = (reading) => {
+export const getStatusDisplay = (reading: ReadingInput): string => {
   if (!reading.currentReading || reading.currentReading === '') {
     if (reading.warningFlag && reading.warningFlag !== '') {
       return reading.warningFlag;
     }
 
-    const previousReading = parseFloat(reading.previousReading) || 0;
-    const previousPreviousReading = parseFloat(reading.previousPreviousReading) || 0;
-    const threeTimesPreviousReading = parseFloat(reading.threeTimesPrevious) || 0;
+    const previousReading = parseFloat(String(reading.previousReading)) || 0;
+    const previousPreviousReading = parseFloat(String(reading.previousPreviousReading)) || 0;
+    const threeTimesPreviousReading = parseFloat(String(reading.threeTimesPrevious)) || 0;
 
     const thresholdResult = calculateWarningFlag(
       null,
@@ -217,8 +241,8 @@ export const getStatusDisplay = (reading) => {
     return reading.warningFlag;
   }
 
-  const current = parseFloat(reading.currentReading) || 0;
-  const previous = parseFloat(reading.previousReading) || 0;
+  const current = parseFloat(String(reading.currentReading)) || 0;
+  const previous = parseFloat(String(reading.previousReading)) || 0;
 
   if (current > 0 && previous > 0) {
     const usage = current - previous;
@@ -232,9 +256,9 @@ export const getStatusDisplay = (reading) => {
  * Gets the standard deviation display value for a reading.
  * Currently always returns null to hide standard deviation from the UI.
  *
- * @param {Object} _reading - The reading object (unused)
- * @returns {null} Always returns null
+ * @param _reading - The reading object (unused)
+ * @returns Always returns null
  */
-export const getStandardDeviationDisplay = (_reading) => {
+export const getStandardDeviationDisplay = (_reading: ReadingInput): null => {
   return null;
 };

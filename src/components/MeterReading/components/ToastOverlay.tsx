@@ -1,6 +1,9 @@
-import React from 'react';
+interface ToastOverlayProps {
+  show: boolean;
+  message: string;
+}
 
-const ToastOverlay = ({ show, message }) => {
+const ToastOverlay = ({ show, message }: ToastOverlayProps) => {
   if (!show) return null;
 
   return (

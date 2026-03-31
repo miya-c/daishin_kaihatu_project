@@ -18,7 +18,7 @@ class PWAUtils {
       try {
         const registration = await navigator.serviceWorker.register('/service-worker.js');
         return registration;
-      } catch (error) {
+      } catch (_) {
         // Service Worker registration failed
       }
     }
@@ -91,7 +91,7 @@ class PWAUtils {
     };
   }
 
-  showNetworkStatus(message, level) {
+  showNetworkStatus(_message, _level) {
     // Placeholder for network status display
   }
 }

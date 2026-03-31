@@ -10,15 +10,23 @@ const SAFE_ID_PATTERN = /^[a-zA-Z0-9._-]+$/;
 const MAX_ID_LENGTH = 128;
 
 /**
+ * Result of validating a single ID parameter.
+ */
+export interface ValidationResult {
+  valid: boolean;
+  error?: string;
+}
+
+/**
  * Validates that a parameter value is a safe, non-empty string ID.
  * Rejects empty strings, whitespace-only values, overly long values,
  * and values containing characters outside the safe set.
  *
- * @param {string} value - The parameter value to validate
- * @param {string} paramName - Name of the parameter (for error messages)
- * @returns {{ valid: boolean, error?: string }}
+ * @param value - The parameter value to validate
+ * @param paramName - Name of the parameter (for error messages)
+ * @returns Validation result with `valid` flag and optional error message
  */
-export function validateId(value, paramName = 'ID') {
+export function validateId(value: unknown, paramName: string = 'ID'): ValidationResult {
   if (value == null || typeof value !== 'string') {
     return { valid: false, error: `${paramName}が指定されていません。` };
   }
@@ -43,10 +51,10 @@ export function validateId(value, paramName = 'ID') {
 /**
  * Validates multiple ID parameters at once.
  *
- * @param {Record<string, string>} params - Key-value pairs of parameters
- * @returns {{ valid: boolean, error?: string }}
+ * @param params - Key-value pairs of parameters to validate
+ * @returns Validation result with `valid` flag and optional error message
  */
-export function validateIds(params) {
+export function validateIds(params: Record<string, unknown>): ValidationResult {
   for (const [name, value] of Object.entries(params)) {
     const result = validateId(value, name);
     if (!result.valid) {

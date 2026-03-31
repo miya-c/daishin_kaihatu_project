@@ -7,10 +7,10 @@
  * Formats a date for display using Japanese locale with JST timezone.
  * Returns the date in "M月D日" format (e.g., "6月18日").
  *
- * @param {string|Date|null|undefined} rawDate - The date value to format
- * @returns {string|null} Formatted date string in Japanese, or null if invalid
+ * @param rawDate - The date value to format
+ * @returns Formatted date string in Japanese, or null if invalid
  */
-export const formatDateForDisplay = (rawDate) => {
+export const formatDateForDisplay = (rawDate: string | Date | null | undefined): string | null => {
   if (!rawDate) {
     return null;
   }
@@ -28,7 +28,7 @@ export const formatDateForDisplay = (rawDate) => {
     }).format(date);
 
     return formatted;
-  } catch (error) {
+  } catch (_error: unknown) {
     return null;
   }
 };
@@ -37,9 +37,9 @@ export const formatDateForDisplay = (rawDate) => {
  * Gets the current date as a JST date string in YYYY-MM-DD format.
  * Uses Intl.DateTimeFormat with 'ja-CA' locale for calendar-aligned formatting.
  *
- * @returns {string} Current JST date string (e.g., "2025-06-18")
+ * @returns Current JST date string (e.g., "2025-06-18")
  */
-export const getCurrentJSTDateString = () => {
+export const getCurrentJSTDateString = (): string => {
   const now = new Date();
 
   const jstDateString = new Intl.DateTimeFormat('ja-CA', {
@@ -57,10 +57,10 @@ export const getCurrentJSTDateString = () => {
  * If the input is already in YYYY-MM-DD format, returns it as-is.
  * Falls back to the current JST date for invalid or missing input.
  *
- * @param {string|Date|null|undefined} dateValue - The date value to normalize
- * @returns {string} Normalized JST date string in YYYY-MM-DD format
+ * @param dateValue - The date value to normalize
+ * @returns Normalized JST date string in YYYY-MM-DD format
  */
-export const normalizeToJSTDate = (dateValue) => {
+export const normalizeToJSTDate = (dateValue: string | Date | null | undefined): string => {
   if (!dateValue) return getCurrentJSTDateString();
 
   try {
@@ -81,7 +81,7 @@ export const normalizeToJSTDate = (dateValue) => {
     }).format(date);
 
     return jstDate;
-  } catch (error) {
+  } catch (_error: unknown) {
     return getCurrentJSTDateString();
   }
 };
@@ -91,9 +91,9 @@ export const normalizeToJSTDate = (dateValue) => {
  * This is an alternative to getCurrentJSTDateString that computes the JST offset
  * manually rather than relying on Intl.DateTimeFormat timezone support.
  *
- * @returns {string} JST date string in YYYY-MM-DD format
+ * @returns JST date string in YYYY-MM-DD format
  */
-export const getJSTDateString = () => {
+export const getJSTDateString = (): string => {
   const now = new Date();
   const jstOffset = 9 * 60;
   const utc = now.getTime() + now.getTimezoneOffset() * 60000;

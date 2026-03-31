@@ -1,4 +1,11 @@
-import React from 'react';
+interface NavigationButtonsProps {
+  hasPrevious: boolean;
+  hasNext: boolean;
+  disabled: boolean;
+  onPrevious: () => void;
+  onNext: () => void;
+  variant?: 'header' | 'footer';
+}
 
 const NavigationButtons = ({
   hasPrevious,
@@ -7,12 +14,7 @@ const NavigationButtons = ({
   onPrevious,
   onNext,
   variant = 'header',
-}) => {
-  const className =
-    variant === 'footer'
-      ? `nav-button nav-button-footer ${!hasPrevious && !hasNext ? 'disabled' : ''}`
-      : `nav-button nav-button-large ${!hasPrevious && !hasNext ? 'disabled' : ''}`;
-
+}: NavigationButtonsProps) => {
   const prevClassName =
     variant === 'footer'
       ? `nav-button nav-button-footer prev-room-btn ${!hasPrevious ? 'disabled' : ''}`

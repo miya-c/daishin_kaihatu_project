@@ -1,7 +1,17 @@
-import React, { useCallback } from 'react';
+import { useCallback } from 'react';
 import { formatDateForDisplay } from '../utils/dateUtils';
 import { formatReading, formatInspectionStatus, calculateUsageDisplay } from '../utils/formatUtils';
 import { getStatusDisplay, getStandardDeviationDisplay } from '../utils/warningFlag';
+
+import type { MeterReading } from '../../../types';
+
+interface ReadingHistoryTableProps {
+  meterReadings: MeterReading[];
+  readingValues: Record<string, string>;
+  inputErrors: Record<string, string>;
+  usageStates: Record<string, string>;
+  onInputChange: (date: string, value: string, reading: MeterReading) => void;
+}
 
 const ReadingHistoryTable = ({
   meterReadings,
@@ -9,14 +19,14 @@ const ReadingHistoryTable = ({
   inputErrors,
   usageStates,
   onInputChange,
-}) => {
-  const getPreviousReadingsText = useCallback((r) => {
-    let parts = [];
+}: ReadingHistoryTableProps) => {
+  const getPreviousReadingsText = useCallback((r: MeterReading): string[] => {
+    const parts: string[] = [];
     if (r.previousReading && r.previousReading !== 'N/A') {
       let text = `前回: ${r.previousReading}`;
       if (r.previousPreviousReading && r.previousPreviousReading !== 'N/A') {
-        const prev = parseFloat(r.previousReading);
-        const prevPrev = parseFloat(r.previousPreviousReading);
+        const prev = parseFloat(String(r.previousReading));
+        const prevPrev = parseFloat(String(r.previousPreviousReading));
         if (!isNaN(prev) && !isNaN(prevPrev)) {
           const diff = prev - prevPrev;
           text += ` [${diff >= 0 ? '+' : ''}${diff}]`;
@@ -27,8 +37,8 @@ const ReadingHistoryTable = ({
     if (r.previousPreviousReading && r.previousPreviousReading !== 'N/A') {
       let text = `前々回: ${r.previousPreviousReading}`;
       if (r.threeTimesPrevious && r.threeTimesPrevious !== 'N/A') {
-        const prevPrev = parseFloat(r.previousPreviousReading);
-        const prevPrevPrev = parseFloat(r.threeTimesPrevious);
+        const prevPrev = parseFloat(String(r.previousPreviousReading));
+        const prevPrevPrev = parseFloat(String(r.threeTimesPrevious));
         if (!isNaN(prevPrev) && !isNaN(prevPrevPrev)) {
           const diff = prevPrev - prevPrevPrev;
           text += ` [${diff >= 0 ? '+' : ''}${diff}]`;

@@ -1,6 +1,11 @@
-import React from 'react';
+interface InitialReadingFormProps {
+  readingValue: string;
+  inputError: string;
+  usageState: string;
+  onInputChange: (value: string) => void;
+}
 
-const InitialReadingForm = ({ readingValue, inputError, usageState, onInputChange }) => (
+const InitialReadingForm = ({ readingValue, inputError, usageState, onInputChange }: InitialReadingFormProps) => (
   <div className="mantine-stack">
     <div className="mantine-alert info">
       <h3 className="mantine-text weight-600">初回検針</h3>

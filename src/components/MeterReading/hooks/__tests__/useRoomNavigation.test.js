@@ -48,7 +48,7 @@ describe('useRoomNavigation', () => {
       assign: vi.fn(),
       reload: vi.fn(),
     };
-    const originalDescriptor = Object.getOwnPropertyDescriptor(window, 'location');
+    const _originalDescriptor = Object.getOwnPropertyDescriptor(window, 'location');
     Object.defineProperty(window, 'location', {
       writable: true,
       value: mockLocation,

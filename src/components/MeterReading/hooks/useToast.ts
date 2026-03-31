@@ -1,12 +1,18 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 
-export const useToast = (autoHideMs = 3000) => {
+interface UseToastReturn {
+  toastMessage: string;
+  showToast: boolean;
+  displayToast: (message: string) => void;
+}
+
+export const useToast = (autoHideMs: number = 3000): UseToastReturn => {
   const [toastMessage, setToastMessage] = useState('');
   const [showToast, setShowToast] = useState(false);
-  const toastTimerRef = useRef(null);
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const displayToast = useCallback(
-    (message) => {
+    (message: string) => {
       setToastMessage(message);
       setShowToast(true);
       if (toastTimerRef.current) clearTimeout(toastTimerRef.current);

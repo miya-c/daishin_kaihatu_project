@@ -1,11 +1,13 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { getGasUrl, fetchProperties } from '../../utils/gasClient';
 
+import type { Property } from '../../types';
+
 const PropertySelectApp = () => {
-  const [properties, setProperties] = useState([]);
+  const [properties, setProperties] = useState<Property[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const [isFetched, setIsFetched] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
   const [navigationMessage, setNavigationMessage] = useState('');
@@ -16,7 +18,7 @@ const PropertySelectApp = () => {
 
   const gasWebAppUrl = useMemo(() => getGasUrl(), []);
 
-  const formatCompletionDate = (dateStr) => {
+  const formatCompletionDate = (dateStr: string): string => {
     if (!dateStr || typeof dateStr !== 'string' || dateStr.trim() === '') return '';
     try {
       const date = new Date(dateStr);
@@ -24,7 +26,7 @@ const PropertySelectApp = () => {
       const month = date.getMonth() + 1;
       const day = date.getDate();
       return `検針完了日：${month}月${day}日`;
-    } catch (error) {
+    } catch (_error) {
       return '';
     }
   };
@@ -44,25 +46,25 @@ const PropertySelectApp = () => {
       }
 
       try {
-        const data = await fetchProperties(gasWebAppUrl);
+        const data = await fetchProperties(gasWebAppUrl) as Record<string, unknown>;
         const actualData = data.data || data.properties || (Array.isArray(data) ? data : null);
         if (!actualData || !Array.isArray(actualData)) {
           throw new Error('物件データの形式が正しくありません。');
         }
-        const normalizedData = actualData.map((property) => ({
-          ...property,
+        const normalizedData: Property[] = (actualData as Record<string, unknown>[]).map((property) => ({
           id: String(property.id || property['物件ID'] || ''),
           name: String(property.name || property['物件名'] || '名称未設定'),
-          completionDate: property.completionDate || property['検針完了日'] || '',
+          completionDate: String(property.completionDate || property['検針完了日'] || ''),
         }));
         setProperties(normalizedData);
       } catch (fetchError) {
+        const fetchErr = fetchError instanceof Error ? fetchError : new Error(String(fetchError));
         let errorMessage = '物件情報の取得に失敗しました。\n\n';
-        if (fetchError.message.includes('Failed to fetch')) {
+        if (fetchErr.message.includes('Failed to fetch')) {
           errorMessage +=
             '原因: ネットワークエラーまたはCORS問題\n対処法: インターネット接続を確認してください';
         } else {
-          errorMessage += `原因: ${fetchError.message}`;
+          errorMessage += `原因: ${fetchErr.message}`;
         }
         setError(errorMessage);
         setLoading(false);
@@ -92,7 +94,7 @@ const PropertySelectApp = () => {
   }, [urlInput]);
 
   const handlePropertySelect = useCallback(
-    async (property) => {
+    async (property: Property) => {
       if (!property || typeof property.id === 'undefined' || typeof property.name === 'undefined')
         return;
 
@@ -107,7 +109,7 @@ const PropertySelectApp = () => {
         const roomData = await roomResponse.json();
         if (roomData.success === false) throw new Error(roomData.error || '部屋APIエラー');
 
-        let rooms = [];
+        let rooms: Record<string, unknown>[] = [];
         if (roomData.data && roomData.data.rooms && Array.isArray(roomData.data.rooms)) {
           rooms = roomData.data.rooms;
         } else if (Array.isArray(roomData.data)) {
@@ -116,7 +118,7 @@ const PropertySelectApp = () => {
           throw new Error('部屋APIのデータ形式が正しくありません。');
         }
 
-        const normalizedRooms = rooms.map((room, index) => ({
+        const normalizedRooms = rooms.map((room: Record<string, unknown>, index: number) => ({
           ...room,
           id: room.id || room.roomId || room['部屋ID'] || `room-${index}`,
           name: room.name || room.roomName || room['部屋名'] || '部屋名未設定',
@@ -135,8 +137,9 @@ const PropertySelectApp = () => {
         setTimeout(() => {
           window.location.href = `/room/?propertyId=${encodeURIComponent(property.id)}`;
         }, 300);
-      } catch (error) {
-        setError('部屋情報の読み込みに失敗しました。\n' + error.message);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        setError('部屋情報の読み込みに失敗しました。\n' + message);
         setIsNavigating(false);
       }
     },
@@ -455,7 +458,7 @@ const PropertySelectApp = () => {
             {filteredProperties.map((property, index) => (
               <div
                 key={property.id}
-                data-property-id={property.id}
+                data-property-id={String(property.id)}
                 className={`MuiCard-root ${loading || isNavigating ? 'MuiCard-disabled' : ''}`}
                 onClick={() => !(loading || isNavigating) && handlePropertySelect(property)}
                 style={{
@@ -498,7 +501,7 @@ const PropertySelectApp = () => {
                           ID: {String(property.id || 'IDなし')}
                         </div>
                         {(() => {
-                          const completionText = formatCompletionDate(property.completionDate);
+                          const completionText = formatCompletionDate(String(property.completionDate));
                           return completionText ? (
                             <div
                               style={{

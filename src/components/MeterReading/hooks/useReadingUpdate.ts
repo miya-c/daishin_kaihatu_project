@@ -1,26 +1,42 @@
 import { useState, useCallback } from 'react';
 import { getCurrentJSTDateString } from '../utils/dateUtils';
 
+import type { MeterReading } from '../../../types';
+
+interface UseReadingUpdateParams {
+  propertyId: string;
+  roomId: string;
+  gasWebAppUrl: string;
+  meterReadings: MeterReading[];
+  setMeterReadings: React.Dispatch<React.SetStateAction<MeterReading[]>>;
+  displayToast: (message: string) => void;
+  setUpdating: React.Dispatch<React.SetStateAction<boolean>>;
+}
+
+function formatReading(value: string | number | null | undefined): string {
+  if (value === null || value === undefined || value === '') return '';
+  return String(value).trim();
+}
+
 export const useReadingUpdate = ({
   propertyId,
   roomId,
   gasWebAppUrl,
   meterReadings,
-  setMeterReadings,
   displayToast,
   setUpdating,
-}) => {
-  const [inputErrors, setInputErrors] = useState({});
-  const [usageStates, setUsageStates] = useState({});
+}: Omit<UseReadingUpdateParams, 'setMeterReadings'>) => {
+  const [inputErrors, setInputErrors] = useState<Record<string, string>>({});
+  const [usageStates, setUsageStates] = useState<Record<string, string>>({});
 
   const handleUpdateReadings = useCallback(
-    async (readingValues) => {
+    async (readingValues: Record<string, string>): Promise<boolean | void> => {
       if (!propertyId || !roomId) {
         displayToast('物件IDまたは部屋IDが取得できませんでした。');
         return;
       }
 
-      const updatedReadings = [];
+      const updatedReadings: Record<string, unknown>[] = [];
       let hasValidationErrors = false;
       const newInputErrors = { ...inputErrors };
 
@@ -98,8 +114,9 @@ export const useReadingUpdate = ({
         } else {
           throw new Error(result.error || '指示数の更新に失敗しました。');
         }
-      } catch (err) {
-        displayToast('更新エラー: ' + err.message);
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        displayToast('更新エラー: ' + message);
         return false;
       } finally {
         setUpdating(false);
@@ -116,8 +133,3 @@ export const useReadingUpdate = ({
     handleUpdateReadings,
   };
 };
-
-function formatReading(value) {
-  if (value === null || value === undefined || value === '') return '';
-  return String(value).trim();
-}

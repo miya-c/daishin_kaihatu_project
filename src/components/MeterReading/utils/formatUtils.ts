@@ -9,10 +9,10 @@ import { formatDateForDisplay } from './dateUtils';
  * Formats a meter reading value for display.
  * Returns the trimmed string representation, or empty string for null/undefined/empty values.
  *
- * @param {string|number|null|undefined} value - The reading value to format
- * @returns {string} Formatted reading string
+ * @param value - The reading value to format
+ * @returns Formatted reading string
  */
-export const formatReading = (value) => {
+export const formatReading = (value: string | number | null | undefined): string => {
   if (value === null || value === undefined || value === '') {
     return '';
   }
@@ -23,14 +23,14 @@ export const formatReading = (value) => {
  * Formats a usage value for display.
  * Converts to a numeric string representation, or empty string for invalid values.
  *
- * @param {string|number|null|undefined} value - The usage value to format
- * @returns {string} Formatted usage string
+ * @param value - The usage value to format
+ * @returns Formatted usage string
  */
-export const formatUsage = (value) => {
+export const formatUsage = (value: string | number | null | undefined): string => {
   if (value === null || value === undefined || value === '') {
     return '';
   }
-  const numValue = parseFloat(value);
+  const numValue = parseFloat(String(value));
   if (isNaN(numValue)) {
     return '';
   }
@@ -41,10 +41,10 @@ export const formatUsage = (value) => {
  * Formats a status value for display.
  * Returns '正常' (normal) for empty or unset status values.
  *
- * @param {string|null|undefined} value - The status value to format
- * @returns {string} Formatted status string
+ * @param value - The status value to format
+ * @returns Formatted status string
  */
-export const formatStatus = (value) => {
+export const formatStatus = (value: string | null | undefined): string => {
   if (!value || value === '' || value === '未入力' || value === null || value === undefined) {
     return '正常';
   }
@@ -52,13 +52,21 @@ export const formatStatus = (value) => {
 };
 
 /**
+ * Inspection status result with status label and optional display date.
+ */
+interface InspectionStatus {
+  status: string;
+  displayDate: string | null;
+}
+
+/**
  * Determines the inspection status and formatted display date from a raw date value.
  * Returns an object with the inspection status ('検針済み' or '未検針') and the display date.
  *
- * @param {string|Date|null|undefined} rawDate - The inspection date to evaluate
- * @returns {{ status: string, displayDate: string|null }} Inspection status object
+ * @param rawDate - The inspection date to evaluate
+ * @returns Inspection status object
  */
-export const formatInspectionStatus = (rawDate) => {
+export const formatInspectionStatus = (rawDate: string | Date | null | undefined): InspectionStatus => {
   const formattedDate = formatDateForDisplay(rawDate);
   return formattedDate
     ? { status: '検針済み', displayDate: formattedDate }
@@ -70,13 +78,16 @@ export const formatInspectionStatus = (rawDate) => {
  * If no valid previous reading exists, returns the current reading as-is.
  * Returns a non-negative usage value as a string.
  *
- * @param {string|number|null} currentReading - The current meter reading
- * @param {string|number|null} previousReading - The previous meter reading
- * @returns {string} Calculated usage as a string, or empty string if current is invalid
+ * @param currentReading - The current meter reading
+ * @param previousReading - The previous meter reading
+ * @returns Calculated usage as a string, or empty string if current is invalid
  */
-export const calculateUsage = (currentReading, previousReading) => {
-  const current = parseFloat(currentReading);
-  const previous = parseFloat(previousReading);
+export const calculateUsage = (
+  currentReading: string | number | null,
+  previousReading: string | number | null
+): string => {
+  const current = parseFloat(String(currentReading));
+  const previous = parseFloat(String(previousReading));
 
   if (isNaN(current)) return '';
 
@@ -90,9 +101,5 @@ export const calculateUsage = (currentReading, previousReading) => {
 
 /**
  * Alias for calculateUsage. Calculates water usage from current and previous readings.
- *
- * @param {string|number|null} currentReading - The current meter reading
- * @param {string|number|null} previousReading - The previous meter reading
- * @returns {string} Calculated usage as a string
  */
 export const calculateUsageDisplay = calculateUsage;

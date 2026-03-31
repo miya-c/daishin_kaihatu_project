@@ -7,23 +7,23 @@
 import { validateId } from './validateParams';
 
 /** Default GAS Web App URL from environment variable */
-const GAS_URL_DEFAULT = import.meta.env.VITE_GAS_WEB_APP_URL || '';
+const GAS_URL_DEFAULT: string = import.meta.env.VITE_GAS_WEB_APP_URL || '';
 
 /**
  * Retrieves the GAS Web App URL from browser storage.
  * Checks sessionStorage first, then falls back to localStorage,
  * and finally uses the hardcoded default URL.
  *
- * @returns {string} The GAS Web App URL
+ * @returns The GAS Web App URL
  */
-export const getGasUrl = () => {
+export const getGasUrl = (): string => {
   try {
     return (
       sessionStorage.getItem('gasWebAppUrl') ||
       localStorage.getItem('gasWebAppUrl') ||
       GAS_URL_DEFAULT
     );
-  } catch (storageError) {
+  } catch (_storageError: unknown) {
     return GAS_URL_DEFAULT;
   }
 };
@@ -31,11 +31,11 @@ export const getGasUrl = () => {
 /**
  * Fetches the list of properties from the GAS backend.
  *
- * @param {string} [gasUrl] - Optional GAS Web App URL; defaults to getGasUrl()
- * @returns {Promise<Object>} The API response containing property data
- * @throws {Error} If the network request fails or returns a non-OK status
+ * @param gasUrl - Optional GAS Web App URL; defaults to getGasUrl()
+ * @returns The API response containing property data
+ * @throws If the network request fails or returns a non-OK status
  */
-export const fetchProperties = async (gasUrl) => {
+export const fetchProperties = async (gasUrl?: string): Promise<unknown> => {
   const url = gasUrl || getGasUrl();
   const requestUrl = `${url}?action=getProperties&cache=${Date.now()}`;
   const response = await fetch(requestUrl);
@@ -50,12 +50,12 @@ export const fetchProperties = async (gasUrl) => {
 /**
  * Fetches the list of rooms for a specific property from the GAS backend.
  *
- * @param {string} [gasUrl] - Optional GAS Web App URL; defaults to getGasUrl()
- * @param {string} propertyId - The property ID to fetch rooms for
- * @returns {Promise<Object>} The API response containing room data
- * @throws {Error} If the network request fails or returns a non-OK status
+ * @param gasUrl - Optional GAS Web App URL; defaults to getGasUrl()
+ * @param propertyId - The property ID to fetch rooms for
+ * @returns The API response containing room data
+ * @throws If the network request fails or returns a non-OK status
  */
-export const fetchRooms = async (gasUrl, propertyId) => {
+export const fetchRooms = async (gasUrl: string | undefined, propertyId: string): Promise<unknown> => {
   const validation = validateId(propertyId, 'propertyId');
   if (!validation.valid) throw new Error(validation.error);
 
@@ -73,13 +73,17 @@ export const fetchRooms = async (gasUrl, propertyId) => {
 /**
  * Fetches meter readings for a specific property and room from the GAS backend.
  *
- * @param {string} [gasUrl] - Optional GAS Web App URL; defaults to getGasUrl()
- * @param {string} propertyId - The property ID
- * @param {string} roomId - The room ID
- * @returns {Promise<Object>} The API response containing meter reading data
- * @throws {Error} If the network request fails or returns a non-OK status
+ * @param gasUrl - Optional GAS Web App URL; defaults to getGasUrl()
+ * @param propertyId - The property ID
+ * @param roomId - The room ID
+ * @returns The API response containing meter reading data
+ * @throws If the network request fails or returns a non-OK status
  */
-export const fetchMeterReadings = async (gasUrl, propertyId, roomId) => {
+export const fetchMeterReadings = async (
+  gasUrl: string | undefined,
+  propertyId: string,
+  roomId: string
+): Promise<unknown> => {
   const propValidation = validateId(propertyId, 'propertyId');
   if (!propValidation.valid) throw new Error(propValidation.error);
 
@@ -101,14 +105,19 @@ export const fetchMeterReadings = async (gasUrl, propertyId, roomId) => {
  * Updates meter readings for a specific property and room via the GAS backend.
  * Sends reading data as a JSON-encoded parameter in a GET request.
  *
- * @param {string} [gasUrl] - Optional GAS Web App URL; defaults to getGasUrl()
- * @param {string} propertyId - The property ID
- * @param {string} roomId - The room ID
- * @param {Array<Object>} readings - Array of reading objects to update
- * @returns {Promise<Object>} The API response confirming the update
- * @throws {Error} If the network request fails or returns a non-OK status
+ * @param gasUrl - Optional GAS Web App URL; defaults to getGasUrl()
+ * @param propertyId - The property ID
+ * @param roomId - The room ID
+ * @param readings - Array of reading objects to update
+ * @returns The API response confirming the update
+ * @throws If the network request fails or returns a non-OK status
  */
-export const updateMeterReadings = async (gasUrl, propertyId, roomId, readings) => {
+export const updateMeterReadings = async (
+  gasUrl: string | undefined,
+  propertyId: string,
+  roomId: string,
+  readings: Record<string, unknown>[]
+): Promise<unknown> => {
   const propValidation = validateId(propertyId, 'propertyId');
   if (!propValidation.valid) throw new Error(propValidation.error);
 
@@ -137,13 +146,17 @@ export const updateMeterReadings = async (gasUrl, propertyId, roomId, readings) 
  * Marks an inspection as completed for a specific property.
  * Records the completion date on the GAS backend.
  *
- * @param {string} [gasUrl] - Optional GAS Web App URL; defaults to getGasUrl()
- * @param {string} propertyId - The property ID to complete inspection for
- * @param {string} completionDate - The date string (YYYY-MM-DD) when inspection was completed
- * @returns {Promise<Object>} The API response confirming the completion
- * @throws {Error} If the network request fails or returns a non-OK status
+ * @param gasUrl - Optional GAS Web App URL; defaults to getGasUrl()
+ * @param propertyId - The property ID to complete inspection for
+ * @param completionDate - The date string (YYYY-MM-DD) when inspection was completed
+ * @returns The API response confirming the completion
+ * @throws If the network request fails or returns a non-OK status
  */
-export const completeInspection = async (gasUrl, propertyId, completionDate) => {
+export const completeInspection = async (
+  gasUrl: string | undefined,
+  propertyId: string,
+  completionDate: string
+): Promise<unknown> => {
   const propValidation = validateId(propertyId, 'propertyId');
   if (!propValidation.valid) throw new Error(propValidation.error);
 

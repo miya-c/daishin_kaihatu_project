@@ -1,8 +1,7 @@
-import React from 'react';
 import { createRoot } from 'react-dom/client';
 import ErrorBoundary from '../../components/shared/ErrorBoundary';
-import RoomSelectApp from '../../components/RoomSelect/RoomSelectApp';
-import '../../styles/room_select.css';
+import PropertySelectApp from '../../components/PropertySelect/PropertySelectApp';
+import '../../styles/property_select.css';
 
 // Register Service Worker
 if ('serviceWorker' in navigator) {
@@ -11,10 +10,9 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-const root = document.getElementById('root');
-const appRoot = createRoot(root);
-appRoot.render(
+const root = createRoot(document.getElementById('root')!);
+root.render(
   <ErrorBoundary>
-    <RoomSelectApp />
+    <PropertySelectApp />
   </ErrorBoundary>
 );
