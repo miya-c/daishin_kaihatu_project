@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { getGasUrl } from '../../utils/gasClient';
 import NetworkStatusBar from '../NetworkStatusBar';
 import { validateId } from '../../utils/validateParams';
@@ -13,7 +13,7 @@ const RoomSelectApp = () => {
   const [propertyId, setPropertyId] = useState('');
   const [toastMessage, setToastMessage] = useState('');
   const [showToast, setShowToast] = useState(false);
-  const toastTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const displayToast = useCallback((message: string) => {
     setToastMessage(message);
