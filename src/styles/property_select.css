@@ -444,3 +444,23 @@ body {
   outline: 3px solid var(--mui-palette-primary-main);
   outline-offset: 2px;
 }
+
+/* Skip link */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: var(--mui-palette-primary-main, #1976d2);
+  color: white;
+  padding: 8px 16px;
+  z-index: 10000;
+  font-size: 1rem;
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: 0 0 4px 0;
+  transition: top 0.2s;
+}
+
+.skip-link:focus {
+  top: 0;
+}

@@ -249,8 +249,12 @@ const PropertySelectApp = () => {
   // Main content
   return (
     <div style={{ minHeight: '100vh' }}>
+      <a href="#main-content" className="skip-link">メインコンテンツへ</a>
       {showUrlModal && (
         <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="url-modal-title"
           style={{
             position: 'fixed',
             top: 0,
@@ -384,7 +388,7 @@ const PropertySelectApp = () => {
         </div>
       </div>
 
-      <div className="MuiContainer-root">
+      <div id="main-content" className="MuiContainer-root">
         <div style={{ maxWidth: '600px', margin: '0 auto' }}>
           <div className="MuiTextField-root">
             <input

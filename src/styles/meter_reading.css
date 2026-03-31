@@ -146,7 +146,7 @@ body {
   transition: all 0.1s ease;
 }
 
-.mantine-button.variant-filled:focus {
+.mantine-button.variant-filled:focus-visible {
   outline: 2px solid var(--mui-palette-blue-light);
   outline-offset: 2px;
 }
@@ -181,6 +181,11 @@ body {
 .fab-button:active {
   transform: scale(0.98) translateY(-1px);
   transition: all 0.1s ease;
+}
+
+.fab-button:focus-visible {
+  outline: 3px solid var(--mui-palette-blue-light);
+  outline-offset: 3px;
 }
 
 .fab-button::before {
@@ -219,6 +224,11 @@ body {
 .nav-button.disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.nav-button:focus-visible {
+  outline: 3px solid var(--mui-palette-blue-light);
+  outline-offset: 2px;
 }
 
 .mantine-paper {
@@ -435,7 +445,7 @@ body {
   min-height: 60px; /* 48px → 60px に増加 */
 }
 
-.mantine-input:focus {
+.mantine-input:focus-visible {
   outline: none;
   border-color: var(--mui-palette-blue-6);
   box-shadow: 0 0 0 2px var(--mui-palette-blue-light);
@@ -1172,4 +1182,36 @@ body {
     width: 100%;
     max-width: 250px;
   }
+}
+
+/* Accessibility: Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Skip link - visually hidden, visible on focus */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: var(--mui-palette-blue-6);
+  color: white;
+  padding: 8px 16px;
+  z-index: 10000;
+  font-size: 1rem;
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: 0 0 4px 0;
+  transition: top 0.2s;
+}
+
+.skip-link:focus {
+  top: 0;
 }

@@ -255,6 +255,7 @@ const RoomSelectApp = () => {
   if (loading) {
     return (
       <div>
+        <a href="#main-content" className="skip-link">メインコンテンツへ</a>
         <header
           className="MuiAppBar-root MuiAppBar-colorPrimary MuiAppBar-positionStatic mui-elevation-4"
           role="banner"
@@ -270,7 +271,7 @@ const RoomSelectApp = () => {
             <span className="MuiTypography-root MuiTypography-h6 app-title">部屋選択</span>
           </nav>
         </header>
-        <main className="MuiContainer-root MuiContainer-maxWidthLg" style={{ paddingTop: '32px' }}>
+        <main id="main-content" className="MuiContainer-root MuiContainer-maxWidthLg" style={{ paddingTop: '32px' }}>
           <div className="loading-container">
             <span className="MuiCircularProgress-root" aria-label="読み込み中"></span>
             <span className="MuiTypography-root MuiTypography-body1">
@@ -286,6 +287,7 @@ const RoomSelectApp = () => {
   if (error) {
     return (
       <div>
+        <a href="#main-content" className="skip-link">メインコンテンツへ</a>
         <header
           className="MuiAppBar-root MuiAppBar-colorPrimary MuiAppBar-positionStatic mui-elevation-4"
           role="banner"
@@ -301,7 +303,7 @@ const RoomSelectApp = () => {
             <span className="MuiTypography-root MuiTypography-h6 app-title">部屋選択</span>
           </nav>
         </header>
-        <main className="MuiContainer-root MuiContainer-maxWidthLg" style={{ paddingTop: '32px' }}>
+        <main id="main-content" className="MuiContainer-root MuiContainer-maxWidthLg" style={{ paddingTop: '32px' }}>
           <div className="MuiAlert-root MuiAlert-standardError" role="alert">
             <span className="MuiAlert-message">{String(error)}</span>
           </div>
@@ -313,6 +315,7 @@ const RoomSelectApp = () => {
   // Main content
   return (
     <div>
+      <a href="#main-content" className="skip-link">メインコンテンツへ</a>
       <header
         className="MuiAppBar-root MuiAppBar-colorPrimary MuiAppBar-positionStatic mui-elevation-4"
         role="banner"
@@ -329,7 +332,7 @@ const RoomSelectApp = () => {
         </nav>
       </header>
 
-      <main className="MuiContainer-root MuiContainer-maxWidthLg" style={{ paddingTop: '32px' }}>
+      <main id="main-content" className="MuiContainer-root MuiContainer-maxWidthLg" style={{ paddingTop: '32px' }}>
         <section
           className="MuiCard-root MuiPaper-root MuiPaper-elevation1 property-card"
           aria-label="物件情報"

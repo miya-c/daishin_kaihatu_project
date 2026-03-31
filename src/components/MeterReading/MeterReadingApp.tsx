@@ -301,6 +301,7 @@ const MeterReadingApp = () => {
   if (loading) {
     return (
       <>
+        <a href="#main-content" className="skip-link">メインコンテンツへ</a>
         <div className="app-header">
           <button
             onClick={() => handleBackButton(propertyId, roomId)}
@@ -311,7 +312,7 @@ const MeterReadingApp = () => {
           </button>
           <h1 className="header-title">検針情報</h1>
         </div>
-        <div className="content-area mantine-container">
+        <div id="main-content" className="content-area mantine-container">
           <div className="mantine-stack center">
             <div className="mantine-loader"></div>
             <p className="mantine-text">検針データを読み込んでいます...</p>
@@ -325,6 +326,7 @@ const MeterReadingApp = () => {
   if (error) {
     return (
       <>
+        <a href="#main-content" className="skip-link">メインコンテンツへ</a>
         <div className="app-header">
           <button
             onClick={() => handleBackButton(propertyId, roomId)}
@@ -335,7 +337,7 @@ const MeterReadingApp = () => {
           </button>
           <h1 className="header-title">検針情報</h1>
         </div>
-        <div className="content-area mantine-container">
+        <div id="main-content" className="content-area mantine-container">
           <div className="mantine-stack">
             <div className="mantine-alert">
               <h3 className="mantine-text weight-600">エラー</h3>
@@ -359,6 +361,7 @@ const MeterReadingApp = () => {
   return (
     <>
       {isNavigating && <LoadingOverlay message={navigationMessage} />}
+      <a href="#main-content" className="skip-link">メインコンテンツへ</a>
       <div className="app-header">
         <button
           onClick={() => handleBackButton(propertyId, roomId)}
@@ -370,7 +373,7 @@ const MeterReadingApp = () => {
         <h1 className="header-title">検針情報</h1>
       </div>
 
-      <div className="content-area mantine-container">
+      <div id="main-content" className="content-area mantine-container">
         <div className="mantine-stack">
           <PropertyInfoHeader propertyName={propertyName} roomName={roomName} />
           <div
