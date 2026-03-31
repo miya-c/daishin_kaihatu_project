@@ -149,3 +149,79 @@ describe('completeInspection', () => {
     vi.restoreAllMocks();
   });
 });
+
+describe('error handling', () => {
+  it('throws on non-OK response in fetchProperties', async () => {
+    vi.stubGlobal('fetch', () =>
+      Promise.resolve({ ok: false, status: 500, statusText: 'Server Error' })
+    );
+    await expect(fetchProperties(MOCK_URL)).rejects.toThrow('HTTP 500');
+    vi.restoreAllMocks();
+  });
+
+  it('throws on non-OK response in fetchRooms', async () => {
+    vi.stubGlobal('fetch', () =>
+      Promise.resolve({ ok: false, status: 404, statusText: 'Not Found' })
+    );
+    await expect(fetchRooms(MOCK_URL, 'prop-1')).rejects.toThrow('HTTP 404');
+    vi.restoreAllMocks();
+  });
+
+  it('throws on non-OK response in fetchMeterReadings', async () => {
+    vi.stubGlobal('fetch', () =>
+      Promise.resolve({ ok: false, status: 503, statusText: 'Service Unavailable' })
+    );
+    await expect(fetchMeterReadings(MOCK_URL, 'prop-1', 'room-1')).rejects.toThrow('HTTP 503');
+    vi.restoreAllMocks();
+  });
+
+  it('throws on non-OK response in updateMeterReadings', async () => {
+    vi.stubGlobal('fetch', () =>
+      Promise.resolve({ ok: false, status: 400, statusText: 'Bad Request' })
+    );
+    await expect(
+      updateMeterReadings(MOCK_URL, 'prop-1', 'room-1', [])
+    ).rejects.toThrow('HTTP 400');
+    vi.restoreAllMocks();
+  });
+
+  it('throws on non-OK response in completeInspection', async () => {
+    vi.stubGlobal('fetch', () =>
+      Promise.resolve({ ok: false, status: 500, statusText: 'Internal Server Error' })
+    );
+    await expect(
+      completeInspection(MOCK_URL, 'prop-1', '2025-06-18')
+    ).rejects.toThrow('HTTP 500');
+    vi.restoreAllMocks();
+  });
+
+  it('throws for invalid propertyId in fetchRooms', async () => {
+    await expect(fetchRooms(MOCK_URL, '')).rejects.toThrow();
+  });
+
+  it('throws for invalid propertyId in fetchMeterReadings', async () => {
+    await expect(fetchMeterReadings(MOCK_URL, '', 'room-1')).rejects.toThrow();
+  });
+
+  it('throws for invalid roomId in fetchMeterReadings', async () => {
+    await expect(fetchMeterReadings(MOCK_URL, 'prop-1', '')).rejects.toThrow();
+  });
+
+  it('throws for invalid propertyId in updateMeterReadings', async () => {
+    await expect(
+      updateMeterReadings(MOCK_URL, '', 'room-1', [])
+    ).rejects.toThrow();
+  });
+
+  it('throws for invalid roomId in updateMeterReadings', async () => {
+    await expect(
+      updateMeterReadings(MOCK_URL, 'prop-1', '', [])
+    ).rejects.toThrow();
+  });
+
+  it('throws for invalid propertyId in completeInspection', async () => {
+    await expect(
+      completeInspection(MOCK_URL, '', '2025-06-18')
+    ).rejects.toThrow();
+  });
+});

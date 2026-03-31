@@ -758,4 +758,199 @@ describe('RoomSelectApp', () => {
       expect(screen.queryByText('この物件の検針を完了する')).not.toBeInTheDocument();
     });
   });
+
+  // === Phase V: Additional branch coverage ===
+
+  describe('room display variants', () => {
+    it('shows completed badge without date when isCompleted but no readingDateFormatted', async () => {
+      mockLocationSearch(`?propertyId=${MOCK_PROPERTY_ID}`);
+      sessionStorage.setItem('gasWebAppUrl', MOCK_GAS_URL);
+      sessionStorage.setItem('selectedPropertyId', MOCK_PROPERTY_ID);
+      sessionStorage.setItem('selectedPropertyName', 'テスト物件');
+      sessionStorage.setItem(
+        'selectedRooms',
+        JSON.stringify([{ id: 'room-105', name: '105号室', isCompleted: true }])
+      );
+
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockReturnValue(createMockFetchResponse({ success: true, data: { rooms: [] } }))
+      );
+
+      render(<RoomSelectApp />);
+
+      await waitFor(() => {
+        expect(screen.getByText('105号室')).toBeInTheDocument();
+        // Should show '検針済み' without date since readingDateFormatted is missing
+        expect(screen.getByText('検針済み')).toBeInTheDocument();
+      });
+    });
+
+    it('navigates using roomId when room has no id', async () => {
+      mockLocationSearch(`?propertyId=${MOCK_PROPERTY_ID}`);
+      sessionStorage.setItem('gasWebAppUrl', MOCK_GAS_URL);
+      sessionStorage.setItem('selectedPropertyId', MOCK_PROPERTY_ID);
+      sessionStorage.setItem('selectedPropertyName', 'テスト物件');
+      sessionStorage.setItem(
+        'selectedRooms',
+        JSON.stringify([{ roomId: 'room-201', name: '201号室' }])
+      );
+
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockReturnValue(createMockFetchResponse({ success: true, data: { rooms: [] } }))
+      );
+
+      render(<RoomSelectApp />);
+
+      await waitFor(() => {
+        expect(screen.getByText('201号室')).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByText('201号室'));
+      expect(window.location.href).toContain('room-201');
+    });
+  });
+
+  describe('legacy API property name fallbacks', () => {
+    it('falls back to property_name from data', async () => {
+      mockLocationSearch(`?propertyId=${MOCK_PROPERTY_ID}`);
+      sessionStorage.setItem('gasWebAppUrl', MOCK_GAS_URL);
+
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockImplementation((url) => {
+          if (url.includes('getRoomsLight')) {
+            return Promise.reject(new Error('Light failed'));
+          }
+          return createMockFetchResponse({
+            success: true,
+            data: {
+              rooms: [{ id: 'r1', name: '部屋1' }],
+              property_name: 'pn-objects',
+            },
+          });
+        })
+      );
+
+      render(<RoomSelectApp />);
+
+      await waitFor(() => {
+        expect(screen.getByText('pn-objects')).toBeInTheDocument();
+      });
+    });
+
+    it('falls back to data.name when no other name fields', async () => {
+      mockLocationSearch(`?propertyId=${MOCK_PROPERTY_ID}`);
+      sessionStorage.setItem('gasWebAppUrl', MOCK_GAS_URL);
+
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockImplementation((url) => {
+          if (url.includes('getRoomsLight')) {
+            return Promise.reject(new Error('Light failed'));
+          }
+          return createMockFetchResponse({
+            success: true,
+            data: {
+              rooms: [{ id: 'r1', name: '部屋1' }],
+              name: 'name-field',
+            },
+          });
+        })
+      );
+
+      render(<RoomSelectApp />);
+
+      await waitFor(() => {
+        expect(screen.getByText('name-field')).toBeInTheDocument();
+      });
+    });
+
+    it('falls back to sessionStorage name when no name in data', async () => {
+      mockLocationSearch(`?propertyId=${MOCK_PROPERTY_ID}`);
+      sessionStorage.setItem('gasWebAppUrl', MOCK_GAS_URL);
+      sessionStorage.setItem('selectedPropertyName', 'cached-name');
+
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockImplementation((url) => {
+          if (url.includes('getRoomsLight')) {
+            return Promise.reject(new Error('Light failed'));
+          }
+          return createMockFetchResponse({
+            success: true,
+            data: {
+              rooms: [{ id: 'r1', name: '部屋1' }],
+            },
+          });
+        })
+      );
+
+      render(<RoomSelectApp />);
+
+      await waitFor(() => {
+        expect(screen.getByText('cached-name')).toBeInTheDocument();
+      });
+    });
+
+    it('shows empty rooms when legacy API returns non-array rooms', async () => {
+      mockLocationSearch(`?propertyId=${MOCK_PROPERTY_ID}`);
+      sessionStorage.setItem('gasWebAppUrl', MOCK_GAS_URL);
+
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockImplementation((url) => {
+          if (url.includes('getRoomsLight')) {
+            return Promise.reject(new Error('Light failed'));
+          }
+          return createMockFetchResponse({
+            success: true,
+            data: { rooms: 'not-an-array' },
+          });
+        })
+      );
+
+      render(<RoomSelectApp />);
+
+      await waitFor(() => {
+        expect(screen.getByText('部屋データがありません')).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('light API returns non-array data', () => {
+    it('handles light API returning data without rooms', async () => {
+      mockLocationSearch(`?propertyId=${MOCK_PROPERTY_ID}`);
+      sessionStorage.setItem('gasWebAppUrl', MOCK_GAS_URL);
+
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockReturnValue(
+          createMockFetchResponse({
+            success: true,
+            data: 'not-an-array-or-object',
+          })
+        )
+      );
+
+      render(<RoomSelectApp />);
+
+      await waitFor(() => {
+        expect(screen.getByText('部屋データがありません')).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('handleCompleteInspection additional coverage', () => {
+    it('shows toast when propertyId is missing', async () => {
+      // Render with valid data first
+      mockLocationSearch('?propertyId=');
+      render(<RoomSelectApp />);
+
+      await waitFor(() => {
+        expect(screen.getByText('物件IDが指定されていません。')).toBeInTheDocument();
+      });
+    });
+  });
 });

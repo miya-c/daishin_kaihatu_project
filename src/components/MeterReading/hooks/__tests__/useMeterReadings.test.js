@@ -575,4 +575,110 @@ describe('useMeterReadings', () => {
       expect(mockReload).toHaveBeenCalled();
     });
   });
+
+  // === Phase U: Additional branch coverage ===
+
+  describe('URL parameter validation', () => {
+    it('sets error for invalid propertyId', async () => {
+      sessionStorage.setItem('gasWebAppUrl', MOCK_GAS_URL);
+      restoreLocation = mockLocationSearch('?propertyId=<invalid>&roomId=room-101');
+
+      const { result } = renderHook(() => useMeterReadings());
+
+      await waitFor(() => {
+        expect(result.current.error).toBeTruthy();
+        expect(result.current.error).toContain('物件ID');
+        expect(result.current.loading).toBe(false);
+      });
+    });
+
+    it('sets error for invalid roomId', async () => {
+      sessionStorage.setItem('gasWebAppUrl', MOCK_GAS_URL);
+      restoreLocation = mockLocationSearch('?propertyId=prop-001&roomId=<script>');
+
+      const { result } = renderHook(() => useMeterReadings());
+
+      await waitFor(() => {
+        expect(result.current.error).toBeTruthy();
+        expect(result.current.error).toContain('部屋ID');
+        expect(result.current.loading).toBe(false);
+      });
+    });
+  });
+
+  describe('data format branches', () => {
+    it('handles empty array response', async () => {
+      sessionStorage.setItem('gasWebAppUrl', MOCK_GAS_URL);
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockReturnValue(createMockFetchResponse({ success: true, data: [] }))
+      );
+      restoreLocation = mockLocationSearch(
+        `?propertyId=${MOCK_PROPERTY_ID}&roomId=${MOCK_ROOM_ID}`
+      );
+
+      const { result } = renderHook(() => useMeterReadings());
+
+      await waitFor(() => {
+        expect(result.current.propertyName).toBe('N/A');
+        expect(result.current.roomName).toBe('部屋名不明');
+        expect(result.current.meterReadings).toEqual([]);
+      });
+    });
+
+    it('handles unrecognized data format (string)', async () => {
+      sessionStorage.setItem('gasWebAppUrl', MOCK_GAS_URL);
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockReturnValue(createMockFetchResponse({ success: true, data: 'not-an-object' }))
+      );
+      restoreLocation = mockLocationSearch(
+        `?propertyId=${MOCK_PROPERTY_ID}&roomId=${MOCK_ROOM_ID}`
+      );
+
+      const { result } = renderHook(() => useMeterReadings());
+
+      await waitFor(() => {
+        expect(result.current.error).toBeTruthy();
+        expect(result.current.error).toContain('検針データの読み込みに失敗');
+      });
+    });
+
+    it('handles non-503 HTTP error without retry', async () => {
+      sessionStorage.setItem('gasWebAppUrl', MOCK_GAS_URL);
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue({ ok: false, status: 404, json: () => Promise.resolve({}) })
+      );
+      restoreLocation = mockLocationSearch(
+        `?propertyId=${MOCK_PROPERTY_ID}&roomId=${MOCK_ROOM_ID}`
+      );
+
+      const { result } = renderHook(() => useMeterReadings());
+
+      await waitFor(() => {
+        expect(result.current.error).toBeTruthy();
+      });
+    });
+
+    it('handles data object without required keys', async () => {
+      sessionStorage.setItem('gasWebAppUrl', MOCK_GAS_URL);
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockReturnValue(
+          createMockFetchResponse({ success: true, data: { someOtherKey: 'value' } })
+        )
+      );
+      restoreLocation = mockLocationSearch(
+        `?propertyId=${MOCK_PROPERTY_ID}&roomId=${MOCK_ROOM_ID}`
+      );
+
+      const { result } = renderHook(() => useMeterReadings());
+
+      await waitFor(() => {
+        expect(result.current.error).toBeTruthy();
+        expect(result.current.error).toContain('検針データの読み込みに失敗');
+      });
+    });
+  });
 });
