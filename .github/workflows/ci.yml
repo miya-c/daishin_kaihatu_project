@@ -12,7 +12,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [18, 20]
+        node-version: [18, 20, 22]
 
     steps:
       - uses: actions/checkout@v4
@@ -27,7 +27,16 @@ jobs:
         run: npm ci
 
       - name: Create .env file
-        run: cp .env.example .env && sed -i 's|YOUR_SCRIPT_ID|CI_PLACEHOLDER|' .env
+        run: |
+          if [ -f .env.example ]; then
+            cp .env.example .env
+            sed -i 's|YOUR_SCRIPT_ID|CI_PLACEHOLDER|' .env
+          else
+            echo "VITE_GAS_WEB_APP_URL=https://script.google.com/macros/s/CI_PLACEHOLDER/exec" > .env
+          fi
+
+      - name: TypeScript type check
+        run: npx tsc --noEmit
 
       - name: Lint
         run: npm run lint
@@ -35,8 +44,16 @@ jobs:
       - name: Check formatting
         run: npm run format:check
 
-      - name: Run tests
-        run: npm test
+      - name: Run tests with coverage
+        run: npx vitest run --coverage
 
       - name: Build
         run: npm run build
+
+      - name: Upload build artifacts
+        if: matrix.node-version == 22
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+          retention-days: 7
