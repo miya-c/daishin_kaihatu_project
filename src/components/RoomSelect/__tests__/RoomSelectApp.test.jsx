@@ -94,7 +94,6 @@ describe('RoomSelectApp', () => {
     it('shows error when API fails', async () => {
       mockLocationSearch(`?propertyId=${MOCK_PROPERTY_ID}`);
       sessionStorage.setItem('gasWebAppUrl', MOCK_GAS_URL);
-      sessionStorage.setItem('forceRefreshRooms', 'true');
 
       vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('Network error')));
 
@@ -487,7 +486,7 @@ describe('RoomSelectApp', () => {
   });
 
   describe('session cache behavior', () => {
-    it('skips session cache when forceRefreshRooms is true', async () => {
+    it('uses session cache immediately and cleans up forceRefreshRooms flag', async () => {
       mockLocationSearch(`?propertyId=${MOCK_PROPERTY_ID}`);
       sessionStorage.setItem('gasWebAppUrl', MOCK_GAS_URL);
       sessionStorage.setItem('forceRefreshRooms', 'true');
@@ -508,11 +507,13 @@ describe('RoomSelectApp', () => {
 
       render(<RoomSelectApp />);
 
+      // Should show cached rooms immediately (not wait for API)
       await waitFor(() => {
-        expect(screen.getByText('新規物件')).toBeInTheDocument();
-        expect(screen.getByText('201号室')).toBeInTheDocument();
+        expect(screen.getByText('キャッシュ物件')).toBeInTheDocument();
+        expect(screen.getByText('101号室')).toBeInTheDocument();
       });
 
+      // forceRefreshRooms should be cleaned up
       expect(sessionStorage.getItem('forceRefreshRooms')).toBeNull();
     });
 

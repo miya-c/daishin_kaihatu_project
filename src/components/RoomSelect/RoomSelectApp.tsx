@@ -41,31 +41,26 @@ const RoomSelectApp = () => {
     }
 
     try {
-      const forceRefresh = sessionStorage.getItem('forceRefreshRooms') === 'true';
-      if (forceRefresh) {
-        sessionStorage.removeItem('forceRefreshRooms');
-        sessionStorage.removeItem('updatedRoomId');
-        sessionStorage.removeItem('lastUpdateTime');
-      }
+      // Clean up stale flags from previous navigation
+      sessionStorage.removeItem('forceRefreshRooms');
 
-      if (!forceRefresh) {
-        const sessionRooms = sessionStorage.getItem('selectedRooms');
-        const sessionPropertyName = sessionStorage.getItem('selectedPropertyName');
-        const sessionPropertyId = sessionStorage.getItem('selectedPropertyId');
+      // Try sessionStorage cache first (always, since handleBackButton updates it optimistically)
+      const sessionRooms = sessionStorage.getItem('selectedRooms');
+      const sessionPropertyName = sessionStorage.getItem('selectedPropertyName');
+      const sessionPropertyId = sessionStorage.getItem('selectedPropertyId');
 
-        if (sessionRooms && sessionPropertyId === propId && sessionPropertyName) {
-          try {
-            const parsedRooms = JSON.parse(sessionRooms);
-            if (Array.isArray(parsedRooms)) {
-              setRooms(parsedRooms);
-              setPropertyName(sessionPropertyName);
-              setLoading(false);
-              setTimeout(() => performBackgroundUpdate(propId, gasWebAppUrl!, parsedRooms), 100);
-              return;
-            }
-          } catch (_) {
-            // Continue to API fetch
+      if (sessionRooms && sessionPropertyId === propId && sessionPropertyName) {
+        try {
+          const parsedRooms = JSON.parse(sessionRooms);
+          if (Array.isArray(parsedRooms)) {
+            setRooms(parsedRooms);
+            setPropertyName(sessionPropertyName);
+            setLoading(false);
+            setTimeout(() => performBackgroundUpdate(propId, gasWebAppUrl!, parsedRooms), 100);
+            return;
           }
+        } catch (_) {
+          // Continue to API fetch
         }
       }
 
@@ -138,7 +133,11 @@ const RoomSelectApp = () => {
     }
   };
 
-  const performBackgroundUpdate = async (propId: string, gasWebAppUrl: string, _currentRooms: Room[]): Promise<void> => {
+  const performBackgroundUpdate = async (
+    propId: string,
+    gasWebAppUrl: string,
+    _currentRooms: Room[]
+  ): Promise<void> => {
     try {
       const fetchUrl = `${gasWebAppUrl}?action=getRoomsLight&propertyId=${encodeURIComponent(propId)}&cache=${Date.now()}`;
       const response = await fetch(fetchUrl);
@@ -257,7 +256,9 @@ const RoomSelectApp = () => {
     return (
       <div>
         <NetworkStatusBar />
-        <a href="#main-content" className="skip-link">メインコンテンツへ</a>
+        <a href="#main-content" className="skip-link">
+          メインコンテンツへ
+        </a>
         <header
           className="MuiAppBar-root MuiAppBar-colorPrimary MuiAppBar-positionStatic mui-elevation-4"
           role="banner"
@@ -273,7 +274,11 @@ const RoomSelectApp = () => {
             <span className="MuiTypography-root MuiTypography-h6 app-title">部屋選択</span>
           </nav>
         </header>
-        <main id="main-content" className="MuiContainer-root MuiContainer-maxWidthLg" style={{ paddingTop: '32px' }}>
+        <main
+          id="main-content"
+          className="MuiContainer-root MuiContainer-maxWidthLg"
+          style={{ paddingTop: '32px' }}
+        >
           <div className="loading-container">
             <span className="MuiCircularProgress-root" aria-label="読み込み中"></span>
             <span className="MuiTypography-root MuiTypography-body1">
@@ -290,7 +295,9 @@ const RoomSelectApp = () => {
     return (
       <div>
         <NetworkStatusBar />
-        <a href="#main-content" className="skip-link">メインコンテンツへ</a>
+        <a href="#main-content" className="skip-link">
+          メインコンテンツへ
+        </a>
         <header
           className="MuiAppBar-root MuiAppBar-colorPrimary MuiAppBar-positionStatic mui-elevation-4"
           role="banner"
@@ -306,7 +313,11 @@ const RoomSelectApp = () => {
             <span className="MuiTypography-root MuiTypography-h6 app-title">部屋選択</span>
           </nav>
         </header>
-        <main id="main-content" className="MuiContainer-root MuiContainer-maxWidthLg" style={{ paddingTop: '32px' }}>
+        <main
+          id="main-content"
+          className="MuiContainer-root MuiContainer-maxWidthLg"
+          style={{ paddingTop: '32px' }}
+        >
           <div className="MuiAlert-root MuiAlert-standardError" role="alert">
             <span className="MuiAlert-message">{String(error)}</span>
           </div>
@@ -318,7 +329,9 @@ const RoomSelectApp = () => {
   // Main content
   return (
     <div>
-      <a href="#main-content" className="skip-link">メインコンテンツへ</a>
+      <a href="#main-content" className="skip-link">
+        メインコンテンツへ
+      </a>
       <header
         className="MuiAppBar-root MuiAppBar-colorPrimary MuiAppBar-positionStatic mui-elevation-4"
         role="banner"
@@ -335,7 +348,11 @@ const RoomSelectApp = () => {
         </nav>
       </header>
 
-      <main id="main-content" className="MuiContainer-root MuiContainer-maxWidthLg" style={{ paddingTop: '32px' }}>
+      <main
+        id="main-content"
+        className="MuiContainer-root MuiContainer-maxWidthLg"
+        style={{ paddingTop: '32px' }}
+      >
         <section
           className="MuiCard-root MuiPaper-root MuiPaper-elevation1 property-card"
           aria-label="物件情報"

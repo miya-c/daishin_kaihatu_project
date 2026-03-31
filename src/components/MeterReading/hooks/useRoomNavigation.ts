@@ -37,7 +37,8 @@ export const useRoomNavigation = ({
   const getRoomNavigation = useCallback((): RoomNavigation => {
     try {
       const selectedRooms = sessionStorage.getItem('selectedRooms');
-      if (!selectedRooms || !roomId) return { hasPrevious: false, hasNext: false, previousRoom: null, nextRoom: null };
+      if (!selectedRooms || !roomId)
+        return { hasPrevious: false, hasNext: false, previousRoom: null, nextRoom: null };
 
       const roomsArray: NavigationRoom[] = JSON.parse(selectedRooms);
       const currentIndex = roomsArray.findIndex((room) => room.id === roomId);
@@ -145,7 +146,11 @@ export const useRoomNavigation = ({
   );
 
   const saveAndNavigateToRoom = useCallback(
-    async (targetRoomId: string, _direction: string, collectReadingsFn: (() => Record<string, unknown>[]) | undefined): Promise<void> => {
+    async (
+      targetRoomId: string,
+      _direction: string,
+      collectReadingsFn: (() => Record<string, unknown>[]) | undefined
+    ): Promise<void> => {
       try {
         setUpdating(true);
         const meterReadingsData = collectReadingsFn ? collectReadingsFn() : [];
@@ -187,25 +192,53 @@ export const useRoomNavigation = ({
     [getRoomNavigation, saveAndNavigateToRoom, displayToast]
   );
 
-  const handleBackButton = useCallback(
-    async (propId: string, rId: string): Promise<void> => {
-      try {
-        setIsNavigating(true);
-        setNavigationMessage('画面を切り替えています...');
-        await updateSessionStorageCache(propId, rId);
-        window.scrollTo(0, 0);
-        sessionStorage.setItem('forceRefreshRooms', 'true');
-        sessionStorage.setItem('updatedRoomId', rId);
-        sessionStorage.setItem('lastUpdateTime', Date.now().toString());
-        window.location.href = `/room/?propertyId=${encodeURIComponent(propId)}`;
-      } catch (_) {
-        window.location.href = propId
-          ? `/room/?propertyId=${encodeURIComponent(propId)}`
-          : '/property/';
+  const handleBackButton = useCallback(async (propId: string, rId: string): Promise<void> => {
+    try {
+      setIsNavigating(true);
+      setNavigationMessage('画面を切り替えています...');
+      window.scrollTo(0, 0);
+      sessionStorage.setItem('updatedRoomId', rId);
+      sessionStorage.setItem('lastUpdateTime', Date.now().toString());
+
+      // Optimistic update: mark current room as completed in sessionStorage cache
+      const sessionRooms = sessionStorage.getItem('selectedRooms');
+      if (sessionRooms) {
+        try {
+          const rooms = JSON.parse(sessionRooms);
+          if (Array.isArray(rooms)) {
+            const today = new Date();
+            const dateStr =
+              today.getFullYear() +
+              '-' +
+              String(today.getMonth() + 1).padStart(2, '0') +
+              '-' +
+              String(today.getDate()).padStart(2, '0');
+            const updated = rooms.map((room: Record<string, unknown>) => {
+              const roomIdentifier = String(room.id || room.roomId || '');
+              if (roomIdentifier === rId) {
+                return {
+                  ...room,
+                  readingStatus: 'completed',
+                  isCompleted: true,
+                  readingDateFormatted: dateStr,
+                };
+              }
+              return room;
+            });
+            sessionStorage.setItem('selectedRooms', JSON.stringify(updated));
+          }
+        } catch (_) {
+          // Navigation proceeds even if cache update fails
+        }
       }
-    },
-    [updateSessionStorageCache]
-  );
+
+      window.location.href = `/room/?propertyId=${encodeURIComponent(propId)}`;
+    } catch (_) {
+      window.location.href = propId
+        ? `/room/?propertyId=${encodeURIComponent(propId)}`
+        : '/property/';
+    }
+  }, []);
 
   return {
     updating,

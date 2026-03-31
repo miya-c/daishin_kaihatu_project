@@ -299,10 +299,22 @@ describe('useRoomNavigation', () => {
 
   describe('handleBackButton', () => {
     it('sets sessionStorage flags and navigates to room page', async () => {
-      vi.stubGlobal(
-        'fetch',
-        vi.fn().mockReturnValue(createMockFetchResponse({ success: true, data: [] }))
-      );
+      const { result } = renderHook(() => useRoomNavigation(createDefaultProps()));
+
+      await act(async () => {
+        await result.current.handleBackButton(MOCK_PROPERTY_ID, MOCK_ROOM_ID);
+      });
+
+      expect(sessionStorage.getItem('updatedRoomId')).toBe(MOCK_ROOM_ID);
+      expect(mockLocation.href).toContain('/room/');
+    });
+
+    it('optimistically updates room status in sessionStorage cache', async () => {
+      const rooms = [
+        { id: 'room-100', name: '100号室', readingStatus: 'pending', isCompleted: false },
+        { id: 'room-101', name: '101号室', readingStatus: 'pending', isCompleted: false },
+      ];
+      sessionStorage.setItem('selectedRooms', JSON.stringify(rooms));
 
       const { result } = renderHook(() => useRoomNavigation(createDefaultProps()));
 
@@ -310,12 +322,16 @@ describe('useRoomNavigation', () => {
         await result.current.handleBackButton(MOCK_PROPERTY_ID, MOCK_ROOM_ID);
       });
 
-      expect(sessionStorage.getItem('forceRefreshRooms')).toBe('true');
-      expect(sessionStorage.getItem('updatedRoomId')).toBe(MOCK_ROOM_ID);
-      expect(mockLocation.href).toContain('/room/');
+      const updated = JSON.parse(sessionStorage.getItem('selectedRooms'));
+      // room-101 should be marked completed
+      expect(updated[1].readingStatus).toBe('completed');
+      expect(updated[1].isCompleted).toBe(true);
+      expect(updated[1].readingDateFormatted).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+      // room-100 should be unchanged
+      expect(updated[0].readingStatus).toBe('pending');
     });
 
-    it('navigates to property page on error', async () => {
+    it('navigates to room page on error', async () => {
       vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('fail')));
 
       const { result } = renderHook(() => useRoomNavigation(createDefaultProps()));
@@ -427,12 +443,10 @@ describe('useRoomNavigation', () => {
 
   describe('handleBackButton edge cases', () => {
     it('navigates to /property/ on error with empty propId', async () => {
-      vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('fail')));
-
-      // Force sessionStorage.setItem to throw for forceRefreshRooms
+      // Force sessionStorage.setItem to throw to trigger catch block
       const setItemSpy = vi.spyOn(Storage.prototype, 'setItem');
-      setItemSpy.mockImplementation((key) => {
-        if (key === 'forceRefreshRooms') throw new Error('QuotaExceededError');
+      setItemSpy.mockImplementation(() => {
+        throw new Error('QuotaExceededError');
       });
 
       const { result } = renderHook(() => useRoomNavigation(createDefaultProps()));
