@@ -227,9 +227,9 @@ export const useRoomNavigation = ({
                 const today = new Date();
                 const dateStr =
                   today.getFullYear() +
-                  '-' +
+                  '/' +
                   String(today.getMonth() + 1).padStart(2, '0') +
-                  '-' +
+                  '/' +
                   String(today.getDate()).padStart(2, '0');
                 const updated = rooms.map((room: Record<string, unknown>) => {
                   const roomIdentifier = String(room.id || room.roomId || '');
