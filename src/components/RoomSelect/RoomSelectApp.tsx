@@ -159,7 +159,7 @@ const RoomSelectApp = () => {
                 if (rid === savedRoomId) {
                   return {
                     ...room,
-                    readingStatus: room.readingStatus === 'completed' ? 'completed' : 'completed',
+                    readingStatus: 'completed',
                     isCompleted: true,
                     readingDateFormatted:
                       room.readingDateFormatted || new Date().toISOString().slice(0, 10),
