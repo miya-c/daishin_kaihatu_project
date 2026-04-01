@@ -326,7 +326,7 @@ describe('useRoomNavigation', () => {
       // room-101 should be marked completed
       expect(updated[1].readingStatus).toBe('completed');
       expect(updated[1].isCompleted).toBe(true);
-      expect(updated[1].readingDateFormatted).toMatch(/^\d{4}\/\d{2}\/\d{2}$/);
+      expect(updated[1].readingDateFormatted).toMatch(/^\d+月\d+日$/);
       // room-100 should be unchanged
       expect(updated[0].readingStatus).toBe('pending');
     });

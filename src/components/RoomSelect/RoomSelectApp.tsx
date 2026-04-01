@@ -163,16 +163,11 @@ const RoomSelectApp = () => {
                     isCompleted: true,
                     readingDateFormatted:
                       room.readingDateFormatted ||
-                      (() => {
-                        const d = new Date();
-                        return (
-                          d.getFullYear() +
-                          '/' +
-                          String(d.getMonth() + 1).padStart(2, '0') +
-                          '/' +
-                          String(d.getDate()).padStart(2, '0')
-                        );
-                      })(),
+                      new Intl.DateTimeFormat('ja-JP', {
+                        timeZone: 'Asia/Tokyo',
+                        month: 'long',
+                        day: 'numeric',
+                      }).format(new Date()),
                   };
                 }
                 return room;

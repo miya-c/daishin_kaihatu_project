@@ -158,6 +158,9 @@ export const useRoomNavigation = ({
         setUpdating(true);
         const meterReadingsData = collectReadingsFn ? collectReadingsFn() : [];
 
+        // Capture the current room ID before navigation changes it
+        const currentRoomId = roomId;
+
         // Navigate immediately (loads new room data in parallel with save)
         if (onNavigateToRoom) {
           onNavigateToRoom(targetRoomId);
@@ -168,7 +171,40 @@ export const useRoomNavigation = ({
         // Save in background - don't block navigation
         if (meterReadingsData.length > 0) {
           saveReadings(meterReadingsData).then((saveOk) => {
-            if (!saveOk) {
+            if (saveOk) {
+              // Update sessionStorage cache for the saved room so the room
+              // selection screen reflects the completed status immediately
+              try {
+                const sessionRooms = sessionStorage.getItem('selectedRooms');
+                if (sessionRooms) {
+                  const rooms = JSON.parse(sessionRooms);
+                  if (Array.isArray(rooms)) {
+                    const dateStr = new Intl.DateTimeFormat('ja-JP', {
+                      timeZone: 'Asia/Tokyo',
+                      month: 'long',
+                      day: 'numeric',
+                    }).format(new Date());
+                    const updated = rooms.map((room: Record<string, unknown>) => {
+                      const rid = String(room.id || room.roomId || '');
+                      if (rid === currentRoomId) {
+                        return {
+                          ...room,
+                          readingStatus: 'completed',
+                          isCompleted: true,
+                          readingDateFormatted: dateStr,
+                        };
+                      }
+                      return room;
+                    });
+                    sessionStorage.setItem('selectedRooms', JSON.stringify(updated));
+                    sessionStorage.setItem('updatedRoomId', currentRoomId);
+                    sessionStorage.setItem('lastUpdateTime', Date.now().toString());
+                  }
+                }
+              } catch (_) {
+                // Cache update failure is non-critical
+              }
+            } else {
               displayToast('保存に失敗しました。ネットワークを確認して再試行してください。');
             }
           });
@@ -181,7 +217,7 @@ export const useRoomNavigation = ({
       // The caller (navigateToRoomRef in MeterReadingApp) is responsible for
       // calling setUpdating(false) after data loading completes.
     },
-    [propertyId, saveReadings, displayToast, onNavigateToRoom]
+    [propertyId, roomId, saveReadings, displayToast, onNavigateToRoom]
   );
 
   const handlePreviousRoom = useCallback(
@@ -225,12 +261,11 @@ export const useRoomNavigation = ({
               const rooms = JSON.parse(sessionRooms);
               if (Array.isArray(rooms)) {
                 const today = new Date();
-                const dateStr =
-                  today.getFullYear() +
-                  '/' +
-                  String(today.getMonth() + 1).padStart(2, '0') +
-                  '/' +
-                  String(today.getDate()).padStart(2, '0');
+                const dateStr = new Intl.DateTimeFormat('ja-JP', {
+                  timeZone: 'Asia/Tokyo',
+                  month: 'long',
+                  day: 'numeric',
+                }).format(today);
                 const updated = rooms.map((room: Record<string, unknown>) => {
                   const roomIdentifier = String(room.id || room.roomId || '');
                   if (roomIdentifier === rId) {
