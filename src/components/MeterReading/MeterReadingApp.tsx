@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { formatReading, calculateUsageDisplay } from './utils/formatUtils';
 import { calculateWarningFlag } from './utils/warningFlag';
 import { useMeterReadings } from './hooks/useMeterReadings';
@@ -58,6 +58,9 @@ const MeterReadingApp = () => {
     displayToast,
     setUpdating,
   });
+
+  // Track whether reading was successfully saved for optimistic cache update
+  const hasSavedRef = useRef(false);
 
   // Controlled input values for each reading date
   const [readingValues, setReadingValues] = useState<Record<string, string>>({});
@@ -148,7 +151,8 @@ const MeterReadingApp = () => {
 
         // Real-time warning flag calculation
         const previousReadingValue = parseFloat(String(reading.previousReading)) || 0;
-        const previousPreviousReadingValue = parseFloat(String(reading.previousPreviousReading)) || 0;
+        const previousPreviousReadingValue =
+          parseFloat(String(reading.previousPreviousReading)) || 0;
         const threeTimesPreviousReadingValue = parseFloat(String(reading.threeTimesPrevious)) || 0;
 
         const warningResult = calculateWarningFlag(
@@ -252,7 +256,10 @@ const MeterReadingApp = () => {
       ]);
 
       if (response.status === 'rejected') {
-        throw new Error('ネットワークエラー: ' + (response.reason instanceof Error ? response.reason.message : String(response.reason)));
+        throw new Error(
+          'ネットワークエラー: ' +
+            (response.reason instanceof Error ? response.reason.message : String(response.reason))
+        );
       }
       if (!response.value.ok) {
         throw new Error(
@@ -263,6 +270,7 @@ const MeterReadingApp = () => {
       const result = await response.value.json();
 
       if (result.success) {
+        hasSavedRef.current = true;
         displayToast('検針データが正常に更新されました');
         setInputErrors({});
 
@@ -305,10 +313,12 @@ const MeterReadingApp = () => {
     return (
       <>
         <NetworkStatusBar />
-        <a href="#main-content" className="skip-link">メインコンテンツへ</a>
+        <a href="#main-content" className="skip-link">
+          メインコンテンツへ
+        </a>
         <div className="app-header">
           <button
-            onClick={() => handleBackButton(propertyId, roomId)}
+            onClick={() => handleBackButton(propertyId, roomId, hasSavedRef.current)}
             className="back-button"
             aria-label="戻る"
           >
@@ -331,10 +341,12 @@ const MeterReadingApp = () => {
     return (
       <>
         <NetworkStatusBar />
-        <a href="#main-content" className="skip-link">メインコンテンツへ</a>
+        <a href="#main-content" className="skip-link">
+          メインコンテンツへ
+        </a>
         <div className="app-header">
           <button
-            onClick={() => handleBackButton(propertyId, roomId)}
+            onClick={() => handleBackButton(propertyId, roomId, hasSavedRef.current)}
             className="back-button"
             aria-label="戻る"
           >
@@ -367,10 +379,12 @@ const MeterReadingApp = () => {
     <>
       {isNavigating && <LoadingOverlay message={navigationMessage} />}
       <NetworkStatusBar />
-      <a href="#main-content" className="skip-link">メインコンテンツへ</a>
+      <a href="#main-content" className="skip-link">
+        メインコンテンツへ
+      </a>
       <div className="app-header">
         <button
-          onClick={() => handleBackButton(propertyId, roomId)}
+          onClick={() => handleBackButton(propertyId, roomId, hasSavedRef.current)}
           className="back-button"
           aria-label="戻る"
         >

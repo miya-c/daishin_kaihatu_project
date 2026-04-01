@@ -192,53 +192,58 @@ export const useRoomNavigation = ({
     [getRoomNavigation, saveAndNavigateToRoom, displayToast]
   );
 
-  const handleBackButton = useCallback(async (propId: string, rId: string): Promise<void> => {
-    try {
-      setIsNavigating(true);
-      setNavigationMessage('画面を切り替えています...');
-      window.scrollTo(0, 0);
-      sessionStorage.setItem('updatedRoomId', rId);
-      sessionStorage.setItem('lastUpdateTime', Date.now().toString());
+  const handleBackButton = useCallback(
+    async (propId: string, rId: string, wasSaved: boolean = false): Promise<void> => {
+      try {
+        setIsNavigating(true);
+        setNavigationMessage('画面を切り替えています...');
+        window.scrollTo(0, 0);
+        sessionStorage.setItem('updatedRoomId', rId);
+        sessionStorage.setItem('lastUpdateTime', Date.now().toString());
 
-      // Optimistic update: mark current room as completed in sessionStorage cache
-      const sessionRooms = sessionStorage.getItem('selectedRooms');
-      if (sessionRooms) {
-        try {
-          const rooms = JSON.parse(sessionRooms);
-          if (Array.isArray(rooms)) {
-            const today = new Date();
-            const dateStr =
-              today.getFullYear() +
-              '-' +
-              String(today.getMonth() + 1).padStart(2, '0') +
-              '-' +
-              String(today.getDate()).padStart(2, '0');
-            const updated = rooms.map((room: Record<string, unknown>) => {
-              const roomIdentifier = String(room.id || room.roomId || '');
-              if (roomIdentifier === rId) {
-                return {
-                  ...room,
-                  readingStatus: 'completed',
-                  isCompleted: true,
-                  readingDateFormatted: dateStr,
-                };
+        // Optimistic update: only mark as completed if the reading was actually saved
+        if (wasSaved) {
+          const sessionRooms = sessionStorage.getItem('selectedRooms');
+          if (sessionRooms) {
+            try {
+              const rooms = JSON.parse(sessionRooms);
+              if (Array.isArray(rooms)) {
+                const today = new Date();
+                const dateStr =
+                  today.getFullYear() +
+                  '-' +
+                  String(today.getMonth() + 1).padStart(2, '0') +
+                  '-' +
+                  String(today.getDate()).padStart(2, '0');
+                const updated = rooms.map((room: Record<string, unknown>) => {
+                  const roomIdentifier = String(room.id || room.roomId || '');
+                  if (roomIdentifier === rId) {
+                    return {
+                      ...room,
+                      readingStatus: 'completed',
+                      isCompleted: true,
+                      readingDateFormatted: dateStr,
+                    };
+                  }
+                  return room;
+                });
+                sessionStorage.setItem('selectedRooms', JSON.stringify(updated));
               }
-              return room;
-            });
-            sessionStorage.setItem('selectedRooms', JSON.stringify(updated));
+            } catch (_) {
+              // Navigation proceeds even if cache update fails
+            }
           }
-        } catch (_) {
-          // Navigation proceeds even if cache update fails
         }
-      }
 
-      window.location.href = `/room/?propertyId=${encodeURIComponent(propId)}`;
-    } catch (_) {
-      window.location.href = propId
-        ? `/room/?propertyId=${encodeURIComponent(propId)}`
-        : '/property/';
-    }
-  }, []);
+        window.location.href = `/room/?propertyId=${encodeURIComponent(propId)}`;
+      } catch (_) {
+        window.location.href = propId
+          ? `/room/?propertyId=${encodeURIComponent(propId)}`
+          : '/property/';
+      }
+    },
+    []
+  );
 
   return {
     updating,
