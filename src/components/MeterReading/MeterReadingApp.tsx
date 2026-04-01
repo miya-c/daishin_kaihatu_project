@@ -33,6 +33,9 @@ const MeterReadingApp = () => {
 
   const { toastMessage, showToast, displayToast } = useToast();
 
+  // Ref for in-place room navigation (set after all hooks are initialized)
+  const navigateToRoomRef = useRef<(targetRoomId: string) => void>(() => {});
+
   const {
     updating,
     isNavigating,
@@ -47,6 +50,9 @@ const MeterReadingApp = () => {
     roomId,
     gasWebAppUrl,
     displayToast,
+    onNavigateToRoom: useCallback((targetRoomId: string) => {
+      navigateToRoomRef.current?.(targetRoomId);
+    }, []),
   });
 
   const { inputErrors, setInputErrors, usageStates, setUsageStates } = useReadingUpdate({
@@ -60,6 +66,18 @@ const MeterReadingApp = () => {
 
   // Track whether reading was successfully saved for optimistic cache update
   const hasSavedRef = useRef(false);
+
+  // Wire up in-place navigation after all hooks are available
+  navigateToRoomRef.current = (targetRoomId: string) => {
+    hasSavedRef.current = false;
+    setReadingValues({});
+    setInputErrors({});
+    setUsageStates({});
+    const newUrl = `/reading/?propertyId=${encodeURIComponent(propertyId)}&roomId=${encodeURIComponent(targetRoomId)}`;
+    window.history.replaceState(null, '', newUrl);
+    loadMeterReadings(propertyId, targetRoomId);
+    window.scrollTo(0, 0);
+  };
 
   // Controlled input values for each reading date
   const [readingValues, setReadingValues] = useState<Record<string, string>>({});
@@ -263,16 +281,6 @@ const MeterReadingApp = () => {
         hasSavedRef.current = true;
         displayToast('検針データが正常に更新されました');
         setInputErrors({});
-
-        // Reload data
-        const [dataReloadResult] = await Promise.allSettled([
-          loadMeterReadings(propertyId, roomId),
-        ]);
-        if (dataReloadResult.status === 'rejected') {
-          displayToast(
-            'データが更新されました。最新情報を確認するにはページを再読み込みしてください。'
-          );
-        }
       } else {
         throw new Error(result.error || '指示数の更新に失敗しました。');
       }
@@ -291,7 +299,6 @@ const MeterReadingApp = () => {
     displayToast,
     setUpdating,
     collectReadingsFromState,
-    loadMeterReadings,
     setInputErrors,
   ]);
 

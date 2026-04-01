@@ -29,7 +29,10 @@ export const useRoomNavigation = ({
   roomId,
   gasWebAppUrl,
   displayToast,
-}: Omit<UseRoomNavigationParams, '_meterReadings' | '_setMeterReadings'>) => {
+  onNavigateToRoom,
+}: Omit<UseRoomNavigationParams, '_meterReadings' | '_setMeterReadings'> & {
+  onNavigateToRoom?: (targetRoomId: string) => void;
+}) => {
   const [updating, setUpdating] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
   const [navigationMessage, setNavigationMessage] = useState('');
@@ -165,15 +168,19 @@ export const useRoomNavigation = ({
           }
         }
 
-        // Navigate to target room after save completes
-        window.location.href = `/reading/?propertyId=${propertyId}&roomId=${targetRoomId}`;
+        // Navigate to target room without full page reload
+        if (onNavigateToRoom) {
+          onNavigateToRoom(targetRoomId);
+        } else {
+          window.location.href = `/reading/?propertyId=${propertyId}&roomId=${targetRoomId}`;
+        }
       } catch (_) {
         displayToast('保存に失敗しました。ネットワークを確認して再試行してください。');
       } finally {
         setUpdating(false);
       }
     },
-    [propertyId, saveReadings, displayToast]
+    [propertyId, saveReadings, displayToast, onNavigateToRoom]
   );
 
   const handlePreviousRoom = useCallback(
