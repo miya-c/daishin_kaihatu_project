@@ -332,8 +332,10 @@ body {
   color: var(--mui-palette-grey-7);
 }
 
-.mantine-table tbody tr:hover {
-  background-color: var(--mui-palette-grey-0);
+@media (hover: hover) {
+  .mantine-table tbody tr:hover {
+    background-color: var(--mui-palette-grey-0);
+  }
 }
 
 /* デスクトップ用のスタイリング */
