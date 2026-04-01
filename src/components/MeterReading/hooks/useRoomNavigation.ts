@@ -175,9 +175,11 @@ export const useRoomNavigation = ({
         }
       } catch (_) {
         displayToast('エラーが発生しました。');
-      } finally {
         setUpdating(false);
       }
+      // Note: setUpdating(false) is NOT called here when onNavigateToRoom succeeds.
+      // The caller (navigateToRoomRef in MeterReadingApp) is responsible for
+      // calling setUpdating(false) after data loading completes.
     },
     [propertyId, saveReadings, displayToast, onNavigateToRoom]
   );
