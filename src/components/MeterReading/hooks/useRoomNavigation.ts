@@ -158,24 +158,23 @@ export const useRoomNavigation = ({
         setUpdating(true);
         const meterReadingsData = collectReadingsFn ? collectReadingsFn() : [];
 
-        // Only attempt save if there is data to save
-        if (meterReadingsData.length > 0) {
-          const saveOk = await saveReadings(meterReadingsData);
-          if (!saveOk) {
-            displayToast('保存に失敗しました。ネットワークを確認して再試行してください。');
-            setUpdating(false);
-            return;
-          }
-        }
-
-        // Navigate to target room without full page reload
+        // Navigate immediately (loads new room data in parallel with save)
         if (onNavigateToRoom) {
           onNavigateToRoom(targetRoomId);
         } else {
           window.location.href = `/reading/?propertyId=${propertyId}&roomId=${targetRoomId}`;
         }
+
+        // Save in background - don't block navigation
+        if (meterReadingsData.length > 0) {
+          saveReadings(meterReadingsData).then((saveOk) => {
+            if (!saveOk) {
+              displayToast('保存に失敗しました。ネットワークを確認して再試行してください。');
+            }
+          });
+        }
       } catch (_) {
-        displayToast('保存に失敗しました。ネットワークを確認して再試行してください。');
+        displayToast('エラーが発生しました。');
       } finally {
         setUpdating(false);
       }
