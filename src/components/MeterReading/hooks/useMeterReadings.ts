@@ -28,12 +28,6 @@ export const useMeterReadings = () => {
     setGasWebAppUrl(urlFromSession);
   }, []);
 
-  const mapNavigationReadingsData = useCallback((targetRoomId: string, readings: Record<string, unknown>[]) => {
-    return readings.map((reading, index) =>
-      mapReadingFromApi(reading, index, { roomId: targetRoomId })
-    );
-  }, []);
-
   const loadMeterReadings = useCallback(
     async (propId: string, rId: string, maxRetries: number = 3): Promise<void> => {
       const currentGasUrl = gasWebAppUrl || sessionStorage.getItem('gasWebAppUrl');
@@ -101,8 +95,9 @@ export const useMeterReadings = () => {
           setRoomName(rName);
 
           if (Array.isArray(readings) && readings.length > 0) {
-            const mappedReadings = readings.map((rawReading: Record<string, unknown>, index: number) =>
-              mapReadingFromApi(rawReading, index, { calculateWarnings: true })
+            const mappedReadings = readings.map(
+              (rawReading: Record<string, unknown>, index: number) =>
+                mapReadingFromApi(rawReading, index, { calculateWarnings: true })
             );
             setMeterReadings(mappedReadings);
           } else {
@@ -133,49 +128,6 @@ export const useMeterReadings = () => {
     },
     [gasWebAppUrl]
   );
-
-  const loadRoomDataForSPA = useCallback(
-    async (propId: string, rId: string): Promise<void> => {
-      try {
-        const currentGasUrl = gasWebAppUrl || sessionStorage.getItem('gasWebAppUrl');
-        const fetchUrl = `${currentGasUrl}?action=getMeterReadings&propertyId=${propId}&roomId=${rId}`;
-        const response = await fetch(fetchUrl);
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-        const result = await response.json();
-        if (result.success && result.data) {
-          setPropertyId(propId);
-          setRoomId(rId);
-          setPropertyName(result.data.propertyName || '');
-          setRoomName(result.data.roomName || '');
-
-          if (result.data.readings && result.data.readings.length > 0) {
-            setMeterReadings(mapNavigationReadingsData(rId, result.data.readings));
-          } else {
-            setMeterReadings([]);
-          }
-        } else {
-          throw new Error('データ読み込み失敗');
-        }
-      } catch (_) {
-        window.location.reload();
-      }
-    },
-    [gasWebAppUrl, mapNavigationReadingsData]
-  );
-
-  // Browser history management
-  useEffect(() => {
-    const handlePopState = (event: PopStateEvent) => {
-      if (event.state && event.state.roomId && event.state.propertyId) {
-        loadRoomDataForSPA(event.state.propertyId, event.state.roomId);
-      } else {
-        window.location.reload();
-      }
-    };
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
-  }, [loadRoomDataForSPA]);
 
   // Initial data load
   useEffect(() => {
@@ -221,7 +173,5 @@ export const useMeterReadings = () => {
     setError,
     setLoading,
     loadMeterReadings,
-    loadRoomDataForSPA,
-    mapNavigationReadingsData,
   };
 };

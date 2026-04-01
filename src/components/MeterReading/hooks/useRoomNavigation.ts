@@ -154,18 +154,26 @@ export const useRoomNavigation = ({
       try {
         setUpdating(true);
         const meterReadingsData = collectReadingsFn ? collectReadingsFn() : [];
-        await saveReadings(meterReadingsData);
+
+        // Only attempt save if there is data to save
+        if (meterReadingsData.length > 0) {
+          const saveOk = await saveReadings(meterReadingsData);
+          if (!saveOk) {
+            displayToast('保存に失敗しました。ネットワークを確認して再試行してください。');
+            setUpdating(false);
+            return;
+          }
+        }
 
         // Navigate to target room after save completes
         window.location.href = `/reading/?propertyId=${propertyId}&roomId=${targetRoomId}`;
       } catch (_) {
-        // Fallback: navigate even if save fails
-        window.location.href = `/reading/?propertyId=${propertyId}&roomId=${targetRoomId}`;
+        displayToast('保存に失敗しました。ネットワークを確認して再試行してください。');
       } finally {
         setUpdating(false);
       }
     },
-    [propertyId, saveReadings]
+    [propertyId, saveReadings, displayToast]
   );
 
   const handlePreviousRoom = useCallback(

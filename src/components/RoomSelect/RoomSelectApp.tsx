@@ -147,6 +147,31 @@ const RoomSelectApp = () => {
       if (data.success) {
         const updatedRooms = data.data?.rooms || data.data || [];
         if (Array.isArray(updatedRooms) && updatedRooms.length > 0) {
+          // Preserve optimistic update for recently saved room
+          const savedRoomId = sessionStorage.getItem('updatedRoomId');
+          const savedTime = sessionStorage.getItem('lastUpdateTime');
+          if (savedRoomId && savedTime) {
+            const elapsed = Date.now() - parseInt(savedTime, 10);
+            if (elapsed < 30000) {
+              // Within 30s: protect the optimistic update from API cache lag
+              const preserved = updatedRooms.map((room: Room) => {
+                const rid = String(room.id || room.roomId || '');
+                if (rid === savedRoomId) {
+                  return {
+                    ...room,
+                    readingStatus: room.readingStatus === 'completed' ? 'completed' : 'completed',
+                    isCompleted: true,
+                    readingDateFormatted:
+                      room.readingDateFormatted || new Date().toISOString().slice(0, 10),
+                  };
+                }
+                return room;
+              });
+              setRooms(preserved);
+              sessionStorage.setItem('selectedRooms', JSON.stringify(preserved));
+              return;
+            }
+          }
           setRooms(updatedRooms);
           sessionStorage.setItem('selectedRooms', JSON.stringify(updatedRooms));
         }
