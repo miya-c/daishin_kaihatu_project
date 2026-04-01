@@ -70,13 +70,16 @@ const MeterReadingApp = () => {
   // Wire up in-place navigation after all hooks are available
   navigateToRoomRef.current = (targetRoomId: string) => {
     hasSavedRef.current = false;
-    setReadingValues({});
-    setInputErrors({});
-    setUsageStates({});
     const newUrl = `/reading/?propertyId=${encodeURIComponent(propertyId)}&roomId=${encodeURIComponent(targetRoomId)}`;
     window.history.replaceState(null, '', newUrl);
-    loadMeterReadings(propertyId, targetRoomId);
-    window.scrollTo(0, 0);
+    // silent=true: don't show full-page loading skeleton, keep current content visible
+    loadMeterReadings(propertyId, targetRoomId, 3, true).then(() => {
+      // Reset state only after new data is loaded (prevents flash of empty content)
+      setReadingValues({});
+      setInputErrors({});
+      setUsageStates({});
+      window.scrollTo(0, 0);
+    });
   };
 
   // Controlled input values for each reading date

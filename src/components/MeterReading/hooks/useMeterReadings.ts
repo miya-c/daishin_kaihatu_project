@@ -29,15 +29,22 @@ export const useMeterReadings = () => {
   }, []);
 
   const loadMeterReadings = useCallback(
-    async (propId: string, rId: string, maxRetries: number = 3): Promise<void> => {
+    async (
+      propId: string,
+      rId: string,
+      maxRetries: number = 3,
+      silent: boolean = false
+    ): Promise<void> => {
       const currentGasUrl = gasWebAppUrl || sessionStorage.getItem('gasWebAppUrl');
       if (!currentGasUrl) {
         setError('gasWebAppURLが設定されていません。物件選択画面から再度アクセスしてください。');
-        setLoading(false);
+        if (!silent) setLoading(false);
         return;
       }
 
-      setLoading(true);
+      if (!silent) {
+        setLoading(true);
+      }
 
       for (let attempt = 1; attempt <= maxRetries; attempt++) {
         try {
