@@ -42,7 +42,6 @@ const MeterReadingApp = () => {
     handlePreviousRoom,
     handleNextRoom,
     handleBackButton,
-    updateSessionStorageCache,
   } = useRoomNavigation({
     propertyId,
     roomId,
@@ -250,24 +249,15 @@ const MeterReadingApp = () => {
       });
       const requestUrl = `${currentGasUrl}?${params}`;
 
-      const [response, _cacheUpdateResult] = await Promise.allSettled([
-        fetch(requestUrl, { method: 'GET' }),
-        updateSessionStorageCache(propertyId, roomId),
-      ]);
+      const response = await fetch(requestUrl, { method: 'GET' });
 
-      if (response.status === 'rejected') {
+      if (!response.ok) {
         throw new Error(
-          'ネットワークエラー: ' +
-            (response.reason instanceof Error ? response.reason.message : String(response.reason))
-        );
-      }
-      if (!response.value.ok) {
-        throw new Error(
-          'ネットワークの応答が正しくありませんでした。ステータス: ' + response.value.status
+          'ネットワークの応答が正しくありませんでした。ステータス: ' + response.status
         );
       }
 
-      const result = await response.value.json();
+      const result = await response.json();
 
       if (result.success) {
         hasSavedRef.current = true;
@@ -303,7 +293,6 @@ const MeterReadingApp = () => {
     collectReadingsFromState,
     loadMeterReadings,
     setInputErrors,
-    updateSessionStorageCache,
   ]);
 
   const navigation = getRoomNavigation();

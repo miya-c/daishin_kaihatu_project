@@ -37,11 +37,7 @@ export const useMeterReadings = () => {
         return;
       }
 
-      let showLoading = false;
-      const loadingTimeout = setTimeout(() => {
-        showLoading = true;
-        setLoading(true);
-      }, 300);
+      setLoading(true);
 
       for (let attempt = 1; attempt <= maxRetries; attempt++) {
         try {
@@ -104,8 +100,7 @@ export const useMeterReadings = () => {
             setMeterReadings([]);
           }
 
-          clearTimeout(loadingTimeout);
-          if (showLoading) setLoading(false);
+          setLoading(false);
           return;
         } catch (err: unknown) {
           if (attempt === maxRetries) {
@@ -119,8 +114,7 @@ export const useMeterReadings = () => {
                 'ネットワーク接続に問題があります。インターネット接続を確認してください。';
             }
             setError(userMessage + '\n\n問題が継続する場合は、管理者にお問い合わせください。');
-            clearTimeout(loadingTimeout);
-            if (showLoading) setLoading(false);
+            setLoading(false);
             return;
           }
         }
