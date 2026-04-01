@@ -34,12 +34,12 @@ export const useMeterReadings = () => {
       rId: string,
       maxRetries: number = 3,
       silent: boolean = false
-    ): Promise<void> => {
+    ): Promise<MeterReading[] | null> => {
       const currentGasUrl = gasWebAppUrl || sessionStorage.getItem('gasWebAppUrl');
       if (!currentGasUrl) {
         setError('gasWebAppURLが設定されていません。物件選択画面から再度アクセスしてください。');
         if (!silent) setLoading(false);
-        return;
+        return null;
       }
 
       if (!silent) {
@@ -97,18 +97,20 @@ export const useMeterReadings = () => {
           setRoomId(rId || 'N/A');
           setRoomName(rName);
 
+          let resultReadings: MeterReading[] = [];
           if (Array.isArray(readings) && readings.length > 0) {
             const mappedReadings = readings.map(
               (rawReading: Record<string, unknown>, index: number) =>
                 mapReadingFromApi(rawReading, index, { calculateWarnings: true })
             );
+            resultReadings = mappedReadings;
             setMeterReadings(mappedReadings);
           } else {
             setMeterReadings([]);
           }
 
           if (!silent) setLoading(false);
-          return;
+          return resultReadings;
         } catch (err: unknown) {
           if (attempt === maxRetries) {
             const message = err instanceof Error ? err.message : String(err);
@@ -122,10 +124,11 @@ export const useMeterReadings = () => {
             }
             setError(userMessage + '\n\n問題が継続する場合は、管理者にお問い合わせください。');
             if (!silent) setLoading(false);
-            return;
+            return null;
           }
         }
       }
+      return null;
     },
     [gasWebAppUrl]
   );

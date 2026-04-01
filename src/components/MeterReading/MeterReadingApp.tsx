@@ -73,9 +73,15 @@ const MeterReadingApp = () => {
     const newUrl = `/reading/?propertyId=${encodeURIComponent(propertyId)}&roomId=${encodeURIComponent(targetRoomId)}`;
     window.history.replaceState(null, '', newUrl);
     // silent=true: don't show full-page loading skeleton, keep current content visible
-    loadMeterReadings(propertyId, targetRoomId, 3, true).then(() => {
-      // Reset state only after new data is loaded (prevents flash of empty content)
-      setReadingValues({});
+    loadMeterReadings(propertyId, targetRoomId, 3, true).then((newReadings) => {
+      // Compute new readingValues directly from returned data (atomic update, no flash)
+      const newValues: Record<string, string> = { '': '' };
+      if (newReadings && Array.isArray(newReadings)) {
+        newReadings.forEach((reading) => {
+          newValues[reading.date] = formatReading(reading.currentReading);
+        });
+      }
+      setReadingValues(newValues);
       setInputErrors({});
       setUsageStates({});
       window.scrollTo(0, 0);
