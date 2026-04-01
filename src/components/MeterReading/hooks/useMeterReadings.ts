@@ -107,7 +107,7 @@ export const useMeterReadings = () => {
             setMeterReadings([]);
           }
 
-          setLoading(false);
+          if (!silent) setLoading(false);
           return;
         } catch (err: unknown) {
           if (attempt === maxRetries) {
@@ -121,7 +121,7 @@ export const useMeterReadings = () => {
                 'ネットワーク接続に問題があります。インターネット接続を確認してください。';
             }
             setError(userMessage + '\n\n問題が継続する場合は、管理者にお問い合わせください。');
-            setLoading(false);
+            if (!silent) setLoading(false);
             return;
           }
         }
