@@ -116,7 +116,10 @@ export const createRoomNavigation = (options: CreateRoomNavigationParams) => {
     }
   };
 
-  const saveReadings = async (readings: Record<string, unknown>[]): Promise<boolean> => {
+  const saveReadings = async (
+    readings: Record<string, unknown>[],
+    silent: boolean = false
+  ): Promise<boolean> => {
     if (!readings || readings.length === 0) return false;
 
     const currentGasUrl = options.gasWebAppUrl || sessionStorage.getItem('gasWebAppUrl');
@@ -142,7 +145,9 @@ export const createRoomNavigation = (options: CreateRoomNavigationParams) => {
       if (response.ok) {
         const result = await response.json();
         if (result.success) {
-          options.displayToast('検針データを保存しました');
+          if (!silent) {
+            options.displayToast('検針データを保存しました');
+          }
           return true;
         }
       }
@@ -173,9 +178,9 @@ export const createRoomNavigation = (options: CreateRoomNavigationParams) => {
         window.location.href = `/reading/?propertyId=${options.propertyId}&roomId=${targetRoomId}`;
       }
 
-      // Save in background - don't block navigation
+      // Save in background - don't block navigation (silent: suppress toast on new page)
       if (meterReadingsData.length > 0) {
-        saveReadings(meterReadingsData).then((saveOk) => {
+        saveReadings(meterReadingsData, true).then((saveOk) => {
           if (saveOk) {
             // Update sessionStorage cache for the saved room so the room
             // selection screen reflects the completed status immediately
