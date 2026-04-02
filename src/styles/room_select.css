@@ -726,4 +726,23 @@ body.loading {
     box-shadow: 0 2px 1px -1px rgba(0,0,0,0.2), 0 1px 1px 0 rgba(0,0,0,0.14), 0 1px 3px 0 rgba(0,0,0,0.12);
 }
 
+/* === Inline Toast === */
+.toast-inline {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: var(--mui-palette-primary-main, #1976d2);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    z-index: 10000;
+    text-align: center;
+    max-width: 90vw;
+    animation: fadeIn 0.3s ease;
+}
+
 

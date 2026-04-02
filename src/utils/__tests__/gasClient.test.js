@@ -179,9 +179,7 @@ describe('error handling', () => {
     vi.stubGlobal('fetch', () =>
       Promise.resolve({ ok: false, status: 400, statusText: 'Bad Request' })
     );
-    await expect(
-      updateMeterReadings(MOCK_URL, 'prop-1', 'room-1', [])
-    ).rejects.toThrow('HTTP 400');
+    await expect(updateMeterReadings(MOCK_URL, 'prop-1', 'room-1', [])).rejects.toThrow('HTTP 400');
     vi.restoreAllMocks();
   });
 
@@ -189,9 +187,7 @@ describe('error handling', () => {
     vi.stubGlobal('fetch', () =>
       Promise.resolve({ ok: false, status: 500, statusText: 'Internal Server Error' })
     );
-    await expect(
-      completeInspection(MOCK_URL, 'prop-1', '2025-06-18')
-    ).rejects.toThrow('HTTP 500');
+    await expect(completeInspection(MOCK_URL, 'prop-1', '2025-06-18')).rejects.toThrow('HTTP 500');
     vi.restoreAllMocks();
   });
 
@@ -208,20 +204,14 @@ describe('error handling', () => {
   });
 
   it('throws for invalid propertyId in updateMeterReadings', async () => {
-    await expect(
-      updateMeterReadings(MOCK_URL, '', 'room-1', [])
-    ).rejects.toThrow();
+    await expect(updateMeterReadings(MOCK_URL, '', 'room-1', [])).rejects.toThrow();
   });
 
   it('throws for invalid roomId in updateMeterReadings', async () => {
-    await expect(
-      updateMeterReadings(MOCK_URL, 'prop-1', '', [])
-    ).rejects.toThrow();
+    await expect(updateMeterReadings(MOCK_URL, 'prop-1', '', [])).rejects.toThrow();
   });
 
   it('throws for invalid propertyId in completeInspection', async () => {
-    await expect(
-      completeInspection(MOCK_URL, '', '2025-06-18')
-    ).rejects.toThrow();
+    await expect(completeInspection(MOCK_URL, '', '2025-06-18')).rejects.toThrow();
   });
 });

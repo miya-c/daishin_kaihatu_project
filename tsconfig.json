@@ -10,13 +10,13 @@
     "isolatedModules": true,
     "moduleDetection": "force",
     "noEmit": true,
-    "jsx": "react-jsx",
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedIndexedAccess": true,
-    "allowJs": true
+    "allowJs": true,
+    "types": ["svelte"]
   },
   "include": ["src"]
 }

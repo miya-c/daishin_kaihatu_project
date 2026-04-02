@@ -1,5 +1,5 @@
 import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
+import { svelte } from '@sveltejs/vite-plugin-svelte';
 import { resolve } from 'path';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
 import { visualizer } from 'rollup-plugin-visualizer';
@@ -10,7 +10,7 @@ const isAnalyze = process.env.ANALYZE === 'true';
 
 export default defineConfig({
   plugins: [
-    react(),
+    svelte(),
     viteStaticCopy({
       targets: [
         { src: resolve(projectRoot, 'manifest.json'), dest: '.' },
@@ -40,9 +40,6 @@ export default defineConfig({
       },
       output: {
         compact: true,
-        manualChunks: {
-          'react-vendor': ['react', 'react-dom'],
-        },
       },
     },
     outDir: resolve(projectRoot, 'dist'),

@@ -93,17 +93,20 @@ class PWAUtils {
   }
 
   showNetworkStatus(_message, _level) {
-    // Network status is now handled by NetworkStatusBar React component
+    // Network status is now handled by NetworkStatusBar Svelte component
   }
 
   setupPeriodicUpdate() {
     if ('serviceWorker' in navigator) {
-      setInterval(async () => {
-        const registration = await navigator.serviceWorker.getRegistration();
-        if (registration) {
-          registration.update();
-        }
-      }, 60 * 60 * 1000); // Check for updates every hour
+      setInterval(
+        async () => {
+          const registration = await navigator.serviceWorker.getRegistration();
+          if (registration) {
+            registration.update();
+          }
+        },
+        60 * 60 * 1000
+      ); // Check for updates every hour
     }
   }
 }
