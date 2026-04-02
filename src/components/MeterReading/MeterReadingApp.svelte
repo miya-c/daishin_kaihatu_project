@@ -67,31 +67,35 @@
     get gasWebAppUrl() {
       return readings.gasWebAppUrl;
     },
-    displayToast: toast.displayToast,
-    onNavigateToRoom: (targetRoomId: string) => {
-      hasSaved = false;
-      const newUrl = `/reading/?propertyId=${encodeURIComponent(readings.propertyId)}&roomId=${encodeURIComponent(targetRoomId)}`;
-      window.history.replaceState(null, '', newUrl);
-      // silent=true: keep current content visible during transition
-      readings
-        .loadMeterReadings(readings.propertyId, targetRoomId, 3, true)
-        .then((newReadings: MeterReading[] | null) => {
-          // Compute new readingValues directly from returned data (atomic update)
-          const newValues: Record<string, string> = { '': '' };
-          if (newReadings && Array.isArray(newReadings)) {
-            newReadings.forEach((reading: MeterReading) => {
-              newValues[reading.date] = formatReading(reading.currentReading);
-            });
-          }
-          readingValues = newValues;
-          inputErrors = {};
-          usageStates = {};
-          navigation.updating = false;
-          window.scrollTo(0, 0);
-        })
-        .catch(() => {
-          navigation.updating = false;
-        });
+    get displayToast() {
+      return toast.displayToast;
+    },
+    get onNavigateToRoom() {
+      return (targetRoomId: string) => {
+        hasSaved = false;
+        const newUrl = `/reading/?propertyId=${encodeURIComponent(readings.propertyId)}&roomId=${encodeURIComponent(targetRoomId)}`;
+        window.history.replaceState(null, '', newUrl);
+        // silent=true: keep current content visible during transition
+        readings
+          .loadMeterReadings(readings.propertyId, targetRoomId, 3, true)
+          .then((newReadings: MeterReading[] | null) => {
+            // Compute new readingValues directly from returned data (atomic update)
+            const newValues: Record<string, string> = { '': '' };
+            if (newReadings && Array.isArray(newReadings)) {
+              newReadings.forEach((reading: MeterReading) => {
+                newValues[reading.date] = formatReading(reading.currentReading);
+              });
+            }
+            readingValues = newValues;
+            inputErrors = {};
+            usageStates = {};
+            navigation.updating = false;
+            window.scrollTo(0, 0);
+          })
+          .catch(() => {
+            navigation.updating = false;
+          });
+      };
     },
   });
 

@@ -15,5 +15,6 @@ root.classList.remove('styles-loading');
 root.classList.add('styles-loaded');
 
 if (root) {
+  root.innerHTML = '';
   mount(MeterReadingPage, { target: root });
 }

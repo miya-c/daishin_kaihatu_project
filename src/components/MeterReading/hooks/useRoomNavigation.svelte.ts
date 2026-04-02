@@ -21,13 +21,7 @@ interface GasApiResponse {
   [key: string]: unknown;
 }
 
-export const createRoomNavigation = ({
-  propertyId,
-  roomId,
-  gasWebAppUrl,
-  displayToast,
-  onNavigateToRoom,
-}: CreateRoomNavigationParams) => {
+export const createRoomNavigation = (options: CreateRoomNavigationParams) => {
   let updating = $state(false);
   let isNavigating = $state(false);
   let navigationMessage = $state('');
@@ -36,11 +30,12 @@ export const createRoomNavigation = ({
   const getRoomNavigation = (): RoomNavigation => {
     try {
       const selectedRooms = sessionStorage.getItem('selectedRooms');
-      if (!selectedRooms || !roomId)
+      const currentRoomId = options.roomId;
+      if (!selectedRooms || !currentRoomId)
         return { hasPrevious: false, hasNext: false, previousRoom: null, nextRoom: null };
 
       const roomsArray: NavigationRoom[] = JSON.parse(selectedRooms);
-      const currentIndex = roomsArray.findIndex((room) => room.id === roomId);
+      const currentIndex = roomsArray.findIndex((room) => room.id === currentRoomId);
 
       // Find previous room that needs inspection (skip isNotNeeded rooms)
       let previousRoom: NavigationRoom | null = null;
@@ -78,7 +73,7 @@ export const createRoomNavigation = ({
     _rId: string,
     maxRetries: number = 3
   ): Promise<void> => {
-    const currentGasUrl = gasWebAppUrl || sessionStorage.getItem('gasWebAppUrl');
+    const currentGasUrl = options.gasWebAppUrl || sessionStorage.getItem('gasWebAppUrl');
     if (!currentGasUrl) return;
 
     // Cancel any in-flight request
@@ -124,7 +119,7 @@ export const createRoomNavigation = ({
   const saveReadings = async (readings: Record<string, unknown>[]): Promise<boolean> => {
     if (!readings || readings.length === 0) return false;
 
-    const currentGasUrl = gasWebAppUrl || sessionStorage.getItem('gasWebAppUrl');
+    const currentGasUrl = options.gasWebAppUrl || sessionStorage.getItem('gasWebAppUrl');
     if (!currentGasUrl) return false;
 
     // Use the shared abort controller for the save request
@@ -137,8 +132,8 @@ export const createRoomNavigation = ({
     try {
       const params = new URLSearchParams({
         action: 'updateMeterReadings',
-        propertyId: propertyId,
-        roomId: roomId,
+        propertyId: options.propertyId,
+        roomId: options.roomId,
         readings: JSON.stringify(readings),
       });
 
@@ -147,7 +142,7 @@ export const createRoomNavigation = ({
       if (response.ok) {
         const result = await response.json();
         if (result.success) {
-          displayToast('検針データを保存しました');
+          options.displayToast('検針データを保存しました');
           return true;
         }
       }
@@ -169,13 +164,13 @@ export const createRoomNavigation = ({
       const meterReadingsData = collectReadingsFn ? collectReadingsFn() : [];
 
       // Capture the current room ID before navigation changes it
-      const currentRoomId = roomId;
+      const currentRoomId = options.roomId;
 
       // Navigate immediately (loads new room data in parallel with save)
-      if (onNavigateToRoom) {
-        onNavigateToRoom(targetRoomId);
+      if (options.onNavigateToRoom) {
+        options.onNavigateToRoom(targetRoomId);
       } else {
-        window.location.href = `/reading/?propertyId=${propertyId}&roomId=${targetRoomId}`;
+        window.location.href = `/reading/?propertyId=${options.propertyId}&roomId=${targetRoomId}`;
       }
 
       // Save in background - don't block navigation
@@ -215,12 +210,12 @@ export const createRoomNavigation = ({
               // Cache update failure is non-critical
             }
           } else {
-            displayToast('保存に失敗しました。ネットワークを確認して再試行してください。');
+            options.displayToast('保存に失敗しました。ネットワークを確認して再試行してください。');
           }
         });
       }
     } catch (_) {
-      displayToast('エラーが発生しました。');
+      options.displayToast('エラーが発生しました。');
       updating = false;
     }
     // Note: updating is NOT reset to false here when onNavigateToRoom succeeds.
@@ -230,23 +225,23 @@ export const createRoomNavigation = ({
   const handlePreviousRoom = (
     collectReadingsFn: (() => Record<string, unknown>[]) | undefined
   ): void => {
-    const navigation = getRoomNavigation();
-    if (!navigation.hasPrevious || !navigation.previousRoom) {
-      displayToast('前の部屋がありません。');
+    const nav = getRoomNavigation();
+    if (!nav.hasPrevious || !nav.previousRoom) {
+      options.displayToast('前の部屋がありません。');
       return;
     }
-    saveAndNavigateToRoom(navigation.previousRoom.id, 'prev', collectReadingsFn);
+    saveAndNavigateToRoom(nav.previousRoom.id, 'prev', collectReadingsFn);
   };
 
   const handleNextRoom = (
     collectReadingsFn: (() => Record<string, unknown>[]) | undefined
   ): void => {
-    const navigation = getRoomNavigation();
-    if (!navigation.hasNext || !navigation.nextRoom) {
-      displayToast('次の部屋がありません。');
+    const nav = getRoomNavigation();
+    if (!nav.hasNext || !nav.nextRoom) {
+      options.displayToast('次の部屋がありません。');
       return;
     }
-    saveAndNavigateToRoom(navigation.nextRoom.id, 'next', collectReadingsFn);
+    saveAndNavigateToRoom(nav.nextRoom.id, 'next', collectReadingsFn);
   };
 
   const handleBackButton = async (

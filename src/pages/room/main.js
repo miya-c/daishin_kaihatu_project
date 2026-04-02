@@ -17,5 +17,6 @@ if ('serviceWorker' in navigator) {
 
 const root = document.getElementById('root');
 if (root) {
+  root.innerHTML = '';
   mount(RoomSelectPage, { target: root });
 }
