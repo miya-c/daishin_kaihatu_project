@@ -1,3 +1,4 @@
+import { mount } from 'svelte';
 import PropertySelectPage from '../../components/PropertySelect/PropertySelectPage.svelte';
 import '../../styles/property_select.css';
 
@@ -16,5 +17,5 @@ if ('serviceWorker' in navigator) {
 
 const root = document.getElementById('root');
 if (root) {
-  new PropertySelectPage({ target: root });
+  mount(PropertySelectPage, { target: root });
 }

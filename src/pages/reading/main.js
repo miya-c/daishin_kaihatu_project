@@ -1,3 +1,4 @@
+import { mount } from 'svelte';
 import MeterReadingPage from '../../components/MeterReading/MeterReadingPage.svelte';
 import '../../styles/meter_reading.css';
 
@@ -14,5 +15,5 @@ root.classList.remove('styles-loading');
 root.classList.add('styles-loaded');
 
 if (root) {
-  new MeterReadingPage({ target: root });
+  mount(MeterReadingPage, { target: root });
 }

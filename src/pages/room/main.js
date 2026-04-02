@@ -1,3 +1,4 @@
+import { mount } from 'svelte';
 import RoomSelectPage from '../../components/RoomSelect/RoomSelectPage.svelte';
 import '../../styles/room_select.css';
 
@@ -16,5 +17,5 @@ if ('serviceWorker' in navigator) {
 
 const root = document.getElementById('root');
 if (root) {
-  new RoomSelectPage({ target: root });
+  mount(RoomSelectPage, { target: root });
 }
