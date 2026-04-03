@@ -118,7 +118,8 @@ export const createRoomNavigation = (options: CreateRoomNavigationParams) => {
 
   const saveReadings = async (
     readings: Record<string, unknown>[],
-    silent: boolean = false
+    silent: boolean = false,
+    overrideRoomId?: string
   ): Promise<boolean> => {
     if (!readings || readings.length === 0) return false;
 
@@ -136,7 +137,7 @@ export const createRoomNavigation = (options: CreateRoomNavigationParams) => {
       const params = new URLSearchParams({
         action: 'updateMeterReadings',
         propertyId: options.propertyId,
-        roomId: options.roomId,
+        roomId: overrideRoomId || options.roomId,
         readings: JSON.stringify(readings),
       });
 
@@ -180,7 +181,7 @@ export const createRoomNavigation = (options: CreateRoomNavigationParams) => {
 
       // Save in background - don't block navigation (silent: suppress toast on new page)
       if (meterReadingsData.length > 0) {
-        saveReadings(meterReadingsData, true).then((saveOk) => {
+        saveReadings(meterReadingsData, true, currentRoomId).then((saveOk) => {
           if (saveOk) {
             // Update sessionStorage cache for the saved room so the room
             // selection screen reflects the completed status immediately

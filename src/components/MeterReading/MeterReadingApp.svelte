@@ -216,13 +216,23 @@
 
     // Validate: check for empty required fields
     let hasValidationErrors = false;
-    for (const reading of meterReadings) {
-      const date = reading.date;
-      const originalValue = formatReading(reading.currentReading);
-      const currentValue = readingValues[date] ?? originalValue;
+    if (hasReadingsWithPrevious) {
+      // Regular readings: validate each entry's date-keyed value
+      for (const reading of meterReadings) {
+        const date = reading.date;
+        const originalValue = formatReading(reading.currentReading);
+        const currentValue = readingValues[date] ?? originalValue;
 
-      if (originalValue === '' && (!currentValue || currentValue.trim() === '')) {
-        inputErrors = { ...inputErrors, [date]: '初回検針では指示数の入力が必須です。' };
+        if (originalValue === '' && (!currentValue || currentValue.trim() === '')) {
+          inputErrors = { ...inputErrors, [date]: '初回検針では指示数の入力が必須です。' };
+          hasValidationErrors = true;
+        }
+      }
+    } else {
+      // Initial reading: validate the InitialReadingForm value (stored under '' key)
+      const initialValue = readingValues[''] ?? '';
+      if (!initialValue || initialValue.trim() === '') {
+        inputErrors = { ...inputErrors, '': '初回検針では指示数の入力が必須です。' };
         hasValidationErrors = true;
       }
     }
