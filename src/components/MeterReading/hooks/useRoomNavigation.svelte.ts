@@ -259,11 +259,12 @@ export const createRoomNavigation = (options: CreateRoomNavigationParams) => {
       isNavigating = true;
       navigationMessage = '画面を切り替えています...';
       window.scrollTo(0, 0);
-      sessionStorage.setItem('updatedRoomId', rId);
-      sessionStorage.setItem('lastUpdateTime', Date.now().toString());
 
-      // Optimistic update: only mark as completed if the reading was actually saved
+      // Only set protection flags and optimistic update when data was actually saved
       if (wasSaved) {
+        sessionStorage.setItem('updatedRoomId', rId);
+        sessionStorage.setItem('lastUpdateTime', Date.now().toString());
+
         const sessionRooms = sessionStorage.getItem('selectedRooms');
         if (sessionRooms) {
           try {
