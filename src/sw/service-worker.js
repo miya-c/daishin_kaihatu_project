@@ -36,6 +36,9 @@ self.addEventListener('fetch', (event) => {
 
   if (request.method !== 'GET') return;
 
+  // Skip non-http(s) schemes (chrome-extension, etc.)
+  if (!url.protocol.startsWith('http')) return;
+
   // GAS API: Network only (always fresh data)
   if (url.hostname.includes('script.google.com')) {
     event.respondWith(
