@@ -4,6 +4,16 @@ import { NOT_AVAILABLE, ROOM_NAME_UNKNOWN } from '../../../constants/messages';
 
 import type { MeterReading } from '../../../types';
 
+// ── Prefetch cache ──
+interface PrefetchEntry {
+  meterReadings: MeterReading[];
+  propertyName: string;
+  roomName: string;
+  timestamp: number;
+}
+
+const PREFETCH_TTL = 5 * 60 * 1000; // 5 minutes
+
 export function createMeterReadings() {
   let loading = $state(true);
   let error = $state<string | null>(null);
@@ -14,6 +24,14 @@ export function createMeterReadings() {
   let meterReadings = $state<MeterReading[]>([]);
   let gasWebAppUrl = $state('');
   let abortController: AbortController | null = null;
+
+  // Prefetch state
+  const prefetchMap = new Map<string, PrefetchEntry>();
+  let prefetchAbortController: AbortController | null = null;
+
+  function getPrefetchKey(pId: string, rId: string): string {
+    return `${pId}:${rId}`;
+  }
 
   // Scroll to top on mount
   $effect(() => {
@@ -36,6 +54,59 @@ export function createMeterReadings() {
     }
   }
 
+  /** Fetch and parse API response — shared by loadMeterReadings and prefetchRoom */
+  async function fetchAndParseReadings(
+    propId: string,
+    rId: string,
+    signal?: AbortSignal
+  ): Promise<{ pName: string; rName: string; resultReadings: MeterReading[] } | null> {
+    const currentGasUrl = gasWebAppUrl || sessionStorage.getItem('gasWebAppUrl');
+    if (!currentGasUrl) return null;
+
+    const fetchUrl = `${currentGasUrl}?action=getMeterReadings&propertyId=${propId}&roomId=${rId}`;
+    const response = await fetch(fetchUrl, { signal });
+
+    if (!response.ok) return null;
+
+    const responseObject = await response.json();
+    if (!responseObject.success) return null;
+
+    const data = responseObject.data;
+    if (!data) return null;
+
+    let pName: string, rName: string, readings: Record<string, unknown>[];
+    if (
+      Object.prototype.hasOwnProperty.call(data, 'propertyName') &&
+      Object.prototype.hasOwnProperty.call(data, 'roomName') &&
+      Object.prototype.hasOwnProperty.call(data, 'readings')
+    ) {
+      pName = data.propertyName || NOT_AVAILABLE;
+      rName = data.roomName || ROOM_NAME_UNKNOWN;
+      readings = data.readings || [];
+    } else if (Array.isArray(data)) {
+      if (data.length > 0 && data[0]) {
+        pName = data[0]['物件名'] || data[0].propertyName || NOT_AVAILABLE;
+        rName = data[0]['部屋名'] || data[0].roomName || ROOM_NAME_UNKNOWN;
+      } else {
+        pName = NOT_AVAILABLE;
+        rName = ROOM_NAME_UNKNOWN;
+      }
+      readings = data;
+    } else {
+      return null;
+    }
+
+    const resultReadings =
+      Array.isArray(readings) && readings.length > 0
+        ? readings.map(
+            (rawReading: Record<string, unknown>, index: number) =>
+              mapReadingFromApi(rawReading, index, { calculateWarnings: true })
+          )
+        : [];
+
+    return { pName, rName, resultReadings };
+  }
+
   async function loadMeterReadings(
     propId: string,
     rId: string,
@@ -47,6 +118,21 @@ export function createMeterReadings() {
       error = 'gasWebAppURLが設定されていません。物件選択画面から再度アクセスしてください。';
       if (!silent) loading = false;
       return null;
+    }
+
+    // Check prefetch cache first
+    const cacheKey = getPrefetchKey(propId, rId);
+    const cached = prefetchMap.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < PREFETCH_TTL) {
+      propertyId = propId || NOT_AVAILABLE;
+      propertyName = cached.propertyName;
+      roomId = rId || NOT_AVAILABLE;
+      roomName = cached.roomName;
+      meterReadings = cached.meterReadings;
+      if (!silent) loading = false;
+      // Remove from cache after use (one-shot)
+      prefetchMap.delete(cacheKey);
+      return cached.meterReadings;
     }
 
     if (!silent) {
@@ -62,69 +148,25 @@ export function createMeterReadings() {
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        const fetchUrl = `${currentGasUrl}?action=getMeterReadings&propertyId=${propId}&roomId=${rId}`;
-        const response = await fetch(fetchUrl, { signal: controller.signal });
+        const parsed = await fetchAndParseReadings(propId, rId, controller.signal);
 
-        if (!response.ok) {
-          if (response.status === 503 && attempt < maxRetries) {
+        if (parsed === null) {
+          if (attempt < maxRetries) {
             const delayMs = 1000 * Math.pow(2, attempt - 1);
             await new Promise((resolve) => setTimeout(resolve, delayMs));
             continue;
           }
-          throw new Error(
-            'ネットワークの応答が正しくありませんでした。ステータス: ' + response.status
-          );
-        }
-
-        const responseObject = await response.json();
-        if (!responseObject.success) {
-          throw new Error(responseObject.error || '検針データの取得に失敗しました');
-        }
-
-        const data = responseObject.data;
-        if (!data) throw new Error('応答データが空です');
-
-        let pName: string, rName: string, readings: Record<string, unknown>[];
-        if (
-          Object.prototype.hasOwnProperty.call(data, 'propertyName') &&
-          Object.prototype.hasOwnProperty.call(data, 'roomName') &&
-          Object.prototype.hasOwnProperty.call(data, 'readings')
-        ) {
-          pName = data.propertyName || NOT_AVAILABLE;
-          rName = data.roomName || ROOM_NAME_UNKNOWN;
-          readings = data.readings || [];
-        } else if (Array.isArray(data)) {
-          if (data.length > 0 && data[0]) {
-            pName = data[0]['物件名'] || data[0].propertyName || NOT_AVAILABLE;
-            rName = data[0]['部屋名'] || data[0].roomName || ROOM_NAME_UNKNOWN;
-          } else {
-            pName = NOT_AVAILABLE;
-            rName = ROOM_NAME_UNKNOWN;
-          }
-          readings = data;
-        } else {
-          throw new Error('検針データの形式が認識できません');
+          throw new Error('検針データの取得に失敗しました');
         }
 
         propertyId = propId || NOT_AVAILABLE;
-        propertyName = pName;
+        propertyName = parsed.pName;
         roomId = rId || NOT_AVAILABLE;
-        roomName = rName;
-
-        let resultReadings: MeterReading[] = [];
-        if (Array.isArray(readings) && readings.length > 0) {
-          const mappedReadings = readings.map(
-            (rawReading: Record<string, unknown>, index: number) =>
-              mapReadingFromApi(rawReading, index, { calculateWarnings: true })
-          );
-          resultReadings = mappedReadings;
-          meterReadings = mappedReadings;
-        } else {
-          meterReadings = [];
-        }
+        roomName = parsed.rName;
+        meterReadings = parsed.resultReadings;
 
         if (!silent) loading = false;
-        return resultReadings;
+        return parsed.resultReadings;
       } catch (err: unknown) {
         if (controller.signal.aborted) return null;
         if (attempt === maxRetries) {
@@ -144,6 +186,40 @@ export function createMeterReadings() {
       }
     }
     return null;
+  }
+
+  /** Prefetch room data in the background without affecting UI state */
+  function prefetchRoom(propId: string, rId: string): void {
+    const cacheKey = getPrefetchKey(propId, rId);
+    const cached = prefetchMap.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < PREFETCH_TTL) return;
+
+    // Abort previous prefetch
+    if (prefetchAbortController) {
+      prefetchAbortController.abort();
+    }
+    const controller = new AbortController();
+    prefetchAbortController = controller;
+
+    fetchAndParseReadings(propId, rId, controller.signal)
+      .then((parsed) => {
+        if (parsed && !controller.signal.aborted) {
+          prefetchMap.set(cacheKey, {
+            meterReadings: parsed.resultReadings,
+            propertyName: parsed.pName,
+            roomName: parsed.rName,
+            timestamp: Date.now(),
+          });
+        }
+      })
+      .catch(() => {
+        // Prefetch failure is non-critical
+      });
+  }
+
+  /** Invalidate prefetch cache for a specific room (call after save) */
+  function invalidatePrefetch(propId: string, rId: string): void {
+    prefetchMap.delete(getPrefetchKey(propId, rId));
   }
 
   // Initial data load when gasWebAppUrl is set
@@ -183,6 +259,10 @@ export function createMeterReadings() {
       if (abortController) {
         abortController.abort();
       }
+      if (prefetchAbortController) {
+        prefetchAbortController.abort();
+      }
+      prefetchMap.clear();
     };
   });
 
@@ -199,5 +279,7 @@ export function createMeterReadings() {
     set meterReadings(val: MeterReading[]) { meterReadings = val; },
     get gasWebAppUrl() { return gasWebAppUrl; },
     loadMeterReadings,
+    prefetchRoom,
+    invalidatePrefetch,
   };
 }

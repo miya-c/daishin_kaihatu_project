@@ -265,6 +265,8 @@
         hasSaved = true;
         toast.displayToast('検針データが正常に更新されました');
         inputErrors = {};
+        // Invalidate prefetch cache so next navigation fetches fresh data
+        readings.invalidatePrefetch(readings.propertyId, readings.roomId);
       } else {
         throw new Error(result.error || '指示数の更新に失敗しました。');
       }
@@ -278,6 +280,25 @@
 
   // ── Derived: room navigation info ──
   let roomNav = $derived(navigation.getRoomNavigation());
+
+  // ── Prefetch adjacent rooms after data loads ──
+  $effect(() => {
+    const current = readings.meterReadings;
+    const isLoading = readings.loading;
+    const hasError = readings.error;
+    if (isLoading || hasError || !current) return;
+
+    const propId = readings.propertyId;
+    if (!propId) return;
+
+    const nav = navigation.getRoomNavigation();
+    if (nav.previousRoom?.id) {
+      readings.prefetchRoom(propId, nav.previousRoom.id);
+    }
+    if (nav.nextRoom?.id) {
+      readings.prefetchRoom(propId, nav.nextRoom.id);
+    }
+  });
 </script>
 
 <!-- ═══════════════ Loading state ═══════════════ -->
