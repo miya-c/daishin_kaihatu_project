@@ -281,7 +281,6 @@
 {#if loading}
   <div>
     <NetworkStatusBar />
-    <a href="#main-content" class="skip-link"> メインコンテンツへ </a>
     <header class="MuiAppBar-root MuiAppBar-colorPrimary MuiAppBar-positionStatic mui-elevation-4">
       <nav class="MuiToolbar-root MuiToolbar-regular" aria-label="部屋選択ナビゲーション">
         <button
@@ -294,11 +293,7 @@
         <span class="MuiTypography-root MuiTypography-h6 app-title">部屋選択</span>
       </nav>
     </header>
-    <main
-      id="main-content"
-      class="MuiContainer-root MuiContainer-maxWidthLg"
-      style="padding-top: 32px;"
-    >
+    <main class="MuiContainer-root MuiContainer-maxWidthLg" style="padding-top: 32px;">
       <div class="loading-container">
         <span class="MuiCircularProgress-root" aria-label="読み込み中"></span>
         <span class="MuiTypography-root MuiTypography-body1"> 部屋データを読み込み中... </span>
@@ -308,7 +303,6 @@
 {:else if error}
   <div>
     <NetworkStatusBar />
-    <a href="#main-content" class="skip-link"> メインコンテンツへ </a>
     <header class="MuiAppBar-root MuiAppBar-colorPrimary MuiAppBar-positionStatic mui-elevation-4">
       <nav class="MuiToolbar-root MuiToolbar-regular" aria-label="部屋選択ナビゲーション">
         <button
@@ -321,11 +315,7 @@
         <span class="MuiTypography-root MuiTypography-h6 app-title">部屋選択</span>
       </nav>
     </header>
-    <main
-      id="main-content"
-      class="MuiContainer-root MuiContainer-maxWidthLg"
-      style="padding-top: 32px;"
-    >
+    <main class="MuiContainer-root MuiContainer-maxWidthLg" style="padding-top: 32px;">
       <div class="MuiAlert-root MuiAlert-standardError" role="alert">
         <span class="MuiAlert-message">{String(error)}</span>
       </div>
@@ -333,7 +323,6 @@
   </div>
 {:else}
   <div>
-    <a href="#main-content" class="skip-link"> メインコンテンツへ </a>
     <header class="MuiAppBar-root MuiAppBar-colorPrimary MuiAppBar-positionStatic mui-elevation-4">
       <nav class="MuiToolbar-root MuiToolbar-regular" aria-label="部屋選択ナビゲーション">
         <button
@@ -347,11 +336,7 @@
       </nav>
     </header>
 
-    <main
-      id="main-content"
-      class="MuiContainer-root MuiContainer-maxWidthLg"
-      style="padding-top: 32px;"
-    >
+    <main class="MuiContainer-root MuiContainer-maxWidthLg" style="padding-top: 32px;">
       <section
         class="MuiCard-root MuiPaper-root MuiPaper-elevation1 property-card"
         aria-label="物件情報"
