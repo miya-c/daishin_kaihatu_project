@@ -9,6 +9,28 @@ import { validateId } from './validateParams';
 /** Default GAS Web App URL from environment variable */
 const GAS_URL_DEFAULT: string = import.meta.env.VITE_GAS_WEB_APP_URL || '';
 
+/** API key for authenticated requests (stored in env or localStorage) */
+const getApiKey = (): string => {
+  try {
+    return (
+      localStorage.getItem('gasApiKey') ||
+      import.meta.env.VITE_GAS_API_KEY ||
+      ''
+    );
+  } catch {
+    return import.meta.env.VITE_GAS_API_KEY || '';
+  }
+};
+
+/**
+ * Appends apiKey to URLSearchParams if available.
+ */
+const withApiKey = (params: URLSearchParams): URLSearchParams => {
+  const key = getApiKey();
+  if (key) params.set('apiKey', key);
+  return params;
+};
+
 /**
  * Retrieves the GAS Web App URL from browser storage.
  * Checks sessionStorage first, then falls back to localStorage,
@@ -37,7 +59,9 @@ export const getGasUrl = (): string => {
  */
 export const fetchProperties = async (gasUrl?: string): Promise<unknown> => {
   const url = gasUrl || getGasUrl();
-  const requestUrl = `${url}?action=getProperties&cache=${Date.now()}`;
+  const params = new URLSearchParams({ action: 'getProperties', cache: String(Date.now()) });
+  withApiKey(params);
+  const requestUrl = `${url}?${params}`;
   const response = await fetch(requestUrl);
 
   if (!response.ok) {
@@ -60,7 +84,13 @@ export const fetchRooms = async (gasUrl: string | undefined, propertyId: string)
   if (!validation.valid) throw new Error(validation.error);
 
   const url = gasUrl || getGasUrl();
-  const requestUrl = `${url}?action=getRooms&propertyId=${encodeURIComponent(propertyId)}&cache=${Date.now()}`;
+  const params = new URLSearchParams({
+    action: 'getRooms',
+    propertyId,
+    cache: String(Date.now()),
+  });
+  withApiKey(params);
+  const requestUrl = `${url}?${params}`;
   const response = await fetch(requestUrl);
 
   if (!response.ok) {
@@ -91,7 +121,13 @@ export const fetchMeterReadings = async (
   if (!roomValidation.valid) throw new Error(roomValidation.error);
 
   const url = gasUrl || getGasUrl();
-  const requestUrl = `${url}?action=getMeterReadings&propertyId=${encodeURIComponent(propertyId)}&roomId=${encodeURIComponent(roomId)}`;
+  const params = new URLSearchParams({
+    action: 'getMeterReadings',
+    propertyId,
+    roomId,
+  });
+  withApiKey(params);
+  const requestUrl = `${url}?${params}`;
   const response = await fetch(requestUrl);
 
   if (!response.ok) {
@@ -103,7 +139,7 @@ export const fetchMeterReadings = async (
 
 /**
  * Updates meter readings for a specific property and room via the GAS backend.
- * Sends reading data as a JSON-encoded parameter in a GET request.
+ * Sends reading data as a JSON-encoded parameter in a POST request.
  *
  * @param gasUrl - Optional GAS Web App URL; defaults to getGasUrl()
  * @param propertyId - The property ID
@@ -131,9 +167,13 @@ export const updateMeterReadings = async (
     roomId,
     readings: JSON.stringify(readings),
   });
+  withApiKey(params);
 
-  const requestUrl = `${url}?${params}`;
-  const response = await fetch(requestUrl, { method: 'GET' });
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: params.toString(),
+  });
 
   if (!response.ok) {
     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -166,6 +206,7 @@ export const completeInspection = async (
     propertyId,
     completionDate,
   });
+  withApiKey(params);
 
   const requestUrl = `${url}?${params}`;
   const response = await fetch(requestUrl, { method: 'GET' });

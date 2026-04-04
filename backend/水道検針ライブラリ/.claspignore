@@ -1,0 +1,6 @@
+plan/**
+*.md
+.clasp.json
+.claspignore
+.git/**
+node_modules/**

@@ -113,7 +113,7 @@ describe('fetchMeterReadings', () => {
 });
 
 describe('updateMeterReadings', () => {
-  it('sends readings as JSON-encoded parameter', async () => {
+  it('sends readings as JSON-encoded parameter via POST', async () => {
     const mockFetch = vi.fn().mockResolvedValue({
       ok: true,
       json: () => Promise.resolve({ success: true }),
@@ -123,11 +123,16 @@ describe('updateMeterReadings', () => {
     const readings = [{ date: '2025-06-18', currentReading: '100' }];
     await updateMeterReadings(MOCK_URL, 'prop-1', 'room-1', readings);
 
-    const calledUrl = mockFetch.mock.calls[0][0];
-    expect(calledUrl).toContain('action=updateMeterReadings');
-    expect(calledUrl).toContain('propertyId=prop-1');
-    expect(calledUrl).toContain('roomId=room-1');
-    expect(calledUrl).toContain(encodeURIComponent(JSON.stringify(readings)));
+    // POSTリクエストの検証
+    const callArgs = mockFetch.mock.calls[0];
+    expect(callArgs[0]).toBe(MOCK_URL);
+    expect(callArgs[1].method).toBe('POST');
+    expect(callArgs[1].headers['Content-Type']).toBe('application/x-www-form-urlencoded');
+    const body = callArgs[1].body;
+    expect(body).toContain('action=updateMeterReadings');
+    expect(body).toContain('propertyId=prop-1');
+    expect(body).toContain('roomId=room-1');
+    expect(body).toContain(encodeURIComponent(JSON.stringify(readings)));
     vi.restoreAllMocks();
   });
 });

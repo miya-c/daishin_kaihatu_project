@@ -140,8 +140,18 @@ export const createRoomNavigation = (options: CreateRoomNavigationParams) => {
         roomId: overrideRoomId || options.roomId,
         readings: JSON.stringify(readings),
       });
+      // API key認証（環境変数またはlocalStorageから取得）
+      try {
+        const apiKey = localStorage.getItem('gasApiKey') || import.meta.env.VITE_GAS_API_KEY;
+        if (apiKey) params.set('apiKey', apiKey);
+      } catch { /* ignore */ }
 
-      const response = await fetch(`${currentGasUrl}?${params}`, { method: 'GET', signal: controller.signal });
+      const response = await fetch(currentGasUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: params.toString(),
+        signal: controller.signal,
+      });
 
       if (response.ok) {
         const result = await response.json();
