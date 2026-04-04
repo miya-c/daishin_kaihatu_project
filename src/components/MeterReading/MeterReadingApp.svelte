@@ -1,5 +1,6 @@
 <script lang="ts">
   import { formatReading, calculateUsageDisplay } from './utils/formatUtils';
+  import { mapReadingFromApi } from './utils/readingMapper';
   import { calculateWarningFlag } from './utils/warningFlag';
   import { createMeterReadings } from './hooks/useMeterReadings.svelte';
   import { createRoomNavigation } from './hooks/useRoomNavigation.svelte';
@@ -71,15 +72,38 @@
       return toast.displayToast;
     },
     get onNavigateToRoom() {
-      return (targetRoomId: string) => {
+      return (targetRoomId: string, preloadedNavData?: Record<string, unknown>) => {
         hasSaved = false;
         const newUrl = `/reading/?propertyId=${encodeURIComponent(readings.propertyId)}&roomId=${encodeURIComponent(targetRoomId)}`;
         window.history.replaceState(null, '', newUrl);
-        // silent=true: keep current content visible during transition
+
+        // If integrated API returned navigation data, use it directly (no extra fetch)
+        if (preloadedNavData && preloadedNavData.readings) {
+          const newReadings = Array.isArray(preloadedNavData.readings)
+            ? preloadedNavData.readings.map((raw: Record<string, unknown>, index: number) =>
+                mapReadingFromApi(raw, index, { calculateWarnings: true })
+              )
+            : [];
+          readings.meterReadings = newReadings;
+          readings.propertyName = String(preloadedNavData.propertyName || readings.propertyName);
+          readings.roomName = String(preloadedNavData.roomName || readings.roomName);
+
+          const newValues: Record<string, string> = { '': '' };
+          newReadings.forEach((reading: MeterReading) => {
+            newValues[reading.date] = formatReading(reading.currentReading);
+          });
+          readingValues = newValues;
+          inputErrors = {};
+          usageStates = {};
+          navigation.updating = false;
+          window.scrollTo(0, 0);
+          return;
+        }
+
+        // Fallback: fetch room data separately
         readings
           .loadMeterReadings(readings.propertyId, targetRoomId, 3, true)
           .then((newReadings: MeterReading[] | null) => {
-            // Compute new readingValues directly from returned data (atomic update)
             const newValues: Record<string, string> = { '': '' };
             if (newReadings && Array.isArray(newReadings)) {
               newReadings.forEach((reading: MeterReading) => {
@@ -359,6 +383,8 @@
 {:else}
   {#if navigation.isNavigating}
     <LoadingOverlay message={navigation.navigationMessage} />
+  {:else if navigation.updating}
+    <LoadingOverlay message="移動中..." />
   {/if}
 
   <NetworkStatusBar />

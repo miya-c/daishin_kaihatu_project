@@ -1009,10 +1009,20 @@ function processInspectionDataMonthlyImpl(ss = null) {
       if (sourceDataForBackup.length > 0) {
         backupSheet.getRange(1, 1, sourceDataForBackup.length, sourceDataForBackup[0].length).setValues(sourceDataForBackup);
       }
-      Logger.log(`リセット前バックアップ作成完了: ${preResetBackupSheetName}`);
+      // バックアップ成功確認
+      const verifyData = backupSheet.getDataRange().getValues();
+      if (verifyData.length !== sourceDataForBackup.length) {
+        throw new Error(`バックアップ検証失敗: 期待行数=${sourceDataForBackup.length}, 実際=${verifyData.length}`);
+      }
+      Logger.log(`リセット前バックアップ作成完了: ${preResetBackupSheetName} (${verifyData.length}行)`);
     } catch (backupError) {
       Logger.log(`⚠️ リセット前バックアップ作成エラー: ${backupError.message}`);
-      // バックアップ失敗でも処理は続行
+      // バックアップ失敗時は処理を中止して安全側に倒す
+      if (typeof safeAlert === 'function') {
+        safeAlert('エラー', `バックアップ作成に失敗したためリセットを中止します: ${backupError.message}`);
+      }
+      releaseLockIfHeld();
+      return { success: false, error: `バックアップ作成失敗: ${backupError.message}` };
     }
 
     // 各列のインデックスを取得

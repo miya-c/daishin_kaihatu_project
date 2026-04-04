@@ -918,23 +918,6 @@ function updateMeterReadings(propertyId, roomId, readings) {
     if (updatedRowCount > 0) {
       Logger.log(`[updateMeterReadings] 💾 シートへの書き込み開始: ${updatedRowCount}件`);
 
-      // 書き込み前にバックアップを作成
-      try {
-        const backupSheetName = 'inspection_data_backup';
-        let backupSheet = ss.getSheetByName(backupSheetName);
-        if (!backupSheet) {
-          backupSheet = ss.insertSheet(backupSheetName);
-        }
-        const backupData = sheet.getDataRange().getValues();
-        backupSheet.clear();
-        if (backupData.length > 0) {
-          backupSheet.getRange(1, 1, backupData.length, backupData[0].length).setValues(backupData);
-        }
-        Logger.log(`[updateMeterReadings] ✅ バックアップ作成完了: ${backupSheetName}`);
-      } catch (backupError) {
-        Logger.log(`[updateMeterReadings] ⚠️ バックアップ作成エラー: ${backupError.message}`);
-      }
-
       // 安全な上書き: clear()を使わず直接setValuesで上書き
       sheet.getRange(1, 1, data.length, headers.length).setValues(data);
       // 余剰行があればクリア
@@ -942,33 +925,8 @@ function updateMeterReadings(propertyId, roomId, readings) {
       if (lastRow > data.length) {
         sheet.getRange(data.length + 1, 1, lastRow - data.length, headers.length).clearContent();
       }
-      
+
       Logger.log(`[updateMeterReadings] ✅ ${updatedRowCount}件のデータをシートに書き込み完了`);
-      
-      // ✅ 書き込み後の確認強化
-      Logger.log(`[updateMeterReadings] 🔍 書き込み後確認: 警告フラグ列=${colIndexes.warningFlag + 1}列目`);
-      
-      // 実際のシートから読み戻して確認
-      const verificationData = sheet.getDataRange().getValues();
-      readings.forEach((reading, readingIndex) => {
-        const verificationRow = verificationData.find((row, index) => 
-          index > 0 && 
-          String(row[colIndexes.propertyId]).trim() === String(propertyId).trim() &&
-          String(row[colIndexes.roomId]).trim() === String(roomId).trim()
-        );
-        
-        if (verificationRow) {
-          const actualWarningFlag = verificationRow[colIndexes.warningFlag];
-          const expectedWarningFlag = reading.warningFlag || '正常';
-          
-          Logger.log(`[updateMeterReadings] 📋 書き込み確認[${readingIndex}]:`);
-          Logger.log(`[updateMeterReadings]   - 期待値: "${expectedWarningFlag}"`);
-          Logger.log(`[updateMeterReadings]   - 実際値: "${actualWarningFlag}" (型: ${typeof actualWarningFlag})`);
-          Logger.log(`[updateMeterReadings]   - 一致: ${expectedWarningFlag === actualWarningFlag ? '✅ YES' : '❌ NO'}`);
-        } else {
-          Logger.log(`[updateMeterReadings] ❌ 確認用データが見つかりません[${readingIndex}]`);
-        }
-      });
     }
     
     return {
@@ -1539,7 +1497,7 @@ function validateSaveAndNavigateParams(params) {
     }
     
     // 部屋ID形式検証
-    if (!/^R\d{3}$/.test(params.currentRoomId) || !/^R\d{3}$/.test(params.targetRoomId)) {
+    if (!/^R\d{3,6}$/.test(params.currentRoomId) || !/^R\d{3,6}$/.test(params.targetRoomId)) {
       return {
         success: false,
         error: '部屋IDの形式が正しくありません（R001 形式である必要があります）',
@@ -1817,7 +1775,7 @@ function performNavigationOperation(params) {
     Logger.log(`[performNavigationOperation] 移動先: 物件=${propertyId}, 部屋=${targetRoomId}`);
     
     // 移動先部屋の存在確認（Phase 2.2: 事前チェック）
-    if (!targetRoomId || !/^R\d{3}$/.test(targetRoomId)) {
+    if (!targetRoomId || !/^R\d{3,6}$/.test(targetRoomId)) {
       return {
         success: false,
         error: `移動先部屋IDが無効です: ${targetRoomId}`,

@@ -5,7 +5,7 @@ interface CreateRoomNavigationParams {
   roomId: string;
   gasWebAppUrl: string;
   displayToast: (message: string) => void;
-  onNavigateToRoom?: (targetRoomId: string) => void;
+  onNavigateToRoom?: (targetRoomId: string, preloadedNavData?: Record<string, unknown>) => void;
 }
 
 interface NavigationRoom {
@@ -172,59 +172,64 @@ export const createRoomNavigation = (options: CreateRoomNavigationParams) => {
 
   const saveAndNavigateToRoom = async (
     targetRoomId: string,
-    _direction: string,
+    direction: string,
     collectReadingsFn: (() => Record<string, unknown>[]) | undefined
   ): Promise<void> => {
     try {
       updating = true;
       const meterReadingsData = collectReadingsFn ? collectReadingsFn() : [];
-
-      // Capture the current room ID before navigation changes it
       const currentRoomId = options.roomId;
+      const currentGasUrl = options.gasWebAppUrl || sessionStorage.getItem('gasWebAppUrl');
 
-      // Navigate immediately (loads new room data in parallel with save)
+      // Try integrated saveAndNavigate API first (1 request instead of 2)
+      if (currentGasUrl && options.onNavigateToRoom && meterReadingsData.length > 0) {
+        try {
+          const params = new URLSearchParams({
+            action: 'saveAndNavigate',
+            propertyId: options.propertyId,
+            currentRoomId,
+            targetRoomId,
+            direction,
+            meterReadingsData: JSON.stringify(meterReadingsData),
+          });
+          try {
+            const apiKey = localStorage.getItem('gasApiKey') || import.meta.env.VITE_GAS_API_KEY;
+            if (apiKey) params.set('apiKey', apiKey);
+          } catch { /* ignore */ }
+
+          const response = await fetch(currentGasUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: params.toString(),
+          });
+
+          if (response.ok) {
+            const result = await response.json();
+            if (result.success && result.navigationResult) {
+              // Update sessionStorage cache for saved room
+              updateSessionCacheForSavedRoom(currentRoomId);
+              // Navigate with pre-loaded data (no additional API call)
+              options.onNavigateToRoom(targetRoomId, result.navigationResult);
+              return;
+            }
+          }
+          // Integrated API failed — fall through to legacy approach
+        } catch {
+          // Integrated API error — fall through to legacy approach
+        }
+      }
+
+      // Legacy: navigate immediately and save in background
       if (options.onNavigateToRoom) {
         options.onNavigateToRoom(targetRoomId);
       } else {
         window.location.href = `/reading/?propertyId=${options.propertyId}&roomId=${targetRoomId}`;
       }
 
-      // Save in background - don't block navigation (silent: suppress toast on new page)
       if (meterReadingsData.length > 0) {
         saveReadings(meterReadingsData, true, currentRoomId).then((saveOk) => {
           if (saveOk) {
-            // Update sessionStorage cache for the saved room so the room
-            // selection screen reflects the completed status immediately
-            try {
-              const sessionRooms = sessionStorage.getItem('selectedRooms');
-              if (sessionRooms) {
-                const rooms = JSON.parse(sessionRooms);
-                if (Array.isArray(rooms)) {
-                  const dateStr = new Intl.DateTimeFormat('ja-JP', {
-                    timeZone: 'Asia/Tokyo',
-                    month: 'long',
-                    day: 'numeric',
-                  }).format(new Date());
-                  const updated = rooms.map((room: Record<string, unknown>) => {
-                    const rid = String(room.id || room.roomId || '');
-                    if (rid === currentRoomId) {
-                      return {
-                        ...room,
-                        readingStatus: 'completed',
-                        isCompleted: true,
-                        readingDateFormatted: dateStr,
-                      };
-                    }
-                    return room;
-                  });
-                  sessionStorage.setItem('selectedRooms', JSON.stringify(updated));
-                  sessionStorage.setItem('updatedRoomId', currentRoomId);
-                  sessionStorage.setItem('lastUpdateTime', Date.now().toString());
-                }
-              }
-            } catch (_) {
-              // Cache update failure is non-critical
-            }
+            updateSessionCacheForSavedRoom(currentRoomId);
           } else {
             options.displayToast('保存に失敗しました。ネットワークを確認して再試行してください。');
           }
@@ -234,8 +239,39 @@ export const createRoomNavigation = (options: CreateRoomNavigationParams) => {
       options.displayToast('エラーが発生しました。');
       updating = false;
     }
-    // Note: updating is NOT reset to false here when onNavigateToRoom succeeds.
-    // The caller is responsible for calling setUpdating(false) after data loading completes.
+  };
+
+  const updateSessionCacheForSavedRoom = (currentRoomId: string): void => {
+    try {
+      const sessionRooms = sessionStorage.getItem('selectedRooms');
+      if (sessionRooms) {
+        const rooms = JSON.parse(sessionRooms);
+        if (Array.isArray(rooms)) {
+          const dateStr = new Intl.DateTimeFormat('ja-JP', {
+            timeZone: 'Asia/Tokyo',
+            month: 'long',
+            day: 'numeric',
+          }).format(new Date());
+          const updated = rooms.map((room: Record<string, unknown>) => {
+            const rid = String(room.id || room.roomId || '');
+            if (rid === currentRoomId) {
+              return {
+                ...room,
+                readingStatus: 'completed',
+                isCompleted: true,
+                readingDateFormatted: dateStr,
+              };
+            }
+            return room;
+          });
+          sessionStorage.setItem('selectedRooms', JSON.stringify(updated));
+          sessionStorage.setItem('updatedRoomId', currentRoomId);
+          sessionStorage.setItem('lastUpdateTime', Date.now().toString());
+        }
+      }
+    } catch (_) {
+      // Cache update failure is non-critical
+    }
   };
 
   const handlePreviousRoom = (

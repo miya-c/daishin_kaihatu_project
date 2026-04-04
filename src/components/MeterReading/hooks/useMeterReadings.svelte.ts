@@ -130,8 +130,6 @@ export function createMeterReadings() {
       roomName = cached.roomName;
       meterReadings = cached.meterReadings;
       if (!silent) loading = false;
-      // Remove from cache after use (one-shot)
-      prefetchMap.delete(cacheKey);
       return cached.meterReadings;
     }
 
@@ -273,8 +271,10 @@ export function createMeterReadings() {
     set error(val: string | null) { error = val; },
     get propertyId() { return propertyId; },
     get propertyName() { return propertyName; },
+    set propertyName(val: string) { propertyName = val; },
     get roomId() { return roomId; },
     get roomName() { return roomName; },
+    set roomName(val: string) { roomName = val; },
     get meterReadings() { return meterReadings; },
     set meterReadings(val: MeterReading[]) { meterReadings = val; },
     get gasWebAppUrl() { return gasWebAppUrl; },

@@ -43,6 +43,8 @@ const CONFIG = {
     PREVIOUS_READING: 11,      // 前回指示数
     PREVIOUS_PREVIOUS_READING: 12, // 前々回指示数
     THREE_TIMES_PREVIOUS_READING: 13, // 前々々回指示数
+    INSPECTION_SKIP: 14,             // 検針不要
+    BILLING_SKIP: 15,                // 請求不要
   },
 
   // データ処理設定

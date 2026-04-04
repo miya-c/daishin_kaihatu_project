@@ -500,7 +500,6 @@ function showSearchGuide() {
  * @returns {Object} {hasChanges: boolean, data: Array, lastModified: string}
  */
 function getDeltaData(lastSync, dataType, options = {}) {
-  var startTime = Date.now();
   try {
     Logger.log(`[getDeltaData] 開始 - lastSync: ${lastSync}, dataType: ${dataType}`);
 

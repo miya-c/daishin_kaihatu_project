@@ -20,35 +20,35 @@ function safeAlert(title, message) {
 }
 
 /**
- * 日付を指定フォーマットの文字列に変換
- * @param {Date} date - 変換する日付
- * @param {string} format - フォーマット（デフォルト: 'YYYY-MM-DD'）
- * @returns {string} フォーマットされた日付文字列
- */
-/**
- * 館屋ID正規化: ^R0*(\d+) → R + padStart(3, '0') に統一
+ * 部屋ID正規化: ^R0*(\d+) → R + padStart(3, '0') に統一
  * @param {string} roomId - 部屋ID
  * @returns {string} 正規化された部屋ID
  */
 function normalizeRoomId(roomId) {
   if (!roomId || typeof roomId !== 'string') return '';
   const match = roomId.match(/^R0*(\d+)$/);
-  return 'R' + match[1]).padStart(3, '0');
-  return roomId;
+  if (!match) return roomId;
+  return 'R' + match[1].padStart(3, '0');
 }
 
-
+/**
+ * 日付を指定フォーマットの文字列に変換
+ * @param {Date} date - 変換する日付
+ * @param {string} format - フォーマット（デフォルト: 'YYYY-MM-DD'）
+ * @returns {string} フォーマットされた日付文字列
+ */
+function formatDate(date, format = 'YYYY-MM-DD') {
   if (!date || !(date instanceof Date)) {
     return '';
   }
-  
+
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
   const hours = String(date.getHours()).padStart(2, '0');
   const minutes = String(date.getMinutes()).padStart(2, '0');
   const seconds = String(date.getSeconds()).padStart(2, '0');
-  
+
   return format
     .replace('YYYY', year)
     .replace('MM', month)

@@ -18,13 +18,14 @@ function validateApiKey(params, requireAuth) {
   const apiKey = params.apiKey || params.api_key;
   const storedKey = PropertiesService.getScriptProperties().getProperty('API_KEY');
 
-  if (!storedKey) {
-    // API key未設定時は認証スキップ
-    return { authorized: true };
+  // 書き込み操作（requireAuth=true）は、API key未設定でもkey必須
+  if (requireAuth && !apiKey) {
+    return { authorized: false, error: 'API keyが必要です' };
   }
 
-  if (!apiKey && requireAuth) {
-    return { authorized: false, error: 'API keyが必要です' };
+  if (!storedKey) {
+    // API key未設定時は読み込み操作のみスキップ
+    return { authorized: true };
   }
 
   if (apiKey && apiKey !== storedKey) {
@@ -169,13 +170,8 @@ function doGet(e) {
         
         try {
           const result = getMeterReadings(e.parameter.propertyId, e.parameter.roomId);
-          console.log('[web_app_api] getMeterReadings結果:', result);
-          console.log('[web_app_api] result type:', typeof result);
-          console.log('[web_app_api] result isArray:', Array.isArray(result));
-          
-          // 結果の形式を確認
+
           if (result && typeof result === 'object' && result.hasOwnProperty('propertyName')) {
-            console.log('[web_app_api] ✅ 統合版の戻り値を検出');
             return createCorsJsonResponse({
               success: true,
               data: {
@@ -185,14 +181,11 @@ function doGet(e) {
               }
             });
           } else if (Array.isArray(result)) {
-            console.log('[web_app_api] ⚠️ 旧形式（配列）の戻り値を検出');
-            // 後方互換性: 旧形式への対応
             return createCorsJsonResponse({
               success: true,
               data: result
             });
           } else {
-            console.error('[web_app_api] ❌ 予期しない戻り値形式:', result);
             throw new Error('getMeterReadings関数の戻り値が予期しない形式です');
           }
         } catch (error) {
@@ -294,17 +287,7 @@ function doGet(e) {
         }
         
       default:
-        // 新しいデバッグ用API処理を追加
-        if (action === 'test') {
-          console.log('[doGet] 🧪 テスト接続要求');
-          return createCorsJsonResponse({
-            success: true,
-            message: 'ライブラリAPI接続テスト成功',
-            timestamp: new Date().toISOString(),
-            apiVersion: API_VERSION
-          });
-        }
-        
+        // デバッグ用API処理
         if (action === 'getSpreadsheetInfo') {
           console.log('[doGet] 📊 スプレッドシート情報取得要求');
           // セキュリティ: 管理者トークン必須
@@ -407,9 +390,9 @@ function doGet(e) {
     }
     
   } catch (error) {
-    return createCorsJsonResponse({ 
+    return createCorsJsonResponse({
       success: false,
-      error: `サーバーエラー: ${error.message}`
+      error: 'サーバーエラーが発生しました'
     });
   }
 }
@@ -590,7 +573,7 @@ function doPost(e) {
     console.error('[doPost] 予期しないエラー:', error);
     return createCorsJsonResponse({ 
       success: false,
-      error: error.message,
+      error: 'サーバーエラーが発生しました',
       timestamp: new Date().toISOString(),
       method: 'POST'
     });
