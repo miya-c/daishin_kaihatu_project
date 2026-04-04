@@ -273,6 +273,7 @@ export function createMeterReadings() {
     get propertyName() { return propertyName; },
     set propertyName(val: string) { propertyName = val; },
     get roomId() { return roomId; },
+    set roomId(val: string) { roomId = val; },
     get roomName() { return roomName; },
     set roomName(val: string) { roomName = val; },
     get meterReadings() { return meterReadings; },

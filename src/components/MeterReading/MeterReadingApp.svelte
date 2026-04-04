@@ -84,6 +84,7 @@
                 mapReadingFromApi(raw, index, { calculateWarnings: true })
               )
             : [];
+          readings.roomId = targetRoomId;
           readings.meterReadings = newReadings;
           readings.propertyName = String(preloadedNavData.propertyName || readings.propertyName);
           readings.roomName = String(preloadedNavData.roomName || readings.roomName);
