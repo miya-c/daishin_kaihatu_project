@@ -11,6 +11,7 @@ export default [
       'dist/',
       'coverage/',
       'node_modules/',
+      'backend/',
       'vite.config.js',
       'vitest.config.js',
       'vitest-setup.js',
@@ -35,11 +36,14 @@ export default [
       },
     },
     rules: {
-      'no-unused-vars': ['warn', {
-        argsIgnorePattern: '^_',
-        varsIgnorePattern: '^_',
-        caughtErrorsIgnorePattern: '^_',
-      }],
+      'no-unused-vars': [
+        'warn',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_',
+        },
+      ],
       'no-empty': ['error', { allowEmptyCatch: true }],
     },
   },
