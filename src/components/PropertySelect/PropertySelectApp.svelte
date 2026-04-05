@@ -313,7 +313,10 @@
 
     <div id="main-content" class="MuiContainer-root">
       <div style="max-width: 600px; margin: 0 auto;">
-        <div class="MuiTextField-root">
+        <div
+          class="MuiTextField-root"
+          style="position: sticky; top: 64px; z-index: 1050; background-color: var(--mui-palette-background-default, #fafafa); padding: 12px 0;"
+        >
           <input
             type="text"
             placeholder="物件IDまたは物件名で検索..."
