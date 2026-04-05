@@ -12,13 +12,21 @@
 }
 
 @keyframes pageFadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes pageFadeOut {
-  from { opacity: 1; }
-  to { opacity: 0; }
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
 }
 
 /* ページロード時フェードイン */
@@ -60,7 +68,8 @@ body {
   --secondary-text-color: #555555;
   --accent-color: #007bff; /* Blue accent for property info */
   --border-color: #dddddd;
-  --font-family-sans-serif: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+  --font-family-sans-serif:
+    'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
 }
 
 * {
@@ -70,12 +79,14 @@ body {
 body {
   margin: 0;
   padding: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans',
+    sans-serif;
   line-height: 1.55;
   color: var(--mui-palette-grey-7);
   background-color: var(--app-bg-color);
   font-size: 24px; /* 20px → 24px に増加 老眼対応 */
-  
+
   /* 🚀 高速化: スムーストランジション効果 */
   transition: opacity 0.2s ease-in-out;
 }
@@ -262,7 +273,9 @@ body {
   border: 1px solid var(--mui-palette-grey-2);
   border-radius: var(--mui-radius-md);
   padding: var(--mui-spacing-md);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.1);
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.05),
+    0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .mantine-loader {
@@ -275,8 +288,12 @@ body {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .mantine-alert {
@@ -299,21 +316,23 @@ body {
   padding: var(--mui-spacing-xl);
 }
 
-.usage-highlight { 
+.usage-highlight {
   background-color: var(--mui-palette-blue-light);
-  padding: 2px 4px; 
-  border-radius: 3px; 
+  padding: 2px 4px;
+  border-radius: 3px;
   color: var(--mui-palette-blue-7);
-  font-weight: bold; 
+  font-weight: bold;
 }
 
 .mantine-table {
   width: 100%;
   border-collapse: collapse;
   border: 1px solid var(--mui-palette-grey-3);
-  
+
   /* 🚀 高速化: テーブルのスムーストランジション */
-  transition: opacity 0.3s ease-in-out, transform 0.2s ease-out;
+  transition:
+    opacity 0.3s ease-in-out,
+    transform 0.2s ease-out;
 }
 
 .mantine-table th,
@@ -352,8 +371,6 @@ body {
   box-shadow: 0 0 0 2px var(--mui-palette-blue-light);
 }
 
-
-
 /* インラインエラー表示 */
 .inline-error {
   color: var(--mui-palette-red-6);
@@ -374,318 +391,328 @@ body {
 }
 
 /* レスポンシブスタイル（全サイズ共通） */
-  /* 全体の左右余白を削除 */
-  body {
-    font-size: 20px; /* 16px → 20px に増加 */
-    padding-left: 0;
-    padding-right: 0;
-    margin-left: 0;
-    margin-right: 0;
-  }
-  .mantine-container {
-    padding: 0; /* パディングをリセット */
-    max-width: 100%;
-    margin-left: 0;
-    margin-right: 0;
-  }
+/* 全体の左右余白を削除 */
+body {
+  font-size: 20px; /* 16px → 20px に増加 */
+  padding-left: 0;
+  padding-right: 0;
+  margin-left: 0;
+  margin-right: 0;
+}
+.mantine-container {
+  padding: 0; /* パディングをリセット */
+  max-width: 100%;
+  margin-left: 0;
+  margin-right: 0;
+}
 
-  .mantine-title {
-    font-size: 2.2rem; /* 1.8rem → 2.2rem に増加 */
-  }
-  /* シンプルなテーブルレイアウト（カード型） */
-  .mantine-table {
-    border: none;
-    border-collapse: separate;
-    border-spacing: 0;
-  }
+.mantine-title {
+  font-size: 2.2rem; /* 1.8rem → 2.2rem に増加 */
+}
+/* シンプルなテーブルレイアウト（カード型） */
+.mantine-table {
+  border: none;
+  border-collapse: separate;
+  border-spacing: 0;
+}
 
-  .mantine-table thead {
-    display: none;
-  }
+.mantine-table thead {
+  display: none;
+}
 
-  .mantine-table tbody {
-    display: block;
-    width: 100%;
-  }  .mantine-table tr {
-    display: block;
-    margin-bottom: 2em;
-    margin-left: 0;
-    margin-right: 0;
-    border: 1px solid var(--mui-palette-grey-3);
-    border-radius: 0;
-    background-color: white;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
-    padding: 8px;
-  }
+.mantine-table tbody {
+  display: block;
+  width: 100%;
+}
+.mantine-table tr {
+  display: block;
+  margin-bottom: 2em;
+  margin-left: 0;
+  margin-right: 0;
+  border: 1px solid var(--mui-palette-grey-3);
+  border-radius: 0;
+  background-color: white;
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.12),
+    0 1px 2px rgba(0, 0, 0, 0.24);
+  padding: 8px;
+}
 
-  .mantine-table td {
-    display: block;
-    padding: 1em 0;
-    border: none;
-    border-bottom: 1px solid var(--mui-palette-grey-2);
-    text-align: left;
-    font-size: 1.2rem;
-    line-height: 1.5;
-  }
-  /* 2列レイアウト */
-  .mantine-table tr {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    grid-template-areas:
-      "date date"
-      "reading history"
-      "usage history"
-      "status .";
-    gap: 8px;
-    margin-bottom: 2em;
-    margin-left: 0;
-    margin-right: 0;
-    border: 1px solid var(--mui-palette-grey-3);
-    border-radius: 0;
-    background-color: white;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
-    padding: 8px;
-  }
-  /* 検針日時 - 上部全幅 */
-  .mantine-table td[data-label="検針日時"] {
-    grid-area: date;
-    text-align: center;
-    font-weight: bold;
-    background-color: #f8f9fa;
-    margin: -8px -8px 0 -8px;
-    padding: 16px 8px;
-    border-radius: 0;
-    border-bottom: 1px solid var(--mui-palette-grey-2);
-    margin-bottom: 0;
-  }
+.mantine-table td {
+  display: block;
+  padding: 1em 0;
+  border: none;
+  border-bottom: 1px solid var(--mui-palette-grey-2);
+  text-align: left;
+  font-size: 1.2rem;
+  line-height: 1.5;
+}
+/* 2列レイアウト */
+.mantine-table tr {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-areas:
+    'date date'
+    'reading history'
+    'usage history'
+    'status .';
+  gap: 8px;
+  margin-bottom: 2em;
+  margin-left: 0;
+  margin-right: 0;
+  border: 1px solid var(--mui-palette-grey-3);
+  border-radius: 0;
+  background-color: white;
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.12),
+    0 1px 2px rgba(0, 0, 0, 0.24);
+  padding: 8px;
+}
+/* 検針日時 - 上部全幅 */
+.mantine-table td[data-label='検針日時'] {
+  grid-area: date;
+  text-align: center;
+  font-weight: bold;
+  background-color: #f8f9fa;
+  margin: -8px -8px 0 -8px;
+  padding: 16px 8px;
+  border-radius: 0;
+  border-bottom: 1px solid var(--mui-palette-grey-2);
+  margin-bottom: 0;
+}
 
-  .mantine-table td[data-label="検針日時"]::before {
-    display: none;
-  }  /* 左カラム - 今回指示数 */
-  .mantine-table td[data-label="今回指示数(㎥)"] {
-    grid-area: reading;
-    border-right: 1px solid var(--mui-palette-grey-2);
-    padding-right: 2px;
-  }
+.mantine-table td[data-label='検針日時']::before {
+  display: none;
+} /* 左カラム - 今回指示数 */
+.mantine-table td[data-label='今回指示数(㎥)'] {
+  grid-area: reading;
+  border-right: 1px solid var(--mui-palette-grey-2);
+  padding-right: 2px;
+}
 
-  /* 左カラム - 今回使用量 */
-  .mantine-table td[data-label="今回使用量"] {
-    grid-area: usage;
-    background-color: #e3f2fd;
-    padding: 6px 8px;
-    border-radius: 6px;
-    font-weight: bold;
-    font-size: 3rem;
-    line-height: 1.1;
-    border-right: 1px solid var(--mui-palette-grey-2);
-    margin: 0;
-    border-bottom: none;
-  }
+/* 左カラム - 今回使用量 */
+.mantine-table td[data-label='今回使用量'] {
+  grid-area: usage;
+  background-color: #e3f2fd;
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-weight: bold;
+  font-size: 3rem;
+  line-height: 1.1;
+  border-right: 1px solid var(--mui-palette-grey-2);
+  margin: 0;
+  border-bottom: none;
+}
 
-  .mantine-table td[data-label="今回使用量"]::before {
-    color: var(--mui-palette-blue-7);
-    margin-bottom: 2px;
-  }
+.mantine-table td[data-label='今回使用量']::before {
+  color: var(--mui-palette-blue-7);
+  margin-bottom: 2px;
+}
 
-  /* 左カラム - 状態（今回使用量の下に移動） */
-  .mantine-table td[data-label="状態"] {
-    grid-area: status;
-    border-right: 1px solid var(--mui-palette-grey-2);
-    padding-right: 2px;
-    padding-top: 8px;
-  }
-  /* 右カラム上部 - 前回履歴 */
-  .mantine-table td[data-label="前回履歴"] {
-    grid-area: history;
-    padding-left: 2px;
-    font-size: 1.1rem;
-    line-height: 1.4;
-    align-self: stretch;
-    min-height: 120px;
-    border-left: 1px solid var(--mui-palette-grey-2);
-  }
+/* 左カラム - 状態（今回使用量の下に移動） */
+.mantine-table td[data-label='状態'] {
+  grid-area: status;
+  border-right: 1px solid var(--mui-palette-grey-2);
+  padding-right: 2px;
+  padding-top: 8px;
+}
+/* 右カラム上部 - 前回履歴 */
+.mantine-table td[data-label='前回履歴'] {
+  grid-area: history;
+  padding-left: 2px;
+  font-size: 1.1rem;
+  line-height: 1.4;
+  align-self: stretch;
+  min-height: 120px;
+  border-left: 1px solid var(--mui-palette-grey-2);
+}
 
-  /* 共通のtdスタイル */
-  .mantine-table td {
-    display: block;
-    padding: 8px 0;
-    border: none;
-    background-color: transparent;
-    font-size: 1.2rem;
-    line-height: 1.5;
-    border-bottom: none;
-    margin-bottom: 0;
-  }
+/* 共通のtdスタイル */
+.mantine-table td {
+  display: block;
+  padding: 8px 0;
+  border: none;
+  background-color: transparent;
+  font-size: 1.2rem;
+  line-height: 1.5;
+  border-bottom: none;
+  margin-bottom: 0;
+}
 
-  /* 今回指示数入力欄の下マージンを調整 */
-  .mantine-table td[data-label="今回指示数(㎥)"] {
-    margin-bottom: 4px;
-  }
+/* 今回指示数入力欄の下マージンを調整 */
+.mantine-table td[data-label='今回指示数(㎥)'] {
+  margin-bottom: 4px;
+}
 
-  /* 使用量の後の要素との間隔調整 */
-  .mantine-table td[data-label="状態"] {
-    margin-top: 2px;
-  }
+/* 使用量の後の要素との間隔調整 */
+.mantine-table td[data-label='状態'] {
+  margin-top: 2px;
+}
 
-  .mantine-table td[data-label="前回履歴"] {
-    margin-top: 2px;
-  }
-  .mantine-table td::before {
-    content: attr(data-label) ": ";
-    font-weight: bold;
-    color: var(--mui-palette-grey-7);
-    display: block;
-    margin-bottom: 6px;
-    font-size: 0.9rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 100%;
-  }  /* 入力フィールドのスタイル */
-  .mantine-table td[data-label="今回指示数(㎥)"] .mantine-input {
-    width: 100%;
-    font-size: clamp(1.5rem, 4vw, 2.5rem);
-    padding: 20px;
-    margin-top: 8px;
-    border: 2px solid var(--mui-palette-grey-3);
-    border-radius: 6px;
-    box-sizing: border-box;
-    min-height: 60px;
-  }  /* 状態表示の調整 */
-  .mantine-table td[data-label="状態"] span {
-    display: inline-block;
-    padding: 8px 12px;
-    font-size: 1rem;
-    font-weight: 500;
-    border-radius: var(--mui-radius-sm);
-    text-align: center;
-    width: 100%;
-    box-sizing: border-box;
-    margin-top: 4px;
-  }  /* 前回履歴がない場合のレイアウト調整 */
-  .mantine-table tr:not(:has(td[data-label="前回履歴"])) {
-    grid-template-areas:
-      "date date"
-      "reading ."
-      "usage ."
-      "status .";
-  }
-  .mantine-table td:last-child {
-    border-bottom: none;
-  }
+.mantine-table td[data-label='前回履歴'] {
+  margin-top: 2px;
+}
+.mantine-table td::before {
+  content: attr(data-label) ': ';
+  font-weight: bold;
+  color: var(--mui-palette-grey-7);
+  display: block;
+  margin-bottom: 6px;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+} /* 入力フィールドのスタイル */
+.mantine-table td[data-label='今回指示数(㎥)'] .mantine-input {
+  width: 100%;
+  font-size: clamp(1.5rem, 4vw, 2.5rem);
+  padding: 20px;
+  margin-top: 8px;
+  border: 2px solid var(--mui-palette-grey-3);
+  border-radius: 6px;
+  box-sizing: border-box;
+  min-height: 60px;
+}
+.mantine-table td[data-label='今回指示数(㎥)'] .mantine-input::placeholder {
+  font-size: 0.875rem;
+} /* 状態表示の調整 */
+.mantine-table td[data-label='状態'] span {
+  display: inline-block;
+  padding: 8px 12px;
+  font-size: 1rem;
+  font-weight: 500;
+  border-radius: var(--mui-radius-sm);
+  text-align: center;
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 4px;
+} /* 前回履歴がない場合のレイアウト調整 */
+.mantine-table tr:not(:has(td[data-label='前回履歴'])) {
+  grid-template-areas:
+    'date date'
+    'reading .'
+    'usage .'
+    'status .';
+}
+.mantine-table td:last-child {
+  border-bottom: none;
+}
 
-  .mantine-table td input[type="number"],
-  .mantine-table td .mantine-button {
-    width: 100%;
-    box-sizing: border-box;
-    margin-top: 12px;
-    font-size: 1.2rem;
-    padding: 16px;
-    min-height: 52px;
-  }
+.mantine-table td input[type='number'],
+.mantine-table td .mantine-button {
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 12px;
+  font-size: 1.2rem;
+  padding: 16px;
+  min-height: 52px;
+}
 
-  /* ヘッダー */
-  .app-header {
-    background-color: var(--header-bg-color);
-    color: var(--header-text-color);
-    padding: 12px 16px;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    z-index: 1000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  }
+/* ヘッダー */
+.app-header {
+  background-color: var(--header-bg-color);
+  color: var(--header-text-color);
+  padding: 12px 16px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
 
-  .back-button {
-    background-color: transparent;
-    border: none;
-    color: var(--header-text-color);
-    font-size: 28px;
-    cursor: pointer;
-    position: absolute;
-    left: 16px;
-  }
+.back-button {
+  background-color: transparent;
+  border: none;
+  color: var(--header-text-color);
+  font-size: 28px;
+  cursor: pointer;
+  position: absolute;
+  left: 16px;
+}
 
-  .header-title {
-    margin: 0;
-    font-size: 1.3rem;
-    font-weight: bold;
-  }  .content-area {
-    padding-top: 60px;
-    padding-left: 0;
-    padding-right: 0;
-    padding-bottom: 24px;
-    margin-left: 0;
-    margin-right: 0;
-  }/* 物件情報カード */
-  .property-info-card {
-    background-color: var(--accent-color);
-    color: var(--header-text-color);
-    padding: 5px 8px;
-    margin-bottom: 8px;
-    margin-left: 0;
-    margin-right: 0;
-    border-radius: 0;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  }.property-name {
-    font-size: clamp(1.5rem, 5vw, 2.5rem);
-    font-weight: bold;
-    margin: 0 0 10px 0;
-  }
-  .room-label {
-    font-size: clamp(1.0rem, 3vw, 1.5rem);
-    margin: 0 0 4px 0;
-    opacity: 0.9;
-  }
-  .room-name {
-    font-size: clamp(1.3rem, 4vw, 2.0rem);
-    font-weight: bold;
-    margin: 0;
-  }
+.header-title {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: bold;
+}
+.content-area {
+  padding-top: 60px;
+  padding-left: 0;
+  padding-right: 0;
+  padding-bottom: 24px;
+  margin-left: 0;
+  margin-right: 0;
+} /* 物件情報カード */
+.property-info-card {
+  background-color: var(--accent-color);
+  color: var(--header-text-color);
+  padding: 5px 8px;
+  margin-bottom: 8px;
+  margin-left: 0;
+  margin-right: 0;
+  border-radius: 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+.property-name {
+  font-size: clamp(1.5rem, 5vw, 2.5rem);
+  font-weight: bold;
+  margin: 0 0 10px 0;
+}
+.room-label {
+  font-size: clamp(1rem, 3vw, 1.5rem);
+  margin: 0 0 4px 0;
+  opacity: 0.9;
+}
+.room-name {
+  font-size: clamp(1.3rem, 4vw, 2rem);
+  font-weight: bold;
+  margin: 0;
+}
 
-  .room-info {
-    font-size: clamp(1.3rem, 4vw, 2.0rem);
-    font-weight: bold;
-    margin: 0;
-  }
-  /* 検針履歴コンテナ */
-  .mantine-paper.reading-history-container {
-    padding: 8px;
-    margin: 0;
-    background-color: transparent;
-    box-shadow: none;
-    border: none;
-  }
-  .mantine-paper.reading-history-container .mantine-subtitle {
-    text-align: center;
-    margin-bottom: 16px;
-    font-size: clamp(1.8rem, 5vw, 2.8rem);
-    font-weight: bold;
-    padding: 0 8px;
-  }
+.room-info {
+  font-size: clamp(1.3rem, 4vw, 2rem);
+  font-weight: bold;
+  margin: 0;
+}
+/* 検針履歴コンテナ */
+.mantine-paper.reading-history-container {
+  padding: 8px;
+  margin: 0;
+  background-color: transparent;
+  box-shadow: none;
+  border: none;
+}
+.mantine-paper.reading-history-container .mantine-subtitle {
+  text-align: center;
+  margin-bottom: 16px;
+  font-size: clamp(1.8rem, 5vw, 2.8rem);
+  font-weight: bold;
+  padding: 0 8px;
+}
 
-  /* テーブル */
-  .mantine-table {
-    border: none;
-  }
+/* テーブル */
+.mantine-table {
+  border: none;
+}
 
-  .mantine-table thead {
-    display: none;
-  }
+.mantine-table thead {
+  display: none;
+}
 
-  .mantine-table tbody {
-    display: block;
-    width: 100%;
-  }
+.mantine-table tbody {
+  display: block;
+  width: 100%;
+}
 
 /* 前回履歴の表示改善 */
 
 /* 前回履歴セルを縦方向に均等配置・全高使用 */
-.mantine-table td[data-label="前回履歴"] {
+.mantine-table td[data-label='前回履歴'] {
   display: flex !important;
   flex-direction: column !important;
   justify-content: space-evenly !important;
@@ -693,13 +720,13 @@ body {
   height: 100% !important;
   min-height: 160px !important;
   line-height: 1.5;
-  font-size: clamp(1.2rem, 4.5vw, 2.0rem);
+  font-size: clamp(1.2rem, 4.5vw, 2rem);
   padding-top: 0 !important;
   padding-bottom: 0 !important;
 }
 
 /* 前回履歴の外側のdivコンテナもflexで均等配置 */
-.mantine-table td[data-label="前回履歴"] > div {
+.mantine-table td[data-label='前回履歴'] > div {
   display: flex !important;
   flex-direction: column !important;
   justify-content: space-evenly !important;
@@ -707,12 +734,12 @@ body {
   flex: 1 !important;
 }
 
-.mantine-table td[data-label="前回履歴"] .previous-reading-text {
+.mantine-table td[data-label='前回履歴'] .previous-reading-text {
   flex: 1 1 0 !important;
   display: flex !important;
   align-items: center !important;
   justify-content: flex-start !important;
-  font-size: clamp(1.2rem, 4.5vw, 2.0rem) !important;
+  font-size: clamp(1.2rem, 4.5vw, 2rem) !important;
   line-height: 1.4 !important;
   color: var(--mui-palette-grey-8);
   font-weight: 500;
@@ -724,13 +751,13 @@ body {
   border-bottom: 1px solid #f0f0f0 !important;
 }
 
-.mantine-table td[data-label="前回履歴"] .previous-reading-text:last-child {
+.mantine-table td[data-label='前回履歴'] .previous-reading-text:last-child {
   border-bottom: none !important;
   margin-bottom: 0 !important;
 }
 
 /* 前回履歴表示調整 */
-.mantine-table td[data-label="前回履歴"] {
+.mantine-table td[data-label='前回履歴'] {
   padding-left: 16px;
   font-size: clamp(1.4rem, 6vw, 2.4rem);
   line-height: 1.4;
@@ -741,7 +768,7 @@ body {
   min-height: 180px !important;
 }
 
-.mantine-table td[data-label="前回履歴"] > div {
+.mantine-table td[data-label='前回履歴'] > div {
   display: flex !important;
   flex-direction: column !important;
   justify-content: space-evenly !important;
@@ -749,7 +776,7 @@ body {
   flex: 1 !important;
 }
 
-.mantine-table td[data-label="前回履歴"] div {
+.mantine-table td[data-label='前回履歴'] div {
   margin-bottom: 8px !important;
   padding: 6px 0 !important;
   border-bottom: 1px solid #f0f0f0 !important;
@@ -782,36 +809,36 @@ body {
 }
 
 /* 左右余白削除の追加スタイル */
-  /* mantine-stackの左右余白を削除 */
-  .mantine-stack {
-    padding-left: 0;
-    padding-right: 0;
-    margin-left: 0;
-    margin-right: 0;
-  }
+/* mantine-stackの左右余白を削除 */
+.mantine-stack {
+  padding-left: 0;
+  padding-right: 0;
+  margin-left: 0;
+  margin-right: 0;
+}
 
-  /* アラートの左右余白を削除 */
-  .mantine-alert {
-    margin-left: 0;
-    margin-right: 0;
-    padding-left: 8px;
-    padding-right: 8px;
-    border-radius: 0;
-  }
+/* アラートの左右余白を削除 */
+.mantine-alert {
+  margin-left: 0;
+  margin-right: 0;
+  padding-left: 8px;
+  padding-right: 8px;
+  border-radius: 0;
+}
 
-  /* 初回データ入力フォームの左右余白を削除 */
-  .mantine-paper {
-    margin-left: 0 !important;
-    margin-right: 0 !important;
-    padding-left: 8px !important;
-    padding-right: 8px !important;
-    border-radius: 0;
-  }
+/* 初回データ入力フォームの左右余白を削除 */
+.mantine-paper {
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  padding-left: 8px !important;
+  padding-right: 8px !important;
+  border-radius: 0;
+}
 
-  /* FABボタンの位置調整 */
-  .fab-container {
-    right: 8px !important;
-  }
+/* FABボタンの位置調整 */
+.fab-container {
+  right: 8px !important;
+}
 
 /* 小さな画面サイズ（480px以下）用の前回履歴テキスト調整 */
 @media (max-width: 480px) {
@@ -826,14 +853,14 @@ body {
     padding: 8px 0 !important;
     margin-bottom: 10px !important;
   }
-  
-  .mantine-table td[data-label="前回履歴"] {
+
+  .mantine-table td[data-label='前回履歴'] {
     font-size: clamp(1.3rem, 7vw, 2.2rem);
     padding-left: 12px;
     min-height: 200px !important;
   }
-  
-  .mantine-table td[data-label="前回履歴"] div {
+
+  .mantine-table td[data-label='前回履歴'] div {
     font-size: clamp(1.3rem, 7vw, 2.2rem) !important;
     padding: 8px 0 !important;
     margin-bottom: 10px !important;
@@ -853,14 +880,14 @@ body {
     padding: 8px 0 !important;
     margin-bottom: 10px !important;
   }
-  
-  .mantine-table td[data-label="前回履歴"] {
+
+  .mantine-table td[data-label='前回履歴'] {
     font-size: clamp(1.2rem, 7.5vw, 2.1rem);
     padding-left: 10px;
     min-height: 220px !important;
   }
-  
-  .mantine-table td[data-label="前回履歴"] div {
+
+  .mantine-table td[data-label='前回履歴'] div {
     font-size: clamp(1.2rem, 7.5vw, 2.1rem) !important;
     padding: 8px 0 !important;
     margin-bottom: 10px !important;
@@ -870,7 +897,7 @@ body {
 /* 超小画面（320px以下）用の前回履歴テキスト調整 */
 @media (max-width: 320px) {
   .previous-reading-text {
-    font-size: clamp(1.1rem, 8vw, 2.0rem) !important;
+    font-size: clamp(1.1rem, 8vw, 2rem) !important;
     line-height: 1.25 !important;
     white-space: nowrap;
     overflow: hidden;
@@ -880,15 +907,15 @@ body {
     padding: 8px 0 !important;
     margin-bottom: 10px !important;
   }
-  
-  .mantine-table td[data-label="前回履歴"] {
-    font-size: clamp(1.1rem, 8vw, 2.0rem);
+
+  .mantine-table td[data-label='前回履歴'] {
+    font-size: clamp(1.1rem, 8vw, 2rem);
     padding-left: 8px;
     min-height: 240px !important;
   }
-  
-  .mantine-table td[data-label="前回履歴"] div {
-    font-size: clamp(1.1rem, 8vw, 2.0rem) !important;
+
+  .mantine-table td[data-label='前回履歴'] div {
+    font-size: clamp(1.1rem, 8vw, 2rem) !important;
     padding: 8px 0 !important;
     margin-bottom: 10px !important;
   }
@@ -918,8 +945,12 @@ body {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 /* ✅ 新しいレイアウト用CSS: 検針データヘッダーとナビゲーションボタン */
@@ -1047,26 +1078,26 @@ body {
     gap: clamp(4px, 1vw, 8px);
     align-items: center;
   }
-  
+
   .nav-button-large {
     padding: 12px 16px;
     font-size: 14px;
     min-width: 80px;
     flex-shrink: 1;
   }
-  
+
   .reading-history-header h3 {
     font-size: clamp(1rem, 2.5vw, 1.2rem) !important; /* さらに小さく */
     flex-shrink: 0;
   }
-  
+
   /* 下部ナビゲーションは縦積み */
   .reading-history-footer {
     flex-direction: column;
     gap: 12px;
     align-items: center;
   }
-  
+
   .nav-button-footer {
     padding: 16px 24px;
     font-size: 16px;
@@ -1191,7 +1222,7 @@ body {
   color: white;
   padding: 24px 32px;
   border-radius: var(--mui-radius-lg);
-  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   font-size: 1.2rem;
   font-weight: 600;
   text-align: center;
@@ -1211,7 +1242,7 @@ body {
   border-radius: 8px;
   font-size: 0.95rem;
   font-weight: 500;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   z-index: 10000;
   text-align: center;
   max-width: 90vw;
