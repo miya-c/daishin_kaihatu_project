@@ -429,15 +429,6 @@
             {usageStates}
             onInputChange={handleInputChange}
           />
-
-          <NavigationButtons
-            hasPrevious={roomNav.hasPrevious}
-            hasNext={roomNav.hasNext}
-            disabled={navigation.updating}
-            onPrevious={() => navigation.handlePreviousRoom(collectReadingsFromState)}
-            onNext={() => navigation.handleNextRoom(collectReadingsFromState)}
-            variant="footer"
-          />
         {:else}
           <InitialReadingForm
             readingValue={readingValues[''] ?? ''}
