@@ -92,10 +92,6 @@ class PWAUtils {
     };
   }
 
-  showNetworkStatus(_message, _level) {
-    // Network status is now handled by NetworkStatusBar Svelte component
-  }
-
   setupPeriodicUpdate() {
     if ('serviceWorker' in navigator) {
       setInterval(

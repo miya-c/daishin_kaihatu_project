@@ -20,18 +20,6 @@ function safeAlert(title, message) {
 }
 
 /**
- * 部屋ID正規化: ^R0*(\d+) → R + padStart(3, '0') に統一
- * @param {string} roomId - 部屋ID
- * @returns {string} 正規化された部屋ID
- */
-function normalizeRoomId(roomId) {
-  if (!roomId || typeof roomId !== 'string') return '';
-  const match = roomId.match(/^R0*(\d+)$/);
-  if (!match) return roomId;
-  return 'R' + match[1].padStart(3, '0');
-}
-
-/**
  * 日付を指定フォーマットの文字列に変換
  * @param {Date} date - 変換する日付
  * @param {string} format - フォーマット（デフォルト: 'YYYY-MM-DD'）
@@ -75,78 +63,6 @@ function parseDate(dateString) {
     Logger.log(`日付解析エラー: ${error.message}`);
     return null;
   }
-}
-
-/**
- * 配列をCSV形式の文字列に変換
- * @param {Array} data - 変換する配列データ
- * @param {string} delimiter - 区切り文字（デフォルト: ','）
- * @returns {string} CSV形式の文字列
- */
-function arrayToCSV(data, delimiter = ',') {
-  if (!Array.isArray(data) || data.length === 0) {
-    return '';
-  }
-  
-  return data.map(row => {
-    if (Array.isArray(row)) {
-      return row.map(cell => {
-        const cellString = String(cell || '');
-        // カンマや改行が含まれている場合はダブルクオートで囲む
-        if (cellString.includes(delimiter) || cellString.includes('\n') || cellString.includes('"')) {
-          return `"${cellString.replace(/"/g, '""')}"`;
-        }
-        return cellString;
-      }).join(delimiter);
-    }
-    return String(row);
-  }).join('\n');
-}
-
-/**
- * CSV文字列を配列に変換
- * @param {string} csvString - CSV形式の文字列
- * @param {string} delimiter - 区切り文字（デフォルト: ','）
- * @returns {Array} 配列データ
- */
-function csvToArray(csvString, delimiter = ',') {
-  if (!csvString || typeof csvString !== 'string') {
-    return [];
-  }
-  
-  const lines = csvString.split('\n');
-  const result = [];
-  
-  for (const line of lines) {
-    if (line.trim() === '') continue;
-    
-    const row = [];
-    let current = '';
-    let inQuotes = false;
-    
-    for (let i = 0; i < line.length; i++) {
-      const char = line[i];
-      
-      if (char === '"') {
-        if (inQuotes && line[i + 1] === '"') {
-          current += '"';
-          i++; // Skip next quote
-        } else {
-          inQuotes = !inQuotes;
-        }
-      } else if (char === delimiter && !inQuotes) {
-        row.push(current);
-        current = '';
-      } else {
-        current += char;
-      }
-    }
-    
-    row.push(current);
-    result.push(row);
-  }
-  
-  return result;
 }
 
 /**
@@ -204,77 +120,6 @@ function deepCopy(obj) {
   }
   
   return copied;
-}
-
-/**
- * 実行時間を測定する関数
- * @param {Function} func - 実行する関数
- * @param {Array} args - 関数の引数
- * @returns {Object} 実行結果と実行時間
- */
-function measureExecutionTime(func, args = []) {
-  const startTime = new Date();
-  
-  try {
-    const result = func.apply(this, args);
-    const endTime = new Date();
-    const duration = endTime - startTime;
-    
-    return {
-      success: true,
-      result: result,
-      duration: duration,
-      startTime: startTime,
-      endTime: endTime
-    };
-  } catch (error) {
-    const endTime = new Date();
-    const duration = endTime - startTime;
-    
-    return {
-      success: false,
-      error: error,
-      duration: duration,
-      startTime: startTime,
-      endTime: endTime
-    };
-  }
-}
-
-/**
- * 範囲の値を安全に取得
- * @param {Sheet} sheet - 対象シート
- * @param {number} startRow - 開始行
- * @param {number} startCol - 開始列
- * @param {number} numRows - 行数
- * @param {number} numCols - 列数
- * @returns {Array} 取得したデータ
- */
-function safeGetRange(sheet, startRow, startCol, numRows, numCols) {
-  try {
-    if (!sheet) {
-      Logger.log('エラー: シートが指定されていません');
-      return [];
-    }
-    
-    const maxRows = sheet.getMaxRows();
-    const maxCols = sheet.getMaxColumns();
-    
-    // 範囲が有効かチェック
-    if (startRow < 1 || startCol < 1 || 
-        startRow > maxRows || startCol > maxCols ||
-        numRows < 1 || numCols < 1 ||
-        startRow + numRows - 1 > maxRows ||
-        startCol + numCols - 1 > maxCols) {
-      Logger.log(`エラー: 無効な範囲指定 - Row: ${startRow}-${startRow + numRows - 1}, Col: ${startCol}-${startCol + numCols - 1}`);
-      return [];
-    }
-    
-    return sheet.getRange(startRow, startCol, numRows, numCols).getValues();
-  } catch (error) {
-    Logger.log(`範囲取得エラー: ${error.message}`);
-    return [];
-  }
 }
 
 /**
@@ -573,24 +418,6 @@ function getCacheStats() {
     Logger.log(`[getCacheStats] エラー: ${error.message}`);
     return null;
   }
-}
-
-/**
- * API結果ヘルパー: 統一レスポンス形式
- * @param {boolean} success - 成功フラグ
- * @param {*} data - データ
- * @param {string} error - エラーメッセージ
- * @returns {Object}
- */
-function apiResult(success, data, error) {
-  var result = {
-    success: success,
-    timestamp: new Date().toISOString(),
-    apiVersion: 'v3.0.0-library'
-  };
-  if (data !== undefined && data !== null) result.data = data;
-  if (error) result.error = error;
-  return result;
 }
 
 /**
