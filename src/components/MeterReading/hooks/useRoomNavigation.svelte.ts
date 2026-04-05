@@ -7,6 +7,7 @@ interface CreateRoomNavigationParams {
   gasWebAppUrl: string;
   displayToast: (message: string) => void;
   onNavigateToRoom?: (targetRoomId: string, preloadedNavData?: Record<string, unknown>) => void;
+  invalidatePrefetch?: (propId: string, rId: string) => void;
 }
 
 interface NavigationRoom {
@@ -188,8 +189,15 @@ export const createRoomNavigation = (options: CreateRoomNavigationParams) => {
           if (result.success && result.navigationResult) {
             // Update sessionStorage cache for saved room
             updateSessionCacheForSavedRoom(currentRoomId);
+            // Invalidate prefetch cache so re-navigation fetches fresh data
+            if (options.invalidatePrefetch) {
+              options.invalidatePrefetch(options.propertyId, currentRoomId);
+            }
             // Navigate with pre-loaded data (no additional API call)
-            options.onNavigateToRoom(targetRoomId, result.navigationResult as Record<string, unknown>);
+            options.onNavigateToRoom(
+              targetRoomId,
+              result.navigationResult as Record<string, unknown>
+            );
             return;
           }
           // Integrated API failed — fall through to legacy approach
@@ -209,6 +217,9 @@ export const createRoomNavigation = (options: CreateRoomNavigationParams) => {
         saveReadings(meterReadingsData, true, currentRoomId).then((saveOk) => {
           if (saveOk) {
             updateSessionCacheForSavedRoom(currentRoomId);
+            if (options.invalidatePrefetch) {
+              options.invalidatePrefetch(options.propertyId, currentRoomId);
+            }
           } else {
             options.displayToast('保存に失敗しました。ネットワークを確認して再試行してください。');
           }

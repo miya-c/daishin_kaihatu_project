@@ -27,7 +27,7 @@ export function createMeterReadings() {
 
   // Prefetch state
   const prefetchMap = new Map<string, PrefetchEntry>();
-  let prefetchAbortController: AbortController | null = null;
+  const prefetchAbortMap = new Map<string, AbortController>();
 
   function getPrefetchKey(pId: string, rId: string): string {
     return `${pId}:${rId}`;
@@ -98,9 +98,8 @@ export function createMeterReadings() {
 
     const resultReadings =
       Array.isArray(readings) && readings.length > 0
-        ? readings.map(
-            (rawReading: Record<string, unknown>, index: number) =>
-              mapReadingFromApi(rawReading, index, { calculateWarnings: true })
+        ? readings.map((rawReading: Record<string, unknown>, index: number) =>
+            mapReadingFromApi(rawReading, index, { calculateWarnings: true })
           )
         : [];
 
@@ -192,12 +191,13 @@ export function createMeterReadings() {
     const cached = prefetchMap.get(cacheKey);
     if (cached && Date.now() - cached.timestamp < PREFETCH_TTL) return;
 
-    // Abort previous prefetch
-    if (prefetchAbortController) {
-      prefetchAbortController.abort();
+    // Abort previous prefetch for this specific room only
+    const prevController = prefetchAbortMap.get(cacheKey);
+    if (prevController) {
+      prevController.abort();
     }
     const controller = new AbortController();
-    prefetchAbortController = controller;
+    prefetchAbortMap.set(cacheKey, controller);
 
     fetchAndParseReadings(propId, rId, controller.signal)
       .then((parsed) => {
@@ -257,28 +257,57 @@ export function createMeterReadings() {
       if (abortController) {
         abortController.abort();
       }
-      if (prefetchAbortController) {
-        prefetchAbortController.abort();
+      for (const ctrl of prefetchAbortMap.values()) {
+        ctrl.abort();
       }
+      prefetchAbortMap.clear();
       prefetchMap.clear();
     };
   });
 
   return {
-    get loading() { return loading; },
-    set loading(val: boolean) { loading = val; },
-    get error() { return error; },
-    set error(val: string | null) { error = val; },
-    get propertyId() { return propertyId; },
-    get propertyName() { return propertyName; },
-    set propertyName(val: string) { propertyName = val; },
-    get roomId() { return roomId; },
-    set roomId(val: string) { roomId = val; },
-    get roomName() { return roomName; },
-    set roomName(val: string) { roomName = val; },
-    get meterReadings() { return meterReadings; },
-    set meterReadings(val: MeterReading[]) { meterReadings = val; },
-    get gasWebAppUrl() { return gasWebAppUrl; },
+    get loading() {
+      return loading;
+    },
+    set loading(val: boolean) {
+      loading = val;
+    },
+    get error() {
+      return error;
+    },
+    set error(val: string | null) {
+      error = val;
+    },
+    get propertyId() {
+      return propertyId;
+    },
+    get propertyName() {
+      return propertyName;
+    },
+    set propertyName(val: string) {
+      propertyName = val;
+    },
+    get roomId() {
+      return roomId;
+    },
+    set roomId(val: string) {
+      roomId = val;
+    },
+    get roomName() {
+      return roomName;
+    },
+    set roomName(val: string) {
+      roomName = val;
+    },
+    get meterReadings() {
+      return meterReadings;
+    },
+    set meterReadings(val: MeterReading[]) {
+      meterReadings = val;
+    },
+    get gasWebAppUrl() {
+      return gasWebAppUrl;
+    },
     loadMeterReadings,
     prefetchRoom,
     invalidatePrefetch,

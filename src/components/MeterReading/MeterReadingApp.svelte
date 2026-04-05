@@ -72,6 +72,9 @@
     get displayToast() {
       return toast.displayToast;
     },
+    get invalidatePrefetch() {
+      return readings.invalidatePrefetch;
+    },
     get onNavigateToRoom() {
       return (targetRoomId: string, preloadedNavData?: Record<string, unknown>) => {
         hasSaved = false;
