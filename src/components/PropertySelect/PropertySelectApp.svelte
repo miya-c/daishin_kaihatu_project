@@ -11,6 +11,7 @@
   let isNavigating: boolean = $state(false);
   let navigationMessage: string = $state('');
   let showUrlModal: boolean = $state(false);
+  let showExitModal: boolean = $state(false);
   let urlInput: string = $state(
     import.meta.env.VITE_GAS_WEB_APP_URL || 'https://script.google.com/macros/s/'
   );
@@ -92,6 +93,16 @@
       showUrlModal = false;
     }
   };
+
+  function handleExitYes(): void {
+    window.close();
+    document.body.innerHTML =
+      '<div style="display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;color:#333;font-size:1.125rem;">アプリを終了してください。</div>';
+  }
+
+  function handleExitNo(): void {
+    showExitModal = false;
+  }
 
   const handlePropertySelect = async (property: Property) => {
     if (!property || typeof property.id === 'undefined' || typeof property.name === 'undefined')
@@ -287,6 +298,14 @@
     <div class="MuiAppBar-root">
       <div class="MuiToolbar-root">
         <div class="app-title">物件選択</div>
+        <button
+          onclick={() => (showExitModal = true)}
+          style="margin-left: auto; background: none; border: none; color: #fff; cursor: pointer; display: flex; align-items: center; gap: 4px; font-size: 0.875rem;"
+          aria-label="アプリ終了"
+        >
+          <span class="material-icons MuiSvgIcon-root" style="font-size: 20px;">close</span>
+          終了
+        </button>
       </div>
     </div>
 
@@ -406,5 +425,39 @@
         </div>
       </div>
     </div>
+
+    {#if showExitModal}
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="exit-modal-title"
+        style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 2147483647;"
+      >
+        <div
+          style="background-color: var(--mui-palette-primary-main, #1976d2); border-radius: 16px; padding: 32px; max-width: 360px; width: 90%; box-shadow: 0 8px 32px rgba(0,0,0,0.2); text-align: center;"
+        >
+          <h3
+            id="exit-modal-title"
+            style="margin: 0 0 8px 0; font-size: 1.25rem; font-weight: 600; color: #fff; white-space: nowrap;"
+          >
+            アプリを終了しますか？
+          </h3>
+          <div style="display: flex; gap: 12px; justify-content: center; margin-top: 20px;">
+            <button
+              onclick={handleExitYes}
+              style="flex: 1; padding: 10px 16px; border-radius: 8px; border: 2px solid #fff; background-color: #fff; color: var(--mui-palette-primary-main, #1976d2); cursor: pointer; font-weight: 600; font-size: 1.125rem;"
+            >
+              はい
+            </button>
+            <button
+              onclick={handleExitNo}
+              style="flex: 1; padding: 10px 16px; border-radius: 8px; border: 2px solid rgba(255,255,255,0.5); background-color: transparent; color: #fff; cursor: pointer; font-size: 1.125rem;"
+            >
+              いいえ
+            </button>
+          </div>
+        </div>
+      </div>
+    {/if}
   </div>
 {/if}
