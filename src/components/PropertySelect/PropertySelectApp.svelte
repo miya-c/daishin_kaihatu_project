@@ -297,10 +297,10 @@
 
     <div class="MuiAppBar-root">
       <div class="MuiToolbar-root">
-        <div class="app-title">物件選択</div>
+        <div class="app-title" style="flex: 1; text-align: center;">物件選択</div>
         <button
           onclick={() => (showExitModal = true)}
-          style="margin-left: auto; background: none; border: none; color: #fff; cursor: pointer; display: flex; align-items: center; gap: 4px; font-size: 0.875rem;"
+          style="background: none; border: none; color: #fff; cursor: pointer; display: flex; align-items: center; gap: 4px; font-size: 0.875rem;"
           aria-label="アプリ終了"
         >
           <span class="material-icons MuiSvgIcon-root" style="font-size: 20px;">close</span>
