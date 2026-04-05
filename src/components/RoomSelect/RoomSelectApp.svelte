@@ -427,30 +427,30 @@
         >
           <h3
             id="exit-modal-title"
-            style="margin: 0 0 8px 0; font-size: 1.125rem; font-weight: 600; color: #fff; white-space: nowrap;"
+            style="margin: 0 0 8px 0; font-size: 1.25rem; font-weight: 600; color: #fff; white-space: nowrap;"
           >
             検針を完了しました
           </h3>
           <p
-            style="margin: 0 0 20px 0; font-size: 0.875rem; color: rgba(255,255,255,0.85); white-space: nowrap;"
+            style="margin: 0 0 20px 0; font-size: 1rem; color: rgba(255,255,255,0.85); white-space: nowrap;"
           >
             アプリを終了しますか？
           </p>
           <p
-            style="margin: 0 0 20px 0; font-size: 0.75rem; color: rgba(255,255,255,0.55); white-space: nowrap;"
+            style="margin: 0 0 20px 0; font-size: 0.875rem; color: rgba(255,255,255,0.55); white-space: nowrap;"
           >
             「いいえ」で物件選択画面へ戻ります
           </p>
           <div style="display: flex; gap: 12px; justify-content: center;">
             <button
               onclick={handleExitYes}
-              style="flex: 1; padding: 10px 16px; border-radius: 8px; border: 2px solid #fff; background-color: #fff; color: var(--mui-palette-primary-main, #1976d2); cursor: pointer; font-weight: 600; font-size: 1rem;"
+              style="flex: 1; padding: 10px 16px; border-radius: 8px; border: 2px solid #fff; background-color: #fff; color: var(--mui-palette-primary-main, #1976d2); cursor: pointer; font-weight: 600; font-size: 1.125rem;"
             >
               はい
             </button>
             <button
               onclick={handleExitNo}
-              style="flex: 1; padding: 10px 16px; border-radius: 8px; border: 2px solid rgba(255,255,255,0.5); background-color: transparent; color: #fff; cursor: pointer; font-size: 1rem;"
+              style="flex: 1; padding: 10px 16px; border-radius: 8px; border: 2px solid rgba(255,255,255,0.5); background-color: transparent; color: #fff; cursor: pointer; font-size: 1.125rem;"
             >
               いいえ
             </button>
