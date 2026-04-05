@@ -13,6 +13,7 @@
   let toastMessage: string = $state('');
   let showToast: boolean = $state(false);
   let toastTimerRef: ReturnType<typeof setTimeout> | null = null;
+  let showExitModal: boolean = $state(false);
 
   function displayToast(message: string): void {
     toastMessage = message;
@@ -191,6 +192,17 @@
     window.location.href = '/property/';
   }
 
+  function handleExitYes(): void {
+    window.close();
+    document.body.innerHTML =
+      '<div style="display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;color:#333;font-size:1.125rem;">検針が完了しました。このタブを閉じてください。</div>';
+  }
+
+  function handleExitNo(): void {
+    showExitModal = false;
+    window.location.href = '/property/';
+  }
+
   async function handleCompleteInspection(): Promise<void> {
     if (!propertyId) {
       displayToast('物件IDが取得できませんでした');
@@ -216,7 +228,7 @@
 
       if (result.success) {
         displayToast(`検針完了日を ${completionDate} で保存しました！`);
-        setTimeout(() => window.location.reload(), 1500);
+        showExitModal = true;
       } else {
         throw new Error(result.error || '検針完了処理に失敗しました');
       }
@@ -401,6 +413,40 @@
     {#if showToast}
       <div role="status" aria-live="polite" class="toast-inline">
         {toastMessage}
+      </div>
+    {/if}
+
+    {#if showExitModal}
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="exit-modal-title"
+        style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 2147483647;"
+      >
+        <div
+          style="background-color: #fff; border-radius: 16px; padding: 32px; max-width: 360px; width: 90%; box-shadow: 0 8px 32px rgba(0,0,0,0.2);"
+        >
+          <h3
+            id="exit-modal-title"
+            style="margin: 0 0 16px 0; font-size: 1.125rem; font-weight: 600;"
+          >
+            アプリを終了しますか？
+          </h3>
+          <div style="display: flex; gap: 12px; justify-content: center;">
+            <button
+              onclick={handleExitYes}
+              style="flex: 1; padding: 10px 16px; border-radius: 8px; border: none; background-color: var(--mui-palette-primary-main, #1976d2); color: #fff; cursor: pointer; font-weight: 600; font-size: 1rem;"
+            >
+              はい
+            </button>
+            <button
+              onclick={handleExitNo}
+              style="flex: 1; padding: 10px 16px; border-radius: 8px; border: 1px solid #ccc; background-color: #fff; cursor: pointer; font-size: 1rem;"
+            >
+              いいえ
+            </button>
+          </div>
+        </div>
       </div>
     {/if}
   </div>
