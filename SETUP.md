@@ -101,7 +101,7 @@ npm run build
 src/
 ├── components/
 │   ├── MeterReading/        # 検針ページ
-│   │   ├── MeterReadingApp.jsx
+│   │   ├── MeterReadingApp.svelte
 │   │   ├── components/      # UIコンポーネント
 │   │   ├── hooks/           # カスタムフック
 │   │   └── utils/           # ユーティリティ

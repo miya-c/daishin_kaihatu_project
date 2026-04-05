@@ -37,104 +37,6 @@ function getProperties() {
 }
 
 /**
- * 物件一覧を取得（軽量版・速度改善用）
- * 必要最小限のフィールドのみを返却して通信量を削減
- * @param {string} lastSync - 最終同期日時（ISO形式、省略可）
- * @returns {Array} 軽量化された物件データの配列
- */
-function getPropertiesLight(lastSync = null) {
-  try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const sheet = ss.getSheetByName('物件マスタ');
-    
-    if (!sheet) {
-      throw new Error('物件マスタシートが見つかりません');
-    }
-    
-    const data = sheet.getDataRange().getValues();
-    if (data.length <= 1) {
-      return {
-        hasChanges: false,
-        data: [],
-        lastModified: new Date().toISOString(),
-        totalCount: 0
-      };
-    }
-    
-    const headers = data[0];
-    const lightFields = getConfig('PERFORMANCE.LIGHT_API.PROPERTIES_FIELDS', ['物件ID', '物件名']);
-    const timestampCol = getConfig('PERFORMANCE.DELTA_SYNC.TIMESTAMP_COLUMN', '最終更新日時');
-    
-    // 必要な列インデックスを取得
-    const fieldIndexes = {};
-    lightFields.forEach(field => {
-      const index = headers.indexOf(field);
-      if (index !== -1) {
-        fieldIndexes[field] = index;
-      }
-    });
-    
-    const timestampIndex = headers.indexOf(timestampCol);
-    
-    // データを軽量化して返却
-    const lightData = [];
-    let maxTimestamp = new Date(0);
-    
-    for (let i = 1; i < data.length; i++) {
-      const row = data[i];
-      const item = {};
-      
-      // 指定されたフィールドのみ抽出
-      lightFields.forEach(field => {
-        if (fieldIndexes[field] !== undefined) {
-          item[field] = row[fieldIndexes[field]];
-        }
-      });
-      
-      // タイムスタンプ処理
-      let rowTimestamp = new Date();
-      if (timestampIndex !== -1 && row[timestampIndex]) {
-        try {
-          rowTimestamp = new Date(row[timestampIndex]);
-          if (isNaN(rowTimestamp.getTime())) {
-            rowTimestamp = new Date();
-          }
-        } catch (e) {
-          rowTimestamp = new Date();
-        }
-      }
-      
-      // 差分同期チェック
-      if (lastSync) {
-        const lastSyncDate = new Date(lastSync);
-        if (rowTimestamp <= lastSyncDate) {
-          continue; // 未更新のデータはスキップ
-        }
-      }
-      
-      item.lastModified = rowTimestamp.toISOString();
-      lightData.push(item);
-      
-      if (rowTimestamp > maxTimestamp) {
-        maxTimestamp = rowTimestamp;
-      }
-    }
-    
-    return {
-      hasChanges: lightData.length > 0,
-      data: lightData,
-      lastModified: maxTimestamp.toISOString(),
-      totalCount: lightData.length,
-      compression: Math.round((1 - (JSON.stringify(lightData).length / JSON.stringify(data).length)) * 100)
-    };
-    
-  } catch (error) {
-    Logger.log(`[getPropertiesLight] エラー: ${error.message}`);
-    throw error;
-  }
-}
-
-/**
  * 指定された物件の部屋一覧と検針状況を取得する（CSV構造完全対応版）
  * room_select.html用の形式で返却
  * @param {string} propertyId - 物件ID
@@ -142,8 +44,6 @@ function getPropertiesLight(lastSync = null) {
  */
 function getRooms(propertyId) {
   try {
-    Logger.log(`[getRooms] 開始 - propertyId: ${propertyId}`);
-    
     if (!propertyId) {
       throw new Error('物件IDが指定されていません');
     }
@@ -160,7 +60,7 @@ function getRooms(propertyId) {
       throw new Error('部屋マスタシートが見つかりません');
     }
     
-    Logger.log('[getRooms] シート取得完了');    // 物件情報取得（物件マスタ.csv: 物件ID,物件名,検針完了日）
+    // 物件情報取得（物件マスタ.csv: 物件ID,物件名,検針完了日）
     const propertyData = propertySheet.getDataRange().getValues();
     if (propertyData.length <= 1) {
       throw new Error('物件マスタにデータがありません');
@@ -192,10 +92,9 @@ function getRooms(propertyId) {
       name: String(propertyRow[propertyNameIndex] || '物件名不明').trim()
     };
     
-    Logger.log(`[getRooms] 物件情報取得完了: ${JSON.stringify(propertyInfo)}`);    // 部屋情報取得（部屋マスタ.csv: 物件ID,部屋ID,部屋名）
+    // 部屋情報取得（部屋マスタ.csv: 物件ID,部屋ID,部屋名）
     const roomData = roomSheet.getDataRange().getValues();
     if (roomData.length <= 1) {
-      Logger.log('[getRooms] 部屋マスタにデータなし - 空配列を返却');
       return {
         property: propertyInfo,
         rooms: []
@@ -211,8 +110,6 @@ function getRooms(propertyId) {
       throw new Error('部屋マスタに必要な列（物件ID、部屋ID、部屋名）が見つかりません');
     }
     
-    Logger.log(`[getRooms] 部屋マスタ列構成確認: 物件ID列:${roomPropertyIdIndex}, 部屋ID列:${roomIdIndex}, 部屋名列:${roomNameIndex}`);
-    
     const rooms = roomData.slice(1)
       .filter(row => String(row[roomPropertyIdIndex]).trim() === String(propertyId).trim())
       .map(row => ({
@@ -224,7 +121,7 @@ function getRooms(propertyId) {
         isNotNeeded: false              // 検針不要フラグ（デフォルトは必要）
       }));
     
-    Logger.log(`[getRooms] 対象部屋数: ${rooms.length}件`);    // inspection_dataから検針完了状況と検針不要フラグを確認
+    // inspection_dataから検針完了状況と検針不要フラグを確認
     // inspection_data.csv: 記録ID,物件名,物件ID,部屋ID,部屋名,検針日時,警告フラグ,標準偏差値,今回使用量,今回の指示数,前回指示数,前々回指示数,前々々回指示数,検針不要
     const inspectionSheet = ss.getSheetByName('inspection_data');
     if (inspectionSheet) {
@@ -238,8 +135,6 @@ function getRooms(propertyId) {
           const inspValueIndex = inspHeaders.indexOf('今回の指示数');     // 列J (9)
           const inspDateIndex = inspHeaders.indexOf('検針日時');          // 列F (5)
           const inspNotNeededIndex = inspHeaders.indexOf('検針不要');     // 列N (13)
-          
-          Logger.log(`[getRooms] inspection_data列構成 - 物件ID列:${inspPropertyIdIndex}, 部屋ID列:${inspRoomIdIndex}, 今回の指示数列:${inspValueIndex}, 検針日時列:${inspDateIndex}, 検針不要列:${inspNotNeededIndex}`);
           
           if (inspPropertyIdIndex !== -1 && inspRoomIdIndex !== -1 && inspValueIndex !== -1) {
             const readingMap = new Map(); // 部屋IDと検針日のマップ
@@ -258,7 +153,6 @@ function getRooms(propertyId) {
                   const numPart = roomIdRaw.substring(1); // 000001
                   const normalizedNum = String(parseInt(numPart, 10)).padStart(3, '0'); // 001
                   roomId = 'R' + normalizedNum; // R001
-                  Logger.log(`[getRooms] 部屋ID正規化: ${roomIdRaw} → ${roomId}`);
                 }
                 
                 // 検針完了データを確認（検針値が入力されている場合）
@@ -303,7 +197,6 @@ function getRooms(propertyId) {
                                         notNeededStr === '○' || notNeededStr === 'x' || notNeededStr === '×');
                     
                     notNeededMap.set(roomId, isNotNeeded);
-                    Logger.log(`[getRooms] 部屋${roomId} 検針不要フラグ: ${notNeededStr} -> ${isNotNeeded}`);
                   }
                 }
               }
@@ -330,7 +223,6 @@ function getRooms(propertyId) {
               }
             });
             
-            Logger.log(`[getRooms] 検針完了部屋数: ${readingMap.size}件, 検針不要部屋数: ${Array.from(notNeededMap.values()).filter(v => v).length}件`);
           } else {
             Logger.log('[getRooms] inspection_dataの必要な列が見つかりません');
           }
@@ -348,7 +240,6 @@ function getRooms(propertyId) {
       rooms: rooms
     };
     
-    Logger.log(`[getRooms] 完了 - 結果サマリー: 物件名=${propertyInfo.name}, 部屋数=${rooms.length}件, 検針完了=${rooms.filter(r => r.isCompleted).length}件`);
     return result;
     
   } catch (error) {
@@ -366,7 +257,6 @@ function getRooms(propertyId) {
  */
 function getRoomsLight(propertyId, lastSync = null) {
   try {
-    Logger.log(`[getRoomsLight] 開始 - propertyId: ${propertyId}`);
     
     if (!propertyId) {
       throw new Error('物件IDが指定されていません');
@@ -474,7 +364,6 @@ function getRoomsLight(propertyId, lastSync = null) {
       }
     }
     
-    Logger.log(`[getRoomsLight] 基本部屋データ取得完了: ${lightRooms.length}件`);
     
     // inspection_dataから検針完了状況と検針不要フラグを確認
     const inspectionSheet = ss.getSheetByName('inspection_data');
@@ -490,7 +379,6 @@ function getRoomsLight(propertyId, lastSync = null) {
           const inspDateIndex = inspHeaders.indexOf('検針日時');          // 列F (5)
           const inspNotNeededIndex = inspHeaders.indexOf('検針不要');     // 列N (13)
           
-          Logger.log(`[getRoomsLight] inspection_data列構成 - 物件ID列:${inspPropertyIdIndex}, 部屋ID列:${inspRoomIdIndex}, 今回の指示数列:${inspValueIndex}, 検針日時列:${inspDateIndex}, 検針不要列:${inspNotNeededIndex}`);
           
           if (inspPropertyIdIndex !== -1 && inspRoomIdIndex !== -1 && inspValueIndex !== -1) {
             const readingMap = new Map(); // 部屋IDと検針日のマップ
@@ -509,7 +397,6 @@ function getRoomsLight(propertyId, lastSync = null) {
                   const numPart = roomIdRaw.substring(1); // 000001
                   const normalizedNum = String(parseInt(numPart, 10)).padStart(3, '0'); // 001
                   roomId = 'R' + normalizedNum; // R001
-                  Logger.log(`[getRoomsLight] 部屋ID正規化: ${roomIdRaw} → ${roomId}`);
                 }
                 
                 // 検針完了データを確認（検針値が入力されている場合）
@@ -554,7 +441,6 @@ function getRoomsLight(propertyId, lastSync = null) {
                                         notNeededStr === '○' || notNeededStr === 'x' || notNeededStr === '×');
                     
                     notNeededMap.set(roomId, isNotNeeded);
-                    Logger.log(`[getRoomsLight] 部屋${roomId} 検針不要フラグ: ${notNeededStr} -> ${isNotNeeded}`);
                   }
                 }
               }
@@ -581,7 +467,6 @@ function getRoomsLight(propertyId, lastSync = null) {
               }
             });
             
-            Logger.log(`[getRoomsLight] 検針完了部屋数: ${readingMap.size}件, 検針不要部屋数: ${Array.from(notNeededMap.values()).filter(v => v).length}件`);
           } else {
             Logger.log('[getRoomsLight] inspection_dataの必要な列が見つかりません');
           }
@@ -618,7 +503,6 @@ function getRoomsLight(propertyId, lastSync = null) {
  */
 function getMeterReadings(propertyId, roomId) {
   try {
-    Logger.log(`[getMeterReadings] 統合版開始 - propertyId: ${propertyId}, roomId: ${roomId}`);
     
     if (!propertyId || !roomId) {
       throw new Error('物件IDと部屋IDが必要です');
@@ -684,7 +568,6 @@ function getMeterReadings(propertyId, roomId) {
       return reading;
     });
     
-    Logger.log(`[getMeterReadings] 完了 - 物件名: ${propertyName}, 部屋名: ${roomName}, 検針件数: ${readings.length}`);
     
     return {
       propertyName: propertyName,
@@ -788,9 +671,6 @@ function updateMeterReadings(propertyId, roomId, readings) {
       };
     }
 
-    Logger.log(`[updateMeterReadings] 🚀 開始: 物件=${propertyId}, 部屋=${roomId}, データ数=${readings.length}`);
-    Logger.log(`[updateMeterReadings] 📥 受信データ:`, readings);
-
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const sheet = ss.getSheetByName('inspection_data');
 
@@ -816,9 +696,6 @@ function updateMeterReadings(propertyId, roomId, readings) {
       standardDeviation: headers.indexOf('標準偏差値')
     };
     
-    Logger.log(`[updateMeterReadings] 📊 列インデックス:`, colIndexes);
-    Logger.log(`[updateMeterReadings] 🎯 警告フラグ列インデックス: ${colIndexes.warningFlag}`);
-    Logger.log(`[updateMeterReadings] 📋 利用可能な列: ${headers.join(', ')}`);
     
     // 警告フラグ列が存在しない場合のエラーハンドリング
     if (colIndexes.warningFlag === -1) {
@@ -836,13 +713,11 @@ function updateMeterReadings(propertyId, roomId, readings) {
     const now = new Date();
     
     readings.forEach((reading, readingIndex) => {
-      Logger.log(`[updateMeterReadings] 🔄 処理中[${readingIndex}]:`, reading);
       
       const currentValue = parseFloat(reading.currentReading) || 0;
       
-      // ✅ 警告フラグを確実に受信・ログ出力
+      // 警告フラグを確実に受信
       const receivedWarningFlag = reading.warningFlag || '正常';
-      Logger.log(`[updateMeterReadings] 🚨 受信した警告フラグ[${readingIndex}]: "${receivedWarningFlag}" (型: ${typeof receivedWarningFlag})`);
       
       // JST日付を正規化
       const normalizedDate = reading.date ? normalizeToJSTDate(reading.date) : getCurrentJSTDate();
@@ -853,12 +728,9 @@ function updateMeterReadings(propertyId, roomId, readings) {
         String(row[colIndexes.propertyId]).trim() === String(propertyId).trim() &&
         String(row[colIndexes.roomId]).trim() === String(roomId).trim()
       );
-      
-      Logger.log(`[updateMeterReadings] 🔍 既存データ検索結果[${readingIndex}]: インデックス=${existingRowIndex}`);
-      
+
       if (existingRowIndex >= 0) {
         // 既存データ更新
-        Logger.log(`[updateMeterReadings] 📝 既存データ更新モード[${readingIndex}]`);
         
         const previousReading = parseFloat(data[existingRowIndex][colIndexes.previousReading]) || 0;
         const usage = previousReading > 0 ? Math.max(0, currentValue - previousReading) : currentValue;
@@ -878,9 +750,7 @@ function updateMeterReadings(propertyId, roomId, readings) {
         if (colIndexes.usage >= 0) data[existingRowIndex][colIndexes.usage] = usage;
         
         // ✅ 警告フラグを確実にG列に保存
-        Logger.log(`[updateMeterReadings] 💾 警告フラグ保存前[${readingIndex}]: 列${colIndexes.warningFlag + 1} = "${data[existingRowIndex][colIndexes.warningFlag]}"`);
         data[existingRowIndex][colIndexes.warningFlag] = receivedWarningFlag;
-        Logger.log(`[updateMeterReadings] ✅ 警告フラグ保存後[${readingIndex}]: 列${colIndexes.warningFlag + 1} = "${data[existingRowIndex][colIndexes.warningFlag]}"`);
         
         // 標準偏差を保存
         if (colIndexes.standardDeviation >= 0) {
@@ -889,7 +759,6 @@ function updateMeterReadings(propertyId, roomId, readings) {
         
       } else {
         // 新規データ作成
-        Logger.log(`[updateMeterReadings] 🆕 新規データ作成モード[${readingIndex}]`);
         
         const newRow = new Array(headers.length).fill('');
         
@@ -900,7 +769,6 @@ function updateMeterReadings(propertyId, roomId, readings) {
         if (colIndexes.usage >= 0) newRow[colIndexes.usage] = currentValue;
         
         // ✅ 警告フラグを確実にG列に設定
-        Logger.log(`[updateMeterReadings] 🆕 新規警告フラグ設定[${readingIndex}]: 列${colIndexes.warningFlag + 1} = "${receivedWarningFlag}"`);
         newRow[colIndexes.warningFlag] = receivedWarningFlag;
         
         // 新規データの標準偏差は0
@@ -916,7 +784,6 @@ function updateMeterReadings(propertyId, roomId, readings) {
     
     // シートに一括書き込み（安全な上書き方式）
     if (updatedRowCount > 0) {
-      Logger.log(`[updateMeterReadings] 💾 シートへの書き込み開始: ${updatedRowCount}件`);
 
       // 安全な上書き: clear()を使わず直接setValuesで上書き
       sheet.getRange(1, 1, data.length, headers.length).setValues(data);
@@ -926,7 +793,6 @@ function updateMeterReadings(propertyId, roomId, readings) {
         sheet.getRange(data.length + 1, 1, lastRow - data.length, headers.length).clearContent();
       }
 
-      Logger.log(`[updateMeterReadings] ✅ ${updatedRowCount}件のデータをシートに書き込み完了`);
     }
     
     return {
@@ -963,7 +829,7 @@ function updateMeterReadings(propertyId, roomId, readings) {
       timestamp: Utilities.formatDate(new Date(), 'JST', 'yyyy-MM-dd HH:mm:ss')
     };
   } finally {
-    try { lock.releaseLock(); } catch (e) { /* ignore */ }
+    try { lock.releaseLock(); } catch (e) { Logger.log('[updateMeterReadings] Lock release warning: ' + e.message); }
   }
 }
 
@@ -975,8 +841,6 @@ function updateMeterReadings(propertyId, roomId, readings) {
  */
 function completePropertyInspectionSimple(propertyId, completionDate) {
   try {
-    console.log(`[検針完了] 開始 - 物件ID: ${propertyId}, 完了日: ${completionDate}`);
-    
     if (!propertyId) {
       throw new Error('物件IDが指定されていません');
     }
@@ -1043,7 +907,6 @@ function completePropertyInspectionSimple(propertyId, completionDate) {
     targetCell.setValue(saveDate);
     SpreadsheetApp.flush();
     
-    console.log(`[検針完了] 成功 - ${saveDate} を記録しました`);
     
     return {
       success: true,
@@ -1150,7 +1013,6 @@ function calculateThreshold(previousReading, previousPreviousReading, threeTimes
     // 閾値計算：前回値 + 標準偏差 + 10（標準偏差は既に整数）
     const threshold = previousReading + standardDeviation + 10;
     
-    Logger.log(`[calculateThreshold] 前回値: ${previousReading}, 履歴: [${readingHistory.join(', ')}], 平均: ${average.toFixed(2)}, 標準偏差: ${standardDeviation}, 閾値: ${threshold}`);
     
     return {
       standardDeviation: standardDeviation, // 既に整数
@@ -1219,7 +1081,6 @@ function calculateWarningFlag(currentReading, previousReading, previousPreviousR
     // 警告フラグを判定：今回指示数が閾値を超えた場合のみ「要確認」
     const warningFlag = (currentReading > thresholdInfo.threshold) ? '要確認' : '正常';
     
-    Logger.log(`[calculateWarningFlag] 今回指示数: ${currentReading}, 前回値: ${previousReading}, 標準偏差: ${thresholdInfo.standardDeviation}, 閾値: ${thresholdInfo.threshold}, 判定: ${warningFlag}`);
     
     return {
       warningFlag: warningFlag,
@@ -1277,7 +1138,6 @@ function normalizeToJSTDate(dateValue) {
     if (typeof dateValue === 'string') {
       // 既にYYYY-MM-DD形式の場合
       if (dateValue.match(/^\d{4}-\d{2}-\d{2}$/)) {
-        Logger.log(`[normalizeToJSTDate] 既に正規化済み: ${dateValue}`);
         return dateValue;
       }
       date = new Date(dateValue);
@@ -1300,7 +1160,6 @@ function normalizeToJSTDate(dateValue) {
     // Google Apps Script推奨: Utilities.formatDateを使用
     const jstDateString = Utilities.formatDate(date, 'Asia/Tokyo', 'yyyy-MM-dd');
     
-    Logger.log(`[normalizeToJSTDate] JST日付正規化: ${dateValue} → ${jstDateString}`);
     return jstDateString;
     
   } catch (error) {
@@ -1318,7 +1177,6 @@ function getCurrentJSTDate() {
   // Google Apps Script推奨: Utilities.formatDateを使用
   const jstDateString = Utilities.formatDate(now, 'Asia/Tokyo', 'yyyy-MM-dd');
   
-  Logger.log(`[getCurrentJSTDate] 現在のJST日付: ${jstDateString}`);
   return jstDateString;
 }
 
@@ -1338,9 +1196,6 @@ function saveAndNavigate(params) {
   const timeout = parseInt(params.timeout) || 30000; // デフォルト30秒
   
   try {
-    Logger.log('[saveAndNavigate] 統合API開始 - バージョン: Phase 2.3');
-    Logger.log('[saveAndNavigate] パラメータ:', params);
-    Logger.log(`[saveAndNavigate] タイムアウト設定: ${timeout}ms`);
     
     // Phase 2.3: 既存API互換性確保 - バージョン情報追加
     const apiVersion = 'v1.0.0-integrated';
@@ -1348,7 +1203,6 @@ function saveAndNavigate(params) {
     
     // 1. パラメータ検証（タイムアウト監視付き）
     if (Date.now() - startTime > timeout * 0.1) { // 10%でタイムアウト警告
-      Logger.log('[saveAndNavigate] ⚠️ タイムアウト警告: 検証段階で時間を消費');
     }
     
     const validationResult = validateSaveAndNavigateParams(params);
@@ -1360,20 +1214,17 @@ function saveAndNavigate(params) {
       });
     }
     
-    Logger.log('[saveAndNavigate] ✅ パラメータ検証完了');
     
     // 2. データ保存処理（タイムアウト監視付き）
     const saveStartTime = Date.now();
     const saveTimeLimit = timeout * 0.6; // 60%を保存処理に割当
     
     if (Date.now() - startTime > saveTimeLimit) {
-      Logger.log('[saveAndNavigate] ⚠️ タイムアウト警告: 保存処理開始前に制限時間に近づいています');
     }
     
     const saveResult = performSaveOperation(params);
     const saveOperationTime = Date.now() - saveStartTime;
     
-    Logger.log(`[saveAndNavigate] 保存処理完了: ${saveOperationTime}ms`);
     
     if (!saveResult.success) {
       return createErrorResponse('SAVE_FAILED', saveResult.error, { 
@@ -1392,13 +1243,11 @@ function saveAndNavigate(params) {
     const remainingTime = timeout - (Date.now() - startTime);
     
     if (remainingTime < timeout * 0.2) { // 20%未満で警告
-      Logger.log(`[saveAndNavigate] ⚠️ タイムアウト警告: ナビゲーション処理に残り${remainingTime}ms`);
     }
     
     const navigationResult = performNavigationOperation(params);
     const navOperationTime = Date.now() - navStartTime;
     
-    Logger.log(`[saveAndNavigate] ナビゲーション処理完了: ${navOperationTime}ms`);
     
     if (!navigationResult.success) {
       // 保存は成功したが取得が失敗した場合の部分的成功
@@ -1434,7 +1283,6 @@ function saveAndNavigate(params) {
                  totalProcessingTime < timeout * 0.8 ? 'good' : 'acceptable'
     };
     
-    Logger.log(`[saveAndNavigate] ✅ 統合API完了 - 総処理時間: ${totalProcessingTime}ms`);
     return response;
     
   } catch (error) {
@@ -1461,7 +1309,6 @@ function saveAndNavigate(params) {
  */
 function validateSaveAndNavigateParams(params) {
   try {
-    Logger.log('[validateSaveAndNavigateParams] 検証開始');
     
     // 基本パラメータ存在確認
     const required = ['action', 'propertyId', 'currentRoomId', 'targetRoomId', 'direction', 'meterReadingsData'];
@@ -1606,7 +1453,6 @@ function validateSaveAndNavigateParams(params) {
       }
     }
     
-    Logger.log('[validateSaveAndNavigateParams] 検証成功');
     return { 
       success: true,
       validatedData: {
@@ -1638,8 +1484,6 @@ function performSaveOperation(params) {
   const operationStartTime = Date.now();
   
   try {
-    Logger.log('[performSaveOperation] 保存処理開始');
-    Logger.log(`[performSaveOperation] 対象: 物件=${propertyId}, 部屋=${currentRoomId}`);
     
     // JSON文字列をパース
     let readings;
@@ -1696,14 +1540,11 @@ function performSaveOperation(params) {
       };
     }
     
-    Logger.log(`[performSaveOperation] ${readings.length}件の検針データを保存実行`);
     
     // 既存の updateMeterReadings ロジックを再利用（詳細エラー監視）
     const result = updateMeterReadings(propertyId, currentRoomId, readings);
     const operationDuration = Date.now() - operationStartTime;
     
-    Logger.log(`[performSaveOperation] updateMeterReadings結果:`, result);
-    Logger.log(`[performSaveOperation] 処理時間: ${operationDuration}ms`);
     
     if (result && result.success) {
       return {
@@ -1771,8 +1612,6 @@ function performNavigationOperation(params) {
   const operationStartTime = Date.now();
   
   try {
-    Logger.log('[performNavigationOperation] ナビゲーション処理開始');
-    Logger.log(`[performNavigationOperation] 移動先: 物件=${propertyId}, 部屋=${targetRoomId}`);
     
     // 移動先部屋の存在確認（Phase 2.2: 事前チェック）
     if (!targetRoomId || !/^R\d{3,6}$/.test(targetRoomId)) {
@@ -1789,12 +1628,9 @@ function performNavigationOperation(params) {
     }
     
     // 既存の getMeterReadings ロジックを再利用（詳細エラー監視）
-    Logger.log('[performNavigationOperation] getMeterReadings実行開始');
     const result = getMeterReadings(propertyId, targetRoomId);
     const operationDuration = Date.now() - operationStartTime;
     
-    Logger.log(`[performNavigationOperation] getMeterReadings結果:`, result);
-    Logger.log(`[performNavigationOperation] 処理時間: ${operationDuration}ms`);
     
     // 結果の詳細検証
     if (!result) {
@@ -1858,7 +1694,6 @@ function performNavigationOperation(params) {
       }
     };
     
-    Logger.log('[performNavigationOperation] 成功完了');
     return responseData;
     
   } catch (error) {

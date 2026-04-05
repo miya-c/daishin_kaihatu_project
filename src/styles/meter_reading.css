@@ -1217,3 +1217,78 @@ body {
   max-width: 90vw;
   animation: fadeIn 0.3s ease;
 }
+
+/* === Form Utility Classes === */
+.form-label {
+  font-size: 0.9rem;
+  margin-bottom: 4px;
+  display: block;
+}
+
+.form-input {
+  font-size: 1rem;
+  padding: 10px;
+}
+
+.error-text {
+  color: var(--mui-palette-red-6);
+  font-size: 0.9em;
+  margin-top: 4px;
+}
+
+.usage-display {
+  background-color: #e3f2fd;
+  border: 1px solid var(--mui-palette-grey-3);
+  border-radius: var(--mui-radius-sm);
+  padding: 10px;
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: var(--mui-palette-blue-7);
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+}
+
+.usage-hint {
+  font-size: 0.85em;
+  color: var(--mui-palette-grey-6);
+  margin-top: 4px;
+}
+
+.form-section {
+  margin-top: var(--mui-spacing-md);
+  padding: var(--mui-spacing-md);
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 3px 9px;
+  font-size: 0.9em;
+  font-weight: 500;
+  border-radius: var(--mui-radius-sm);
+}
+
+.status-badge--warning {
+  background-color: var(--mui-palette-red-light);
+  color: var(--mui-palette-red-8);
+}
+
+.status-badge--normal {
+  background-color: var(--mui-palette-green-light);
+  color: var(--mui-palette-green-8);
+}
+
+.status-badge--default {
+  background-color: var(--mui-palette-grey-2);
+  color: var(--mui-palette-grey-7);
+}
+
+.inspection-uninspected {
+  color: var(--mui-palette-red-6);
+  font-weight: bold;
+}
+
+.inspection-inspected {
+  color: inherit;
+  font-weight: normal;
+}

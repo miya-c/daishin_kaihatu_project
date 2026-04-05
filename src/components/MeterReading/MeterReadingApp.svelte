@@ -5,6 +5,7 @@
   import { createMeterReadings } from './hooks/useMeterReadings.svelte';
   import { createRoomNavigation } from './hooks/useRoomNavigation.svelte';
   import { createToast } from './hooks/useToast.svelte';
+  import { gasFetch } from '../../utils/gasClient';
   import LoadingOverlay from './components/LoadingOverlay.svelte';
   import ToastOverlay from './components/ToastOverlay.svelte';
   import NavigationButtons from './components/NavigationButtons.svelte';
@@ -232,7 +233,7 @@
   }
 
   async function handleUpdateReadings(): Promise<void> {
-    const { propertyId, roomId, gasWebAppUrl, meterReadings } = readings;
+    const { propertyId, roomId, meterReadings } = readings;
 
     if (!propertyId || !roomId) {
       toast.displayToast('物件IDまたは部屋IDが取得できませんでした。');
@@ -277,24 +278,15 @@
     navigation.updating = true;
 
     try {
-      const currentGasUrl = gasWebAppUrl || sessionStorage.getItem('gasWebAppUrl');
-      const params = new URLSearchParams({
-        action: 'updateMeterReadings',
-        propertyId,
-        roomId,
-        readings: JSON.stringify(updatedReadings),
-      });
-      const requestUrl = `${currentGasUrl}?${params}`;
-
-      const response = await fetch(requestUrl, { method: 'GET' });
-
-      if (!response.ok) {
-        throw new Error(
-          'ネットワークの応答が正しくありませんでした。ステータス: ' + response.status
-        );
-      }
-
-      const result = await response.json();
+      const result = (await gasFetch(
+        'updateMeterReadings',
+        {
+          propertyId,
+          roomId,
+          readings: JSON.stringify(updatedReadings),
+        },
+        'GET'
+      )) as Record<string, unknown>;
 
       if (result.success) {
         hasSaved = true;
@@ -303,7 +295,7 @@
         // Invalidate prefetch cache so next navigation fetches fresh data
         readings.invalidatePrefetch(readings.propertyId, readings.roomId);
       } else {
-        throw new Error(result.error || '指示数の更新に失敗しました。');
+        throw new Error((result.error as string) || '指示数の更新に失敗しました。');
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);

@@ -13,8 +13,8 @@ const GAS_URL_DEFAULT: string = import.meta.env.VITE_GAS_WEB_APP_URL || '';
 const getApiKey = (): string => {
   try {
     return (
-      localStorage.getItem('gasApiKey') ||
       import.meta.env.VITE_GAS_API_KEY ||
+      localStorage.getItem('gasApiKey') ||
       ''
     );
   } catch {
@@ -29,6 +29,44 @@ const withApiKey = (params: URLSearchParams): URLSearchParams => {
   const key = getApiKey();
   if (key) params.set('apiKey', key);
   return params;
+};
+
+/**
+ * Shared fetch helper for GAS API calls.
+ * Handles URL construction, API key injection, and error handling.
+ *
+ * @param action - The GAS action name (e.g. 'getProperties', 'updateMeterReadings')
+ * @param params - Additional parameters to send
+ * @param method - HTTP method ('GET' or 'POST')
+ * @param signal - Optional AbortSignal for request cancellation
+ * @returns Parsed JSON response
+ * @throws If the network request fails or returns a non-OK status
+ */
+export const gasFetch = async (
+  action: string,
+  params: Record<string, string> = {},
+  method: 'GET' | 'POST' = 'GET',
+  signal?: AbortSignal
+): Promise<unknown> => {
+  const url = getGasUrl();
+  const searchParams = new URLSearchParams({ action, ...params });
+  withApiKey(searchParams);
+
+  const response =
+    method === 'POST'
+      ? await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: searchParams.toString(),
+          signal,
+        })
+      : await fetch(`${url}?${searchParams}`, { signal });
+
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+  }
+
+  return await response.json();
 };
 
 /**

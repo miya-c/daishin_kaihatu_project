@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { getGasUrl } from '../../utils/gasClient';
+  import { getGasUrl, gasFetch } from '../../utils/gasClient';
   import NetworkStatusBar from '../NetworkStatusBar.svelte';
   import { validateId } from '../../utils/validateParams';
 
@@ -64,14 +64,10 @@
       }
 
       try {
-        const fetchUrl = `${gasWebAppUrl}?action=getRoomsLight&propertyId=${encodeURIComponent(propId)}&cache=${Date.now()}`;
-        const response = await fetch(fetchUrl);
-
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`);
-        }
-
-        const data = await response.json();
+        const data: any = await gasFetch('getRoomsLight', {
+          propertyId: propId,
+          cache: String(Date.now()),
+        });
         if (data.success === false) {
           throw new Error(data.error || 'API error');
         }
@@ -90,14 +86,7 @@
         sessionStorage.setItem('selectedPropertyName', fetchedPropertyName);
         sessionStorage.setItem('selectedPropertyId', propId);
       } catch (_) {
-        const fetchUrl = `${gasWebAppUrl}?action=getRooms&propertyId=${encodeURIComponent(propId)}`;
-        const response = await fetch(fetchUrl);
-
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`);
-        }
-
-        const data = await response.json();
+        const data: any = await gasFetch('getRooms', { propertyId: propId });
         if (!data.success) {
           throw new Error(data.error || 'データの取得に失敗しました');
         }
@@ -134,15 +123,14 @@
 
   async function performBackgroundUpdate(
     propId: string,
-    gasWebAppUrl: string,
+    _gasWebAppUrl: string,
     _currentRooms: Room[]
   ): Promise<void> {
     try {
-      const fetchUrl = `${gasWebAppUrl}?action=getRoomsLight&propertyId=${encodeURIComponent(propId)}&cache=${Date.now()}`;
-      const response = await fetch(fetchUrl);
-      if (!response.ok) return;
-
-      const data = await response.json();
+      const data: any = await gasFetch('getRoomsLight', {
+        propertyId: propId,
+        cache: String(Date.now()),
+      });
       if (data.success) {
         const updatedRooms = data.data?.rooms || data.data || [];
         if (Array.isArray(updatedRooms) && updatedRooms.length > 0) {
@@ -224,17 +212,7 @@
         '-' +
         String(today.getDate()).padStart(2, '0');
 
-      const response = await fetch(
-        `${gasUrl}?action=completeInspection&propertyId=${propertyId}&completionDate=${completionDate}`,
-        {
-          method: 'GET',
-          headers: { Accept: 'application/json' },
-        }
-      );
-
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-
-      const result = await response.json();
+      const result: any = await gasFetch('completeInspection', { propertyId, completionDate });
 
       if (result.success) {
         displayToast(`検針完了日を ${completionDate} で保存しました！`);

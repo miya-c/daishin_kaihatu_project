@@ -1,4 +1,5 @@
 import type { RoomNavigation } from '../../../types';
+import { gasFetch } from '../../../utils/gasClient';
 
 interface CreateRoomNavigationParams {
   propertyId: string;
@@ -134,38 +135,26 @@ export const createRoomNavigation = (options: CreateRoomNavigationParams) => {
     abortController = controller;
 
     try {
-      const params = new URLSearchParams({
-        action: 'updateMeterReadings',
-        propertyId: options.propertyId,
-        roomId: overrideRoomId || options.roomId,
-        readings: JSON.stringify(readings),
-      });
-      // API key認証（環境変数またはlocalStorageから取得）
-      try {
-        const apiKey = localStorage.getItem('gasApiKey') || import.meta.env.VITE_GAS_API_KEY;
-        if (apiKey) params.set('apiKey', apiKey);
-      } catch { /* ignore */ }
+      const result = (await gasFetch(
+        'updateMeterReadings',
+        {
+          propertyId: options.propertyId,
+          roomId: overrideRoomId || options.roomId,
+          readings: JSON.stringify(readings),
+        },
+        'POST',
+        controller.signal
+      )) as Record<string, unknown>;
 
-      const response = await fetch(currentGasUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: params.toString(),
-        signal: controller.signal,
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success) {
-          if (!silent) {
-            options.displayToast('検針データを保存しました');
-          }
-          return true;
+      if (result.success) {
+        if (!silent) {
+          options.displayToast('検針データを保存しました');
         }
+        return true;
       }
       return false;
     } catch (err) {
       if (controller.signal.aborted) return false;
-      console.error('saveReadings error:', err);
       return false;
     }
   };
@@ -184,34 +173,24 @@ export const createRoomNavigation = (options: CreateRoomNavigationParams) => {
       // Try integrated saveAndNavigate API first (1 request instead of 2)
       if (currentGasUrl && options.onNavigateToRoom && meterReadingsData.length > 0) {
         try {
-          const params = new URLSearchParams({
-            action: 'saveAndNavigate',
-            propertyId: options.propertyId,
-            currentRoomId,
-            targetRoomId,
-            direction,
-            meterReadingsData: JSON.stringify(meterReadingsData),
-          });
-          try {
-            const apiKey = localStorage.getItem('gasApiKey') || import.meta.env.VITE_GAS_API_KEY;
-            if (apiKey) params.set('apiKey', apiKey);
-          } catch { /* ignore */ }
+          const result = (await gasFetch(
+            'saveAndNavigate',
+            {
+              propertyId: options.propertyId,
+              currentRoomId,
+              targetRoomId,
+              direction,
+              meterReadingsData: JSON.stringify(meterReadingsData),
+            },
+            'POST'
+          )) as Record<string, unknown>;
 
-          const response = await fetch(currentGasUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: params.toString(),
-          });
-
-          if (response.ok) {
-            const result = await response.json();
-            if (result.success && result.navigationResult) {
-              // Update sessionStorage cache for saved room
-              updateSessionCacheForSavedRoom(currentRoomId);
-              // Navigate with pre-loaded data (no additional API call)
-              options.onNavigateToRoom(targetRoomId, result.navigationResult);
-              return;
-            }
+          if (result.success && result.navigationResult) {
+            // Update sessionStorage cache for saved room
+            updateSessionCacheForSavedRoom(currentRoomId);
+            // Navigate with pre-loaded data (no additional API call)
+            options.onNavigateToRoom(targetRoomId, result.navigationResult as Record<string, unknown>);
+            return;
           }
           // Integrated API failed — fall through to legacy approach
         } catch {

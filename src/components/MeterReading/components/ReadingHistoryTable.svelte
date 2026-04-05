@@ -89,11 +89,9 @@
       <tr>
         <td data-label="検針日時">
           <span
-            style="color: {inspectionStatus.status === '未検針'
-              ? 'var(--mui-palette-red-6)'
-              : 'inherit'}; font-weight: {inspectionStatus.status === '未検針'
-              ? 'bold'
-              : 'normal'};"
+            class={inspectionStatus.status === '未検針'
+              ? 'inspection-uninspected'
+              : 'inspection-inspected'}
           >
             最終検針日時:
             {inspectionStatus.status === '未検針' ? '未検針' : inspectionStatus.displayDate}
@@ -120,11 +118,7 @@
               onInputChange(dateForDataAttribute, (e.target as HTMLInputElement).value, reading)}
           />
           {#if inputErrors[dateForDataAttribute]}
-            <div
-              id={`error-${dateForDataAttribute}`}
-              role="alert"
-              style="color: var(--mui-palette-red-6); font-size: 0.9em; margin-top: 4px;"
-            >
+            <div id={`error-${dateForDataAttribute}`} role="alert" class="error-text">
               {inputErrors[dateForDataAttribute]}
             </div>
           {/if}
@@ -132,16 +126,7 @@
         <td data-label="今回使用量">{usageDisplayString}</td>
         <td data-label="状態">
           <span
-            style="display: inline-block; padding: 3px 9px; font-size: 0.9em; font-weight: 500; background-color: {status ===
-            '要確認'
-              ? 'var(--mui-palette-red-light)'
-              : status === '正常'
-                ? 'var(--mui-palette-green-light)'
-                : 'var(--mui-palette-grey-2)'}; color: {status === '要確認'
-              ? 'var(--mui-palette-red-8)'
-              : status === '正常'
-                ? 'var(--mui-palette-green-8)'
-                : 'var(--mui-palette-grey-7)'}; border-radius: var(--mui-radius-sm);"
+            class={`status-badge ${status === '要確認' ? 'status-badge--warning' : status === '正常' ? 'status-badge--normal' : 'status-badge--default'}`}
           >
             {status}
             {#if sigma}

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { getGasUrl, fetchProperties } from '../../utils/gasClient';
+  import { getGasUrl, fetchProperties, gasFetch } from '../../utils/gasClient';
   import NetworkStatusBar from '../NetworkStatusBar.svelte';
   import type { Property } from '../../types';
 
@@ -102,11 +102,10 @@
     navigationMessage = '部屋情報を取得中...';
 
     try {
-      const currentUrl = getGasUrl();
-      const requestUrl = `${currentUrl}?action=getRooms&propertyId=${property.id}&cache=${Date.now()}`;
-      const roomResponse = await fetch(requestUrl);
-      if (!roomResponse.ok) throw new Error(`HTTP ${roomResponse.status}`);
-      const roomData = await roomResponse.json();
+      const roomData: any = await gasFetch('getRooms', {
+        propertyId: String(property.id),
+        cache: String(Date.now()),
+      });
       if (roomData.success === false) throw new Error(roomData.error || '部屋APIエラー');
 
       let rooms: Record<string, unknown>[] = [];
@@ -129,10 +128,6 @@
       sessionStorage.setItem('selectedPropertyId', String(property.id));
       sessionStorage.setItem('selectedPropertyName', String(property.name));
       sessionStorage.setItem('selectedRooms', JSON.stringify(normalizedRooms));
-      if (currentUrl && currentUrl.includes('script.google.com')) {
-        sessionStorage.setItem('gasWebAppUrl', currentUrl);
-        localStorage.setItem('gasWebAppUrl', currentUrl);
-      }
 
       setTimeout(() => {
         window.location.href = `/room/?propertyId=${encodeURIComponent(property.id)}`;

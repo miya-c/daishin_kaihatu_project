@@ -76,7 +76,6 @@ function sanitizeApiParams(params) {
 }
 
 function createCorsJsonResponse(data) {
-  console.log('[createCorsJsonResponse] APIバージョン:', API_VERSION);
   // setHeaders は使用しません - ContentService標準のみ
   return ContentService
     .createTextOutput(JSON.stringify(data))
@@ -87,8 +86,6 @@ function doGet(e) {
   const startTime = new Date();
   try {
     const action = e?.parameter?.action;
-    Logger.log(`[doGet] API呼び出し開始 - action: ${action}, パラメータ: ${JSON.stringify(e?.parameter || {})}`);
-    
     if (!action) {
       // テストページ表示（簡素版）
       return HtmlService.createHtmlOutput(`
@@ -111,7 +108,6 @@ function doGet(e) {
     // API処理
     switch (action) {
       case 'test':
-        Logger.log('[doGet] test API呼び出し');
         return createCorsJsonResponse({
           success: true,
           message: 'ライブラリAPI正常動作',
@@ -120,7 +116,6 @@ function doGet(e) {
         });
         
       case 'getProperties':
-        Logger.log('[doGet] getProperties API呼び出し');
         // 認証チェック（移行期間中はkeyなしでも許可）
         const propAuth = validateApiKey(e.parameter, false);
         if (!propAuth.authorized) {
@@ -237,8 +232,6 @@ function doGet(e) {
         if (!completeAuth.authorized) {
           return createCorsJsonResponse({ success: false, error: completeAuth.error });
         }
-        console.log(`[検針完了] 機能を実行します`);
-        
         const propertyId = e.parameter.propertyId;
         const completionDate = e.parameter.completionDate;
         
@@ -289,7 +282,6 @@ function doGet(e) {
       default:
         // デバッグ用API処理
         if (action === 'getSpreadsheetInfo') {
-          console.log('[doGet] 📊 スプレッドシート情報取得要求');
           // セキュリティ: 管理者トークン必須
           if (!e.parameter.adminToken) {
             return createCorsJsonResponse({
@@ -334,7 +326,6 @@ function doGet(e) {
         }
         
         if (action === 'getPropertyMaster') {
-          console.log('[doGet] 🏠 物件マスタデータ取得要求');
           // セキュリティ: 管理者トークン必須
           if (!e.parameter.adminToken) {
             return createCorsJsonResponse({
@@ -382,8 +373,7 @@ function doGet(e) {
           }
         }
         
-        console.log(`[doGet] ❌ 未知のアクション: ${action}`);
-        return createCorsJsonResponse({ 
+        return createCorsJsonResponse({
           success: false,
           error: `未知のアクション: ${action}`
         });
@@ -399,15 +389,12 @@ function doGet(e) {
 
 function doPost(e) {
   try {
-    Logger.log('[doPost] POSTリクエスト開始');
-    
     // パラメータ抽出（複数の形式に対応）
     let params = {};
     
     // URLエンコードされたフォームデータの場合
     if (e.parameter) {
       params = { ...e.parameter };
-      Logger.log('[doPost] URL-encoded parameters:', params);
     }
     
     // JSON POSTデータの場合
@@ -415,21 +402,15 @@ function doPost(e) {
       try {
         const jsonData = JSON.parse(e.postData.contents);
         params = { ...params, ...jsonData };
-        Logger.log('[doPost] JSON parameters:', jsonData);
       } catch (parseError) {
-        Logger.log('[doPost] JSON解析エラー、URL-encodedとして処理');
       }
     }
     
     const action = params.action;
-    Logger.log(`[doPost] アクション: ${action}`);
-    
     // ═══════════════════════════════════════════════════════
     // Phase 2.3 - 統合API (saveAndNavigate) 処理 - 互換性確保版
     // ═══════════════════════════════════════════════════════
     if (action === 'saveAndNavigate') {
-      Logger.log('[doPost] saveAndNavigate統合API実行開始 - Phase 2.3');
-      
       // Phase 2.3: フィーチャーフラグ対応
       const featureFlags = {
         integratedApiEnabled: getFeatureFlag('INTEGRATED_API_ENABLED', true),
@@ -437,11 +418,8 @@ function doPost(e) {
         detailedLogging: getFeatureFlag('DETAILED_LOGGING', false)
       };
       
-      Logger.log('[doPost] フィーチャーフラグ:', featureFlags);
-      
       // 統合APIが無効化されている場合のフォールバック処理
       if (!featureFlags.integratedApiEnabled) {
-        Logger.log('[doPost] 統合API無効 - レガシーフォールバック実行');
         return executeLegacyFallback(params);
       }
       
@@ -454,19 +432,12 @@ function doPost(e) {
         // Phase 2.3: レスポンス互換性チェック
         const compatibleResult = ensureResponseCompatibility(result);
         
-        Logger.log('[doPost] saveAndNavigate実行完了:', compatibleResult);
-        
-        if (featureFlags.detailedLogging) {
-          Logger.log('[doPost] 詳細ログ - パフォーマンス:', compatibleResult.performance);
-        }
-        
         return createCorsJsonResponse(compatibleResult);
       } catch (error) {
         Logger.log(`[doPost] saveAndNavigateエラー: ${error.message}`);
         
         // Phase 2.3: エラー時のレガシーフォールバック
         if (featureFlags.legacyFallbackEnabled) {
-          Logger.log('[doPost] エラー発生 - レガシーフォールバック試行');
           try {
             return executeLegacyFallback(params);
           } catch (fallbackError) {
@@ -523,7 +494,6 @@ function doPost(e) {
     
     // 既存のupdateMeterReadings処理（API key必須）
     if (action === 'updateMeterReadings') {
-      Logger.log('[doPost] updateMeterReadings処理開始');
       // 書き込み操作: API key必須
       const postUpdateAuth = validateApiKey(params, true);
       if (!postUpdateAuth.authorized) {
@@ -560,8 +530,7 @@ function doPost(e) {
     }
     
     // 通常のPOSTリクエスト処理
-    console.log('[doPost] 汎用POSTリクエスト処理');
-    return createCorsJsonResponse({ 
+    return createCorsJsonResponse({
       success: true, 
       message: 'POST request received successfully',
       timestamp: new Date().toISOString(),
@@ -597,18 +566,15 @@ function getFeatureFlag(flagName, defaultValue = false) {
     const flagValue = properties.getProperty(`FEATURE_${flagName}`);
     
     if (flagValue === null) {
-      Logger.log(`[getFeatureFlag] フラグ${flagName}未設定 - デフォルト値使用: ${defaultValue}`);
       return defaultValue;
     }
     
     // 文字列からブール値への変換
     if (typeof defaultValue === 'boolean') {
       const boolValue = flagValue === 'true' || flagValue === '1';
-      Logger.log(`[getFeatureFlag] フラグ${flagName}: ${boolValue}`);
       return boolValue;
     }
     
-    Logger.log(`[getFeatureFlag] フラグ${flagName}: ${flagValue}`);
     return flagValue;
     
   } catch (error) {
@@ -623,8 +589,6 @@ function getFeatureFlag(flagName, defaultValue = false) {
  * @returns {Object} レスポンス
  */
 function executeLegacyFallback(params) {
-  Logger.log('[executeLegacyFallback] レガシーAPI方式実行開始');
-  
   try {
     const { propertyId, currentRoomId, targetRoomId, meterReadingsData } = params;
     
@@ -687,8 +651,6 @@ function logApiUsage(apiName, params, flags) {
       flags: flags
     };
     
-    Logger.log(`[API使用ログ] ${JSON.stringify(usageData)}`);
-    
     // 使用統計をPropertiesServiceに記録（簡易版）
     try {
       const properties = PropertiesService.getScriptProperties();
@@ -713,7 +675,6 @@ function ensureResponseCompatibility(result) {
   try {
     // 必須フィールドの確認と補完
     if (!result.success && !result.error) {
-      Logger.log('[ensureResponseCompatibility] ⚠️ 不正なレスポンス構造を検出');
       result.success = false;
       result.error = { code: 'UNKNOWN_ERROR', message: 'レスポンス構造エラー' };
     }
@@ -733,7 +694,6 @@ function ensureResponseCompatibility(result) {
       result.apiVersion = 'v1.0.0-integrated';
     }
     
-    Logger.log('[ensureResponseCompatibility] 互換性チェック完了');
     return result;
     
   } catch (error) {

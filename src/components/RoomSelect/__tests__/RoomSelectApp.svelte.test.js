@@ -2,9 +2,13 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { flushSync } from 'svelte';
 import { render, screen } from '@testing-library/svelte';
 
-vi.mock('../../../utils/gasClient', () => ({
-  getGasUrl: vi.fn(),
-}));
+vi.mock('../../../utils/gasClient', async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    getGasUrl: vi.fn(),
+  };
+});
 
 import RoomSelectApp from '../RoomSelectApp.svelte';
 import { getGasUrl } from '../../../utils/gasClient';

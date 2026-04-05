@@ -82,7 +82,7 @@ npm run test:watch
 
 ## 使用技術
 
-- **フロントエンド**: React 18, TypeScript
+- **フロントエンド**: Svelte 5, TypeScript
 - **ビルドツール**: Vite 6
 - **テスト**: Vitest, Testing Library
 - **コード品質**: ESLint, Prettier
