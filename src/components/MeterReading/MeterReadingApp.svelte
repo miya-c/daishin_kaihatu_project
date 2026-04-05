@@ -285,7 +285,7 @@
           roomId,
           readings: JSON.stringify(updatedReadings),
         },
-        'GET'
+        'POST'
       )) as Record<string, unknown>;
 
       if (result.success) {
