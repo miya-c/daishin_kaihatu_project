@@ -139,6 +139,9 @@
   function collectReadingsFromState(): Record<string, unknown>[] {
     const result: Record<string, unknown>[] = [];
 
+    /* eslint-disable svelte/prefer-svelte-reactivity -- Set is local-only, not reactive state */
+    const processedDates = new Set<string>();
+
     for (const reading of readings.meterReadings) {
       const date = reading.date;
       const originalValue = formatReading(reading.currentReading);
@@ -152,20 +155,24 @@
             currentReading: currentValue,
             warningFlag: reading.warningFlag || '正常',
           });
+          processedDates.add(date);
         }
       }
     }
 
     // Also check initial reading form (empty date key)
-    const initialValue = readingValues[''] ?? '';
-    if (initialValue && initialValue.trim() !== '') {
-      const numericValue = parseFloat(initialValue);
-      if (!isNaN(numericValue) && numericValue >= 0) {
-        result.push({
-          date: getCurrentJSTDateString(),
-          currentReading: initialValue,
-          warningFlag: '正常',
-        });
+    // Only add if it wasn't already processed in the loop above (date="")
+    if (!processedDates.has('')) {
+      const initialValue = readingValues[''] ?? '';
+      if (initialValue && initialValue.trim() !== '') {
+        const numericValue = parseFloat(initialValue);
+        if (!isNaN(numericValue) && numericValue >= 0) {
+          result.push({
+            date: getCurrentJSTDateString(),
+            currentReading: initialValue,
+            warningFlag: '正常',
+          });
+        }
       }
     }
 
