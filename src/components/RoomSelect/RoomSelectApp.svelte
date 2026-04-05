@@ -227,7 +227,6 @@
       const result: any = await gasFetch('completeInspection', { propertyId, completionDate });
 
       if (result.success) {
-        displayToast(`検針完了日を ${completionDate} で保存しました！`);
         showExitModal = true;
       } else {
         throw new Error(result.error || '検針完了処理に失敗しました');
@@ -428,10 +427,16 @@
         >
           <h3
             id="exit-modal-title"
-            style="margin: 0 0 16px 0; font-size: 1.125rem; font-weight: 600;"
+            style="margin: 0 0 8px 0; font-size: 1.125rem; font-weight: 600;"
           >
-            アプリを終了しますか？
+            検針を完了しました
           </h3>
+          <p style="margin: 0 0 20px 0; font-size: 0.875rem; color: var(--mui-palette-grey-700);">
+            アプリを終了しますか？
+          </p>
+          <p style="margin: 0 0 20px 0; font-size: 0.75rem; color: var(--mui-palette-grey-400);">
+            「いいえ」を選択すると、物件選択画面へ戻ります
+          </p>
           <div style="display: flex; gap: 12px; justify-content: center;">
             <button
               onclick={handleExitYes}
