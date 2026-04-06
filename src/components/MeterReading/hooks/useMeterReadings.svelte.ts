@@ -4,6 +4,38 @@ import { NOT_AVAILABLE, ROOM_NAME_UNKNOWN } from '../../../constants/messages';
 
 import type { MeterReading } from '../../../types';
 
+const OFFLINE_CACHE_PREFIX = 'offline_reading_';
+
+const isOffline = (): boolean => typeof navigator !== 'undefined' && !navigator.onLine;
+
+function saveReadingToOfflineCache(
+  propId: string,
+  rId: string,
+  data: { propertyName: string; roomName: string; readings: MeterReading[] }
+): void {
+  try {
+    localStorage.setItem(
+      `${OFFLINE_CACHE_PREFIX}${propId}_${rId}`,
+      JSON.stringify({ ...data, cachedAt: Date.now() })
+    );
+  } catch {
+    // localStorage unavailable or full — best effort
+  }
+}
+
+function getReadingFromOfflineCache(
+  propId: string,
+  rId: string
+): { propertyName: string; roomName: string; readings: MeterReading[] } | null {
+  try {
+    const raw = localStorage.getItem(`${OFFLINE_CACHE_PREFIX}${propId}_${rId}`);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
 // ── Prefetch cache ──
 interface PrefetchEntry {
   meterReadings: MeterReading[];
@@ -103,6 +135,12 @@ export function createMeterReadings() {
           )
         : [];
 
+    saveReadingToOfflineCache(propId, rId, {
+      propertyName: pName,
+      roomName: rName,
+      readings: resultReadings,
+    });
+
     return { pName, rName, resultReadings };
   }
 
@@ -130,6 +168,23 @@ export function createMeterReadings() {
       meterReadings = cached.meterReadings;
       if (!silent) loading = false;
       return cached.meterReadings;
+    }
+
+    if (isOffline()) {
+      const offlineData = getReadingFromOfflineCache(propId, rId);
+      if (offlineData) {
+        propertyId = propId || NOT_AVAILABLE;
+        propertyName = offlineData.propertyName;
+        roomId = rId || NOT_AVAILABLE;
+        roomName = offlineData.roomName;
+        meterReadings = offlineData.readings;
+        error = null;
+        if (!silent) loading = false;
+        return offlineData.readings;
+      }
+      error = 'オフライン中で検針データがありません。オンライン時にデータがキャッシュされます。';
+      if (!silent) loading = false;
+      return null;
     }
 
     if (!silent) {

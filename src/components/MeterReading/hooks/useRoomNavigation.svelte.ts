@@ -1,5 +1,6 @@
 import type { RoomNavigation } from '../../../types';
-import { gasFetch } from '../../../utils/gasClient';
+import { gasFetch, isOffline } from '../../../utils/gasClient';
+import { saveToQueue } from '../../../utils/offlineQueue';
 
 interface CreateRoomNavigationParams {
   propertyId: string;
@@ -125,6 +126,25 @@ export const createRoomNavigation = (options: CreateRoomNavigationParams) => {
   ): Promise<boolean> => {
     if (!readings || readings.length === 0) return false;
 
+    const targetRoomId = overrideRoomId || options.roomId;
+
+    if (isOffline()) {
+      saveToQueue({
+        action: 'updateMeterReadings',
+        propertyId: options.propertyId,
+        roomId: targetRoomId,
+        readings,
+      });
+      updateSessionCacheForSavedRoom(targetRoomId);
+      if (options.invalidatePrefetch) {
+        options.invalidatePrefetch(options.propertyId, targetRoomId);
+      }
+      if (!silent) {
+        options.displayToast('オフラインで保存しました（オンライン復帰時に自動送信します）');
+      }
+      return true;
+    }
+
     const currentGasUrl = options.gasWebAppUrl || sessionStorage.getItem('gasWebAppUrl');
     if (!currentGasUrl) return false;
 
@@ -140,7 +160,7 @@ export const createRoomNavigation = (options: CreateRoomNavigationParams) => {
         'updateMeterReadings',
         {
           propertyId: options.propertyId,
-          roomId: overrideRoomId || options.roomId,
+          roomId: targetRoomId,
           readings: JSON.stringify(readings),
         },
         'POST',
@@ -169,6 +189,29 @@ export const createRoomNavigation = (options: CreateRoomNavigationParams) => {
       updating = true;
       const meterReadingsData = collectReadingsFn ? collectReadingsFn() : [];
       const currentRoomId = options.roomId;
+
+      if (isOffline()) {
+        if (meterReadingsData.length > 0) {
+          saveToQueue({
+            action: 'updateMeterReadings',
+            propertyId: options.propertyId,
+            roomId: currentRoomId,
+            readings: meterReadingsData,
+          });
+          updateSessionCacheForSavedRoom(currentRoomId);
+          if (options.invalidatePrefetch) {
+            options.invalidatePrefetch(options.propertyId, currentRoomId);
+          }
+        }
+        options.displayToast('オフラインで保存しました（オンライン復帰時に自動送信します）');
+        if (options.onNavigateToRoom) {
+          options.onNavigateToRoom(targetRoomId);
+        } else {
+          window.location.href = `/reading/?propertyId=${options.propertyId}&roomId=${targetRoomId}`;
+        }
+        return;
+      }
+
       const currentGasUrl = options.gasWebAppUrl || sessionStorage.getItem('gasWebAppUrl');
 
       // Try integrated saveAndNavigate API first (1 request instead of 2)
