@@ -1,8 +1,9 @@
 // Service Worker for Water Meter Reading PWA
-// Version: 2.0.0 - Phase 6 PWA improvements
+// Version: 2.1.0 - Phase 3: Background Sync for offline queue
 
 const CACHE_VERSION = 'v2';
 const CACHE_NAME = `meter-reading-${CACHE_VERSION}`;
+const SYNC_TAG = 'offline-sync';
 
 const STATIC_ASSETS = ['/', '/index.html', '/manifest.json'];
 
@@ -116,3 +117,17 @@ self.addEventListener('message', (event) => {
     self.skipWaiting();
   }
 });
+
+// Background Sync: process offline queue when connectivity returns
+self.addEventListener('sync', (event) => {
+  if (event.tag === SYNC_TAG) {
+    event.waitUntil(processOfflineQueue());
+  }
+});
+
+async function processOfflineQueue() {
+  const allClients = await self.clients.matchAll({ includeUncontrolled: true, type: 'window' });
+  for (const client of allClients) {
+    client.postMessage({ type: 'PROCESS_OFFLINE_QUEUE' });
+  }
+}
