@@ -5,7 +5,8 @@
   import { createMeterReadings } from './hooks/useMeterReadings.svelte';
   import { createRoomNavigation } from './hooks/useRoomNavigation.svelte';
   import { createToast } from './hooks/useToast.svelte';
-  import { gasFetch } from '../../utils/gasClient';
+  import { gasFetch, isOffline } from '../../utils/gasClient';
+  import { saveToQueue, registerOnlineListener, getQueueStatus } from '../../utils/offlineQueue';
   import LoadingOverlay from './components/LoadingOverlay.svelte';
   import ToastOverlay from './components/ToastOverlay.svelte';
   import NavigationButtons from './components/NavigationButtons.svelte';
@@ -27,6 +28,8 @@
   // Mutable flag — does NOT need to trigger re-renders.
   // Tracks whether reading was successfully saved for optimistic cache update.
   let hasSaved = false;
+  let offlineMode = $state(!navigator.onLine);
+  let pendingCount = $state(0);
 
   // ── Derived: whether any reading has a valid previousReading ──
   let hasReadingsWithPrevious = $derived(
@@ -56,6 +59,34 @@
       }
       if (changed) readingValues = updated;
     }
+  });
+
+  // ── Track online/offline state + queue sync ──
+  $effect(() => {
+    const setOffline = () => {
+      offlineMode = true;
+    };
+    const setOnline = () => {
+      offlineMode = false;
+      pendingCount = getQueueStatus().pendingCount;
+    };
+
+    window.addEventListener('online', setOnline);
+    window.addEventListener('offline', setOffline);
+    pendingCount = getQueueStatus().pendingCount;
+
+    const unregisterSync = registerOnlineListener((result) => {
+      pendingCount = getQueueStatus().pendingCount;
+      if (result.processed > 0) {
+        toast.displayToast(`${result.processed}件のデータを送信しました`);
+      }
+    });
+
+    return () => {
+      window.removeEventListener('online', setOnline);
+      window.removeEventListener('offline', setOffline);
+      unregisterSync();
+    };
   });
 
   // ── Room navigation (created after readings store is available) ──
@@ -288,6 +319,21 @@
     navigation.updating = true;
 
     try {
+      if (isOffline()) {
+        saveToQueue({
+          action: 'updateMeterReadings',
+          propertyId,
+          roomId,
+          readings: updatedReadings,
+        });
+        hasSaved = true;
+        pendingCount = getQueueStatus().pendingCount;
+        toast.displayToast('オフラインで保存しました（オンライン復帰時に自動送信します）');
+        inputErrors = {};
+        readings.invalidatePrefetch(readings.propertyId, readings.roomId);
+        return;
+      }
+
       const result = (await gasFetch(
         'updateMeterReadings',
         {
@@ -445,8 +491,12 @@
         <button
           class="fab-button mantine-button variant-filled"
           onclick={handleUpdateReadings}
-          disabled={navigation.updating || navigation.isNavigating || !navigator.onLine}
-          title={hasReadingsWithPrevious ? '指示数を更新' : '初回検針データを保存'}
+          disabled={navigation.updating || navigation.isNavigating}
+          title={offlineMode
+            ? 'オフラインで保存（オンライン復帰時に自動送信）'
+            : hasReadingsWithPrevious
+              ? '指示数を更新'
+              : '初回検針データを保存'}
           style="width: 72px; height: 72px; border-radius: 50%; font-size: 28px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center;"
         >
           {#if navigation.updating}
@@ -458,6 +508,13 @@
             💾
           {/if}
         </button>
+        {#if offlineMode && pendingCount > 0}
+          <span
+            style="position: absolute; top: -6px; right: -6px; background: #ed6c02; color: #fff; border-radius: 10px; padding: 2px 6px; font-size: 0.7rem; font-weight: 700; min-width: 18px; text-align: center;"
+          >
+            {pendingCount}
+          </span>
+        {/if}
       </div>
     {/if}
 

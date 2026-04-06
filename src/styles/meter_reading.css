@@ -1163,6 +1163,11 @@ body {
   color: white;
 }
 
+.network-status-syncing {
+  background-color: #1565c0;
+  color: white;
+}
+
 @keyframes slideDown {
   from {
     transform: translateY(-100%);
