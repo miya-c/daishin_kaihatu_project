@@ -1,22 +1,35 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createRoomNavigation } from '../useRoomNavigation.svelte';
 
+const QUEUE_KEY = 'offline_readings_queue';
+
 describe('createRoomNavigation', () => {
   let mockToast;
+  let localStore;
 
   beforeEach(() => {
     vi.useFakeTimers();
     mockToast = vi.fn();
-    const store = {};
+    localStore = {};
     vi.stubGlobal('sessionStorage', {
-      getItem: vi.fn((key) => store[key] ?? null),
+      getItem: vi.fn((key) => localStore[key] ?? null),
       setItem: vi.fn((key, value) => {
-        store[key] = value;
+        localStore[key] = value;
       }),
       removeItem: vi.fn((key) => {
-        delete store[key];
+        delete localStore[key];
       }),
-      clear: vi.fn(() => Object.keys(store).forEach((k) => delete store[k])),
+      clear: vi.fn(() => Object.keys(localStore).forEach((k) => delete localStore[k])),
+    });
+    vi.stubGlobal('localStorage', {
+      getItem: vi.fn((key) => localStore[key] ?? null),
+      setItem: vi.fn((key, value) => {
+        localStore[key] = value;
+      }),
+      removeItem: vi.fn((key) => {
+        delete localStore[key];
+      }),
+      clear: vi.fn(() => Object.keys(localStore).forEach((k) => delete localStore[k])),
     });
   });
 
@@ -162,6 +175,53 @@ describe('createRoomNavigation', () => {
       expect(nav.updating).toBe(false);
       nav.updating = true;
       expect(nav.updating).toBe(true);
+    });
+  });
+
+  describe('saveReadings — offline', () => {
+    it('saves to offline queue and returns true', async () => {
+      vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false);
+
+      const nav = createNav();
+      const readings = [{ date: '2025-01-01', currentReading: '100' }];
+      const result = await nav.saveReadings(readings);
+
+      expect(result).toBe(true);
+      expect(mockToast).toHaveBeenCalled();
+      expect(mockToast.mock.calls[0][0]).toContain('オフラインで保存しました');
+
+      const queueRaw = localStore[QUEUE_KEY];
+      expect(queueRaw).toBeTruthy();
+      const queue = JSON.parse(queueRaw);
+      expect(queue).toHaveLength(1);
+      expect(queue[0].action).toBe('updateMeterReadings');
+
+      vi.restoreAllMocks();
+    });
+
+    it('updates session cache for saved room', async () => {
+      vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false);
+      sessionStorage.getItem.mockImplementation((key) => {
+        if (key === 'selectedRooms') return JSON.stringify([{ id: 'room1' }]);
+        return null;
+      });
+
+      const nav = createNav();
+      const readings = [{ date: '2025-01-01', currentReading: '100' }];
+      await nav.saveReadings(readings);
+
+      expect(sessionStorage.setItem).toHaveBeenCalled();
+      vi.restoreAllMocks();
+    });
+
+    it('returns false for empty readings offline', async () => {
+      vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false);
+
+      const nav = createNav();
+      const result = await nav.saveReadings([]);
+      expect(result).toBe(false);
+
+      vi.restoreAllMocks();
     });
   });
 });

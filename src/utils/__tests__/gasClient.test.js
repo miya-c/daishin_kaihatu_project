@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   getGasUrl,
+  isOffline,
   fetchProperties,
   fetchRooms,
   fetchMeterReadings,
@@ -218,5 +219,21 @@ describe('error handling', () => {
 
   it('throws for invalid propertyId in completeInspection', async () => {
     await expect(completeInspection(MOCK_URL, '', '2025-06-18')).rejects.toThrow();
+  });
+});
+
+describe('isOffline', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('returns false when navigator.onLine is true', () => {
+    vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(true);
+    expect(isOffline()).toBe(false);
+  });
+
+  it('returns true when navigator.onLine is false', () => {
+    vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false);
+    expect(isOffline()).toBe(true);
   });
 });

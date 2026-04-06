@@ -533,6 +533,100 @@ function doPost(e) {
       }
     }
 
+    // バッチ更新: オフラインキューの一括処理用
+    if (action === 'batchUpdateReadings') {
+      const batchAuth = validateApiKey(params, true);
+      if (!batchAuth.authorized) {
+        return createCorsJsonResponse({ success: false, error: batchAuth.error });
+      }
+
+      const batchData = params.batchData;
+      if (!batchData) {
+        return createCorsJsonResponse({
+          success: false,
+          error: 'batchDataが必要です',
+        });
+      }
+
+      try {
+        const entries = typeof batchData === 'string' ? JSON.parse(batchData) : batchData;
+        if (!Array.isArray(entries) || entries.length === 0) {
+          return createCorsJsonResponse({
+            success: false,
+            error: 'batchDataは空でない配列である必要があります',
+          });
+        }
+
+        const results = [];
+        let successCount = 0;
+        let failCount = 0;
+
+        for (const entry of entries) {
+          try {
+            if (entry.action === 'updateMeterReadings') {
+              const readings = entry.readings
+                ? typeof entry.readings === 'string'
+                  ? JSON.parse(entry.readings)
+                  : entry.readings
+                : [];
+              if (
+                !entry.propertyId ||
+                !entry.roomId ||
+                !Array.isArray(readings) ||
+                readings.length === 0
+              ) {
+                results.push({ action: entry.action, success: false, error: 'パラメータ不足' });
+                failCount++;
+                continue;
+              }
+              const r = updateMeterReadings(entry.propertyId, entry.roomId, readings);
+              results.push({
+                action: entry.action,
+                propertyId: entry.propertyId,
+                roomId: entry.roomId,
+                success: r.success !== false,
+              });
+              if (r.success !== false) successCount++;
+              else failCount++;
+            } else if (entry.action === 'completeInspection') {
+              if (!entry.propertyId || !entry.completionDate) {
+                results.push({ action: entry.action, success: false, error: 'パラメータ不足' });
+                failCount++;
+                continue;
+              }
+              const r = completePropertyInspectionSimple(entry.propertyId, entry.completionDate);
+              results.push({
+                action: entry.action,
+                propertyId: entry.propertyId,
+                success: r.success !== false,
+              });
+              if (r.success !== false) successCount++;
+              else failCount++;
+            } else {
+              results.push({ action: entry.action, success: false, error: '未知のアクション' });
+              failCount++;
+            }
+          } catch (entryError) {
+            results.push({ action: entry.action, success: false, error: entryError.message });
+            failCount++;
+          }
+        }
+
+        return createCorsJsonResponse({
+          success: failCount === 0,
+          processed: successCount,
+          failed: failCount,
+          results: results,
+          total: entries.length,
+        });
+      } catch (batchError) {
+        return createCorsJsonResponse({
+          success: false,
+          error: `バッチ処理エラー: ${batchError.message}`,
+        });
+      }
+    }
+
     // 通常のPOSTリクエスト処理
     return createCorsJsonResponse({
       success: true,

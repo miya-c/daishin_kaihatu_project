@@ -17,9 +17,7 @@ describe('NetworkStatusBar', () => {
     const cleanup = $effect.root(() => {
       render(NetworkStatusBar);
       flushSync();
-      expect(
-        screen.getByText('オフライン - インターネット接続を確認してください')
-      ).toBeInTheDocument();
+      expect(screen.getByText(/オフライン中 — データはローカルに保存します/)).toBeInTheDocument();
       return () => {};
     });
     cleanup();
@@ -48,7 +46,7 @@ describe('NetworkStatusBar', () => {
       fireEvent(window, new Event('online'));
       flushSync();
 
-      expect(screen.getByText('オンラインに復帰しました')).toBeInTheDocument();
+      expect(screen.getByText(/オンラインに復帰しました/)).toBeInTheDocument();
       return () => {};
     });
     cleanup();
@@ -64,8 +62,7 @@ describe('NetworkStatusBar', () => {
       fireEvent(window, new Event('online'));
       flushSync();
 
-      expect(screen.getByText('オンラインに復帰しました')).toBeInTheDocument();
-
+      expect(screen.getByText(/オンラインに復帰しました/)).toBeInTheDocument();
       vi.advanceTimersByTime(3000);
       flushSync();
 
