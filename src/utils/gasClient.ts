@@ -6,17 +6,19 @@
 
 import { validateId } from './validateParams';
 
+/**
+ * Returns true when the browser reports no network connectivity.
+ * Safe for SSR — returns false when `navigator` is unavailable.
+ */
+export const isOffline = (): boolean => typeof navigator !== 'undefined' && !navigator.onLine;
+
 /** Default GAS Web App URL from environment variable */
 const GAS_URL_DEFAULT: string = import.meta.env.VITE_GAS_WEB_APP_URL || '';
 
 /** API key for authenticated requests (stored in env or localStorage) */
 const getApiKey = (): string => {
   try {
-    return (
-      import.meta.env.VITE_GAS_API_KEY ||
-      localStorage.getItem('gasApiKey') ||
-      ''
-    );
+    return import.meta.env.VITE_GAS_API_KEY || localStorage.getItem('gasApiKey') || '';
   } catch {
     return import.meta.env.VITE_GAS_API_KEY || '';
   }
@@ -117,7 +119,10 @@ export const fetchProperties = async (gasUrl?: string): Promise<unknown> => {
  * @returns The API response containing room data
  * @throws If the network request fails or returns a non-OK status
  */
-export const fetchRooms = async (gasUrl: string | undefined, propertyId: string): Promise<unknown> => {
+export const fetchRooms = async (
+  gasUrl: string | undefined,
+  propertyId: string
+): Promise<unknown> => {
   const validation = validateId(propertyId, 'propertyId');
   if (!validation.valid) throw new Error(validation.error);
 
