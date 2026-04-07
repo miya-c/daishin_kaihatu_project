@@ -24,7 +24,7 @@ function saveReadingToOfflineCache(
 function getReadingFromOfflineCache(
   propId: string,
   rId: string
-): { propertyName: string; roomName: string; readings: MeterReading[] } | null {
+): { propertyName: string; roomName: string; readings: MeterReading[]; cachedAt?: number } | null {
   try {
     const raw = localStorage.getItem(`${OFFLINE_CACHE_PREFIX}${propId}_${rId}`);
     if (!raw) return null;
@@ -43,6 +43,7 @@ interface PrefetchEntry {
 }
 
 const PREFETCH_TTL = 5 * 60 * 1000; // 5 minutes
+const OFFLINE_CACHE_TTL = 5 * 60 * 1000; // 5 minutes — fresh localStorage cache threshold
 
 export function createMeterReadings() {
   let loading = $state(true);
@@ -166,6 +167,31 @@ export function createMeterReadings() {
       meterReadings = cached.meterReadings;
       if (!silent) loading = false;
       return cached.meterReadings;
+    }
+
+    const offlineCache = getReadingFromOfflineCache(propId, rId);
+    if (offlineCache && offlineCache.readings) {
+      const cacheAge = offlineCache.cachedAt ? Date.now() - offlineCache.cachedAt : Infinity;
+      if (cacheAge < OFFLINE_CACHE_TTL) {
+        propertyId = propId || NOT_AVAILABLE;
+        propertyName = offlineCache.propertyName;
+        roomId = rId || NOT_AVAILABLE;
+        roomName = offlineCache.roomName;
+        meterReadings = offlineCache.readings;
+        if (!silent) loading = false;
+
+        fetchAndParseReadings(propId, rId)
+          .then((parsed) => {
+            if (parsed) {
+              propertyName = parsed.pName;
+              roomName = parsed.rName;
+              meterReadings = parsed.resultReadings;
+            }
+          })
+          .catch(() => {});
+
+        return offlineCache.readings;
+      }
     }
 
     if (!silent) {

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { getGasUrl, fetchProperties, gasFetch } from '../../utils/gasClient';
+  import { getGasUrl, fetchProperties } from '../../utils/gasClient';
   import NetworkStatusBar from '../NetworkStatusBar.svelte';
   import type { Property } from '../../types';
 
@@ -8,8 +8,7 @@
   let loading: boolean = $state(true);
   let error: string | null = $state(null);
   let isFetched: boolean = $state(false);
-  let isNavigating: boolean = $state(false);
-  let navigationMessage: string = $state('');
+
   let showUrlModal: boolean = $state(false);
   let showExitModal: boolean = $state(false);
   let urlInput: string = $state(
@@ -104,50 +103,16 @@
     showExitModal = false;
   }
 
-  const handlePropertySelect = async (property: Property) => {
+  const handlePropertySelect = (property: Property) => {
     if (!property || typeof property.id === 'undefined' || typeof property.name === 'undefined')
       return;
 
-    window.scrollTo(0, 0);
-    isNavigating = true;
-    navigationMessage = '部屋情報を取得中...';
+    // Save property info to sessionStorage for the room page
+    sessionStorage.setItem('selectedPropertyId', String(property.id));
+    sessionStorage.setItem('selectedPropertyName', String(property.name));
 
-    try {
-      const roomData: any = await gasFetch('getRooms', {
-        propertyId: String(property.id),
-        cache: String(Date.now()),
-      });
-      if (roomData.success === false) throw new Error(roomData.error || '部屋APIエラー');
-
-      let rooms: Record<string, unknown>[] = [];
-      if (roomData.data && roomData.data.rooms && Array.isArray(roomData.data.rooms)) {
-        rooms = roomData.data.rooms;
-      } else if (Array.isArray(roomData.data)) {
-        rooms = roomData.data;
-      } else {
-        throw new Error('部屋APIのデータ形式が正しくありません。');
-      }
-
-      const normalizedRooms = rooms.map((room: Record<string, unknown>, index: number) => ({
-        ...room,
-        id: room.id || room.roomId || room['部屋ID'] || `room-${index}`,
-        name: room.name || room.roomName || room['部屋名'] || '部屋名未設定',
-        rawInspectionDate: room.rawInspectionDate || room.inspectionDate || room['検針日時'],
-        hasActualReading: room.hasActualReading || room.hasReading || room['検針済み'] || false,
-      }));
-
-      sessionStorage.setItem('selectedPropertyId', String(property.id));
-      sessionStorage.setItem('selectedPropertyName', String(property.name));
-      sessionStorage.setItem('selectedRooms', JSON.stringify(normalizedRooms));
-
-      setTimeout(() => {
-        window.location.href = `/room/?propertyId=${encodeURIComponent(property.id)}`;
-      }, 300);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      error = '部屋情報の読み込みに失敗しました。\n' + message;
-      isNavigating = false;
-    }
+    // Navigate immediately — room page handles fetching room data from API
+    window.location.href = `/room/?propertyId=${encodeURIComponent(property.id)}`;
   };
 
   let filteredProperties: Property[] = $derived(
@@ -278,23 +243,6 @@
       </div>
     {/if}
 
-    {#if isNavigating}
-      <div
-        role="status"
-        aria-live="polite"
-        style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: rgba(255,255,255,0.95); display: flex; align-items: center; justify-content: center; z-index: 2147483647;"
-      >
-        <div
-          style="background-color: #fff; border-radius: 16px; padding: 40px 32px; display: flex; flex-direction: column; align-items: center; gap: 24px; box-shadow: var(--mui-shadows-4); max-width: 320px; text-align: center;"
-        >
-          <div class="MuiCircularProgress-root"></div>
-          <div style="font-size: 1rem; font-weight: 500; color: var(--mui-palette-grey-900);">
-            {navigationMessage || '読み込み中...'}
-          </div>
-        </div>
-      </div>
-    {/if}
-
     <div class="MuiAppBar-root">
       <div class="MuiToolbar-root" style="position: relative;">
         <div class="app-title" style="position: absolute; left: 50%; transform: translateX(-50%);">
@@ -360,7 +308,7 @@
         <div style="display: flex; flex-direction: column; gap: 16px;">
           {#each filteredProperties as property, index (property.id)}
             {@const completionText = formatCompletionDate(String(property.completionDate))}
-            {@const isDisabled = loading || isNavigating}
+            {@const isDisabled = loading}
             <div
               data-property-id={String(property.id)}
               class="MuiCard-root {isDisabled ? 'MuiCard-disabled' : ''}"

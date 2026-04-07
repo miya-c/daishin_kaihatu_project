@@ -75,16 +75,25 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // HTML pages: Network first (fallback to cache for offline)
+  // HTML pages: Stale-while-revalidate
+  // Serve cached HTML immediately for fast navigation, update cache in background
   if (url.pathname.endsWith('.html') || url.pathname === '/' || url.pathname.endsWith('/')) {
     event.respondWith(
-      fetch(request)
-        .then((response) => {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-          return response;
-        })
-        .catch(() => caches.match(request))
+      caches.open(CACHE_NAME).then(async (cache) => {
+        const cached = await cache.match(request);
+        // Fetch fresh version in background to update cache
+        const fetchPromise = fetch(request)
+          .then((networkResponse) => {
+            if (networkResponse.ok) {
+              const responseToCache = networkResponse.clone();
+              cache.put(request, responseToCache);
+            }
+            return networkResponse;
+          })
+          .catch(() => cached);
+        // Return cached version immediately if available, otherwise wait for network
+        return cached || fetchPromise;
+      })
     );
     return;
   }
