@@ -1,6 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createRoomNavigation } from '../useRoomNavigation.svelte';
 
+vi.mock('../../../../utils/gasClient', () => ({
+  gasFetch: vi.fn().mockRejectedValue(new Error('Network error')),
+}));
+
 const QUEUE_KEY = 'offline_readings_queue';
 
 describe('createRoomNavigation', () => {
@@ -180,8 +184,6 @@ describe('createRoomNavigation', () => {
 
   describe('saveReadings — offline', () => {
     it('saves to offline queue and returns true', async () => {
-      vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false);
-
       const nav = createNav();
       const readings = [{ date: '2025-01-01', currentReading: '100' }];
       const result = await nav.saveReadings(readings);
@@ -195,12 +197,9 @@ describe('createRoomNavigation', () => {
       const queue = JSON.parse(queueRaw);
       expect(queue).toHaveLength(1);
       expect(queue[0].action).toBe('updateMeterReadings');
-
-      vi.restoreAllMocks();
     });
 
     it('updates session cache for saved room', async () => {
-      vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false);
       sessionStorage.getItem.mockImplementation((key) => {
         if (key === 'selectedRooms') return JSON.stringify([{ id: 'room1' }]);
         return null;
@@ -211,17 +210,12 @@ describe('createRoomNavigation', () => {
       await nav.saveReadings(readings);
 
       expect(sessionStorage.setItem).toHaveBeenCalled();
-      vi.restoreAllMocks();
     });
 
     it('returns false for empty readings offline', async () => {
-      vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false);
-
       const nav = createNav();
       const result = await nav.saveReadings([]);
       expect(result).toBe(false);
-
-      vi.restoreAllMocks();
     });
   });
 });

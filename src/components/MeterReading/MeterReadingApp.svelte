@@ -5,7 +5,7 @@
   import { createMeterReadings } from './hooks/useMeterReadings.svelte';
   import { createRoomNavigation } from './hooks/useRoomNavigation.svelte';
   import { createToast } from './hooks/useToast.svelte';
-  import { gasFetch, isOffline } from '../../utils/gasClient';
+  import { gasFetch } from '../../utils/gasClient';
   import { saveToQueue, registerOnlineListener, getQueueStatus } from '../../utils/offlineQueue';
   import LoadingOverlay from './components/LoadingOverlay.svelte';
   import ToastOverlay from './components/ToastOverlay.svelte';
@@ -319,21 +319,6 @@
     navigation.updating = true;
 
     try {
-      if (isOffline()) {
-        saveToQueue({
-          action: 'updateMeterReadings',
-          propertyId,
-          roomId,
-          readings: updatedReadings,
-        });
-        hasSaved = true;
-        pendingCount = getQueueStatus().pendingCount;
-        toast.displayToast('オフラインで保存しました（オンライン復帰時に自動送信します）');
-        inputErrors = {};
-        readings.invalidatePrefetch(readings.propertyId, readings.roomId);
-        return;
-      }
-
       const result = (await gasFetch(
         'updateMeterReadings',
         {
@@ -354,8 +339,18 @@
         throw new Error((result.error as string) || '指示数の更新に失敗しました。');
       }
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : String(err);
-      toast.displayToast('更新エラー: ' + message);
+      // API failed — fallback to offline queue
+      saveToQueue({
+        action: 'updateMeterReadings',
+        propertyId,
+        roomId,
+        readings: updatedReadings,
+      });
+      hasSaved = true;
+      pendingCount = getQueueStatus().pendingCount;
+      toast.displayToast('オフラインで保存しました（オンライン復帰時に自動送信します）');
+      inputErrors = {};
+      readings.invalidatePrefetch(readings.propertyId, readings.roomId);
     } finally {
       navigation.updating = false;
     }

@@ -6,8 +6,6 @@ import type { MeterReading } from '../../../types';
 
 const OFFLINE_CACHE_PREFIX = 'offline_reading_';
 
-const isOffline = (): boolean => typeof navigator !== 'undefined' && !navigator.onLine;
-
 function saveReadingToOfflineCache(
   propId: string,
   rId: string,
@@ -170,23 +168,6 @@ export function createMeterReadings() {
       return cached.meterReadings;
     }
 
-    if (isOffline()) {
-      const offlineData = getReadingFromOfflineCache(propId, rId);
-      if (offlineData) {
-        propertyId = propId || NOT_AVAILABLE;
-        propertyName = offlineData.propertyName;
-        roomId = rId || NOT_AVAILABLE;
-        roomName = offlineData.roomName;
-        meterReadings = offlineData.readings;
-        error = null;
-        if (!silent) loading = false;
-        return offlineData.readings;
-      }
-      error = 'オフライン中で検針データがありません。オンライン時にデータがキャッシュされます。';
-      if (!silent) loading = false;
-      return null;
-    }
-
     if (!silent) {
       loading = true;
     }
@@ -222,6 +203,17 @@ export function createMeterReadings() {
       } catch (err: unknown) {
         if (controller.signal.aborted) return null;
         if (attempt === maxRetries) {
+          const offlineData = getReadingFromOfflineCache(propId, rId);
+          if (offlineData) {
+            propertyId = propId || NOT_AVAILABLE;
+            propertyName = offlineData.propertyName;
+            roomId = rId || NOT_AVAILABLE;
+            roomName = offlineData.roomName;
+            meterReadings = offlineData.readings;
+            error = null;
+            if (!silent) loading = false;
+            return offlineData.readings;
+          }
           const message = err instanceof Error ? err.message : String(err);
           let userMessage = '検針データの読み込みに失敗しました。';
           if (message.includes('503')) {

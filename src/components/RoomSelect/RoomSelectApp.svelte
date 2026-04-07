@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { getGasUrl, gasFetch, isOffline } from '../../utils/gasClient';
+  import { getGasUrl, gasFetch } from '../../utils/gasClient';
   import { saveToQueue } from '../../utils/offlineQueue';
   import NetworkStatusBar from '../NetworkStatusBar.svelte';
   import { validateId } from '../../utils/validateParams';
@@ -218,37 +218,21 @@
       '-' +
       String(today.getDate()).padStart(2, '0');
 
-    if (isOffline()) {
-      const rooms =
-        typeof sessionStorage !== 'undefined'
-          ? JSON.parse(sessionStorage.getItem('selectedRooms') || '[]')
-          : [];
-      for (const room of rooms) {
-        const roomId = String(room.id || room.roomId || '');
-        if (
-          roomId &&
-          room.isNotNeeded !== true &&
-          !(room.readingStatus === 'completed' || room.isCompleted)
-        ) {
-          displayToast('未検針の部屋があります。すべての検針を完了してください。');
-          return;
-        }
+    // Validate all rooms are completed before finishing
+    const rooms =
+      typeof sessionStorage !== 'undefined'
+        ? JSON.parse(sessionStorage.getItem('selectedRooms') || '[]')
+        : [];
+    for (const room of rooms) {
+      const roomId = String(room.id || room.roomId || '');
+      if (
+        roomId &&
+        room.isNotNeeded !== true &&
+        !(room.readingStatus === 'completed' || room.isCompleted)
+      ) {
+        displayToast('未検針の部屋があります。すべての検針を完了してください。');
+        return;
       }
-
-      saveToQueue({
-        action: 'completeInspection',
-        propertyId,
-        roomId: propertyId,
-        completionDate,
-      });
-      showExitModal = true;
-      return;
-    }
-
-    const gasUrl = sessionStorage.getItem('gasWebAppUrl');
-    if (!gasUrl) {
-      displayToast('Web App URLが設定されていません');
-      return;
     }
 
     try {
@@ -260,8 +244,14 @@
         throw new Error(result.error || '検針完了処理に失敗しました');
       }
     } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      displayToast(`検針完了処理でエラーが発生しました: ${message}`);
+      // API failed — fallback to offline queue
+      saveToQueue({
+        action: 'completeInspection',
+        propertyId,
+        roomId: propertyId,
+        completionDate,
+      });
+      showExitModal = true;
     }
   }
 
