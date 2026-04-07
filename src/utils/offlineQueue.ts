@@ -1,5 +1,7 @@
 const STORAGE_KEY = 'offline_readings_queue';
 
+let isSyncing = false;
+
 export interface QueueEntry {
   id: string;
   timestamp: number;
@@ -54,13 +56,37 @@ export function saveToQueue(entry: Omit<QueueEntry, 'id' | 'timestamp'>): QueueE
 export async function processQueue(
   sender?: (entry: QueueEntry) => Promise<boolean>
 ): Promise<{ processed: number; failed: number }> {
+  if (isSyncing) return { processed: 0, failed: 0 };
   const queue = readQueue();
   if (queue.length === 0) return { processed: 0, failed: 0 };
 
-  if (!sender) {
-    return processQueueBatch(queue);
-  }
+  isSyncing = true;
+  try {
+    let result: { processed: number; failed: number };
+    if (!sender) {
+      result = await processQueueBatch(queue);
+    } else {
+      result = await processQueueWithSender(queue, sender);
+    }
 
+    const remaining = readQueue();
+    if (remaining.length > 0 && !isSyncing) {
+      const retried = await processQueue(sender);
+      return {
+        processed: result.processed + retried.processed,
+        failed: result.failed + retried.failed,
+      };
+    }
+    return result;
+  } finally {
+    isSyncing = false;
+  }
+}
+
+async function processQueueWithSender(
+  queue: QueueEntry[],
+  sender: (entry: QueueEntry) => Promise<boolean>
+): Promise<{ processed: number; failed: number }> {
   let processed = 0;
   let failed = 0;
   const remaining: QueueEntry[] = [];
@@ -226,12 +252,17 @@ export function removeEntry(id: string): void {
 /**
  * オンライン復帰時のリスナー登録
  */
+export function isCurrentlySyncing(): boolean {
+  return isSyncing;
+}
+
 export function registerOnlineListener(
   onSync?: (result: { processed: number; failed: number }) => void
 ): () => void {
   const handler = async () => {
     const status = getQueueStatus();
     if (status.pendingCount === 0) return;
+    await new Promise((resolve) => setTimeout(resolve, 2000));
     const result = await processQueue();
     onSync?.(result);
   };

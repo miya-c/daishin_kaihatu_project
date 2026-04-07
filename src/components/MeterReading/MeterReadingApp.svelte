@@ -6,7 +6,12 @@
   import { createRoomNavigation } from './hooks/useRoomNavigation.svelte';
   import { createToast } from './hooks/useToast.svelte';
   import { gasFetch } from '../../utils/gasClient';
-  import { saveToQueue, registerOnlineListener, getQueueStatus } from '../../utils/offlineQueue';
+  import {
+    saveToQueue,
+    registerOnlineListener,
+    getQueueStatus,
+    isCurrentlySyncing,
+  } from '../../utils/offlineQueue';
   import LoadingOverlay from './components/LoadingOverlay.svelte';
   import ToastOverlay from './components/ToastOverlay.svelte';
   import NavigationButtons from './components/NavigationButtons.svelte';
@@ -337,6 +342,7 @@
     navigation.updating = true;
 
     try {
+      if (isCurrentlySyncing()) throw new Error('sync in progress');
       const result = (await gasFetch(
         'updateMeterReadings',
         {

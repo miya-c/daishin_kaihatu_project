@@ -1,6 +1,6 @@
 import type { RoomNavigation } from '../../../types';
 import { gasFetch } from '../../../utils/gasClient';
-import { saveToQueue } from '../../../utils/offlineQueue';
+import { saveToQueue, isCurrentlySyncing } from '../../../utils/offlineQueue';
 
 interface CreateRoomNavigationParams {
   propertyId: string;
@@ -140,6 +140,7 @@ export const createRoomNavigation = (options: CreateRoomNavigationParams) => {
 
     try {
       if (!currentGasUrl) throw new Error('gasWebAppUrl not configured');
+      if (isCurrentlySyncing()) throw new Error('sync in progress');
       const result = (await gasFetch(
         'updateMeterReadings',
         {
