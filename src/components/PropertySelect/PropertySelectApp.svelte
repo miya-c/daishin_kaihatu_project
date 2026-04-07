@@ -57,7 +57,20 @@
           })
         );
         properties = normalizedData;
+        localStorage.setItem('cached_properties', JSON.stringify(normalizedData));
       } catch (fetchError) {
+        const cached = localStorage.getItem('cached_properties');
+        if (cached) {
+          try {
+            const parsed = JSON.parse(cached);
+            if (Array.isArray(parsed)) {
+              properties = parsed as Property[];
+              loading = false;
+              isFetched = true;
+              return;
+            }
+          } catch {}
+        }
         const fetchErr = fetchError instanceof Error ? fetchError : new Error(String(fetchError));
         let errorMessage = '物件情報の取得に失敗しました。\n\n';
         if (fetchErr.message.includes('Failed to fetch')) {

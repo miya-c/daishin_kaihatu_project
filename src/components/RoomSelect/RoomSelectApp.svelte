@@ -87,6 +87,10 @@
         sessionStorage.setItem('selectedRooms', JSON.stringify(fetchedRooms));
         sessionStorage.setItem('selectedPropertyName', fetchedPropertyName);
         sessionStorage.setItem('selectedPropertyId', propId);
+        localStorage.setItem(
+          'cached_rooms_' + propId,
+          JSON.stringify({ rooms: fetchedRooms, propertyName: fetchedPropertyName })
+        );
       } catch (_) {
         const data: any = await gasFetch('getRooms', { propertyId: propId });
         if (!data.success) {
@@ -114,8 +118,24 @@
         sessionStorage.setItem('selectedRooms', JSON.stringify(fetchedRooms));
         sessionStorage.setItem('selectedPropertyName', fetchedPropertyName);
         sessionStorage.setItem('selectedPropertyId', propId);
+        localStorage.setItem(
+          'cached_rooms_' + propId,
+          JSON.stringify({ rooms: fetchedRooms, propertyName: fetchedPropertyName })
+        );
       }
     } catch (err) {
+      const cached = localStorage.getItem('cached_rooms_' + propId);
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed.rooms)) {
+            rooms = parsed.rooms;
+            propertyName = parsed.propertyName || '物件名不明';
+            loading = false;
+            return;
+          }
+        } catch {}
+      }
       const message = err instanceof Error ? err.message : String(err);
       error = message;
     } finally {
@@ -163,11 +183,19 @@
               });
               rooms = preserved;
               sessionStorage.setItem('selectedRooms', JSON.stringify(preserved));
+              localStorage.setItem(
+                'cached_rooms_' + propId,
+                JSON.stringify({ rooms: preserved, propertyName })
+              );
               return;
             }
           }
           rooms = updatedRooms;
           sessionStorage.setItem('selectedRooms', JSON.stringify(updatedRooms));
+          localStorage.setItem(
+            'cached_rooms_' + propId,
+            JSON.stringify({ rooms: updatedRooms, propertyName })
+          );
         }
       }
     } catch (_) {
