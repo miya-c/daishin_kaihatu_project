@@ -389,6 +389,10 @@ export function createMeterReadings() {
     get gasWebAppUrl() {
       return gasWebAppUrl;
     },
+    hasPrefetch(pId: string, rId: string): boolean {
+      const cached = prefetchMap.get(getPrefetchKey(pId, rId));
+      return !!cached && Date.now() - cached.timestamp < PREFETCH_TTL;
+    },
     loadMeterReadings,
     prefetchRoom,
     invalidatePrefetch,

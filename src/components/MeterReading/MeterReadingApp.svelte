@@ -111,6 +111,9 @@
     get invalidatePrefetch() {
       return readings.invalidatePrefetch;
     },
+    get hasPrefetch() {
+      return readings.hasPrefetch;
+    },
     get updateOfflineCache() {
       return (propId: string, rId: string, updatedReadings: Record<string, unknown>[]) => {
         const merged = readings.meterReadings.map((r: MeterReading) => {

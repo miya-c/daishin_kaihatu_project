@@ -10,6 +10,7 @@ interface CreateRoomNavigationParams {
   onNavigateToRoom?: (targetRoomId: string, preloadedNavData?: Record<string, unknown>) => void;
   invalidatePrefetch?: (propId: string, rId: string) => void;
   updateOfflineCache?: (propId: string, rId: string, readings: Record<string, unknown>[]) => void;
+  hasPrefetch?: (propId: string, rId: string) => boolean;
 }
 
 interface NavigationRoom {
@@ -30,6 +31,8 @@ export const createRoomNavigation = (options: CreateRoomNavigationParams) => {
   let isNavigating = $state(false);
   let navigationMessage = $state('');
   let abortController: AbortController | null = null;
+  let consecutiveSaveAndNavigateFailures = 0;
+  const MAX_CONSECUTIVE_FAILURES = 3;
 
   const getRoomNavigation = (): RoomNavigation => {
     try {
@@ -194,9 +197,18 @@ export const createRoomNavigation = (options: CreateRoomNavigationParams) => {
 
       const currentGasUrl = options.gasWebAppUrl || sessionStorage.getItem('gasWebAppUrl');
 
-      // Try integrated saveAndNavigate API first (1 request instead of 2)
-      if (currentGasUrl && options.onNavigateToRoom && meterReadingsData.length > 0) {
+      const shouldTryIntegratedApi =
+        currentGasUrl &&
+        options.onNavigateToRoom &&
+        meterReadingsData.length > 0 &&
+        consecutiveSaveAndNavigateFailures < MAX_CONSECUTIVE_FAILURES;
+
+      const targetHasPrefetch = options.hasPrefetch?.(options.propertyId, targetRoomId);
+
+      if (shouldTryIntegratedApi && !targetHasPrefetch) {
         try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 5000);
           const result = (await gasFetch(
             'saveAndNavigate',
             {
@@ -206,30 +218,29 @@ export const createRoomNavigation = (options: CreateRoomNavigationParams) => {
               direction,
               meterReadingsData: JSON.stringify(meterReadingsData),
             },
-            'POST'
+            'POST',
+            controller.signal
           )) as Record<string, unknown>;
+          clearTimeout(timeoutId);
 
           if (result.success && result.navigationResult) {
-            // Update sessionStorage cache for saved room
+            consecutiveSaveAndNavigateFailures = 0;
             updateSessionCacheForSavedRoom(currentRoomId);
-            // Invalidate prefetch cache so re-navigation fetches fresh data
             if (options.invalidatePrefetch) {
               options.invalidatePrefetch(options.propertyId, currentRoomId);
             }
-            // Navigate with pre-loaded data (no additional API call)
-            options.onNavigateToRoom(
+            options.onNavigateToRoom!(
               targetRoomId,
               result.navigationResult as Record<string, unknown>
             );
             return;
           }
-          // Integrated API failed — fall through to legacy approach
+          consecutiveSaveAndNavigateFailures++;
         } catch {
-          // Integrated API error — fall through to legacy approach
+          consecutiveSaveAndNavigateFailures++;
         }
       }
 
-      // Legacy: navigate immediately and save in background
       if (options.onNavigateToRoom) {
         options.onNavigateToRoom(targetRoomId);
       } else {
