@@ -232,6 +232,19 @@
     window.location.href = '/property/';
   }
 
+  function updatePropertyCacheCompletion(propId: string, date: string): void {
+    const cached = localStorage.getItem('cached_properties');
+    if (!cached) return;
+    try {
+      const properties = JSON.parse(cached);
+      if (!Array.isArray(properties)) return;
+      const updated = properties.map((p: any) =>
+        String(p.id) === String(propId) ? { ...p, completionDate: date } : p
+      );
+      localStorage.setItem('cached_properties', JSON.stringify(updated));
+    } catch {}
+  }
+
   async function handleCompleteInspection(): Promise<void> {
     if (!propertyId) {
       displayToast('物件IDが取得できませんでした');
@@ -267,6 +280,7 @@
       const result: any = await gasFetch('completeInspection', { propertyId, completionDate });
 
       if (result.success) {
+        updatePropertyCacheCompletion(propertyId, completionDate);
         showExitModal = true;
       } else {
         throw new Error(result.error || '検針完了処理に失敗しました');
@@ -279,6 +293,7 @@
         roomId: propertyId,
         completionDate,
       });
+      updatePropertyCacheCompletion(propertyId, completionDate);
       showExitModal = true;
     }
   }
