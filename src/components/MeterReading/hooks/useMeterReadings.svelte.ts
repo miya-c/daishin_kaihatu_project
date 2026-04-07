@@ -182,7 +182,7 @@ export function createMeterReadings() {
 
         fetchAndParseReadings(propId, rId)
           .then((parsed) => {
-            if (parsed) {
+            if (parsed && roomId === rId) {
               propertyName = parsed.pName;
               roomName = parsed.rName;
               meterReadings = parsed.resultReadings;
