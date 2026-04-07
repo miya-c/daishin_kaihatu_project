@@ -15,6 +15,11 @@ root.classList.remove('styles-loading');
 root.classList.add('styles-loaded');
 
 if (root) {
-  root.innerHTML = '';
-  mount(MeterReadingPage, { target: root });
+  mount(MeterReadingPage, {
+    target: root,
+    props: {},
+    intro: true,
+  });
+  const skeletons = root.querySelectorAll('.skeleton-header, .skeleton-card');
+  skeletons.forEach((el) => el.remove());
 }

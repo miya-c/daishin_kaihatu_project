@@ -42,8 +42,7 @@ interface PrefetchEntry {
   timestamp: number;
 }
 
-const PREFETCH_TTL = 5 * 60 * 1000; // 5 minutes
-const OFFLINE_CACHE_TTL = 5 * 60 * 1000; // 5 minutes — fresh localStorage cache threshold
+const PREFETCH_TTL = 5 * 60 * 1000;
 
 export function createMeterReadings() {
   let loading = $state(true);
@@ -170,28 +169,25 @@ export function createMeterReadings() {
     }
 
     const offlineCache = getReadingFromOfflineCache(propId, rId);
-    if (offlineCache && offlineCache.readings) {
-      const cacheAge = offlineCache.cachedAt ? Date.now() - offlineCache.cachedAt : Infinity;
-      if (cacheAge < OFFLINE_CACHE_TTL) {
-        propertyId = propId || NOT_AVAILABLE;
-        propertyName = offlineCache.propertyName;
-        roomId = rId || NOT_AVAILABLE;
-        roomName = offlineCache.roomName;
-        meterReadings = offlineCache.readings;
-        if (!silent) loading = false;
+    if (offlineCache && offlineCache.readings && offlineCache.readings.length > 0) {
+      propertyId = propId || NOT_AVAILABLE;
+      propertyName = offlineCache.propertyName;
+      roomId = rId || NOT_AVAILABLE;
+      roomName = offlineCache.roomName;
+      meterReadings = offlineCache.readings;
+      if (!silent) loading = false;
 
-        fetchAndParseReadings(propId, rId)
-          .then((parsed) => {
-            if (parsed && roomId === rId) {
-              propertyName = parsed.pName;
-              roomName = parsed.rName;
-              meterReadings = parsed.resultReadings;
-            }
-          })
-          .catch(() => {});
+      fetchAndParseReadings(propId, rId)
+        .then((parsed) => {
+          if (parsed && roomId === rId) {
+            propertyName = parsed.pName;
+            roomName = parsed.rName;
+            meterReadings = parsed.resultReadings;
+          }
+        })
+        .catch(() => {});
 
-        return offlineCache.readings;
-      }
+      return offlineCache.readings;
     }
 
     if (!silent) {

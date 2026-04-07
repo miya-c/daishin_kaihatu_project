@@ -17,6 +17,11 @@ if ('serviceWorker' in navigator) {
 
 const root = document.getElementById('root');
 if (root) {
-  root.innerHTML = '';
-  mount(RoomSelectPage, { target: root });
+  mount(RoomSelectPage, {
+    target: root,
+    props: {},
+    intro: true,
+  });
+  const skeletons = root.querySelectorAll('.skeleton-header, .skeleton-card');
+  skeletons.forEach((el) => el.remove());
 }
