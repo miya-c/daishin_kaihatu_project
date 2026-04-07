@@ -380,6 +380,32 @@
         return r;
       });
       readings.updateOfflineCache(readings.propertyId, readings.roomId, mergedReadings);
+
+      const roomCache = localStorage.getItem('cached_rooms_' + readings.propertyId);
+      if (roomCache) {
+        try {
+          const parsed = JSON.parse(roomCache);
+          if (parsed.rooms && Array.isArray(parsed.rooms)) {
+            const dateStr = new Intl.DateTimeFormat('ja-JP', {
+              timeZone: 'Asia/Tokyo',
+              month: 'long',
+              day: 'numeric',
+            }).format(new Date());
+            parsed.rooms = parsed.rooms.map((room: Record<string, unknown>) => {
+              const rid = String(room.id || room.roomId || '');
+              return rid === readings.roomId
+                ? {
+                    ...room,
+                    readingStatus: 'completed',
+                    isCompleted: true,
+                    readingDateFormatted: dateStr,
+                  }
+                : room;
+            });
+            localStorage.setItem('cached_rooms_' + readings.propertyId, JSON.stringify(parsed));
+          }
+        } catch {}
+      }
     } finally {
       navigation.updating = false;
     }

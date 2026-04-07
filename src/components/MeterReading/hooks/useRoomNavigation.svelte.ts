@@ -279,6 +279,28 @@ export const createRoomNavigation = (options: CreateRoomNavigationParams) => {
           sessionStorage.setItem('selectedRooms', JSON.stringify(updated));
           sessionStorage.setItem('updatedRoomId', currentRoomId);
           sessionStorage.setItem('lastUpdateTime', Date.now().toString());
+
+          const propId = options.propertyId;
+          const roomCache = localStorage.getItem('cached_rooms_' + propId);
+          if (roomCache) {
+            try {
+              const parsed = JSON.parse(roomCache);
+              if (parsed.rooms && Array.isArray(parsed.rooms)) {
+                parsed.rooms = parsed.rooms.map((room: Record<string, unknown>) => {
+                  const rid = String(room.id || room.roomId || '');
+                  return rid === currentRoomId
+                    ? {
+                        ...room,
+                        readingStatus: 'completed',
+                        isCompleted: true,
+                        readingDateFormatted: dateStr,
+                      }
+                    : room;
+                });
+                localStorage.setItem('cached_rooms_' + propId, JSON.stringify(parsed));
+              }
+            } catch {}
+          }
         }
       }
     } catch (_) {
