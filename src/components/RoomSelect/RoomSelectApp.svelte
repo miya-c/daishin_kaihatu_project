@@ -161,7 +161,7 @@
           const savedTime = sessionStorage.getItem('lastUpdateTime');
           if (savedRoomId && savedTime) {
             const elapsed = Date.now() - parseInt(savedTime, 10);
-            if (elapsed < 30000) {
+            if (elapsed < 600000) {
               // Within 30s: protect the optimistic update from API cache lag
               const preserved = updatedRooms.map((room: Room) => {
                 const rid = String(room.id || room.roomId || '');
