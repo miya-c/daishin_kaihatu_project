@@ -338,6 +338,14 @@ export function createMeterReadings() {
     };
   });
 
+  function updateOfflineCache(propId: string, rId: string, updatedReadings: MeterReading[]): void {
+    saveReadingToOfflineCache(propId, rId, {
+      propertyName,
+      roomName,
+      readings: updatedReadings,
+    });
+  }
+
   return {
     get loading() {
       return loading;
@@ -384,5 +392,6 @@ export function createMeterReadings() {
     loadMeterReadings,
     prefetchRoom,
     invalidatePrefetch,
+    updateOfflineCache,
   };
 }

@@ -106,6 +106,24 @@
     get invalidatePrefetch() {
       return readings.invalidatePrefetch;
     },
+    get updateOfflineCache() {
+      return (propId: string, rId: string, updatedReadings: Record<string, unknown>[]) => {
+        const merged = readings.meterReadings.map((r: MeterReading) => {
+          const date = r.date;
+          const match = updatedReadings.find(
+            (u: Record<string, unknown>) => u.date === date || u.date === r.date
+          );
+          if (match && match.currentReading !== undefined) {
+            return {
+              ...r,
+              currentReading: parseFloat(String(match.currentReading)) || r.currentReading,
+            };
+          }
+          return r;
+        });
+        readings.updateOfflineCache(propId, rId, merged);
+      };
+    },
     get onNavigateToRoom() {
       return (targetRoomId: string, preloadedNavData?: Record<string, unknown>) => {
         hasSaved = false;
@@ -351,6 +369,17 @@
       toast.displayToast('オフラインで保存しました（オンライン復帰時に自動送信します）');
       inputErrors = {};
       readings.invalidatePrefetch(readings.propertyId, readings.roomId);
+
+      // Update localStorage cache with the latest input values
+      const mergedReadings = readings.meterReadings.map((r: MeterReading) => {
+        const date = r.date;
+        const updatedValue = readingValues[date];
+        if (updatedValue && updatedValue.trim() !== '') {
+          return { ...r, currentReading: parseFloat(updatedValue) || r.currentReading };
+        }
+        return r;
+      });
+      readings.updateOfflineCache(readings.propertyId, readings.roomId, mergedReadings);
     } finally {
       navigation.updating = false;
     }

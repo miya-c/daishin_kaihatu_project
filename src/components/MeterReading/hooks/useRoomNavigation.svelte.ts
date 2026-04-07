@@ -9,6 +9,7 @@ interface CreateRoomNavigationParams {
   displayToast: (message: string) => void;
   onNavigateToRoom?: (targetRoomId: string, preloadedNavData?: Record<string, unknown>) => void;
   invalidatePrefetch?: (propId: string, rId: string) => void;
+  updateOfflineCache?: (propId: string, rId: string, readings: Record<string, unknown>[]) => void;
 }
 
 interface NavigationRoom {
@@ -169,6 +170,9 @@ export const createRoomNavigation = (options: CreateRoomNavigationParams) => {
       updateSessionCacheForSavedRoom(targetRoomId);
       if (options.invalidatePrefetch) {
         options.invalidatePrefetch(options.propertyId, targetRoomId);
+      }
+      if (options.updateOfflineCache) {
+        options.updateOfflineCache(options.propertyId, targetRoomId, readings);
       }
       if (!silent) {
         options.displayToast('オフラインで保存しました（オンライン復帰時に自動送信します）');
