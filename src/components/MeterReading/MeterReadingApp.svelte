@@ -370,11 +370,16 @@
       return;
     }
 
-    // Check for zero usage
-    const hasZeroUsage = Object.entries(usageStates).some(([date, usage]) => {
-      if (date === '') return false; // skip initial reading
-      const num = parseFloat(usage);
-      return !isNaN(num) && num === 0;
+    // Check for zero usage — calculate directly from input values and previous readings
+    const hasZeroUsage = readings.meterReadings.some((reading: MeterReading) => {
+      const date = reading.date;
+      const currentInput = readingValues[date];
+      if (!currentInput || currentInput.trim() === '') return false;
+      const current = parseFloat(currentInput);
+      if (isNaN(current)) return false;
+      const previous = parseFloat(String(reading.previousReading));
+      if (isNaN(previous) || previous === 0) return false; // no previous reading to compare
+      return current - previous === 0;
     });
     if (hasZeroUsage) {
       showZeroUsageModal = true;
