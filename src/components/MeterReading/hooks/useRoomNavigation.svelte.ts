@@ -1,6 +1,8 @@
 import type { RoomNavigation } from '../../../types';
 import { gasFetch } from '../../../utils/gasClient';
 import { saveToQueue, isCurrentlySyncing } from '../../../utils/offlineQueue';
+import { updateRoomInBothCaches } from '../../../utils/roomCache';
+import { API_TIMEOUT_MS } from '../../../utils/config';
 
 interface CreateRoomNavigationParams {
   propertyId: string;
@@ -213,7 +215,7 @@ export const createRoomNavigation = (options: CreateRoomNavigationParams) => {
       if (shouldTryIntegratedApi && !targetHasPrefetch) {
         try {
           const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 5000);
+          const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
           const result = (await gasFetch(
             'saveAndNavigate',
             {
@@ -272,54 +274,9 @@ export const createRoomNavigation = (options: CreateRoomNavigationParams) => {
 
   const updateSessionCacheForSavedRoom = (currentRoomId: string): void => {
     try {
-      const sessionRooms = sessionStorage.getItem('selectedRooms');
-      if (sessionRooms) {
-        const rooms = JSON.parse(sessionRooms);
-        if (Array.isArray(rooms)) {
-          const dateStr = new Intl.DateTimeFormat('ja-JP', {
-            timeZone: 'Asia/Tokyo',
-            month: 'long',
-            day: 'numeric',
-          }).format(new Date());
-          const updated = rooms.map((room: Record<string, unknown>) => {
-            const rid = String(room.id || room.roomId || '');
-            if (rid === currentRoomId) {
-              return {
-                ...room,
-                readingStatus: 'completed',
-                isCompleted: true,
-                readingDateFormatted: dateStr,
-              };
-            }
-            return room;
-          });
-          sessionStorage.setItem('selectedRooms', JSON.stringify(updated));
-          sessionStorage.setItem('updatedRoomId', currentRoomId);
-          sessionStorage.setItem('lastUpdateTime', Date.now().toString());
-
-          const propId = options.propertyId;
-          const roomCache = localStorage.getItem('cached_rooms_' + propId);
-          if (roomCache) {
-            try {
-              const parsed = JSON.parse(roomCache);
-              if (parsed.rooms && Array.isArray(parsed.rooms)) {
-                parsed.rooms = parsed.rooms.map((room: Record<string, unknown>) => {
-                  const rid = String(room.id || room.roomId || '');
-                  return rid === currentRoomId
-                    ? {
-                        ...room,
-                        readingStatus: 'completed',
-                        isCompleted: true,
-                        readingDateFormatted: dateStr,
-                      }
-                    : room;
-                });
-                localStorage.setItem('cached_rooms_' + propId, JSON.stringify(parsed));
-              }
-            } catch {}
-          }
-        }
-      }
+      updateRoomInBothCaches(options.propertyId, currentRoomId);
+      sessionStorage.setItem('updatedRoomId', currentRoomId);
+      sessionStorage.setItem('lastUpdateTime', Date.now().toString());
     } catch (_) {
       // Cache update failure is non-critical
     }
@@ -380,58 +337,12 @@ export const createRoomNavigation = (options: CreateRoomNavigationParams) => {
 
       // Only set protection flags and optimistic update when data was actually saved
       if (wasSaved) {
-        sessionStorage.setItem('updatedRoomId', rId);
-        sessionStorage.setItem('lastUpdateTime', Date.now().toString());
-
-        const sessionRooms = sessionStorage.getItem('selectedRooms');
-        if (sessionRooms) {
-          try {
-            const rooms = JSON.parse(sessionRooms);
-            if (Array.isArray(rooms)) {
-              const today = new Date();
-              const dateStr = new Intl.DateTimeFormat('ja-JP', {
-                timeZone: 'Asia/Tokyo',
-                month: 'long',
-                day: 'numeric',
-              }).format(today);
-              const updated = rooms.map((room: Record<string, unknown>) => {
-                const roomIdentifier = String(room.id || room.roomId || '');
-                if (roomIdentifier === rId) {
-                  return {
-                    ...room,
-                    readingStatus: 'completed',
-                    isCompleted: true,
-                    readingDateFormatted: dateStr,
-                  };
-                }
-                return room;
-              });
-              sessionStorage.setItem('selectedRooms', JSON.stringify(updated));
-
-              const roomCache = localStorage.getItem('cached_rooms_' + propId);
-              if (roomCache) {
-                try {
-                  const parsed = JSON.parse(roomCache);
-                  if (parsed.rooms && Array.isArray(parsed.rooms)) {
-                    parsed.rooms = parsed.rooms.map((room: Record<string, unknown>) => {
-                      const rid = String(room.id || room.roomId || '');
-                      return rid === rId
-                        ? {
-                            ...room,
-                            readingStatus: 'completed',
-                            isCompleted: true,
-                            readingDateFormatted: dateStr,
-                          }
-                        : room;
-                    });
-                    localStorage.setItem('cached_rooms_' + propId, JSON.stringify(parsed));
-                  }
-                } catch {}
-              }
-            }
-          } catch (_) {
-            // Navigation proceeds even if cache update fails
-          }
+        try {
+          updateRoomInBothCaches(propId, rId);
+          sessionStorage.setItem('updatedRoomId', rId);
+          sessionStorage.setItem('lastUpdateTime', Date.now().toString());
+        } catch (_) {
+          // Navigation proceeds even if cache update fails
         }
       }
 

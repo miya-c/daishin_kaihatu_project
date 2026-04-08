@@ -13,6 +13,7 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write \"src/**/*.{js,svelte}\"",
     "format:check": "prettier --check \"src/**/*.{js,svelte}\"",
+    "typecheck": "svelte-check --threshold error",
     "analyze": "ANALYZE=true vite build",
     "prepare": "simple-git-hooks"
   },
@@ -20,7 +21,7 @@
     "pre-commit": "npx lint-staged"
   },
   "lint-staged": {
-    "src/**/*.{js,svelte}": [
+    "src/**/*.{js,svelte,ts}": [
       "eslint --fix",
       "prettier --write"
     ]

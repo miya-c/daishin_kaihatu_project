@@ -242,13 +242,13 @@
                 showUrlModal = false;
                 error = '正しいGAS Web App URLを設定してください。';
               }}
-              style="padding: 8px 16px; border-radius: 8px; border: 1px solid #ccc; background-color: #fff; cursor: pointer;"
+              style="padding: 12px 24px; border-radius: 8px; border: 1px solid #ccc; background-color: #fff; cursor: pointer; min-height: 44px;"
             >
               キャンセル
             </button>
             <button
               onclick={handleUrlSubmit}
-              style="padding: 8px 16px; border-radius: 8px; border: none; background-color: var(--mui-palette-primary-main, #1976d2); color: #fff; cursor: pointer; font-weight: 600;"
+              style="padding: 12px 24px; border-radius: 8px; border: none; background-color: var(--mui-palette-primary-main, #1976d2); color: #fff; cursor: pointer; font-weight: 600; min-height: 44px;"
             >
               保存
             </button>

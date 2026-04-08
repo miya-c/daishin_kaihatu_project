@@ -1,10 +1,12 @@
 <script lang="ts">
   import { getGasUrl, gasFetch } from '../../utils/gasClient';
   import { saveToQueue } from '../../utils/offlineQueue';
+  import { markRoomCompleted, formatDateJa } from '../../utils/roomCache';
+  import { TOAST_DISPLAY_MS, OPTIMISTIC_UPDATE_PROTECTION_MS } from '../../utils/config';
   import NetworkStatusBar from '../NetworkStatusBar.svelte';
   import { validateId } from '../../utils/validateParams';
 
-  import type { Room } from '../../types';
+  import type { Room, ApiResponse } from '../../types';
 
   let rooms: Room[] = $state([]);
   let propertyName: string = $state('物件名読み込み中...');
@@ -23,7 +25,7 @@
     toastTimerRef = setTimeout(() => {
       showToast = false;
       toastMessage = '';
-    }, 3000);
+    }, TOAST_DISPLAY_MS);
   }
 
   async function loadRoomData(propId: string): Promise<void> {
@@ -66,10 +68,10 @@
       }
 
       try {
-        const data: any = await gasFetch('getRoomsLight', {
+        const data = (await gasFetch('getRoomsLight', {
           propertyId: propId,
           cache: String(Date.now()),
-        });
+        })) as ApiResponse<{ rooms: Room[]; propertyName: string }>;
         if (data.success === false) {
           throw new Error(data.error || 'API error');
         }
@@ -92,7 +94,13 @@
           JSON.stringify({ rooms: fetchedRooms, propertyName: fetchedPropertyName })
         );
       } catch (_) {
-        const data: any = await gasFetch('getRooms', { propertyId: propId });
+        const data = (await gasFetch('getRooms', { propertyId: propId })) as ApiResponse<{
+          rooms: Room[];
+          propertyName: string;
+          property?: { name: string };
+          property_name?: string;
+          name?: string;
+        }>;
         if (!data.success) {
           throw new Error(data.error || 'データの取得に失敗しました');
         }
@@ -149,39 +157,28 @@
     _currentRooms: Room[]
   ): Promise<void> {
     try {
-      const data: any = await gasFetch('getRoomsLight', {
+      const data = (await gasFetch('getRoomsLight', {
         propertyId: propId,
         cache: String(Date.now()),
-      });
+      })) as ApiResponse<{ rooms: Room[] }>;
       if (data.success) {
-        const updatedRooms = data.data?.rooms || data.data || [];
-        if (Array.isArray(updatedRooms) && updatedRooms.length > 0) {
+        const fetchedRooms = data.data?.rooms || data.data || [];
+        if (Array.isArray(fetchedRooms) && fetchedRooms.length > 0) {
           // Preserve optimistic update for recently saved room
           const savedRoomId = sessionStorage.getItem('updatedRoomId');
           const savedTime = sessionStorage.getItem('lastUpdateTime');
           if (savedRoomId && savedTime) {
             const elapsed = Date.now() - parseInt(savedTime, 10);
-            if (elapsed < 600000) {
-              // Within 30s: protect the optimistic update from API cache lag
-              const preserved = updatedRooms.map((room: Room) => {
-                const rid = String(room.id || room.roomId || '');
-                if (rid === savedRoomId) {
-                  return {
-                    ...room,
-                    readingStatus: 'completed',
-                    isCompleted: true,
-                    readingDateFormatted:
-                      room.readingDateFormatted ||
-                      new Intl.DateTimeFormat('ja-JP', {
-                        timeZone: 'Asia/Tokyo',
-                        month: 'long',
-                        day: 'numeric',
-                      }).format(new Date()),
-                  };
-                }
-                return room;
-              });
-              rooms = preserved;
+            if (elapsed < OPTIMISTIC_UPDATE_PROTECTION_MS) {
+              const dateStr =
+                fetchedRooms.find((r: Room) => String(r.id || r.roomId || '') === savedRoomId)
+                  ?.readingDateFormatted || formatDateJa();
+              const preserved = markRoomCompleted(
+                fetchedRooms as Record<string, unknown>[],
+                savedRoomId,
+                dateStr
+              );
+              rooms = preserved as Room[];
               sessionStorage.setItem('selectedRooms', JSON.stringify(preserved));
               localStorage.setItem(
                 'cached_rooms_' + propId,
@@ -190,11 +187,11 @@
               return;
             }
           }
-          rooms = updatedRooms;
-          sessionStorage.setItem('selectedRooms', JSON.stringify(updatedRooms));
+          rooms = fetchedRooms;
+          sessionStorage.setItem('selectedRooms', JSON.stringify(fetchedRooms));
           localStorage.setItem(
             'cached_rooms_' + propId,
-            JSON.stringify({ rooms: updatedRooms, propertyName })
+            JSON.stringify({ rooms: fetchedRooms, propertyName })
           );
         }
       }
@@ -238,7 +235,7 @@
     try {
       const properties = JSON.parse(cached);
       if (!Array.isArray(properties)) return;
-      const updated = properties.map((p: any) =>
+      const updated = properties.map((p: Record<string, unknown>) =>
         String(p.id) === String(propId) ? { ...p, completionDate: date } : p
       );
       localStorage.setItem('cached_properties', JSON.stringify(updated));
@@ -277,7 +274,10 @@
     }
 
     try {
-      const result: any = await gasFetch('completeInspection', { propertyId, completionDate });
+      const result = (await gasFetch('completeInspection', {
+        propertyId,
+        completionDate,
+      })) as ApiResponse<unknown>;
 
       if (result.success) {
         updatePropertyCacheCompletion(propertyId, completionDate);

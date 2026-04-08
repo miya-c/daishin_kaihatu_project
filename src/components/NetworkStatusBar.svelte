@@ -1,5 +1,6 @@
 <script>
   import { getQueueStatus, registerOnlineListener } from '../utils/offlineQueue';
+  import { TOAST_DISPLAY_MS } from '../utils/config';
 
   let isOnline = $state(navigator.onLine);
   let wasOffline = $state(false);
@@ -37,7 +38,7 @@
         showBackOnline = false;
         wasOffline = false;
         syncing = false;
-      }, 3000);
+      }, TOAST_DISPLAY_MS);
       return () => clearTimeout(timer);
     }
   });

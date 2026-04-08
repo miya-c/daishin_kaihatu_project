@@ -6,6 +6,8 @@
   import { createRoomNavigation } from './hooks/useRoomNavigation.svelte';
   import { createToast } from './hooks/useToast.svelte';
   import { gasFetch } from '../../utils/gasClient';
+  import { updateRoomInBothCaches } from '../../utils/roomCache';
+  import { CACHE_STALE_THRESHOLD_MS } from '../../utils/config';
   import {
     saveToQueue,
     registerOnlineListener,
@@ -67,22 +69,13 @@
     }
   });
 
-  // ── Track online/offline state + queue sync ──
+  // ── Queue sync ──
   $effect(() => {
-    const setOffline = () => {
-      offlineMode = true;
-    };
-    const setOnline = () => {
-      offlineMode = false;
-      pendingCount = getQueueStatus().pendingCount;
-    };
-
-    window.addEventListener('online', setOnline);
-    window.addEventListener('offline', setOffline);
     pendingCount = getQueueStatus().pendingCount;
 
     const unregisterSync = registerOnlineListener((result) => {
       pendingCount = getQueueStatus().pendingCount;
+      offlineMode = !navigator.onLine;
       if (result.processed > 0) {
         toast.displayToast(`${result.processed}件のデータを送信しました`);
       }
@@ -92,14 +85,13 @@
       const { processQueue } = await import('../../utils/offlineQueue');
       const result = await processQueue();
       pendingCount = getQueueStatus().pendingCount;
+      offlineMode = !navigator.onLine;
       if (result.processed > 0) {
         toast.displayToast(`${result.processed}件のデータを送信しました`);
       }
     });
 
     return () => {
-      window.removeEventListener('online', setOnline);
-      window.removeEventListener('offline', setOffline);
       unregisterSync();
       unregisterSwMessage();
     };
@@ -407,31 +399,7 @@
       });
       readings.updateOfflineCache(readings.propertyId, readings.roomId, mergedReadings);
 
-      const roomCache = localStorage.getItem('cached_rooms_' + readings.propertyId);
-      if (roomCache) {
-        try {
-          const parsed = JSON.parse(roomCache);
-          if (parsed.rooms && Array.isArray(parsed.rooms)) {
-            const dateStr = new Intl.DateTimeFormat('ja-JP', {
-              timeZone: 'Asia/Tokyo',
-              month: 'long',
-              day: 'numeric',
-            }).format(new Date());
-            parsed.rooms = parsed.rooms.map((room: Record<string, unknown>) => {
-              const rid = String(room.id || room.roomId || '');
-              return rid === readings.roomId
-                ? {
-                    ...room,
-                    readingStatus: 'completed',
-                    isCompleted: true,
-                    readingDateFormatted: dateStr,
-                  }
-                : room;
-            });
-            localStorage.setItem('cached_rooms_' + readings.propertyId, JSON.stringify(parsed));
-          }
-        } catch {}
-      }
+      updateRoomInBothCaches(readings.propertyId, readings.roomId);
     } finally {
       navigation.updating = false;
     }
@@ -550,9 +518,9 @@
   <div id="main-content" class="content-area mantine-container">
     <div class="mantine-stack">
       <PropertyInfoHeader propertyName={readings.propertyName} roomName={readings.roomName} />
-      {#if readings.cacheAgeMs !== null && readings.cacheAgeMs > 60000}
+      {#if readings.cacheAgeMs !== null && readings.cacheAgeMs > CACHE_STALE_THRESHOLD_MS}
         <div style="font-size: 0.75rem; color: #888; text-align: center; margin-top: -4px;">
-          キャッシュからの表示（{Math.round(readings.cacheAgeMs / 60000)}分前）
+          キャッシュからの表示（{Math.round(readings.cacheAgeMs / CACHE_STALE_THRESHOLD_MS)}分前）
         </div>
       {/if}
       <div

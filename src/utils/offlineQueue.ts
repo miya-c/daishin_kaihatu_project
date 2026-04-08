@@ -1,14 +1,15 @@
+import { SYNC_LOCK_TTL_MS, SYNC_RETRY_DELAY_MS } from './config';
+
 const STORAGE_KEY = 'offline_readings_queue';
 
 const SYNC_LOCK_KEY = 'offline_sync_lock';
-const SYNC_LOCK_TTL = 30000;
 
 function acquireSyncLock(): boolean {
   try {
     const raw = localStorage.getItem(SYNC_LOCK_KEY);
     if (raw) {
       const lock = JSON.parse(raw);
-      if (Date.now() - lock.timestamp < SYNC_LOCK_TTL) return false;
+      if (Date.now() - lock.timestamp < SYNC_LOCK_TTL_MS) return false;
     }
     localStorage.setItem(SYNC_LOCK_KEY, JSON.stringify({ timestamp: Date.now() }));
     return true;
@@ -101,29 +102,15 @@ export async function processQueue(
   sender?: (entry: QueueEntry) => Promise<boolean>
 ): Promise<{ processed: number; failed: number }> {
   if (!acquireSyncLock()) return { processed: 0, failed: 0 };
-  const queue = readQueue();
-  if (queue.length === 0) {
-    releaseSyncLock();
-    return { processed: 0, failed: 0 };
-  }
 
   try {
-    let result: { processed: number; failed: number };
-    if (!sender) {
-      result = await processQueueBatch(queue);
-    } else {
-      result = await processQueueWithSender(queue, sender);
-    }
+    const queue = readQueue();
+    if (queue.length === 0) return { processed: 0, failed: 0 };
 
-    const remaining = readQueue();
-    if (remaining.length > 0 && acquireSyncLock()) {
-      const retried = await processQueue(sender);
-      return {
-        processed: result.processed + retried.processed,
-        failed: result.failed + retried.failed,
-      };
+    if (!sender) {
+      return await processQueueBatch(queue);
     }
-    return result;
+    return await processQueueWithSender(queue, sender);
   } finally {
     releaseSyncLock();
   }
@@ -303,7 +290,7 @@ export function isCurrentlySyncing(): boolean {
     const raw = localStorage.getItem(SYNC_LOCK_KEY);
     if (!raw) return false;
     const lock = JSON.parse(raw);
-    return Date.now() - lock.timestamp < SYNC_LOCK_TTL;
+    return Date.now() - lock.timestamp < SYNC_LOCK_TTL_MS;
   } catch {
     return false;
   }
@@ -315,7 +302,7 @@ export function registerOnlineListener(
   const handler = async () => {
     const status = getQueueStatus();
     if (status.pendingCount === 0) return;
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    await new Promise((resolve) => setTimeout(resolve, SYNC_RETRY_DELAY_MS));
     const result = await processQueue();
     onSync?.(result);
   };

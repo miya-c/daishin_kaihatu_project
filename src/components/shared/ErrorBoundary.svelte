@@ -43,14 +43,16 @@
           </button>
         </div>
 
-        <details style="margin-top: 24px; text-align: left;">
-          <summary style="font-size: 0.8rem; color: #999; cursor: pointer;">
-            エラー詳細（開発者向け）
-          </summary>
-          <pre
-            style="font-size: 0.75rem; color: #666; background: #f5f5f5; padding: 12px; border-radius: 4px; overflow-x: auto; white-space: pre-wrap; word-break: break-all;">{error?.stack ||
-              'スタックトレースなし'}</pre>
-        </details>
+        {#if import.meta.env.DEV}
+          <details style="margin-top: 24px; text-align: left;">
+            <summary style="font-size: 0.8rem; color: #999; cursor: pointer;">
+              エラー詳細（開発者向け）
+            </summary>
+            <pre
+              style="font-size: 0.75rem; color: #666; background: #f5f5f5; padding: 12px; border-radius: 4px; overflow-x: auto; white-space: pre-wrap; word-break: break-all;">{error?.stack ||
+                'スタックトレースなし'}</pre>
+          </details>
+        {/if}
       </div>
     </div>
   {/snippet}
