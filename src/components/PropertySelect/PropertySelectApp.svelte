@@ -128,6 +128,8 @@
     // Save property info to sessionStorage for the room page
     sessionStorage.setItem('selectedPropertyId', String(property.id));
     sessionStorage.setItem('selectedPropertyName', String(property.name));
+    localStorage.setItem('last_property_id', String(property.id));
+    localStorage.setItem('last_property_name', String(property.name));
 
     // Navigate immediately — room page handles fetching room data from API
     window.location.href = `/room/?propertyId=${encodeURIComponent(property.id)}`;
@@ -268,7 +270,7 @@
         </div>
         <button
           onclick={() => (showExitModal = true)}
-          style="margin-left: auto; background: none; border: none; color: #fff; cursor: pointer; display: flex; align-items: center; gap: 4px; font-size: 0.875rem;"
+          style="margin-left: auto; background: none; border: none; color: #fff; cursor: pointer; display: flex; align-items: center; gap: 4px; font-size: 0.875rem; padding: 12px 16px; min-height: 44px; min-width: 44px;"
           aria-label="アプリ終了"
         >
           <span class="material-icons MuiSvgIcon-root" style="font-size: 20px;">close</span>
@@ -361,7 +363,7 @@
                       </div>
                       {#if completionText}
                         <div
-                          style="background-color: #e8f5e8; color: #2e7d32; font-size: 0.75rem; font-weight: 600; padding: 6px 10px; border-radius: 12px; border: 1px solid #c8e6c9; box-shadow: 0 2px 8px rgba(46,125,50,0.15);"
+                          style="background-color: #e8f5e8; color: #2e7d32; font-size: 0.875rem; font-weight: 600; padding: 6px 10px; border-radius: 12px; border: 1px solid #c8e6c9; box-shadow: 0 2px 8px rgba(46,125,50,0.15);"
                         >
                           {completionText}
                         </div>

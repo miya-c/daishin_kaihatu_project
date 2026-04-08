@@ -8,7 +8,5 @@
 </script>
 
 {#if show}
-  <div role="status" aria-live="polite" class="toast-overlay-backdrop">
-    <div class="toast-overlay-content">{message}</div>
-  </div>
+  <div role="status" aria-live="polite" class="toast-inline">{message}</div>
 {/if}

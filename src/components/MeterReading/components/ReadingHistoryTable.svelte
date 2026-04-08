@@ -100,7 +100,7 @@
         <td data-label="今回指示数(㎥)">
           <input
             type="number"
-            step="any"
+            step="1"
             value={currentReadingDisplay}
             placeholder="指示数入力"
             min="0"

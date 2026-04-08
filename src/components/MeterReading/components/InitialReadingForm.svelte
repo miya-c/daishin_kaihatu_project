@@ -38,7 +38,7 @@
           class="mantine-input form-input"
           placeholder="指示数入力"
           min="0"
-          step="any"
+          step="1"
           value={readingValue ?? ''}
           aria-required="true"
           aria-invalid={!!inputError}

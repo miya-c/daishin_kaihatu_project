@@ -97,6 +97,24 @@
     };
   });
 
+  let popstateSkip = true;
+  $effect(() => {
+    const handler = () => {
+      if (popstateSkip) {
+        popstateSkip = false;
+        return;
+      }
+      navigation.handleBackButton(
+        readings.propertyId,
+        readings.roomId,
+        hasSaved,
+        collectReadingsFromState
+      );
+    };
+    window.addEventListener('popstate', handler);
+    return () => window.removeEventListener('popstate', handler);
+  });
+
   // ── Room navigation (created after readings store is available) ──
   const navigation = createRoomNavigation({
     get propertyId() {
@@ -162,6 +180,10 @@
           usageStates = {};
           navigation.updating = false;
           window.scrollTo(0, 0);
+          setTimeout(
+            () => document.querySelector<HTMLInputElement>('input.mantine-input')?.focus(),
+            100
+          );
           return;
         }
 
@@ -180,6 +202,10 @@
             usageStates = {};
             navigation.updating = false;
             window.scrollTo(0, 0);
+            setTimeout(
+              () => document.querySelector<HTMLInputElement>('input.mantine-input')?.focus(),
+              100
+            );
           })
           .catch(() => {
             navigation.updating = false;
@@ -484,6 +510,14 @@
             ? String(readings.error || 'エラーが発生しました')
             : 'インターネットに接続されていません。オンライン状態で一度アプリを開いてから再度お試しください。'}
         </p>
+        {#if navigator.onLine}
+          <button
+            onclick={() => readings.loadMeterReadings(readings.propertyId, readings.roomId)}
+            style="margin-top: 16px; padding: 14px 24px; background: var(--mui-palette-blue-6); color: #fff; border: none; border-radius: 8px; font-size: 1rem; cursor: pointer; min-height: 44px;"
+          >
+            再試行
+          </button>
+        {/if}
       </div>
     </div>
   </div>
@@ -598,7 +632,7 @@
               collectReadingsFromState
             )}
           disabled={navigation.updating || navigation.isNavigating}
-          style="padding: 10px 16px; background: #6c757d; color: #fff; border: none; border-radius: 8px; font-size: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); cursor: pointer; display: flex; align-items: center; gap: 6px;"
+          style="padding: 14px 20px; background: #6c757d; color: #fff; border: none; border-radius: 8px; font-size: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); cursor: pointer; display: flex; align-items: center; gap: 6px; min-height: 44px;"
           title="部屋選択画面へ戻る"
         >
           <span style="font-size: 16px;">◀</span> 選択画面へ

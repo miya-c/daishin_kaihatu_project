@@ -253,6 +253,7 @@ export const createRoomNavigation = (options: CreateRoomNavigationParams) => {
       } else {
         window.location.href = `/reading/?propertyId=${options.propertyId}&roomId=${targetRoomId}`;
       }
+      updating = false;
 
       if (meterReadingsData.length > 0) {
         saveReadings(meterReadingsData, true, currentRoomId).then((saveOk) => {
@@ -261,6 +262,7 @@ export const createRoomNavigation = (options: CreateRoomNavigationParams) => {
             if (options.invalidatePrefetch) {
               options.invalidatePrefetch(options.propertyId, currentRoomId);
             }
+            options.displayToast('保存しました');
           } else {
             options.displayToast('保存に失敗しました。ネットワークを確認して再試行してください。');
           }

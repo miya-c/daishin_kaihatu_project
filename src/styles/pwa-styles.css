@@ -32,6 +32,7 @@ body.pwa-installed {
   font-weight: 500;
   display: none;
   transition: all 0.3s ease;
+  min-height: 44px;
 }
 
 #pwa-install-button:hover {
@@ -173,10 +174,11 @@ body.pwa-installed {
   background: rgba(255, 255, 255, 0.2);
   border: 1px solid rgba(255, 255, 255, 0.3);
   color: white;
-  padding: 8px 16px;
+  padding: 10px 20px;
   border-radius: 4px;
   cursor: pointer;
   font-weight: 500;
+  min-height: 44px;
 }
 
 .update-notification button:hover {
@@ -190,7 +192,7 @@ body.pwa-installed {
     padding-top: env(safe-area-inset-top);
     padding-bottom: env(safe-area-inset-bottom);
   }
-  
+
   /* Hide install button when already installed */
   #pwa-install-button {
     display: none !important;
@@ -218,15 +220,15 @@ body.pwa-installed {
   #pwa-install-button {
     background: #0d6efd;
   }
-  
+
   #pwa-install-button:hover {
     background: #0b5ed7;
   }
-  
+
   .pwa-splash-screen {
     background: linear-gradient(135deg, #1a1a1a, #333);
   }
-  
+
   .offline-indicator {
     background: #856404;
     color: #fff3cd;
@@ -241,14 +243,14 @@ body.pwa-installed {
     padding: 10px 16px;
     font-size: 13px;
   }
-  
+
   #network-status {
     left: 10px;
     right: 10px;
     transform: none;
     width: auto;
   }
-  
+
   .update-notification {
     left: 10px;
     right: 10px;

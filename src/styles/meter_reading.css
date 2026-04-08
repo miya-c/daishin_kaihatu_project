@@ -49,8 +49,10 @@ body {
   --mui-palette-grey-7: #495057;
   --mui-palette-grey-8: #343a40;
   --mui-palette-red-6: #fa5252;
+  --mui-palette-red-8: #c92a2a;
   --mui-palette-red-light: #fff5f5;
   --mui-palette-green-6: #40c057;
+  --mui-palette-green-8: #2b8a3e;
   --mui-palette-green-light: #ebfbee;
   --mui-radius-xs: 2px;
   --mui-radius-sm: 4px;
@@ -135,7 +137,7 @@ body {
 
 .mantine-text {
   font-size: 1.3rem; /* 1.1rem → 1.3rem に増加 */
-  color: var(--mui-palette-grey-6);
+  color: var(--mui-palette-grey-7);
   margin: 0;
   line-height: 1.6;
 }
@@ -633,6 +635,9 @@ body {
   cursor: pointer;
   position: absolute;
   left: 16px;
+  padding: 8px;
+  min-height: 44px;
+  min-width: 44px;
 }
 
 .header-title {
@@ -1083,6 +1088,7 @@ body {
     padding: 12px 16px;
     font-size: 14px;
     min-width: 80px;
+    min-height: 44px;
     flex-shrink: 1;
   }
 
@@ -1263,7 +1269,8 @@ body {
 
 .form-input {
   font-size: 1rem;
-  padding: 10px;
+  padding: 14px;
+  min-height: 44px;
 }
 
 .error-text {

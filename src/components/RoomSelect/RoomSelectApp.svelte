@@ -18,6 +18,7 @@
   let loading: boolean = $state(true);
   let error: string | null = $state(null);
   let propertyId: string = $state('');
+  let completing: boolean = $state(false);
   let toastMessage: string = $state('');
   let showToast: boolean = $state(false);
   let toastTimerRef: ReturnType<typeof setTimeout> | null = null;
@@ -266,6 +267,7 @@
     }
 
     try {
+      completing = true;
       const result = (await gasFetch('completeInspection', {
         propertyId,
         completionDate,
@@ -292,6 +294,8 @@
       }
       updatePropertyCacheCompletion(propertyId, completionDate);
       showExitModal = true;
+    } finally {
+      completing = false;
     }
   }
 
@@ -458,14 +462,27 @@
       </section>
 
       {#if rooms.length > 0}
+        {@const allDone = rooms.every(
+          (r) => r.readingStatus === 'completed' || r.isCompleted || r.isNotNeeded === true
+        )}
         <div class="complete-button-container">
           <button
-            class="MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeLarge complete-button"
+            class="MuiButton-root MuiButton-contained MuiButton-sizeLarge complete-button"
+            style={allDone ? 'background-color: #2e7d32;' : ''}
             onclick={handleCompleteInspection}
-            aria-label="この物件の検針を完了する"
+            disabled={completing}
+            aria-label={allDone ? '全件完了 - 完了登録する' : 'この物件の検針を完了する'}
           >
-            <span class="material-icons MuiSvgIcon-root" aria-hidden="true"> check_circle </span>
-            <span class="MuiButton-label">この物件の検針を完了する</span>
+            <span class="material-icons MuiSvgIcon-root" aria-hidden="true">
+              {completing ? 'hourglass_empty' : 'check_circle'}
+            </span>
+            <span class="MuiButton-label">
+              {completing
+                ? '処理中...'
+                : allDone
+                  ? '全件完了 - 完了登録する'
+                  : 'この物件の検針を完了する'}
+            </span>
           </button>
         </div>
       {/if}
