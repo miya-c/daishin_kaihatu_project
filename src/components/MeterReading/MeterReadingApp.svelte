@@ -575,6 +575,18 @@
           </span>
         {/if}
       </div>
+
+      <div style="position: fixed; bottom: 20px; left: 20px; z-index: 1001;">
+        <button
+          onclick={() =>
+            navigation.handleBackButton(readings.propertyId, readings.roomId, hasSaved)}
+          disabled={navigation.updating || navigation.isNavigating}
+          style="padding: 10px 16px; background: #6c757d; color: #fff; border: none; border-radius: 8px; font-size: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); cursor: pointer; display: flex; align-items: center; gap: 6px;"
+          title="部屋選択画面へ戻る"
+        >
+          <span style="font-size: 16px;">◀</span> 選択画面へ
+        </button>
+      </div>
     {/if}
 
     <ToastOverlay show={toast.showToast} message={toast.toastMessage} />
