@@ -405,12 +405,30 @@
       </section>
 
       {#if rooms.filter((r) => r.isNotNeeded !== true).length > 0}
-        <div
-          style="text-align: center; padding: 8px 0; font-size: 0.95rem; color: var(--mui-palette-grey-700, #495057);"
-        >
-          {rooms.filter(
-            (r) => (r.readingStatus === 'completed' || r.isCompleted) && r.isNotNeeded !== true
-          ).length}/{rooms.filter((r) => r.isNotNeeded !== true).length} 完了
+        {@const completed = rooms.filter(
+          (r) => (r.readingStatus === 'completed' || r.isCompleted) && r.isNotNeeded !== true
+        ).length}
+        {@const total = rooms.filter((r) => r.isNotNeeded !== true).length}
+        {@const pct = Math.round((completed / total) * 100)}
+        {@const barColor = pct === 100 ? '#2e7d32' : pct >= 50 ? '#e67700' : '#c92a2a'}
+        <div style="padding: 12px 16px; margin: 0 0 8px;">
+          <div
+            style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px;"
+          >
+            <span style="font-size: 1.15rem; font-weight: 700; color: {barColor};">
+              {completed}/{total} 完了
+            </span>
+            <span style="font-size: 0.95rem; font-weight: 600; color: {barColor};">
+              {pct}%
+            </span>
+          </div>
+          <div
+            style="width: 100%; height: 8px; background: #e9ecef; border-radius: 4px; overflow: hidden;"
+          >
+            <div
+              style="width: {pct}%; height: 100%; background: {barColor}; border-radius: 4px; transition: width 0.3s ease;"
+            ></div>
+          </div>
         </div>
       {/if}
 
