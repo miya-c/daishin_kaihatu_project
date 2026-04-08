@@ -404,6 +404,16 @@
         </div>
       </section>
 
+      {#if rooms.filter((r) => r.isNotNeeded !== true).length > 0}
+        <div
+          style="text-align: center; padding: 8px 0; font-size: 0.95rem; color: var(--mui-palette-grey-700, #495057);"
+        >
+          {rooms.filter(
+            (r) => (r.readingStatus === 'completed' || r.isCompleted) && r.isNotNeeded !== true
+          ).length}/{rooms.filter((r) => r.isNotNeeded !== true).length} 完了
+        </div>
+      {/if}
+
       <section class="room-grid" aria-label="部屋一覧" role="list">
         {#if rooms.length === 0}
           <div class="no-rooms-message">部屋データがありません</div>
