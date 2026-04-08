@@ -3,8 +3,6 @@
  * sessionStorage (selectedRooms) and localStorage (cached_rooms_{propId}).
  */
 
-import { CACHE_TTL_MS } from './config';
-
 export function formatDateJa(): string {
   return new Intl.DateTimeFormat('ja-JP', {
     timeZone: 'Asia/Tokyo',
@@ -41,7 +39,6 @@ export function readRoomsFromCache(
   try {
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed.rooms)) return null;
-    if (parsed.cachedAt && Date.now() - parsed.cachedAt >= CACHE_TTL_MS) return null;
     return { rooms: parsed.rooms, propertyName: parsed.propertyName || '' };
   } catch {
     return null;

@@ -9,5 +9,3 @@ export const OPTIMISTIC_UPDATE_PROTECTION_MS = 600000;
 export const SYNC_RETRY_DELAY_MS = 2000;
 
 export const CACHE_STALE_THRESHOLD_MS = 60000;
-
-export const CACHE_TTL_MS = 1800000;
