@@ -54,6 +54,7 @@ export function createMeterReadings() {
   let meterReadings = $state<MeterReading[]>([]);
   let gasWebAppUrl = $state('');
   let abortController: AbortController | null = null;
+  let cacheAgeMs = $state<number | null>(null);
 
   // Prefetch state
   const prefetchMap = new Map<string, PrefetchEntry>();
@@ -175,6 +176,7 @@ export function createMeterReadings() {
       roomId = rId || NOT_AVAILABLE;
       roomName = offlineCache.roomName;
       meterReadings = offlineCache.readings;
+      cacheAgeMs = offlineCache.cachedAt ? Date.now() - offlineCache.cachedAt : null;
       if (!silent) loading = false;
 
       fetchAndParseReadings(propId, rId)
@@ -183,6 +185,7 @@ export function createMeterReadings() {
             propertyName = parsed.pName;
             roomName = parsed.rName;
             meterReadings = parsed.resultReadings;
+            cacheAgeMs = null;
           }
         })
         .catch(() => {});
@@ -393,5 +396,8 @@ export function createMeterReadings() {
     prefetchRoom,
     invalidatePrefetch,
     updateOfflineCache,
+    get cacheAgeMs() {
+      return cacheAgeMs;
+    },
   };
 }

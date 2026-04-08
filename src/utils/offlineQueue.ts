@@ -1,6 +1,27 @@
 const STORAGE_KEY = 'offline_readings_queue';
 
-let isSyncing = false;
+const SYNC_LOCK_KEY = 'offline_sync_lock';
+const SYNC_LOCK_TTL = 30000;
+
+function acquireSyncLock(): boolean {
+  try {
+    const raw = localStorage.getItem(SYNC_LOCK_KEY);
+    if (raw) {
+      const lock = JSON.parse(raw);
+      if (Date.now() - lock.timestamp < SYNC_LOCK_TTL) return false;
+    }
+    localStorage.setItem(SYNC_LOCK_KEY, JSON.stringify({ timestamp: Date.now() }));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function releaseSyncLock(): void {
+  try {
+    localStorage.removeItem(SYNC_LOCK_KEY);
+  } catch {}
+}
 
 export interface QueueEntry {
   id: string;
@@ -43,12 +64,33 @@ function writeQueue(entries: QueueEntry[]): void {
 }
 
 export function saveToQueue(entry: Omit<QueueEntry, 'id' | 'timestamp'>): QueueEntry {
+  const queue = readQueue();
+
+  const duplicateIdx = queue.findIndex(
+    (e) =>
+      e.action === entry.action && e.propertyId === entry.propertyId && e.roomId === entry.roomId
+  );
+  if (duplicateIdx !== -1) {
+    const existing = queue[duplicateIdx];
+    if (existing) {
+      const merged: QueueEntry = {
+        ...existing,
+        ...entry,
+        id: existing.id,
+        timestamp: Date.now(),
+      };
+      queue[duplicateIdx] = merged;
+      writeQueue(queue);
+      registerSync();
+      return merged;
+    }
+  }
+
   const full: QueueEntry = {
     ...entry,
     id: generateId(),
     timestamp: Date.now(),
   };
-  const queue = readQueue();
   queue.push(full);
   writeQueue(queue);
   registerSync();
@@ -58,11 +100,13 @@ export function saveToQueue(entry: Omit<QueueEntry, 'id' | 'timestamp'>): QueueE
 export async function processQueue(
   sender?: (entry: QueueEntry) => Promise<boolean>
 ): Promise<{ processed: number; failed: number }> {
-  if (isSyncing) return { processed: 0, failed: 0 };
+  if (!acquireSyncLock()) return { processed: 0, failed: 0 };
   const queue = readQueue();
-  if (queue.length === 0) return { processed: 0, failed: 0 };
+  if (queue.length === 0) {
+    releaseSyncLock();
+    return { processed: 0, failed: 0 };
+  }
 
-  isSyncing = true;
   try {
     let result: { processed: number; failed: number };
     if (!sender) {
@@ -72,7 +116,7 @@ export async function processQueue(
     }
 
     const remaining = readQueue();
-    if (remaining.length > 0 && !isSyncing) {
+    if (remaining.length > 0 && acquireSyncLock()) {
       const retried = await processQueue(sender);
       return {
         processed: result.processed + retried.processed,
@@ -81,7 +125,7 @@ export async function processQueue(
     }
     return result;
   } finally {
-    isSyncing = false;
+    releaseSyncLock();
   }
 }
 
@@ -255,7 +299,14 @@ export function removeEntry(id: string): void {
  * オンライン復帰時のリスナー登録
  */
 export function isCurrentlySyncing(): boolean {
-  return isSyncing;
+  try {
+    const raw = localStorage.getItem(SYNC_LOCK_KEY);
+    if (!raw) return false;
+    const lock = JSON.parse(raw);
+    return Date.now() - lock.timestamp < SYNC_LOCK_TTL;
+  } catch {
+    return false;
+  }
 }
 
 export function registerOnlineListener(

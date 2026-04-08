@@ -550,6 +550,11 @@
   <div id="main-content" class="content-area mantine-container">
     <div class="mantine-stack">
       <PropertyInfoHeader propertyName={readings.propertyName} roomName={readings.roomName} />
+      {#if readings.cacheAgeMs !== null && readings.cacheAgeMs > 60000}
+        <div style="font-size: 0.75rem; color: #888; text-align: center; margin-top: -4px;">
+          キャッシュからの表示（{Math.round(readings.cacheAgeMs / 60000)}分前）
+        </div>
+      {/if}
       <div
         class="mantine-paper reading-history-container"
         style="padding: var(--mui-spacing-xs); margin: 0;"
