@@ -673,25 +673,28 @@
         role="dialog"
         aria-modal="true"
         aria-label="使用量0㎥の確認"
-        style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 50000; display: flex; align-items: center; justify-content: center;"
+        style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 2147483647;"
       >
         <div
-          style="background: #fff; border-radius: 16px; padding: 32px 24px; max-width: 360px; width: 90%; text-align: center; box-shadow: 0 8px 32px rgba(0,0,0,0.2);"
+          style="background-color: var(--mui-palette-primary-main, #1976d2); border-radius: 16px; padding: 32px; max-width: 360px; width: 90%; box-shadow: 0 8px 32px rgba(0,0,0,0.2); text-align: center;"
         >
           <span
             class="material-icons"
-            style="font-size: 48px; color: #e67700; display: block; margin-bottom: 12px;"
-            >warning</span
+            style="font-size: 48px; color: #fff; display: block; margin-bottom: 8px;">warning</span
           >
-          <h3 style="margin: 0 0 8px; font-size: 1.1rem;">使用量が0㎥です</h3>
-          <p style="margin: 0 0 24px; font-size: 0.95rem; color: #666;">このまま保存しますか？</p>
+          <h3 style="margin: 0 0 8px; font-size: 1.25rem; font-weight: 600; color: #fff;">
+            使用量が0㎥です
+          </h3>
+          <p style="margin: 0 0 24px; font-size: 1rem; color: rgba(255,255,255,0.85);">
+            このまま保存しますか？
+          </p>
           <div style="display: flex; gap: 12px; justify-content: center;">
             <button
               onclick={() => {
                 showZeroUsageModal = false;
                 performSave();
               }}
-              style="padding: 14px 24px; background: #1976d2; color: #fff; border: none; border-radius: 8px; font-size: 1rem; cursor: pointer; min-height: 44px; min-width: 100px;"
+              style="flex: 1; padding: 12px 16px; border-radius: 8px; border: 2px solid #fff; background-color: #fff; color: var(--mui-palette-primary-main, #1976d2); cursor: pointer; font-weight: 600; font-size: 1.125rem; min-height: 44px;"
             >
               保存する
             </button>
@@ -699,9 +702,9 @@
               onclick={() => {
                 showZeroUsageModal = false;
               }}
-              style="padding: 14px 24px; background: #f5f5f5; color: #333; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; cursor: pointer; min-height: 44px; min-width: 100px;"
+              style="flex: 1; padding: 12px 16px; border-radius: 8px; border: 2px solid rgba(255,255,255,0.5); background-color: transparent; color: #fff; cursor: pointer; font-weight: 600; font-size: 1.125rem; min-height: 44px;"
             >
-              キャンセル
+              戻る
             </button>
           </div>
         </div>
