@@ -37,6 +37,7 @@
   // Tracks whether reading was successfully saved for optimistic cache update.
   let hasSaved = false;
   let offlineMode = $state(!navigator.onLine);
+  let showZeroUsageModal = $state(false);
   let pendingCount = $state(0);
 
   // ── Derived: whether any reading has a valid previousReading ──
@@ -369,6 +370,24 @@
       return;
     }
 
+    // Check for zero usage
+    const hasZeroUsage = Object.entries(usageStates).some(([date, usage]) => {
+      if (date === '') return false; // skip initial reading
+      const num = parseFloat(usage);
+      return !isNaN(num) && num === 0;
+    });
+    if (hasZeroUsage) {
+      showZeroUsageModal = true;
+      return;
+    }
+
+    performSave();
+  }
+
+  async function performSave(): Promise<void> {
+    const propertyId = readings.propertyId;
+    const roomId = readings.roomId;
+
     const updatedReadings = collectReadingsFromState();
 
     if (updatedReadings.length === 0) {
@@ -394,13 +413,11 @@
         hasSaved = true;
         toast.displayToast('検針データが正常に更新されました');
         inputErrors = {};
-        // Invalidate prefetch cache so next navigation fetches fresh data
         readings.invalidatePrefetch(readings.propertyId, readings.roomId);
       } else {
         throw new Error((result.error as string) || '指示数の更新に失敗しました。');
       }
     } catch (err: unknown) {
-      // API failed — fallback to offline queue
       try {
         saveToQueue({
           action: 'updateMeterReadings',
@@ -419,7 +436,6 @@
       inputErrors = {};
       readings.invalidatePrefetch(readings.propertyId, readings.roomId);
 
-      // Update localStorage cache with the latest input values
       const mergedReadings = readings.meterReadings.map((r: MeterReading) => {
         const date = r.date;
         const updatedValue = readingValues[date];
@@ -646,5 +662,45 @@
     {/if}
 
     <ToastOverlay show={toast.showToast} message={toast.toastMessage} />
+
+    {#if showZeroUsageModal}
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="使用量0㎥の確認"
+        style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 50000; display: flex; align-items: center; justify-content: center;"
+      >
+        <div
+          style="background: #fff; border-radius: 16px; padding: 32px 24px; max-width: 360px; width: 90%; text-align: center; box-shadow: 0 8px 32px rgba(0,0,0,0.2);"
+        >
+          <span
+            class="material-icons"
+            style="font-size: 48px; color: #e67700; display: block; margin-bottom: 12px;"
+            >warning</span
+          >
+          <h3 style="margin: 0 0 8px; font-size: 1.1rem;">使用量が0㎥です</h3>
+          <p style="margin: 0 0 24px; font-size: 0.95rem; color: #666;">このまま保存しますか？</p>
+          <div style="display: flex; gap: 12px; justify-content: center;">
+            <button
+              onclick={() => {
+                showZeroUsageModal = false;
+                performSave();
+              }}
+              style="padding: 14px 24px; background: #1976d2; color: #fff; border: none; border-radius: 8px; font-size: 1rem; cursor: pointer; min-height: 44px; min-width: 100px;"
+            >
+              保存する
+            </button>
+            <button
+              onclick={() => {
+                showZeroUsageModal = false;
+              }}
+              style="padding: 14px 24px; background: #f5f5f5; color: #333; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; cursor: pointer; min-height: 44px; min-width: 100px;"
+            >
+              キャンセル
+            </button>
+          </div>
+        </div>
+      </div>
+    {/if}
   </div>
 {/if}
