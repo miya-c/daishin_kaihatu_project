@@ -14,7 +14,9 @@
   import type { Room, ApiResponse } from '../../types';
 
   let rooms: Room[] = $state([]);
-  let propertyName: string = $state('物件名読み込み中...');
+  let propertyName: string = $state(
+    localStorage.getItem('last_property_name') || '物件名読み込み中...'
+  );
   let loading: boolean = $state(true);
   let error: string | null = $state(null);
   let propertyId: string = $state('');
@@ -84,7 +86,10 @@
 
         const fetchedRooms = data.data?.rooms || data.data || [];
         const fetchedPropertyName =
-          data.data?.propertyName || sessionStorage.getItem('selectedPropertyName') || '物件名不明';
+          data.data?.propertyName ||
+          sessionStorage.getItem('selectedPropertyName') ||
+          localStorage.getItem('last_property_name') ||
+          '物件名不明';
 
         if (!Array.isArray(fetchedRooms)) {
           throw new Error('Invalid data format');
@@ -108,7 +113,7 @@
           throw new Error(data.error || 'データの取得に失敗しました');
         }
 
-        let fetchedPropertyName = '物件名不明';
+        let fetchedPropertyName = localStorage.getItem('last_property_name') || '物件名不明';
         if (data.data) {
           fetchedPropertyName =
             data.data.propertyName ||
@@ -116,6 +121,7 @@
             data.data.property_name ||
             data.data.name ||
             sessionStorage.getItem('selectedPropertyName') ||
+            localStorage.getItem('last_property_name') ||
             '物件名不明';
         }
 
