@@ -287,12 +287,17 @@
       }
     } catch (err) {
       // API failed — fallback to offline queue
-      saveToQueue({
-        action: 'completeInspection',
-        propertyId,
-        roomId: propertyId,
-        completionDate,
-      });
+      try {
+        saveToQueue({
+          action: 'completeInspection',
+          propertyId,
+          roomId: propertyId,
+          completionDate,
+        });
+      } catch {
+        displayToast('保存に失敗しました。保存領域が一杯の可能性があります。');
+        return;
+      }
       updatePropertyCacheCompletion(propertyId, completionDate);
       showExitModal = true;
     }

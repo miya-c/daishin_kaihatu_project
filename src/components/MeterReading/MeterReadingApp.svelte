@@ -9,6 +9,7 @@
   import {
     saveToQueue,
     registerOnlineListener,
+    registerServiceWorkerMessageListener,
     getQueueStatus,
     isCurrentlySyncing,
   } from '../../utils/offlineQueue';
@@ -87,10 +88,20 @@
       }
     });
 
+    const unregisterSwMessage = registerServiceWorkerMessageListener(async () => {
+      const { processQueue } = await import('../../utils/offlineQueue');
+      const result = await processQueue();
+      pendingCount = getQueueStatus().pendingCount;
+      if (result.processed > 0) {
+        toast.displayToast(`${result.processed}件のデータを送信しました`);
+      }
+    });
+
     return () => {
       window.removeEventListener('online', setOnline);
       window.removeEventListener('offline', setOffline);
       unregisterSync();
+      unregisterSwMessage();
     };
   });
 
@@ -367,12 +378,18 @@
       }
     } catch (err: unknown) {
       // API failed — fallback to offline queue
-      saveToQueue({
-        action: 'updateMeterReadings',
-        propertyId,
-        roomId,
-        readings: updatedReadings,
-      });
+      try {
+        saveToQueue({
+          action: 'updateMeterReadings',
+          propertyId,
+          roomId,
+          readings: updatedReadings,
+        });
+      } catch {
+        toast.displayToast('保存に失敗しました。保存領域が一杯の可能性があります。');
+        navigation.updating = false;
+        return;
+      }
       hasSaved = true;
       pendingCount = getQueueStatus().pendingCount;
       toast.displayToast('オフラインで保存しました（オンライン復帰時に自動送信します）');
@@ -449,7 +466,13 @@
   <a href="#main-content" class="skip-link"> メインコンテンツへ </a>
   <div class="app-header">
     <button
-      onclick={() => navigation.handleBackButton(readings.propertyId, readings.roomId, hasSaved)}
+      onclick={() =>
+        navigation.handleBackButton(
+          readings.propertyId,
+          readings.roomId,
+          hasSaved,
+          collectReadingsFromState
+        )}
       class="back-button"
       aria-label="戻る"
     >
@@ -470,7 +493,13 @@
   <a href="#main-content" class="skip-link"> メインコンテンツへ </a>
   <div class="app-header">
     <button
-      onclick={() => navigation.handleBackButton(readings.propertyId, readings.roomId, hasSaved)}
+      onclick={() =>
+        navigation.handleBackButton(
+          readings.propertyId,
+          readings.roomId,
+          hasSaved,
+          collectReadingsFromState
+        )}
       class="back-button"
       aria-label="戻る"
     >
@@ -499,7 +528,13 @@
   <a href="#main-content" class="skip-link"> メインコンテンツへ </a>
   <div class="app-header">
     <button
-      onclick={() => navigation.handleBackButton(readings.propertyId, readings.roomId, hasSaved)}
+      onclick={() =>
+        navigation.handleBackButton(
+          readings.propertyId,
+          readings.roomId,
+          hasSaved,
+          collectReadingsFromState
+        )}
       class="back-button"
       aria-label="戻る"
     >
@@ -579,7 +614,12 @@
       <div style="position: fixed; bottom: 20px; left: 20px; z-index: 1001;">
         <button
           onclick={() =>
-            navigation.handleBackButton(readings.propertyId, readings.roomId, hasSaved)}
+            navigation.handleBackButton(
+              readings.propertyId,
+              readings.roomId,
+              hasSaved,
+              collectReadingsFromState
+            )}
           disabled={navigation.updating || navigation.isNavigating}
           style="padding: 10px 16px; background: #6c757d; color: #fff; border: none; border-radius: 8px; font-size: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); cursor: pointer; display: flex; align-items: center; gap: 6px;"
           title="部屋選択画面へ戻る"

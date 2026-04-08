@@ -165,12 +165,17 @@ export const createRoomNavigation = (options: CreateRoomNavigationParams) => {
     } catch (err) {
       if (controller.signal.aborted) return false;
       // API failed — fallback to offline queue
-      saveToQueue({
-        action: 'updateMeterReadings',
-        propertyId: options.propertyId,
-        roomId: targetRoomId,
-        readings,
-      });
+      try {
+        saveToQueue({
+          action: 'updateMeterReadings',
+          propertyId: options.propertyId,
+          roomId: targetRoomId,
+          readings,
+        });
+      } catch {
+        options.displayToast('保存に失敗しました。保存領域が一杯の可能性があります。');
+        return false;
+      }
       updateSessionCacheForSavedRoom(targetRoomId);
       if (options.invalidatePrefetch) {
         options.invalidatePrefetch(options.propertyId, targetRoomId);
@@ -345,12 +350,33 @@ export const createRoomNavigation = (options: CreateRoomNavigationParams) => {
   const handleBackButton = async (
     propId: string,
     rId: string,
-    wasSaved: boolean = false
+    wasSaved: boolean = false,
+    collectReadingsFn?: (() => Record<string, unknown>[]) | undefined
   ): Promise<void> => {
     try {
       isNavigating = true;
       navigationMessage = '画面を切り替えています...';
       window.scrollTo(0, 0);
+
+      if (!wasSaved && collectReadingsFn) {
+        const unsavedReadings = collectReadingsFn();
+        if (unsavedReadings.length > 0) {
+          try {
+            saveToQueue({
+              action: 'updateMeterReadings',
+              propertyId: propId,
+              roomId: rId,
+              readings: unsavedReadings,
+            });
+            wasSaved = true;
+            options.displayToast(
+              '未保存のデータを保存しました（オンライン復帰時に自動送信します）'
+            );
+          } catch {
+            options.displayToast('保存に失敗しました。保存領域が一杯の可能性があります。');
+          }
+        }
+      }
 
       // Only set protection flags and optimistic update when data was actually saved
       if (wasSaved) {

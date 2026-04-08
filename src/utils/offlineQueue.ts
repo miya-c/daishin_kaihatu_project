@@ -35,8 +35,10 @@ function readQueue(): QueueEntry[] {
 function writeQueue(entries: QueueEntry[]): void {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
-  } catch {
-    // localStorage full or unavailable — best effort
+  } catch (e) {
+    throw new Error(
+      '保存領域が一杯です。ブラウザの不要なデータを削除するか、管理者に連絡してください。'
+    );
   }
 }
 
