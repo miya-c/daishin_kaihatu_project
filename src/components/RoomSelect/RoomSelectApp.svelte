@@ -1,13 +1,8 @@
 <script lang="ts">
   import { getGasUrl, gasFetch } from '../../utils/gasClient';
   import { saveToQueue } from '../../utils/offlineQueue';
-  import {
-    markRoomCompleted,
-    formatDateJa,
-    saveRoomsToCache,
-    readRoomsFromCache,
-  } from '../../utils/roomCache';
-  import { TOAST_DISPLAY_MS, OPTIMISTIC_UPDATE_PROTECTION_MS } from '../../utils/config';
+  import { saveRoomsToCache, readRoomsFromCache } from '../../utils/roomCache';
+  import { TOAST_DISPLAY_MS } from '../../utils/config';
   import NetworkStatusBar from '../NetworkStatusBar.svelte';
   import { validateId } from '../../utils/validateParams';
 
@@ -55,29 +50,8 @@
     }
 
     try {
-      // Clean up stale flags from previous navigation
-      sessionStorage.removeItem('forceRefreshRooms');
-
-      // Try sessionStorage cache first (always, since handleBackButton updates it optimistically)
-      const sessionRooms = sessionStorage.getItem('selectedRooms');
-      const sessionPropertyName = sessionStorage.getItem('selectedPropertyName');
-      const sessionPropertyId = sessionStorage.getItem('selectedPropertyId');
-
-      if (sessionRooms && sessionPropertyId === propId && sessionPropertyName) {
-        try {
-          const parsedRooms = JSON.parse(sessionRooms);
-          if (Array.isArray(parsedRooms)) {
-            rooms = parsedRooms;
-            propertyName = sessionPropertyName;
-            loading = false;
-            setTimeout(() => performBackgroundUpdate(propId, gasWebAppUrl!, parsedRooms), 100);
-            return;
-          }
-        } catch (_) {
-          // Continue to API fetch
-        }
-      }
-
+      // Always fetch fresh data from API first — stale cache causes confusion
+      // when returning from reading page or resuming from index page.
       try {
         const data = (await gasFetch('getRoomsLight', {
           propertyId: propId,
@@ -141,6 +115,25 @@
         saveRoomsToCache(propId, fetchedRooms, fetchedPropertyName);
       }
     } catch (err) {
+      // Both API calls failed — try caches as last resort
+      const sessionRooms = sessionStorage.getItem('selectedRooms');
+      const sessionPropertyName = sessionStorage.getItem('selectedPropertyName');
+      const sessionPropertyId = sessionStorage.getItem('selectedPropertyId');
+
+      if (sessionRooms && sessionPropertyId === propId && sessionPropertyName) {
+        try {
+          const parsedRooms = JSON.parse(sessionRooms);
+          if (Array.isArray(parsedRooms)) {
+            rooms = parsedRooms;
+            propertyName = sessionPropertyName;
+            loading = false;
+            return;
+          }
+        } catch (_) {
+          // Continue to localStorage fallback
+        }
+      }
+
       const cached = readRoomsFromCache(propId);
       if (cached) {
         rooms = cached.rooms as Room[];
@@ -152,49 +145,6 @@
       error = message;
     } finally {
       loading = false;
-    }
-  }
-
-  async function performBackgroundUpdate(
-    propId: string,
-    _gasWebAppUrl: string,
-    _currentRooms: Room[]
-  ): Promise<void> {
-    try {
-      const data = (await gasFetch('getRoomsLight', {
-        propertyId: propId,
-        cache: String(Date.now()),
-      })) as ApiResponse<{ rooms: Room[] }>;
-      if (data.success) {
-        const fetchedRooms = data.data?.rooms || data.data || [];
-        if (Array.isArray(fetchedRooms) && fetchedRooms.length > 0) {
-          // Preserve optimistic update for recently saved room
-          const savedRoomId = sessionStorage.getItem('updatedRoomId');
-          const savedTime = sessionStorage.getItem('lastUpdateTime');
-          if (savedRoomId && savedTime) {
-            const elapsed = Date.now() - parseInt(savedTime, 10);
-            if (elapsed < OPTIMISTIC_UPDATE_PROTECTION_MS) {
-              const dateStr =
-                fetchedRooms.find((r: Room) => String(r.id || r.roomId || '') === savedRoomId)
-                  ?.readingDateFormatted || formatDateJa();
-              const preserved = markRoomCompleted(
-                fetchedRooms as Record<string, unknown>[],
-                savedRoomId,
-                dateStr
-              );
-              rooms = preserved as Room[];
-              sessionStorage.setItem('selectedRooms', JSON.stringify(preserved));
-              saveRoomsToCache(propId, preserved, propertyName);
-              return;
-            }
-          }
-          rooms = fetchedRooms;
-          sessionStorage.setItem('selectedRooms', JSON.stringify(fetchedRooms));
-          saveRoomsToCache(propId, fetchedRooms, propertyName);
-        }
-      }
-    } catch (_) {
-      // Background update failure is non-critical
     }
   }
 

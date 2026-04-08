@@ -77,7 +77,7 @@ describe('RoomSelectApp', () => {
     cleanup();
   });
 
-  it('renders rooms from sessionStorage cache', async () => {
+  it('renders rooms from API (with sessionStorage as fallback)', async () => {
     store['selectedRooms'] = JSON.stringify([
       { id: 'r1', name: '101号室', readingStatus: 'pending' },
       { id: 'r2', name: '102号室', readingStatus: 'completed', isCompleted: true },
@@ -90,7 +90,17 @@ describe('RoomSelectApp', () => {
       'fetch',
       vi.fn().mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve({ success: true, data: [] }),
+        json: () =>
+          Promise.resolve({
+            success: true,
+            data: {
+              rooms: [
+                { id: 'r1', name: '101号室', readingStatus: 'pending' },
+                { id: 'r2', name: '102号室', readingStatus: 'completed', isCompleted: true },
+              ],
+              propertyName: 'テスト物件',
+            },
+          }),
       })
     );
 
@@ -146,20 +156,24 @@ describe('RoomSelectApp', () => {
   });
 
   it('shows room status correctly', async () => {
-    store['selectedRooms'] = JSON.stringify([
-      { id: 'r1', name: '101号室', readingStatus: 'pending' },
-      { id: 'r2', name: '102号室', readingStatus: 'completed', isCompleted: true },
-      { id: 'r3', name: '103号室', isNotNeeded: true },
-    ]);
-    store['selectedPropertyName'] = 'テスト物件';
-    store['selectedPropertyId'] = 'prop1';
     store['gasWebAppUrl'] = 'https://script.google.com/test';
 
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve({ success: true, data: [] }),
+        json: () =>
+          Promise.resolve({
+            success: true,
+            data: {
+              rooms: [
+                { id: 'r1', name: '101号室', readingStatus: 'pending' },
+                { id: 'r2', name: '102号室', readingStatus: 'completed', isCompleted: true },
+                { id: 'r3', name: '103号室', isNotNeeded: true },
+              ],
+              propertyName: 'テスト物件',
+            },
+          }),
       })
     );
 
@@ -179,16 +193,20 @@ describe('RoomSelectApp', () => {
   });
 
   it('shows "no rooms" message when rooms are empty', async () => {
-    store['selectedRooms'] = JSON.stringify([]);
-    store['selectedPropertyName'] = '空の物件';
-    store['selectedPropertyId'] = 'prop1';
     store['gasWebAppUrl'] = 'https://script.google.com/test';
 
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve({ success: true, data: [] }),
+        json: () =>
+          Promise.resolve({
+            success: true,
+            data: {
+              rooms: [],
+              propertyName: '空の物件',
+            },
+          }),
       })
     );
 
