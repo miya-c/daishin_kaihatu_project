@@ -299,10 +299,12 @@
         {#if error}
           <div class="MuiAlert-root" style="margin-bottom: 16px;">
             <div style="font-size: 1.125rem; font-weight: 600; margin: 0 0 8px 0; color: #b91c1c;">
-              エラー
+              {navigator.onLine ? 'エラー' : 'オフラインです'}
             </div>
             <div style="font-size: 1rem; margin: 0; color: #b91c1c;">
-              {String(error)}
+              {navigator.onLine
+                ? String(error)
+                : 'インターネットに接続されていません。オンライン状態で一度アプリを開いてから再度お試しください。'}
             </div>
           </div>
         {/if}

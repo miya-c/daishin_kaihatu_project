@@ -5,7 +5,7 @@ const CACHE_VERSION = 'v2';
 const CACHE_NAME = `meter-reading-${CACHE_VERSION}`;
 const SYNC_TAG = 'offline-sync';
 
-const STATIC_ASSETS = ['/', '/index.html', '/manifest.json'];
+const STATIC_ASSETS = ['/', '/index.html', '/manifest.json', '/property/', '/room/', '/reading/'];
 
 // Install: cache essential static assets
 self.addEventListener('install', (event) => {

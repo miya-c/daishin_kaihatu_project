@@ -510,8 +510,12 @@
   <div id="main-content" class="content-area mantine-container">
     <div class="mantine-stack">
       <div class="mantine-alert">
-        <h3 class="mantine-text weight-600">エラー</h3>
-        <p class="mantine-text">{String(readings.error || 'エラーが発生しました')}</p>
+        <h3 class="mantine-text weight-600">{navigator.onLine ? 'エラー' : 'オフラインです'}</h3>
+        <p class="mantine-text">
+          {navigator.onLine
+            ? String(readings.error || 'エラーが発生しました')
+            : 'インターネットに接続されていません。オンライン状態で一度アプリを開いてから再度お試しください。'}
+        </p>
       </div>
     </div>
   </div>

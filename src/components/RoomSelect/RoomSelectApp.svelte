@@ -372,7 +372,11 @@
     </header>
     <main class="MuiContainer-root MuiContainer-maxWidthLg" style="padding-top: 32px;">
       <div class="MuiAlert-root MuiAlert-standardError" role="alert">
-        <span class="MuiAlert-message">{String(error)}</span>
+        <span class="MuiAlert-message"
+          >{navigator.onLine
+            ? String(error)
+            : 'オフラインです。インターネットに接続されていません。オンライン状態で一度アプリを開いてから再度お試しください。'}</span
+        >
       </div>
     </main>
   </div>
