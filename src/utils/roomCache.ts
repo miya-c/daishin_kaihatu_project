@@ -3,6 +3,8 @@
  * sessionStorage (selectedRooms) and localStorage (cached_rooms_{propId}).
  */
 
+import { CACHE_TTL_MS } from './config';
+
 export function formatDateJa(): string {
   return new Intl.DateTimeFormat('ja-JP', {
     timeZone: 'Asia/Tokyo',
@@ -22,6 +24,28 @@ export function markRoomCompleted(
       ? { ...room, readingStatus: 'completed', isCompleted: true, readingDateFormatted: dateStr }
       : room;
   });
+}
+
+export function saveRoomsToCache(propId: string, rooms: unknown[], propertyName: string): void {
+  localStorage.setItem(
+    'cached_rooms_' + propId,
+    JSON.stringify({ rooms, propertyName, cachedAt: Date.now() })
+  );
+}
+
+export function readRoomsFromCache(
+  propId: string
+): { rooms: unknown[]; propertyName: string } | null {
+  const raw = localStorage.getItem('cached_rooms_' + propId);
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed.rooms)) return null;
+    if (parsed.cachedAt && Date.now() - parsed.cachedAt >= CACHE_TTL_MS) return null;
+    return { rooms: parsed.rooms, propertyName: parsed.propertyName || '' };
+  } catch {
+    return null;
+  }
 }
 
 export function updateRoomInSessionCache(roomId: string): void {

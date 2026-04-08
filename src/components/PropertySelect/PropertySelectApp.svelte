@@ -1,5 +1,6 @@
 <script lang="ts">
   import { getGasUrl, fetchProperties } from '../../utils/gasClient';
+  import { CACHE_TTL_MS } from '../../utils/config';
   import NetworkStatusBar from '../NetworkStatusBar.svelte';
   import type { Property } from '../../types';
 
@@ -47,8 +48,10 @@
       if (cached) {
         try {
           const parsed = JSON.parse(cached);
-          if (Array.isArray(parsed)) {
-            properties = parsed as Property[];
+          const entries = Array.isArray(parsed) ? parsed : parsed.data;
+          const cachedAt = parsed.cachedAt ?? 0;
+          if (Array.isArray(entries) && Date.now() - cachedAt < CACHE_TTL_MS) {
+            properties = entries as Property[];
             loading = false;
             isFetched = true;
           }
@@ -69,7 +72,10 @@
           })
         );
         properties = normalizedData;
-        localStorage.setItem('cached_properties', JSON.stringify(normalizedData));
+        localStorage.setItem(
+          'cached_properties',
+          JSON.stringify({ data: normalizedData, cachedAt: Date.now() })
+        );
       } catch (fetchError) {
         if (properties.length > 0) return;
         const fetchErr = fetchError instanceof Error ? fetchError : new Error(String(fetchError));

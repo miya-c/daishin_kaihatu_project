@@ -1,7 +1,12 @@
 <script lang="ts">
   import { getGasUrl, gasFetch } from '../../utils/gasClient';
   import { saveToQueue } from '../../utils/offlineQueue';
-  import { markRoomCompleted, formatDateJa } from '../../utils/roomCache';
+  import {
+    markRoomCompleted,
+    formatDateJa,
+    saveRoomsToCache,
+    readRoomsFromCache,
+  } from '../../utils/roomCache';
   import { TOAST_DISPLAY_MS, OPTIMISTIC_UPDATE_PROTECTION_MS } from '../../utils/config';
   import NetworkStatusBar from '../NetworkStatusBar.svelte';
   import { validateId } from '../../utils/validateParams';
@@ -89,10 +94,7 @@
         sessionStorage.setItem('selectedRooms', JSON.stringify(fetchedRooms));
         sessionStorage.setItem('selectedPropertyName', fetchedPropertyName);
         sessionStorage.setItem('selectedPropertyId', propId);
-        localStorage.setItem(
-          'cached_rooms_' + propId,
-          JSON.stringify({ rooms: fetchedRooms, propertyName: fetchedPropertyName })
-        );
+        saveRoomsToCache(propId, fetchedRooms, fetchedPropertyName);
       } catch (_) {
         const data = (await gasFetch('getRooms', { propertyId: propId })) as ApiResponse<{
           rooms: Room[];
@@ -126,23 +128,15 @@
         sessionStorage.setItem('selectedRooms', JSON.stringify(fetchedRooms));
         sessionStorage.setItem('selectedPropertyName', fetchedPropertyName);
         sessionStorage.setItem('selectedPropertyId', propId);
-        localStorage.setItem(
-          'cached_rooms_' + propId,
-          JSON.stringify({ rooms: fetchedRooms, propertyName: fetchedPropertyName })
-        );
+        saveRoomsToCache(propId, fetchedRooms, fetchedPropertyName);
       }
     } catch (err) {
-      const cached = localStorage.getItem('cached_rooms_' + propId);
+      const cached = readRoomsFromCache(propId);
       if (cached) {
-        try {
-          const parsed = JSON.parse(cached);
-          if (Array.isArray(parsed.rooms)) {
-            rooms = parsed.rooms;
-            propertyName = parsed.propertyName || '物件名不明';
-            loading = false;
-            return;
-          }
-        } catch {}
+        rooms = cached.rooms as Room[];
+        propertyName = cached.propertyName || '物件名不明';
+        loading = false;
+        return;
       }
       const message = err instanceof Error ? err.message : String(err);
       error = message;
@@ -180,19 +174,13 @@
               );
               rooms = preserved as Room[];
               sessionStorage.setItem('selectedRooms', JSON.stringify(preserved));
-              localStorage.setItem(
-                'cached_rooms_' + propId,
-                JSON.stringify({ rooms: preserved, propertyName })
-              );
+              saveRoomsToCache(propId, preserved, propertyName);
               return;
             }
           }
           rooms = fetchedRooms;
           sessionStorage.setItem('selectedRooms', JSON.stringify(fetchedRooms));
-          localStorage.setItem(
-            'cached_rooms_' + propId,
-            JSON.stringify({ rooms: fetchedRooms, propertyName })
-          );
+          saveRoomsToCache(propId, fetchedRooms, propertyName);
         }
       }
     } catch (_) {
@@ -233,12 +221,16 @@
     const cached = localStorage.getItem('cached_properties');
     if (!cached) return;
     try {
-      const properties = JSON.parse(cached);
-      if (!Array.isArray(properties)) return;
-      const updated = properties.map((p: Record<string, unknown>) =>
+      const parsed = JSON.parse(cached);
+      const entries = Array.isArray(parsed) ? parsed : parsed.data;
+      if (!Array.isArray(entries)) return;
+      const updated = entries.map((p: Record<string, unknown>) =>
         String(p.id) === String(propId) ? { ...p, completionDate: date } : p
       );
-      localStorage.setItem('cached_properties', JSON.stringify(updated));
+      localStorage.setItem(
+        'cached_properties',
+        JSON.stringify({ data: updated, cachedAt: parsed.cachedAt ?? Date.now() })
+      );
     } catch {}
   }
 
