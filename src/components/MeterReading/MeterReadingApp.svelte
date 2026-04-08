@@ -38,6 +38,7 @@
   let hasSaved = false;
   let offlineMode = $state(!navigator.onLine);
   let showZeroUsageModal = $state(false);
+  let zeroUsageSource = $state<'fab' | 'nav'>('fab');
   let pendingCount = $state(0);
 
   // ── Derived: whether any reading has a valid previousReading ──
@@ -165,7 +166,6 @@
         const newUrl = `/reading/?propertyId=${encodeURIComponent(readings.propertyId)}&roomId=${encodeURIComponent(targetRoomId)}`;
         window.history.replaceState(null, '', newUrl);
 
-        // If integrated API returned navigation data, use it directly (no extra fetch)
         if (preloadedNavData && preloadedNavData.readings) {
           const newReadings = Array.isArray(preloadedNavData.readings)
             ? preloadedNavData.readings.map((raw: Record<string, unknown>, index: number) =>
@@ -193,7 +193,6 @@
           return;
         }
 
-        // Fallback: fetch room data separately
         readings
           .loadMeterReadings(readings.propertyId, targetRoomId, 3, true)
           .then((newReadings: MeterReading[] | null) => {
@@ -218,9 +217,32 @@
           });
       };
     },
+    get checkZeroUsage() {
+      return () => {
+        if (checkForZeroUsage()) {
+          zeroUsageSource = 'nav';
+          showZeroUsageModal = true;
+          return true;
+        }
+        return false;
+      };
+    },
   });
 
   // ── Helpers ──
+
+  function checkForZeroUsage(): boolean {
+    return readings.meterReadings.some((reading: MeterReading) => {
+      const date = reading.date;
+      const currentInput = readingValues[date];
+      if (!currentInput || currentInput.trim() === '') return false;
+      const current = parseFloat(currentInput);
+      if (isNaN(current)) return false;
+      const previous = parseFloat(String(reading.previousReading));
+      if (isNaN(previous) || previous === 0) return false;
+      return current - previous === 0;
+    });
+  }
 
   function getCurrentJSTDateString(): string {
     return new Intl.DateTimeFormat('ja-CA', {
@@ -370,18 +392,8 @@
       return;
     }
 
-    // Check for zero usage — calculate directly from input values and previous readings
-    const hasZeroUsage = readings.meterReadings.some((reading: MeterReading) => {
-      const date = reading.date;
-      const currentInput = readingValues[date];
-      if (!currentInput || currentInput.trim() === '') return false;
-      const current = parseFloat(currentInput);
-      if (isNaN(current)) return false;
-      const previous = parseFloat(String(reading.previousReading));
-      if (isNaN(previous) || previous === 0) return false; // no previous reading to compare
-      return current - previous === 0;
-    });
-    if (hasZeroUsage) {
+    if (checkForZeroUsage()) {
+      zeroUsageSource = 'fab';
       showZeroUsageModal = true;
       return;
     }
@@ -692,7 +704,11 @@
             <button
               onclick={() => {
                 showZeroUsageModal = false;
-                performSave();
+                if (zeroUsageSource === 'nav') {
+                  navigation.resumePendingNavigation();
+                } else {
+                  performSave();
+                }
               }}
               style="flex: 1; padding: 12px 16px; border-radius: 8px; border: 2px solid #fff; background-color: #fff; color: var(--mui-palette-primary-main, #1976d2); cursor: pointer; font-weight: 600; font-size: 1.125rem; min-height: 44px;"
             >
@@ -701,6 +717,9 @@
             <button
               onclick={() => {
                 showZeroUsageModal = false;
+                if (zeroUsageSource === 'nav') {
+                  navigation.cancelPendingNavigation();
+                }
               }}
               style="flex: 1; padding: 12px 16px; border-radius: 8px; border: 2px solid rgba(255,255,255,0.5); background-color: transparent; color: #fff; cursor: pointer; font-weight: 600; font-size: 1.125rem; min-height: 44px;"
             >

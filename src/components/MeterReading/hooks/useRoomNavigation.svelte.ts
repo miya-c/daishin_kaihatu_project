@@ -13,6 +13,7 @@ interface CreateRoomNavigationParams {
   invalidatePrefetch?: (propId: string, rId: string) => void;
   updateOfflineCache?: (propId: string, rId: string, readings: Record<string, unknown>[]) => void;
   hasPrefetch?: (propId: string, rId: string) => boolean;
+  checkZeroUsage?: () => boolean;
 }
 
 interface NavigationRoom {
@@ -28,6 +29,12 @@ interface GasApiResponse {
   [key: string]: unknown;
 }
 
+interface PendingNavigation {
+  targetRoomId: string;
+  direction: string;
+  collectReadingsFn: (() => Record<string, unknown>[]) | undefined;
+}
+
 export const createRoomNavigation = (options: CreateRoomNavigationParams) => {
   let updating = $state(false);
   let isNavigating = $state(false);
@@ -35,6 +42,7 @@ export const createRoomNavigation = (options: CreateRoomNavigationParams) => {
   let abortController: AbortController | null = null;
   let consecutiveSaveAndNavigateFailures = 0;
   const MAX_CONSECUTIVE_FAILURES = 3;
+  let pendingNavigation = $state<PendingNavigation | null>(null);
 
   const getRoomNavigation = (): RoomNavigation => {
     try {
@@ -195,10 +203,19 @@ export const createRoomNavigation = (options: CreateRoomNavigationParams) => {
   const saveAndNavigateToRoom = async (
     targetRoomId: string,
     direction: string,
-    collectReadingsFn: (() => Record<string, unknown>[]) | undefined
+    collectReadingsFn: (() => Record<string, unknown>[]) | undefined,
+    skipZeroCheck: boolean = false
   ): Promise<void> => {
     try {
       updating = true;
+
+      // Check for zero usage before proceeding — caller shows modal if detected
+      if (!skipZeroCheck && options.checkZeroUsage && options.checkZeroUsage()) {
+        pendingNavigation = { targetRoomId, direction, collectReadingsFn };
+        updating = false;
+        return;
+      }
+
       const meterReadingsData = collectReadingsFn ? collectReadingsFn() : [];
       const currentRoomId = options.roomId;
 
@@ -362,6 +379,17 @@ export const createRoomNavigation = (options: CreateRoomNavigationParams) => {
     }
   };
 
+  const resumePendingNavigation = (): void => {
+    const pending = pendingNavigation;
+    if (!pending) return;
+    pendingNavigation = null;
+    saveAndNavigateToRoom(pending.targetRoomId, pending.direction, pending.collectReadingsFn, true);
+  };
+
+  const cancelPendingNavigation = (): void => {
+    pendingNavigation = null;
+  };
+
   return {
     get updating() {
       return updating;
@@ -385,5 +413,10 @@ export const createRoomNavigation = (options: CreateRoomNavigationParams) => {
     updateSessionStorageCache,
     saveReadings,
     destroy,
+    get hasPendingNavigation() {
+      return pendingNavigation !== null;
+    },
+    resumePendingNavigation,
+    cancelPendingNavigation,
   };
 };
