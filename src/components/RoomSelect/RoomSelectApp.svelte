@@ -25,6 +25,9 @@
   let showToast: boolean = $state(false);
   let toastTimerRef: ReturnType<typeof setTimeout> | null = null;
   let showExitModal: boolean = $state(false);
+  let sortAsc: boolean = $state(true);
+
+  let sortedRooms = $derived(sortAsc ? rooms : [...rooms].reverse());
 
   function displayToast(message: string): void {
     toastMessage = message;
@@ -438,11 +441,24 @@
         </div>
       {/if}
 
+      <div style="display: flex; justify-content: flex-end; padding: 4px 8px 8px;">
+        <button
+          onclick={() => (sortAsc = !sortAsc)}
+          style="display: flex; align-items: center; gap: 4px; padding: 8px 14px; background: #f5f5f5; border: 1px solid #ddd; border-radius: 8px; font-size: 0.85rem; color: #495057; cursor: pointer; min-height: 36px;"
+          aria-label={sortAsc ? '降順に並べ替え' : '昇順に並べ替え'}
+        >
+          <span class="material-icons MuiSvgIcon-root" aria-hidden="true" style="font-size: 18px;">
+            {sortAsc ? 'arrow_downward' : 'arrow_upward'}
+          </span>
+          {sortAsc ? '降順' : '昇順'}
+        </button>
+      </div>
+
       <section class="room-grid" aria-label="部屋一覧" role="list">
         {#if rooms.length === 0}
           <div class="no-rooms-message">部屋データがありません</div>
         {:else}
-          {#each rooms as room, index (room.id || index)}
+          {#each sortedRooms as room, index (room.id || index)}
             {@const isSkipInspection = room.isNotNeeded === true}
             {@const isCompleted = room.readingStatus === 'completed' || room.isCompleted}
             {@const statusIcon = isSkipInspection
