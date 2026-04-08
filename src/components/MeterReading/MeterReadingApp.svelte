@@ -97,22 +97,27 @@
     };
   });
 
-  let popstateSkip = true;
   $effect(() => {
-    const handler = () => {
-      if (popstateSkip) {
-        popstateSkip = false;
-        return;
+    const handler = (e: BeforeUnloadEvent) => {
+      if (!hasSaved) {
+        const unsaved = collectReadingsFromState();
+        if (unsaved.length > 0) {
+          try {
+            saveToQueue({
+              action: 'updateMeterReadings',
+              propertyId: readings.propertyId,
+              roomId: readings.roomId,
+              readings: unsaved,
+            });
+          } catch {
+            /* storage full */
+          }
+          e.preventDefault();
+        }
       }
-      navigation.handleBackButton(
-        readings.propertyId,
-        readings.roomId,
-        hasSaved,
-        collectReadingsFromState
-      );
     };
-    window.addEventListener('popstate', handler);
-    return () => window.removeEventListener('popstate', handler);
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
   });
 
   // ── Room navigation (created after readings store is available) ──

@@ -262,7 +262,6 @@ export const createRoomNavigation = (options: CreateRoomNavigationParams) => {
             if (options.invalidatePrefetch) {
               options.invalidatePrefetch(options.propertyId, currentRoomId);
             }
-            options.displayToast('保存しました');
           } else {
             options.displayToast('保存に失敗しました。ネットワークを確認して再試行してください。');
           }
