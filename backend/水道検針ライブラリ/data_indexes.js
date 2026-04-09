@@ -11,37 +11,38 @@
 function createPropertyIndex() {
   try {
     console.log('[createPropertyIndex] 物件マスタインデックス作成開始');
-    
+
     const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('物件マスタ');
     if (!sheet) {
       throw new Error('物件マスタシートが見つかりません');
     }
-    
+
     const data = sheet.getDataRange().getValues();
     const headers = data[0];
     const propertyIndex = {};
-    
+
     // ヘッダー行をスキップして処理
     for (let i = 1; i < data.length; i++) {
       const row = data[i];
       const propertyId = row[0]; // 物件ID
-      
+
       if (propertyId) {
         propertyIndex[propertyId] = {
           row: i + 1,
-          data: {}
+          data: {},
         };
-        
+
         // 各列のデータをインデックスに追加
         headers.forEach((header, index) => {
           propertyIndex[propertyId].data[header] = row[index];
         });
       }
     }
-    
-    console.log(`[createPropertyIndex] ${Object.keys(propertyIndex).length}件の物件をインデックス化`);
+
+    console.log(
+      `[createPropertyIndex] ${Object.keys(propertyIndex).length}件の物件をインデックス化`
+    );
     return propertyIndex;
-    
   } catch (error) {
     console.error('[createPropertyIndex] エラー:', error);
     throw error;
@@ -55,12 +56,12 @@ function createPropertyIndex() {
 function createRoomIndex() {
   try {
     console.log('[createRoomIndex] 部屋マスタインデックス作成開始');
-    
+
     const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('部屋マスタ');
     if (!sheet) {
       throw new Error('部屋マスタシートが見つかりません');
     }
-    
+
     const data = sheet.getDataRange().getValues();
     const headers = data[0];
     const roomIndex = {};
@@ -79,18 +80,18 @@ function createRoomIndex() {
       const row = data[i];
       const roomId = row[roomIdColIndex]; // ヘッダーベース検索
       const propertyId = propertyIdColIndex !== -1 ? row[propertyIdColIndex] : null;
-      
+
       if (roomId) {
         roomIndex[roomId] = {
           row: i + 1,
-          data: {}
+          data: {},
         };
-        
+
         // 各列のデータをインデックスに追加
         headers.forEach((header, index) => {
           roomIndex[roomId].data[header] = row[index];
         });
-        
+
         // 物件ID別インデックスも作成
         if (propertyId) {
           if (!propertyRoomIndex[propertyId]) {
@@ -100,13 +101,12 @@ function createRoomIndex() {
         }
       }
     }
-    
+
     console.log(`[createRoomIndex] ${Object.keys(roomIndex).length}件の部屋をインデックス化`);
     return {
       roomIndex,
-      propertyRoomIndex
+      propertyRoomIndex,
     };
-    
   } catch (error) {
     console.error('[createRoomIndex] エラー:', error);
     throw error;
@@ -120,21 +120,21 @@ function createRoomIndex() {
 function createMeterReadingIndex() {
   try {
     console.log('[createMeterReadingIndex] 検針データインデックス作成開始');
-    
+
     const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('inspection_data');
     if (!sheet) {
       throw new Error('検針データシートが見つかりません');
     }
-    
+
     const data = sheet.getDataRange().getValues();
     const headers = data[0];
     const meterIndex = {};
     const roomMeterIndex = {}; // 部屋ID別の検針データ
-    const dateIndex = {}; // 日付別の検針データ
-    
+    const dateIndex = {}; // 日付別の検釈データ
+
     // ヘッダーベースで列インデックスを取得
     const meterRoomIdCol = headers.indexOf('部屋ID');
-    const meterReadingDateCol = headers.indexOf('検針日時');
+    const meterReadingDateCol = headers.indexOf('検釈日時');
 
     // ヘッダー行をスキップして処理
     for (let i = 1; i < data.length; i++) {
@@ -142,17 +142,17 @@ function createMeterReadingIndex() {
       const recordId = `record_${i}`;
       const roomId = meterRoomIdCol >= 0 ? row[meterRoomIdCol] : null;
       const readingDate = meterReadingDateCol >= 0 ? row[meterReadingDateCol] : null;
-      
+
       meterIndex[recordId] = {
         row: i + 1,
-        data: {}
+        data: {},
       };
-      
+
       // 各列のデータをインデックスに追加
       headers.forEach((header, index) => {
         meterIndex[recordId].data[header] = row[index];
       });
-      
+
       // 部屋ID別インデックス
       if (roomId) {
         if (!roomMeterIndex[roomId]) {
@@ -160,27 +160,29 @@ function createMeterReadingIndex() {
         }
         roomMeterIndex[roomId].push(recordId);
       }
-      
+
       // 日付別インデックス
       if (readingDate) {
-        const dateKey = readingDate instanceof Date ? 
-          readingDate.toDateString() : 
-          new Date(readingDate).toDateString();
-        
+        const dateKey =
+          readingDate instanceof Date
+            ? readingDate.toDateString()
+            : new Date(readingDate).toDateString();
+
         if (!dateIndex[dateKey]) {
           dateIndex[dateKey] = [];
         }
         dateIndex[dateKey].push(recordId);
       }
     }
-    
-    console.log(`[createMeterReadingIndex] ${Object.keys(meterIndex).length}件の検針データをインデックス化`);
+
+    console.log(
+      `[createMeterReadingIndex] ${Object.keys(meterIndex).length}件の検針データをインデックス化`
+    );
     return {
       meterIndex,
       roomMeterIndex,
-      dateIndex
+      dateIndex,
     };
-    
   } catch (error) {
     console.error('[createMeterReadingIndex] エラー:', error);
     throw error;
@@ -194,11 +196,11 @@ function createMeterReadingIndex() {
 function createAllIndexes() {
   try {
     console.log('[createAllIndexes] 全インデックス作成開始');
-    
+
     const propertyIndex = createPropertyIndex();
     const roomIndexes = createRoomIndex();
     const meterIndexes = createMeterReadingIndex();
-    
+
     const allIndexes = {
       property: propertyIndex,
       room: roomIndexes.roomIndex,
@@ -206,12 +208,11 @@ function createAllIndexes() {
       meter: meterIndexes.meterIndex,
       roomMeter: meterIndexes.roomMeterIndex,
       dateMeter: meterIndexes.dateIndex,
-      created: new Date()
+      created: new Date(),
     };
-    
+
     console.log('[createAllIndexes] 全インデックス作成完了');
     return allIndexes;
-    
   } catch (error) {
     console.error('[createAllIndexes] エラー:', error);
     throw error;
@@ -229,456 +230,53 @@ function fastSearch(type, key, indexes = null) {
   try {
     // 引数バリデーション
     if (!type) {
-      throw new Error('検索タイプが指定されていません。使用可能なタイプ: property, room, meter, propertyRooms, roomMeters');
+      throw new Error(
+        '検索タイプが指定されていません。使用可能なタイプ: property, room, meter, propertyRooms, roomMeters'
+      );
     }
-    
+
     if (!key) {
       throw new Error('検索キーが指定されていません');
     }
-    
+
     const validTypes = ['property', 'room', 'meter', 'propertyRooms', 'roomMeters'];
     if (!validTypes.includes(type)) {
       throw new Error(`不明な検索タイプ: "${type}". 使用可能なタイプ: ${validTypes.join(', ')}`);
     }
-    
+
     console.log(`[fastSearch] 検索開始: type="${type}", key="${key}"`);
-    
+
     if (!indexes) {
       console.log('[fastSearch] インデックスを新規作成中...');
       indexes = createAllIndexes();
     }
-    
+
     // インデックスの存在確認
     if (!indexes || typeof indexes !== 'object') {
       throw new Error('インデックスの作成に失敗しました');
     }
-    
+
     switch (type) {
       case 'property':
         return indexes.property[key] || null;
-        
+
       case 'room':
         return indexes.room[key] || null;
-        
+
       case 'meter':
         return indexes.meter[key] || null;
-        
+
       case 'propertyRooms':
         return indexes.propertyRoom[key] || [];
-        
+
       case 'roomMeters':
         return indexes.roomMeter[key] || [];
-        
+
       default:
         throw new Error(`不明な検索タイプ: ${type}`);
     }
-    
   } catch (error) {
     console.error('[fastSearch] エラー:', error);
-    throw error;
-  }
-}
-
-/**
- * インデックス統計情報を取得
- * @returns {Object} 統計情報
- */
-function getIndexStats() {
-  try {
-    const indexes = createAllIndexes();
-    
-    return {
-      物件数: Object.keys(indexes.property).length,
-      部屋数: Object.keys(indexes.room).length,
-      検針データ数: Object.keys(indexes.meter).length,
-      物件別部屋数: Object.keys(indexes.propertyRoom).length,
-      部屋別検針数: Object.keys(indexes.roomMeter).length,
-      作成日時: indexes.created
-    };
-    
-  } catch (error) {
-    console.error('[getIndexStats] エラー:', error);
-    throw error;
-  }
-}
-
-/**
- * fastSearch関数のテスト用関数
- */
-function testFastSearch() {
-  try {
-    console.log('[testFastSearch] 高速検索テスト開始');
-    
-    // インデックスを一度作成
-    const indexes = createAllIndexes();
-    console.log('[testFastSearch] インデックス作成完了');
-    
-    // 各検索タイプのテスト
-    const testCases = [
-      { type: 'property', description: '物件検索テスト' },
-      { type: 'room', description: '部屋検索テスト' },
-      { type: 'meter', description: '検針データ検索テスト' },
-      { type: 'propertyRooms', description: '物件別部屋一覧テスト' },
-      { type: 'roomMeters', description: '部屋別検針データテスト' }
-    ];
-    
-    const results = [];
-    
-    testCases.forEach(testCase => {
-      try {
-        console.log(`[testFastSearch] ${testCase.description}`);
-        
-        // テスト用の検索を実行（存在しないキーで安全にテスト）
-        const result = fastSearch(testCase.type, 'TEST_KEY_NOT_EXISTS', indexes);
-        
-        results.push({
-          type: testCase.type,
-          description: testCase.description,
-          status: 'OK',
-          result: result
-        });
-        
-        console.log(`[testFastSearch] ${testCase.type}: OK`);
-        
-      } catch (error) {
-        results.push({
-          type: testCase.type,
-          description: testCase.description,
-          status: 'ERROR',
-          error: error.message
-        });
-        
-        console.error(`[testFastSearch] ${testCase.type}: ERROR -`, error.message);
-      }
-    });
-    
-    // 結果サマリー
-    const successCount = results.filter(r => r.status === 'OK').length;
-    const totalCount = results.length;
-    
-    console.log(`[testFastSearch] テスト完了: ${successCount}/${totalCount} 成功`);
-    
-    return {
-      成功率: `${successCount}/${totalCount}`,
-      詳細結果: results,
-      実行時間: new Date()
-    };
-    
-  } catch (error) {
-    console.error('[testFastSearch] テストエラー:', error);
-    throw error;
-  }
-}
-
-/**
- * 実際のデータを使用した検索サンプル
- */
-function sampleDataSearch() {
-  try {
-    console.log('[sampleDataSearch] 実データ検索サンプル');
-    
-    // インデックス作成
-    const indexes = createAllIndexes();
-    
-    // 利用可能なキーを取得してサンプル検索
-    const propertyKeys = Object.keys(indexes.property);
-    const roomKeys = Object.keys(indexes.room);
-    
-    const samples = [];
-    
-    // 物件検索サンプル
-    if (propertyKeys.length > 0) {
-      const samplePropertyId = propertyKeys[0];
-      const propertyResult = fastSearch('property', samplePropertyId, indexes);
-      samples.push({
-        type: '物件検索',
-        key: samplePropertyId,
-        found: !!propertyResult,
-        data: propertyResult ? propertyResult.data : null
-      });
-    }
-    
-    // 部屋検索サンプル
-    if (roomKeys.length > 0) {
-      const sampleRoomId = roomKeys[0];
-      const roomResult = fastSearch('room', sampleRoomId, indexes);
-      samples.push({
-        type: '部屋検索',
-        key: sampleRoomId,
-        found: !!roomResult,
-        data: roomResult ? roomResult.data : null
-      });
-      
-      // 物件別部屋一覧サンプル
-      if (roomResult && roomResult.data) {
-        const propertyId = roomResult.data['物件ID'] || roomResult.data[Object.keys(roomResult.data)[1]];
-        if (propertyId) {
-          const propertyRooms = fastSearch('propertyRooms', propertyId, indexes);
-          samples.push({
-            type: '物件別部屋一覧',
-            key: propertyId,
-            found: propertyRooms.length > 0,
-            count: propertyRooms.length
-          });
-        }
-      }
-    }
-    
-    console.log('[sampleDataSearch] サンプル検索完了:', samples);
-    return samples;
-    
-  } catch (error) {
-    console.error('[sampleDataSearch] エラー:', error);
-    throw error;
-  }
-}
-
-/**
- * 検索機能の使用方法ガイド
- */
-function showSearchGuide() {
-  const guide = `
-=== 高速検索機能の使用方法 ===
-
-1. 基本的な使用方法:
-   const result = fastSearch(type, key);
-
-2. 検索タイプ:
-   - 'property': 物件IDで物件情報を検索
-   - 'room': 部屋IDで部屋情報を検索
-   - 'meter': レコードIDで検針データを検索
-   - 'propertyRooms': 物件IDで該当する部屋一覧を取得
-   - 'roomMeters': 部屋IDで該当する検針データ一覧を取得
-
-3. 使用例:
-   // 物件情報の取得
-   const property = fastSearch('property', 'P001');
-   
-   // 部屋情報の取得
-   const room = fastSearch('room', 'R001-101');
-   
-   // 物件内の全部屋を取得
-   const rooms = fastSearch('propertyRooms', 'P001');
-   
-   // 部屋の全検針データを取得
-   const meters = fastSearch('roomMeters', 'R001-101');
-
-4. エラーハンドリング:
-   try {
-     const result = fastSearch('property', 'P001');
-     if (result) {
-       console.log('見つかりました:', result.data);
-     } else {
-       console.log('データが見つかりません');
-     }
-   } catch (error) {
-     console.error('検索エラー:', error.message);
-   }
-
-5. パフォーマンス最適化:
-   // インデックスを一度作成して再利用
-   const indexes = createAllIndexes();
-   const result1 = fastSearch('property', 'P001', indexes);
-   const result2 = fastSearch('room', 'R001-101', indexes);
-
-=== テスト関数 ===
-- testFastSearch(): 検索機能のテスト
-- sampleDataSearch(): 実データでのサンプル検索
-- getIndexStats(): インデックス統計情報
-  `;
-  
-  console.log(guide);
-  return guide;
-}
-
-/**
- * 差分データを取得（速度改善用）
- * 指定された最終同期日時以降に更新されたデータのみを返却
- * @param {string} lastSync - 最終同期日時（ISO形式）
- * @param {string} dataType - データタイプ（'properties'|'rooms'|'readings'）
- * @param {Object} options - オプション設定
- * @returns {Object} {hasChanges: boolean, data: Array, lastModified: string}
- */
-function getDeltaData(lastSync, dataType, options = {}) {
-  try {
-    Logger.log(`[getDeltaData] 開始 - lastSync: ${lastSync}, dataType: ${dataType}`);
-
-    const startTime = Date.now();
-
-    if (!lastSync || !dataType) {
-      throw new Error('lastSyncとdataTypeは必須パラメータです');
-    }
-
-    // 設定値を取得
-    const deltaConfig = getConfig('PERFORMANCE.DELTA_SYNC', {});
-    const maxRecords = options.maxRecords || deltaConfig.MAX_DELTA_RECORDS || 1000;
-    const timestampCol = options.timestampColumn || deltaConfig.TIMESTAMP_COLUMN || '最終更新日時';
-
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const lastSyncDate = new Date(lastSync);
-    
-    if (isNaN(lastSyncDate.getTime())) {
-      throw new Error('無効な日時形式です');
-    }
-    
-    let sheetName;
-    let primaryKeyCol = null;
-    
-    // データタイプに応じてシートを決定
-    switch (dataType) {
-      case 'properties':
-        sheetName = '物件マスタ';
-        primaryKeyCol = '物件ID';
-        break;
-      case 'rooms':
-        sheetName = '部屋マスタ';
-        primaryKeyCol = '部屋ID';
-        break;
-      case 'readings':
-        sheetName = 'inspection_data';
-        primaryKeyCol = '記録ID';
-        break;
-      default:
-        throw new Error(`サポートされていないデータタイプ: ${dataType}`);
-    }
-    
-    const sheet = ss.getSheetByName(sheetName);
-    if (!sheet) {
-      throw new Error(`シート「${sheetName}」が見つかりません`);
-    }
-    
-    const data = sheet.getDataRange().getValues();
-    if (data.length <= 1) {
-      return {
-        hasChanges: false,
-        data: [],
-        lastModified: new Date().toISOString(),
-        totalCount: 0,
-        dataType: dataType
-      };
-    }
-    
-    const headers = data[0];
-    const timestampIndex = headers.indexOf(timestampCol);
-    const primaryKeyIndex = primaryKeyCol ? headers.indexOf(primaryKeyCol) : -1;
-    
-    Logger.log(`[getDeltaData] 列構成確認 - timestamp列: ${timestampIndex}, primaryKey列: ${primaryKeyIndex}`);
-    
-    const deltaData = [];
-    let maxTimestamp = new Date(0);
-    let recordCount = 0;
-    
-    // データ行を処理
-    for (let i = 1; i < data.length && recordCount < maxRecords; i++) {
-      const row = data[i];
-      
-      // タイムスタンプを確認
-      let rowTimestamp = new Date();
-      if (timestampIndex !== -1 && row[timestampIndex]) {
-        try {
-          rowTimestamp = new Date(row[timestampIndex]);
-          if (isNaN(rowTimestamp.getTime())) {
-            // タイムスタンプが無効な場合、現在時刻を使用（新規データとして扱う）
-            rowTimestamp = new Date();
-          }
-        } catch (e) {
-          rowTimestamp = new Date();
-        }
-      }
-      
-      // 差分チェック：最終同期より新しいデータのみ
-      if (rowTimestamp > lastSyncDate) {
-        const item = {};
-        
-        // 全ての列データを含める
-        headers.forEach((header, colIndex) => {
-          item[header] = row[colIndex];
-        });
-        
-        // メタデータを追加
-        item._lastModified = rowTimestamp.toISOString();
-        item._rowIndex = i + 1;
-        
-        if (primaryKeyIndex !== -1) {
-          item._primaryKey = row[primaryKeyIndex];
-        }
-        
-        deltaData.push(item);
-        recordCount++;
-        
-        if (rowTimestamp > maxTimestamp) {
-          maxTimestamp = rowTimestamp;
-        }
-      }
-    }
-    
-    // 結果を返却
-    const result = {
-      hasChanges: deltaData.length > 0,
-      data: deltaData,
-      lastModified: maxTimestamp > new Date(0) ? maxTimestamp.toISOString() : new Date().toISOString(),
-      totalCount: deltaData.length,
-      dataType: dataType,
-      syncedFrom: lastSync,
-      maxRecordsReached: recordCount >= maxRecords,
-      processingTime: Date.now() - startTime
-    };
-    
-    Logger.log(`[getDeltaData] 完了 - 差分データ数: ${result.totalCount}, 変更有無: ${result.hasChanges}`);
-    return result;
-    
-  } catch (error) {
-    Logger.log(`[getDeltaData] エラー: ${error.message}`);
-    throw error;
-  }
-}
-
-/**
- * 複数データタイプの差分を一括取得
- * @param {string} lastSync - 最終同期日時
- * @param {Array} dataTypes - データタイプの配列
- * @returns {Object} データタイプ別の差分データ
- */
-function getDeltaDataBatch(lastSync, dataTypes = ['properties', 'rooms', 'readings']) {
-  try {
-    Logger.log(`[getDeltaDataBatch] 一括差分取得開始 - types: ${dataTypes.join(',')}`);
-    
-    const results = {};
-    let hasAnyChanges = false;
-    let latestTimestamp = new Date(0);
-    
-    for (const dataType of dataTypes) {
-      try {
-        const deltaResult = getDeltaData(lastSync, dataType);
-        results[dataType] = deltaResult;
-        
-        if (deltaResult.hasChanges) {
-          hasAnyChanges = true;
-          const resultTimestamp = new Date(deltaResult.lastModified);
-          if (resultTimestamp > latestTimestamp) {
-            latestTimestamp = resultTimestamp;
-          }
-        }
-      } catch (error) {
-        Logger.log(`[getDeltaDataBatch] ${dataType}の取得でエラー: ${error.message}`);
-        results[dataType] = {
-          hasChanges: false,
-          data: [],
-          error: error.message
-        };
-      }
-    }
-    
-    return {
-      hasChanges: hasAnyChanges,
-      results: results,
-      lastModified: latestTimestamp > new Date(0) ? latestTimestamp.toISOString() : new Date().toISOString(),
-      syncedFrom: lastSync,
-      dataTypes: dataTypes
-    };
-    
-  } catch (error) {
-    Logger.log(`[getDeltaDataBatch] エラー: ${error.message}`);
     throw error;
   }
 }

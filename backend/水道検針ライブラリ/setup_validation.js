@@ -1,6 +1,6 @@
 /**
  * setup_validation.gs - 導入完了検証機能
- * 
+ *
  * システム導入が正常に完了したかを包括的に検証
  * 各コンポーネントの動作確認とセットアップ状況の診断
  */
@@ -13,7 +13,7 @@
 function validateSystemSetup(options = {}) {
   try {
     console.log('=== システムセットアップ検証開始 ===');
-    
+
     const validation = {
       timestamp: new Date().toISOString(),
       overall: 'UNKNOWN',
@@ -23,10 +23,10 @@ function validateSystemSetup(options = {}) {
         sheets: { score: 0, maxScore: 0, status: 'UNKNOWN', issues: [] },
         data: { score: 0, maxScore: 0, status: 'UNKNOWN', issues: [] },
         functions: { score: 0, maxScore: 0, status: 'UNKNOWN', issues: [] },
-        integration: { score: 0, maxScore: 0, status: 'UNKNOWN', issues: [] }
+        integration: { score: 0, maxScore: 0, status: 'UNKNOWN', issues: [] },
       },
       recommendations: [],
-      summary: ''
+      summary: '',
     };
 
     const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -34,7 +34,7 @@ function validateSystemSetup(options = {}) {
       return {
         success: false,
         error: 'アクティブなスプレッドシートが見つかりません',
-        message: 'スプレッドシートを開いてから実行してください'
+        message: 'スプレッドシートを開いてから実行してください',
       };
     }
 
@@ -67,8 +67,9 @@ function validateSystemSetup(options = {}) {
     validation.maxScore += integrationValidation.maxScore;
 
     // 総合評価算出
-    const percentage = validation.maxScore > 0 ? Math.round((validation.score / validation.maxScore) * 100) : 0;
-    
+    const percentage =
+      validation.maxScore > 0 ? Math.round((validation.score / validation.maxScore) * 100) : 0;
+
     if (percentage >= 90) {
       validation.overall = 'EXCELLENT';
     } else if (percentage >= 75) {
@@ -82,7 +83,7 @@ function validateSystemSetup(options = {}) {
     }
 
     // 推奨事項の生成
-    validation.recommendations = generateRecommendations(validation);
+    validation.recommendations = generateValidationRecommendations(validation);
 
     // サマリーメッセージの生成
     validation.summary = generateValidationSummary(validation, percentage);
@@ -94,15 +95,14 @@ function validateSystemSetup(options = {}) {
       success: true,
       validation: validation,
       percentage: percentage,
-      message: validation.summary
+      message: validation.summary,
     };
-
   } catch (error) {
     console.error('システムセットアップ検証エラー:', error);
     return {
       success: false,
       error: error.message,
-      message: `システムセットアップ検証に失敗しました: ${error.message}`
+      message: `システムセットアップ検証に失敗しました: ${error.message}`,
     };
   }
 }
@@ -116,7 +116,7 @@ function validateSheetStructure(ss, options) {
     maxScore: 0,
     status: 'UNKNOWN',
     issues: [],
-    details: {}
+    details: {},
   };
 
   try {
@@ -124,40 +124,40 @@ function validateSheetStructure(ss, options) {
       { name: '物件マスタ', required: true, score: 15 },
       { name: '部屋マスタ', required: true, score: 15 },
       { name: 'inspection_data', required: true, score: 20 },
-      { name: '設定値', required: false, score: 10 }
+      { name: '設定値', required: false, score: 10 },
     ];
 
-    requiredSheets.forEach(sheetDef => {
+    requiredSheets.forEach((sheetDef) => {
       validation.maxScore += sheetDef.score;
       const sheet = ss.getSheetByName(sheetDef.name);
-      
+
       if (!sheet) {
         validation.issues.push({
           type: sheetDef.required ? 'error' : 'warning',
           message: `${sheetDef.name}シートが見つかりません`,
-          category: 'sheet_missing'
+          category: 'sheet_missing',
         });
         return;
       }
 
       validation.score += sheetDef.score;
-      
+
       // ヘッダー行の確認
       try {
         const lastRow = sheet.getLastRow();
         const lastCol = sheet.getLastColumn();
-        
+
         validation.details[sheetDef.name] = {
           rows: lastRow,
           columns: lastCol,
-          hasData: lastRow > 1
+          hasData: lastRow > 1,
         };
 
         if (lastRow === 0) {
           validation.issues.push({
             type: 'warning',
             message: `${sheetDef.name}シートにデータがありません`,
-            category: 'sheet_empty'
+            category: 'sheet_empty',
           });
           validation.score -= Math.floor(sheetDef.score * 0.3);
         }
@@ -166,18 +166,17 @@ function validateSheetStructure(ss, options) {
         if (lastRow > 0) {
           const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
           const validationResult = validateSheetHeaders(sheetDef.name, headers);
-          
+
           if (!validationResult.valid) {
             validation.issues.push(...validationResult.issues);
             validation.score -= Math.floor(sheetDef.score * 0.2);
           }
         }
-
       } catch (sheetError) {
         validation.issues.push({
           type: 'error',
           message: `${sheetDef.name}シートの検証中にエラー: ${sheetError.message}`,
-          category: 'sheet_error'
+          category: 'sheet_error',
         });
         validation.score -= Math.floor(sheetDef.score * 0.5);
       }
@@ -192,12 +191,11 @@ function validateSheetStructure(ss, options) {
     } else {
       validation.status = 'FAIL';
     }
-
   } catch (error) {
     validation.issues.push({
       type: 'error',
       message: `シート構造検証エラー: ${error.message}`,
-      category: 'validation_error'
+      category: 'validation_error',
     });
     validation.status = 'ERROR';
   }
@@ -210,15 +208,25 @@ function validateSheetStructure(ss, options) {
  */
 function validateSheetHeaders(sheetName, headers) {
   const expectedHeaders = {
-    '物件マスタ': ['物件ID', '物件名', '住所', '検針完了日'],
-    '部屋マスタ': ['物件ID', '物件名', '部屋ID', '部屋名', '検針不要'],
-    'inspection_data': [
-      '記録ID', '物件名', '物件ID', '部屋ID', '部屋名',
-      '検針日時', '警告フラグ', '標準偏差値', '今回使用量',
-      '今回の指示数', '前回指示数', '前々回指示数', '前々々回指示数',
-      '検針不要'
+    物件マスタ: ['物件ID', '物件名', '住所', '検針完了日'],
+    部屋マスタ: ['物件ID', '物件名', '部屋ID', '部屋名', '検針不要'],
+    inspection_data: [
+      '記録ID',
+      '物件名',
+      '物件ID',
+      '部屋ID',
+      '部屋名',
+      '検針日時',
+      '警告フラグ',
+      '標準偏差値',
+      '今回使用量',
+      '今回の指示数',
+      '前回指示数',
+      '前々回指示数',
+      '前々々回指示数',
+      '検針不要',
     ],
-    '設定値': ['設定項目', '設定値', '説明']
+    設定値: ['設定項目', '設定値', '説明'],
   };
 
   const expected = expectedHeaders[sheetName];
@@ -227,19 +235,19 @@ function validateSheetHeaders(sheetName, headers) {
   }
 
   const issues = [];
-  const missingHeaders = expected.filter(header => !headers.includes(header));
-  
+  const missingHeaders = expected.filter((header) => !headers.includes(header));
+
   if (missingHeaders.length > 0) {
     issues.push({
       type: 'warning',
       message: `${sheetName}に必要な列が不足: ${missingHeaders.join(', ')}`,
-      category: 'missing_headers'
+      category: 'missing_headers',
     });
   }
 
   return {
     valid: missingHeaders.length === 0,
-    issues: issues
+    issues: issues,
   };
 }
 
@@ -252,7 +260,7 @@ function validateDataIntegrity(ss, options) {
     maxScore: 100,
     status: 'UNKNOWN',
     issues: [],
-    details: {}
+    details: {},
   };
 
   try {
@@ -284,12 +292,11 @@ function validateDataIntegrity(ss, options) {
     } else {
       validation.status = 'FAIL';
     }
-
   } catch (error) {
     validation.issues.push({
       type: 'error',
       message: `データ整合性検証エラー: ${error.message}`,
-      category: 'validation_error'
+      category: 'validation_error',
     });
     validation.status = 'ERROR';
   }
@@ -305,7 +312,7 @@ function validatePropertyMasterData(ss) {
     score: 0,
     maxScore: 30,
     issues: [],
-    details: {}
+    details: {},
   };
 
   try {
@@ -314,7 +321,7 @@ function validatePropertyMasterData(ss) {
       validation.issues.push({
         type: 'error',
         message: '物件マスタシートが見つかりません',
-        category: 'sheet_missing'
+        category: 'sheet_missing',
       });
       return validation;
     }
@@ -324,7 +331,7 @@ function validatePropertyMasterData(ss) {
       validation.issues.push({
         type: 'warning',
         message: '物件マスタにデータがありません',
-        category: 'no_data'
+        category: 'no_data',
       });
       return validation;
     }
@@ -344,14 +351,14 @@ function validatePropertyMasterData(ss) {
 
       for (let i = 1; i < data.length; i++) {
         const propertyId = String(data[i][propertyIdIndex]).trim();
-        
+
         if (/^P\d{6}$/.test(propertyId)) {
           validIdCount++;
         } else if (propertyId) {
           validation.issues.push({
             type: 'warning',
             message: `物件ID「${propertyId}」がP000001形式ではありません（行${i + 1}）`,
-            category: 'invalid_format'
+            category: 'invalid_format',
           });
         }
 
@@ -366,7 +373,7 @@ function validatePropertyMasterData(ss) {
         validation.issues.push({
           type: 'error',
           message: `重複する物件ID: ${Array.from(duplicateIds).join(', ')}`,
-          category: 'duplicate_ids'
+          category: 'duplicate_ids',
         });
       } else {
         validation.score += 15;
@@ -400,18 +407,17 @@ function validatePropertyMasterData(ss) {
         validation.issues.push({
           type: 'warning',
           message: `物件名が空の物件が${data.length - 1 - namedPropertiesCount}件あります`,
-          category: 'missing_names'
+          category: 'missing_names',
         });
       }
 
       validation.details.namedProperties = namedPropertiesCount;
     }
-
   } catch (error) {
     validation.issues.push({
       type: 'error',
       message: `物件マスタデータ検証エラー: ${error.message}`,
-      category: 'validation_error'
+      category: 'validation_error',
     });
   }
 
@@ -426,7 +432,7 @@ function validateRoomMasterData(ss) {
     score: 0,
     maxScore: 30,
     issues: [],
-    details: {}
+    details: {},
   };
 
   try {
@@ -435,7 +441,7 @@ function validateRoomMasterData(ss) {
       validation.issues.push({
         type: 'error',
         message: '部屋マスタシートが見つかりません',
-        category: 'sheet_missing'
+        category: 'sheet_missing',
       });
       return validation;
     }
@@ -445,7 +451,7 @@ function validateRoomMasterData(ss) {
       validation.issues.push({
         type: 'warning',
         message: '部屋マスタにデータがありません',
-        category: 'no_data'
+        category: 'no_data',
       });
       return validation;
     }
@@ -468,14 +474,14 @@ function validateRoomMasterData(ss) {
         const roomId = String(data[i][roomIdIndex]).trim();
         const propertyId = String(data[i][propertyIdIndex]).trim();
         const compositeKey = `${propertyId}-${roomId}`;
-        
+
         if (/^R\d{3}$/.test(roomId)) {
           validIdCount++;
         } else if (roomId) {
           validation.issues.push({
             type: 'warning',
             message: `部屋ID「${roomId}」がR001形式ではありません（行${i + 1}）`,
-            category: 'invalid_format'
+            category: 'invalid_format',
           });
         }
 
@@ -490,7 +496,7 @@ function validateRoomMasterData(ss) {
         validation.issues.push({
           type: 'error',
           message: `重複する物件ID-部屋IDの組み合わせが${duplicateRoomIds.size}件あります`,
-          category: 'duplicate_ids'
+          category: 'duplicate_ids',
         });
       } else {
         validation.score += 15;
@@ -519,16 +525,15 @@ function validateRoomMasterData(ss) {
       }
       validation.details.roomsByProperty = roomsByProperty;
       validation.details.averageRoomsPerProperty = Math.round(
-        Object.values(roomsByProperty).reduce((sum, count) => sum + count, 0) / 
-        Object.keys(roomsByProperty).length
+        Object.values(roomsByProperty).reduce((sum, count) => sum + count, 0) /
+          Object.keys(roomsByProperty).length
       );
     }
-
   } catch (error) {
     validation.issues.push({
       type: 'error',
       message: `部屋マスタデータ検証エラー: ${error.message}`,
-      category: 'validation_error'
+      category: 'validation_error',
     });
   }
 
@@ -543,7 +548,7 @@ function validateIdRelationships(ss) {
     score: 0,
     maxScore: 40,
     issues: [],
-    details: {}
+    details: {},
   };
 
   try {
@@ -556,7 +561,7 @@ function validateIdRelationships(ss) {
       validation.issues.push({
         type: 'error',
         message: '必要なシートが見つかりません（物件マスタまたは部屋マスタ）',
-        category: 'sheet_missing'
+        category: 'sheet_missing',
       });
       return validation;
     }
@@ -565,12 +570,12 @@ function validateIdRelationships(ss) {
     const propertyData = propertyMasterSheet.getDataRange().getValues();
     const propertyHeaders = propertyData[0];
     const propertyIdIndex = propertyHeaders.indexOf('物件ID');
-    
+
     if (propertyIdIndex === -1) {
       validation.issues.push({
         type: 'error',
         message: '物件マスタに物件ID列が見つかりません',
-        category: 'missing_column'
+        category: 'missing_column',
       });
       return validation;
     }
@@ -590,7 +595,7 @@ function validateIdRelationships(ss) {
       validation.issues.push({
         type: 'error',
         message: '部屋マスタに物件ID列が見つかりません',
-        category: 'missing_column'
+        category: 'missing_column',
       });
       return validation;
     }
@@ -614,7 +619,7 @@ function validateIdRelationships(ss) {
       validation.issues.push({
         type: 'warning',
         message: `物件マスタに存在しない物件IDの部屋が${orphanedRoomsCount}件あります`,
-        category: 'orphaned_rooms'
+        category: 'orphaned_rooms',
       });
       if (orphanedRoomsCount < roomData.length * 0.1) {
         validation.score += 15;
@@ -648,7 +653,7 @@ function validateIdRelationships(ss) {
           const propId = String(inspectionData[i][inspPropertyIdIndex]).trim();
           const roomId = String(inspectionData[i][inspRoomIdIndex]).trim();
           const pair = `${propId}-${roomId}`;
-          
+
           if (validRoomPairs.has(pair)) {
             matchingRecords++;
           }
@@ -665,14 +670,14 @@ function validateIdRelationships(ss) {
           validation.issues.push({
             type: 'warning',
             message: `inspection_dataの${Math.round(100 - matchPercentage)}%がマスタデータと不一致です`,
-            category: 'data_mismatch'
+            category: 'data_mismatch',
           });
         }
 
         validation.details.inspectionDataMatching = {
           totalRecords: totalRecords,
           matchingRecords: matchingRecords,
-          percentage: Math.round(matchPercentage)
+          percentage: Math.round(matchPercentage),
         };
       }
     } else {
@@ -682,12 +687,11 @@ function validateIdRelationships(ss) {
     validation.details.propertyIdCount = propertyIds.size;
     validation.details.roomPropertyIdCount = roomPropertyIds.size;
     validation.details.orphanedRoomsCount = orphanedRoomsCount;
-
   } catch (error) {
     validation.issues.push({
       type: 'error',
       message: `ID関連性検証エラー: ${error.message}`,
-      category: 'validation_error'
+      category: 'validation_error',
     });
   }
 
@@ -703,21 +707,21 @@ function validateFunctionality(ss, options) {
     maxScore: 60,
     status: 'UNKNOWN',
     issues: [],
-    details: {}
+    details: {},
   };
 
   try {
     // 基本機能の存在確認
     const basicFunctions = [
       'formatAllPropertyIds',
-      'generateRoomIds', 
+      'generateRoomIds',
       'createInitialInspectionData',
       'runSystemDiagnostics',
-      'validateSystemSetup'
+      'validateSystemSetup',
     ];
 
     let availableFunctions = 0;
-    basicFunctions.forEach(funcName => {
+    basicFunctions.forEach((funcName) => {
       try {
         if (typeof this[funcName] === 'function' || typeof eval(funcName) === 'function') {
           availableFunctions++;
@@ -726,7 +730,7 @@ function validateFunctionality(ss, options) {
         validation.issues.push({
           type: 'warning',
           message: `関数${funcName}が利用できません`,
-          category: 'missing_function'
+          category: 'missing_function',
         });
       }
     });
@@ -746,7 +750,7 @@ function validateFunctionality(ss, options) {
       validation.issues.push({
         type: 'info',
         message: 'UI機能が制限されています（ライブラリ実行環境）',
-        category: 'ui_limited'
+        category: 'ui_limited',
       });
       validation.score += 10; // 部分点
       validation.details.uiAvailable = false;
@@ -761,7 +765,7 @@ function validateFunctionality(ss, options) {
       validation.issues.push({
         type: 'warning',
         message: 'システム設定が見つかりません',
-        category: 'missing_config'
+        category: 'missing_config',
       });
       validation.details.configAvailable = false;
     }
@@ -775,12 +779,11 @@ function validateFunctionality(ss, options) {
     } else {
       validation.status = 'FAIL';
     }
-
   } catch (error) {
     validation.issues.push({
       type: 'error',
       message: `機能動作検証エラー: ${error.message}`,
-      category: 'validation_error'
+      category: 'validation_error',
     });
     validation.status = 'ERROR';
   }
@@ -797,7 +800,7 @@ function validateIntegration(ss, options) {
     maxScore: 40,
     status: 'UNKNOWN',
     issues: [],
-    details: {}
+    details: {},
   };
 
   try {
@@ -818,7 +821,7 @@ function validateIntegration(ss, options) {
       validation.issues.push({
         type: 'error',
         message: 'スプレッドシートの書き込み権限がありません',
-        category: 'permission_error'
+        category: 'permission_error',
       });
       validation.details.writePermissions = false;
     }
@@ -829,7 +832,7 @@ function validateIntegration(ss, options) {
       PropertiesService.getScriptProperties().setProperty(testKey, 'test');
       const testValue = PropertiesService.getScriptProperties().getProperty(testKey);
       PropertiesService.getScriptProperties().deleteProperty(testKey);
-      
+
       if (testValue === 'test') {
         validation.score += 15;
         validation.details.propertiesService = true;
@@ -838,7 +841,7 @@ function validateIntegration(ss, options) {
       validation.issues.push({
         type: 'warning',
         message: 'PropertiesServiceが利用できません',
-        category: 'service_unavailable'
+        category: 'service_unavailable',
       });
       validation.details.propertiesService = false;
     }
@@ -852,12 +855,11 @@ function validateIntegration(ss, options) {
     } else {
       validation.status = 'FAIL';
     }
-
   } catch (error) {
     validation.issues.push({
       type: 'error',
       message: `統合動作検証エラー: ${error.message}`,
-      category: 'validation_error'
+      category: 'validation_error',
     });
     validation.status = 'ERROR';
   }
@@ -868,12 +870,12 @@ function validateIntegration(ss, options) {
 /**
  * 推奨事項を生成
  */
-function generateRecommendations(validation) {
+function generateValidationRecommendations(validation) {
   const recommendations = [];
 
   // エラーベースの推奨事項
-  Object.values(validation.categories).forEach(category => {
-    category.issues.forEach(issue => {
+  Object.values(validation.categories).forEach((category) => {
+    category.issues.forEach((issue) => {
       switch (issue.category) {
         case 'sheet_missing':
           recommendations.push('マスタシートテンプレート作成機能でシートを作成してください');
@@ -895,8 +897,9 @@ function generateRecommendations(validation) {
   });
 
   // スコアベースの推奨事項
-  const overallPercentage = validation.maxScore > 0 ? (validation.score / validation.maxScore) * 100 : 0;
-  
+  const overallPercentage =
+    validation.maxScore > 0 ? (validation.score / validation.maxScore) * 100 : 0;
+
   if (overallPercentage < 60) {
     recommendations.push('システムの再導入を検討してください');
     recommendations.push('導入ウィザードを使用して段階的にセットアップしてください');
@@ -913,14 +916,14 @@ function generateRecommendations(validation) {
  */
 function generateValidationSummary(validation, percentage) {
   let summary = `🔍 システムセットアップ検証結果\n\n`;
-  
+
   // 総合評価
   const statusEmoji = {
-    'EXCELLENT': '🌟',
-    'GOOD': '✅',
-    'ACCEPTABLE': '⚠️',
-    'NEEDS_IMPROVEMENT': '❌',
-    'FAILED': '🚨'
+    EXCELLENT: '🌟',
+    GOOD: '✅',
+    ACCEPTABLE: '⚠️',
+    NEEDS_IMPROVEMENT: '❌',
+    FAILED: '🚨',
   };
 
   summary += `📊 総合評価: ${statusEmoji[validation.overall] || '❓'} ${validation.overall}\n`;
@@ -929,29 +932,32 @@ function generateValidationSummary(validation, percentage) {
   // カテゴリ別結果
   summary += `📋 カテゴリ別結果:\n`;
   Object.entries(validation.categories).forEach(([key, category]) => {
-    const categoryName = {
-      sheets: 'シート構造',
-      data: 'データ整合性', 
-      functions: '機能動作',
-      integration: '統合動作'
-    }[key] || key;
+    const categoryName =
+      {
+        sheets: 'シート構造',
+        data: 'データ整合性',
+        functions: '機能動作',
+        integration: '統合動作',
+      }[key] || key;
 
-    const statusIcon = {
-      PASS: '✅',
-      WARNING: '⚠️',
-      FAIL: '❌',
-      ERROR: '🚨'
-    }[category.status] || '❓';
+    const statusIcon =
+      {
+        PASS: '✅',
+        WARNING: '⚠️',
+        FAIL: '❌',
+        ERROR: '🚨',
+      }[category.status] || '❓';
 
-    const categoryPercentage = category.maxScore > 0 ? Math.round((category.score / category.maxScore) * 100) : 0;
+    const categoryPercentage =
+      category.maxScore > 0 ? Math.round((category.score / category.maxScore) * 100) : 0;
     summary += `  ${statusIcon} ${categoryName}: ${categoryPercentage}%\n`;
   });
 
   // 主要な問題
   const errors = [];
   const warnings = [];
-  Object.values(validation.categories).forEach(category => {
-    category.issues.forEach(issue => {
+  Object.values(validation.categories).forEach((category) => {
+    category.issues.forEach((issue) => {
       if (issue.type === 'error') {
         errors.push(issue.message);
       } else if (issue.type === 'warning') {
@@ -962,7 +968,7 @@ function generateValidationSummary(validation, percentage) {
 
   if (errors.length > 0) {
     summary += `\n🚨 エラー (${errors.length}件):\n`;
-    errors.slice(0, 3).forEach(error => {
+    errors.slice(0, 3).forEach((error) => {
       summary += `  • ${error}\n`;
     });
     if (errors.length > 3) {
@@ -972,7 +978,7 @@ function generateValidationSummary(validation, percentage) {
 
   if (warnings.length > 0) {
     summary += `\n⚠️ 警告 (${warnings.length}件):\n`;
-    warnings.slice(0, 2).forEach(warning => {
+    warnings.slice(0, 2).forEach((warning) => {
       summary += `  • ${warning}\n`;
     });
     if (warnings.length > 2) {
@@ -983,7 +989,7 @@ function generateValidationSummary(validation, percentage) {
   // 推奨事項
   if (validation.recommendations.length > 0) {
     summary += `\n💡 推奨事項:\n`;
-    validation.recommendations.slice(0, 3).forEach(rec => {
+    validation.recommendations.slice(0, 3).forEach((rec) => {
       summary += `  • ${rec}\n`;
     });
   }
