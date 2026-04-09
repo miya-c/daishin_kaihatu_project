@@ -16,7 +16,7 @@ function createPropertyIndex() {
       CONFIG.SHEET_NAMES.PROPERTY_MASTER
     );
     if (!sheet) {
-      throw new Error('物件マスタシートが見つかりません');
+      return { success: false, error: '物件マスタシートが見つかりません' };
     }
 
     const data = sheet.getDataRange().getValues();
@@ -44,10 +44,10 @@ function createPropertyIndex() {
     console.log(
       `[createPropertyIndex] ${Object.keys(propertyIndex).length}件の物件をインデックス化`
     );
-    return propertyIndex;
+    return { success: true, data: propertyIndex };
   } catch (error) {
     console.error('[createPropertyIndex] エラー:', error);
-    throw error;
+    return { success: false, error: error.message };
   }
 }
 
@@ -63,7 +63,7 @@ function createRoomIndex() {
       CONFIG.SHEET_NAMES.ROOM_MASTER
     );
     if (!sheet) {
-      throw new Error('部屋マスタシートが見つかりません');
+      return { success: false, error: '部屋マスタシートが見つかりません' };
     }
 
     const data = sheet.getDataRange().getValues();
@@ -76,7 +76,7 @@ function createRoomIndex() {
     const propertyIdColIndex = headers.indexOf('物件ID');
 
     if (roomIdColIndex === -1) {
-      throw new Error('部屋マスタに「部屋ID」列が見つかりません');
+      return { success: false, error: '部屋マスタに「部屋ID」列が見つかりません' };
     }
 
     // ヘッダー行をスキップして処理
@@ -108,12 +108,13 @@ function createRoomIndex() {
 
     console.log(`[createRoomIndex] ${Object.keys(roomIndex).length}件の部屋をインデックス化`);
     return {
+      success: true,
       roomIndex,
       propertyRoomIndex,
     };
   } catch (error) {
     console.error('[createRoomIndex] エラー:', error);
-    throw error;
+    return { success: false, error: error.message };
   }
 }
 
@@ -129,7 +130,7 @@ function createMeterReadingIndex() {
       CONFIG.SHEET_NAMES.INSPECTION_DATA
     );
     if (!sheet) {
-      throw new Error('検針データシートが見つかりません');
+      return { success: false, error: '検針データシートが見つかりません' };
     }
 
     const data = sheet.getDataRange().getValues();
@@ -185,13 +186,14 @@ function createMeterReadingIndex() {
       `[createMeterReadingIndex] ${Object.keys(meterIndex).length}件の検針データをインデックス化`
     );
     return {
+      success: true,
       meterIndex,
       roomMeterIndex,
       dateIndex,
     };
   } catch (error) {
     console.error('[createMeterReadingIndex] エラー:', error);
-    throw error;
+    return { success: false, error: error.message };
   }
 }
 
@@ -203,25 +205,30 @@ function createAllIndexes() {
   try {
     console.log('[createAllIndexes] 全インデックス作成開始');
 
-    const propertyIndex = createPropertyIndex();
-    const roomIndexes = createRoomIndex();
-    const meterIndexes = createMeterReadingIndex();
+    const propertyResult = createPropertyIndex();
+    if (!propertyResult.success) return propertyResult;
+
+    const roomResult = createRoomIndex();
+    if (!roomResult.success) return roomResult;
+
+    const meterResult = createMeterReadingIndex();
+    if (!meterResult.success) return meterResult;
 
     const allIndexes = {
-      property: propertyIndex,
-      room: roomIndexes.roomIndex,
-      propertyRoom: roomIndexes.propertyRoomIndex,
-      meter: meterIndexes.meterIndex,
-      roomMeter: meterIndexes.roomMeterIndex,
-      dateMeter: meterIndexes.dateIndex,
+      property: propertyResult.data,
+      room: roomResult.roomIndex,
+      propertyRoom: roomResult.propertyRoomIndex,
+      meter: meterResult.meterIndex,
+      roomMeter: meterResult.roomMeterIndex,
+      dateMeter: meterResult.dateIndex,
       created: new Date(),
     };
 
     console.log('[createAllIndexes] 全インデックス作成完了');
-    return allIndexes;
+    return { success: true, data: allIndexes };
   } catch (error) {
     console.error('[createAllIndexes] エラー:', error);
-    throw error;
+    return { success: false, error: error.message };
   }
 }
 
@@ -236,53 +243,60 @@ function fastSearch(type, key, indexes = null) {
   try {
     // 引数バリデーション
     if (!type) {
-      throw new Error(
-        '検索タイプが指定されていません。使用可能なタイプ: property, room, meter, propertyRooms, roomMeters'
-      );
+      return {
+        success: false,
+        error:
+          '検索タイプが指定されていません。使用可能なタイプ: property, room, meter, propertyRooms, roomMeters',
+      };
     }
 
     if (!key) {
-      throw new Error('検索キーが指定されていません');
+      return { success: false, error: '検索キーが指定されていません' };
     }
 
     const validTypes = ['property', 'room', 'meter', 'propertyRooms', 'roomMeters'];
     if (!validTypes.includes(type)) {
-      throw new Error(`不明な検索タイプ: "${type}". 使用可能なタイプ: ${validTypes.join(', ')}`);
+      return {
+        success: false,
+        error: '不明な検索タイプ: "' + type + '". 使用可能なタイプ: ' + validTypes.join(', '),
+      };
     }
 
     console.log(`[fastSearch] 検索開始: type="${type}", key="${key}"`);
 
     if (!indexes) {
       console.log('[fastSearch] インデックスを新規作成中...');
-      indexes = createAllIndexes();
+      const indexResult = createAllIndexes();
+      if (!indexResult.success) return indexResult;
+      indexes = indexResult.data;
     }
 
     // インデックスの存在確認
     if (!indexes || typeof indexes !== 'object') {
-      throw new Error('インデックスの作成に失敗しました');
+      return { success: false, error: 'インデックスの作成に失敗しました' };
     }
 
     switch (type) {
       case 'property':
-        return indexes.property[key] || null;
+        return { success: true, data: indexes.property[key] || null };
 
       case 'room':
-        return indexes.room[key] || null;
+        return { success: true, data: indexes.room[key] || null };
 
       case 'meter':
-        return indexes.meter[key] || null;
+        return { success: true, data: indexes.meter[key] || null };
 
       case 'propertyRooms':
-        return indexes.propertyRoom[key] || [];
+        return { success: true, data: indexes.propertyRoom[key] || [] };
 
       case 'roomMeters':
-        return indexes.roomMeter[key] || [];
+        return { success: true, data: indexes.roomMeter[key] || [] };
 
       default:
-        throw new Error(`不明な検索タイプ: ${type}`);
+        return { success: false, error: '不明な検索タイプ: ' + type };
     }
   } catch (error) {
     console.error('[fastSearch] エラー:', error);
-    throw error;
+    return { success: false, error: error.message };
   }
 }

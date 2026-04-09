@@ -14,24 +14,25 @@ function getProperties() {
     const sheet = ss.getSheetByName(CONFIG.SHEET_NAMES.PROPERTY_MASTER);
 
     if (!sheet) {
-      throw new Error('物件マスタシートが見つかりません');
+      return { success: false, error: '物件マスタシートが見つかりません' };
     }
 
     const data = sheet.getDataRange().getValues();
     if (data.length <= 1) {
-      return [];
+      return { success: true, data: [] };
     }
 
     const headers = data[0];
-    return data.slice(1).map((row) => {
+    const properties = data.slice(1).map((row) => {
       const property = {};
       headers.forEach((header, colIndex) => {
         property[header] = row[colIndex];
       });
       return property;
     });
+    return { success: true, data: properties };
   } catch (error) {
-    throw error;
+    return { success: false, error: error.message };
   }
 }
 
@@ -44,7 +45,7 @@ function getProperties() {
 function getRooms(propertyId) {
   try {
     if (!propertyId) {
-      throw new Error('物件IDが指定されていません');
+      return { success: false, error: '物件IDが指定されていません' };
     }
 
     const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -52,17 +53,17 @@ function getRooms(propertyId) {
     const roomSheet = ss.getSheetByName(CONFIG.SHEET_NAMES.ROOM_MASTER);
 
     if (!propertySheet) {
-      throw new Error('物件マスタシートが見つかりません');
+      return { success: false, error: '物件マスタシートが見つかりません' };
     }
 
     if (!roomSheet) {
-      throw new Error('部屋マスタシートが見つかりません');
+      return { success: false, error: '部屋マスタシートが見つかりません' };
     }
 
     // 物件情報取得（物件マスタ.csv: 物件ID,物件名,検針完了日）
     const propertyData = propertySheet.getDataRange().getValues();
     if (propertyData.length <= 1) {
-      throw new Error('物件マスタにデータがありません');
+      return { success: false, error: '物件マスタにデータがありません' };
     }
 
     const propertyHeaders = propertyData[0];
@@ -70,11 +71,11 @@ function getRooms(propertyId) {
     const propertyNameIndex = propertyHeaders.indexOf('物件名'); // 列B (1)
 
     if (propertyIdIndex === -1) {
-      throw new Error('物件マスタに「物件ID」列が見つかりません');
+      return { success: false, error: '物件マスタに「物件ID」列が見つかりません' };
     }
 
     if (propertyNameIndex === -1) {
-      throw new Error('物件マスタに「物件名」列が見つかりません');
+      return { success: false, error: '物件マスタに「物件名」列が見つかりません' };
     }
 
     // 指定された物件IDの物件情報を検索
@@ -83,7 +84,10 @@ function getRooms(propertyId) {
       .find((row) => String(row[propertyIdIndex]).trim() === String(propertyId).trim());
 
     if (!propertyRow) {
-      throw new Error(`指定された物件ID「${propertyId}」が物件マスタに見つかりません`);
+      return {
+        success: false,
+        error: `指定された物件ID「${propertyId}」が物件マスタに見つかりません`,
+      };
     }
 
     const propertyInfo = {
@@ -95,8 +99,11 @@ function getRooms(propertyId) {
     const roomData = roomSheet.getDataRange().getValues();
     if (roomData.length <= 1) {
       return {
-        property: propertyInfo,
-        rooms: [],
+        success: true,
+        data: {
+          property: propertyInfo,
+          rooms: [],
+        },
       };
     }
 
@@ -106,7 +113,10 @@ function getRooms(propertyId) {
     const roomNameIndex = roomHeaders.indexOf('部屋名'); // 列C (2)
 
     if (roomPropertyIdIndex === -1 || roomIdIndex === -1 || roomNameIndex === -1) {
-      throw new Error('部屋マスタに必要な列（物件ID、部屋ID、部屋名）が見つかりません');
+      return {
+        success: false,
+        error: '部屋マスタに必要な列（物件ID、部屋ID、部屋名）が見つかりません',
+      };
     }
 
     const rooms = roomData
@@ -247,10 +257,10 @@ function getRooms(propertyId) {
       rooms: rooms,
     };
 
-    return result;
+    return { success: true, data: result };
   } catch (error) {
     Logger.log(`getRooms エラー: ${error.message}`);
-    throw error;
+    return { success: false, error: error.message };
   }
 }
 
@@ -264,7 +274,7 @@ function getRooms(propertyId) {
 function getRoomsLight(propertyId, lastSync = null) {
   try {
     if (!propertyId) {
-      throw new Error('物件IDが指定されていません');
+      return { success: false, error: '物件IDが指定されていません' };
     }
 
     const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -272,7 +282,7 @@ function getRoomsLight(propertyId, lastSync = null) {
     const roomSheet = ss.getSheetByName(CONFIG.SHEET_NAMES.ROOM_MASTER);
 
     if (!propertySheet || !roomSheet) {
-      throw new Error('必要なシートが見つかりません');
+      return { success: false, error: '必要なシートが見つかりません' };
     }
 
     // 物件情報取得（軽量版）
@@ -286,7 +296,7 @@ function getRoomsLight(propertyId, lastSync = null) {
       .find((row) => String(row[propertyIdIndex]).trim() === String(propertyId).trim());
 
     if (!propertyRow) {
-      throw new Error(`物件ID「${propertyId}」が見つかりません`);
+      return { success: false, error: `物件ID「${propertyId}」が見つかりません` };
     }
 
     const propertyInfo = {
@@ -503,7 +513,7 @@ function getRoomsLight(propertyId, lastSync = null) {
     };
   } catch (error) {
     Logger.log(`[getRoomsLight] エラー: ${error.message}`);
-    throw error;
+    return { success: false, error: error.message };
   }
 }
 
@@ -518,7 +528,7 @@ function getRoomsLight(propertyId, lastSync = null) {
 function getMeterReadings(propertyId, roomId) {
   try {
     if (!propertyId || !roomId) {
-      throw new Error('物件IDと部屋IDが必要です');
+      return { success: false, error: '物件IDと部屋IDが必要です' };
     }
 
     const CACHE_TTL = 300;
@@ -531,13 +541,14 @@ function getMeterReadings(propertyId, roomId) {
       const inspectionSheet = ss.getSheetByName(CONFIG.SHEET_NAMES.INSPECTION_DATA);
 
       if (!inspectionSheet) {
-        throw new Error('inspection_dataシートが見つかりません');
+        return { success: false, error: 'inspection_dataシートが見つかりません' };
       }
 
       const inspectionData = inspectionSheet.getDataRange().getValues();
       if (inspectionData.length <= 1) {
         const fallbackNames = getFallbackNames(propertyId, roomId);
         return {
+          success: true,
           propertyName: fallbackNames.propertyName,
           roomName: fallbackNames.roomName,
           readings: [],
@@ -549,7 +560,7 @@ function getMeterReadings(propertyId, roomId) {
       const roomIdCol = headers.indexOf('部屋ID');
 
       if (propertyIdCol === -1 || roomIdCol === -1) {
-        throw new Error('必要な列（物件ID、部屋ID）が見つかりません');
+        return { success: false, error: '必要な列（物件ID、部屋ID）が見つかりません' };
       }
 
       roomIndex = {};
@@ -602,13 +613,14 @@ function getMeterReadings(propertyId, roomId) {
     }
 
     return {
+      success: true,
       propertyName: propertyName,
       roomName: roomName,
       readings: readings,
     };
   } catch (error) {
     Logger.log('[getMeterReadings] エラー: ' + error.message);
-    throw error;
+    return { success: false, error: error.message };
   }
 }
 
@@ -690,7 +702,7 @@ function updateMeterReadings(propertyId, roomId, readings) {
   const lock = LockService.getScriptLock();
   try {
     if (!propertyId || !roomId || !Array.isArray(readings) || readings.length === 0) {
-      throw new Error('無効なパラメータ');
+      return { success: false, error: '無効なパラメータ' };
     }
 
     // 排他制御: ロック取得（30秒タイムアウト）
@@ -734,7 +746,7 @@ function updateMeterReadings(propertyId, roomId, readings) {
     // 警告フラグ列が存在しない場合のエラーハンドリング
     if (colIndexes.warningFlag === -1) {
       Logger.log(`[updateMeterReadings] ❌ 警告フラグ列が見つかりません！`);
-      throw new Error('警告フラグ列が見つかりません');
+      return { success: false, error: '警告フラグ列が見つかりません' };
     }
 
     // 必須列の存在確認
@@ -744,7 +756,10 @@ function updateMeterReadings(propertyId, roomId, readings) {
       colIndexes.date === -1 ||
       colIndexes.currentReading === -1
     ) {
-      throw new Error(`必要な列が見つかりません。利用可能な列: ${headers.join(', ')}`);
+      return {
+        success: false,
+        error: `必要な列が見つかりません。利用可能な列: ${headers.join(', ')}`,
+      };
     }
 
     let updatedRowCount = 0;
@@ -981,8 +996,9 @@ function validateRoomId(propertyId, roomId) {
   try {
     if (!propertyId || !roomId) return false;
 
-    const roomData = getRooms(propertyId);
-    return roomData.rooms.some((room) => String(room.id).trim() === String(roomId).trim());
+    const roomResult = getRooms(propertyId);
+    if (!roomResult.success || !roomResult.data) return false;
+    return roomResult.data.rooms.some((room) => String(room.id).trim() === String(roomId).trim());
   } catch (error) {
     return false;
   }
@@ -1463,6 +1479,7 @@ function validateSaveAndNavigateParams(params) {
         for (const field of requiredReadingFields) {
           if (reading[field] === undefined || reading[field] === null) {
             return {
+              success: true,
               success: false,
               error: `検針データ[${i}]に必須フィールド「${field}」がありません`,
               details: {
@@ -1679,16 +1696,14 @@ function performNavigationOperation(params) {
     const result = getMeterReadings(propertyId, targetRoomId);
     const operationDuration = Date.now() - operationStartTime;
 
-    // 結果の詳細検証
-    if (!result) {
+    if (!result || !result.success) {
       return {
         success: false,
-        error: 'ナビゲーションデータの取得関数がnullを返しました',
-        errorType: 'NULL_RESULT_ERROR',
+        error: result?.error || 'ナビゲーションデータの取得に失敗しました',
+        errorType: 'NAVIGATION_DATA_ERROR',
         details: {
           operationTime: operationDuration,
           targetRoom: targetRoomId,
-          resultType: typeof result,
         },
       };
     }

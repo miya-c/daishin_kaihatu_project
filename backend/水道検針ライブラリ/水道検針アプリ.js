@@ -67,7 +67,16 @@ function createSystemSetupMenu() {
 function showPropertiesList() {
   try {
     logWithLevel('INFO', 'showPropertiesList開始', 'メニューから呼び出し');
-    const properties = getProperties();
+    const propResult = getProperties();
+
+    if (!propResult.success) {
+      if (typeof safeAlert === 'function') {
+        safeAlert('エラー', propResult.error);
+      }
+      return { success: false, error: propResult.error };
+    }
+
+    const properties = propResult.data;
 
     if (!properties || properties.length === 0) {
       if (typeof safeAlert === 'function') {
@@ -133,8 +142,15 @@ function showRoomsDialog() {
 
     // 部屋一覧取得
     logWithLevel('INFO', 'getRooms呼び出し', `物件ID: ${propertyId}`);
-    const roomsData = getRooms(propertyId);
-    logWithLevel('INFO', 'getRooms結果', roomsData ? '成功' : '失敗');
+    const roomsResult = getRooms(propertyId);
+    logWithLevel('INFO', 'getRooms結果', roomsResult?.success ? '成功' : '失敗');
+
+    if (!roomsResult || !roomsResult.success) {
+      safeAlert('エラー', roomsResult?.error || '部屋データの取得に失敗しました。');
+      return { success: false, error: roomsResult?.error || 'getRooms失敗' };
+    }
+
+    const roomsData = roomsResult.data;
 
     if (!roomsData || !roomsData.rooms || roomsData.rooms.length === 0) {
       safeAlert('部屋データなし', `物件ID「${propertyId}」に対応する部屋が見つかりません。`);
@@ -212,7 +228,12 @@ function openMeterReadingInput() {
     }
 
     // 現在の検針データを取得
-    const currentData = getMeterReadings(propertyId, roomId);
+    const meterResult = getMeterReadings(propertyId, roomId);
+    if (!meterResult || !meterResult.success) {
+      safeAlert('エラー', meterResult?.error || '検針データの取得に失敗しました。');
+      return { success: false, error: meterResult?.error || 'getMeterReadings失敗' };
+    }
+    const currentData = meterResult;
 
     let inputMessage = `🏠 物件: ${currentData.propertyName || propertyId}\n`;
     inputMessage += `🚪 部屋: ${currentData.roomName || roomId}\n\n`;

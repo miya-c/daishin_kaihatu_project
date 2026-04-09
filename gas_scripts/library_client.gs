@@ -113,7 +113,14 @@ function showWaterMeterWebApp() {
  */
 function showPropertiesList() {
   try {
-    const properties = cmlibrary.getProperties();
+    const propResult = cmlibrary.getProperties();
+    
+    if (!propResult || !propResult.success) {
+      SpreadsheetApp.getUi().alert('エラー', propResult?.error || '物件データの取得に失敗しました。', SpreadsheetApp.getUi().ButtonSet.OK);
+      return;
+    }
+    
+    const properties = propResult.data;
     
     if (!properties || properties.length === 0) {
       SpreadsheetApp.getUi().alert('物件データなし', 
@@ -161,7 +168,14 @@ function showRoomsList() {
     }
     
     // 部屋一覧取得
-    const roomsData = cmlibrary.getRooms(propertyId);
+    const roomsResult = cmlibrary.getRooms(propertyId);
+    
+    if (!roomsResult || !roomsResult.success) {
+      ui.alert('エラー', roomsResult?.error || '部屋データの取得に失敗しました。', ui.ButtonSet.OK);
+      return;
+    }
+    
+    const roomsData = roomsResult.data;
     
     if (!roomsData || !roomsData.rooms || roomsData.rooms.length === 0) {
       ui.alert('部屋データなし', 
@@ -320,12 +334,12 @@ function validateDataIntegrity() {
  * cmlibraryのdata_indexes.gsの関数を使用
  */
 function createAllIndexes() {
-  try {
-    return cmlibrary.createAllIndexes();
-  } catch (error) {
-    console.error('インデックス作成エラー:', error);
-    throw error;
+  const result = cmlibrary.createAllIndexes();
+  if (!result.success) {
+    console.error('インデックス作成エラー:', result.error);
+    SpreadsheetApp.getUi().alert('エラー', 'インデックス作成に失敗しました: ' + result.error);
   }
+  return result;
 }
 
 /**

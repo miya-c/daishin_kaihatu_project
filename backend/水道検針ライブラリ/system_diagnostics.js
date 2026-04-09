@@ -119,7 +119,8 @@ function runSystemDiagnostics(options = {}) {
 
       // 物件数カウント
       if (spreadsheet.getSheetByName(CONFIG.SHEET_NAMES.PROPERTY_MASTER)) {
-        const propertyCount = getProperties().length;
+        const propResult = getProperties();
+        const propertyCount = propResult.success ? propResult.data.length : 0;
         diagnostics.performance.propertyCount = propertyCount;
       }
 

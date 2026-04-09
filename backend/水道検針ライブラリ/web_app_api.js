@@ -124,16 +124,18 @@ function doGet(e) {
         });
 
       case 'getProperties':
-        // 認証チェック（移行期間中はkeyなしでも許可）
         const propAuth = validateApiKey(e.parameter, false);
         if (!propAuth.authorized) {
           return createCorsJsonResponse({ success: false, error: propAuth.error });
         }
-        const properties = getProperties();
+        const propResult = getProperties();
+        if (!propResult.success) {
+          return createCorsJsonResponse({ success: false, error: propResult.error });
+        }
         return createCorsJsonResponse({
           success: true,
-          data: Array.isArray(properties) ? properties : [],
-          count: Array.isArray(properties) ? properties.length : 0,
+          data: propResult.data,
+          count: propResult.data.length,
         });
 
       case 'getRooms':
@@ -144,16 +146,18 @@ function doGet(e) {
               error: 'propertyIdが必要です',
             });
           }
-          // バリデーション
           const roomsValidation = sanitizeApiParams(e.parameter);
           if (!roomsValidation.valid) {
             return createCorsJsonResponse({ success: false, error: roomsValidation.error });
           }
           const roomsResult = getRooms(e.parameter.propertyId);
+          if (!roomsResult.success) {
+            return createCorsJsonResponse({ success: false, error: roomsResult.error });
+          }
           return createCorsJsonResponse({
             success: true,
-            data: roomsResult, // {property: {...}, rooms: [...]} 形式
-            message: `${roomsResult.rooms ? roomsResult.rooms.length : 0}件の部屋データを取得しました`,
+            data: roomsResult.data,
+            message: `${roomsResult.data.rooms ? roomsResult.data.rooms.length : 0}件の部屋データを取得しました`,
           });
         } catch (error) {
           Logger.log(`getRooms API エラー: ${error.message}`);
@@ -180,23 +184,18 @@ function doGet(e) {
         try {
           const result = getMeterReadings(e.parameter.propertyId, e.parameter.roomId);
 
-          if (result && typeof result === 'object' && result.hasOwnProperty('propertyName')) {
-            return createCorsJsonResponse({
-              success: true,
-              data: {
-                propertyName: result.propertyName || '物件名不明',
-                roomName: result.roomName || '部屋名不明',
-                readings: Array.isArray(result.readings) ? result.readings : [],
-              },
-            });
-          } else if (Array.isArray(result)) {
-            return createCorsJsonResponse({
-              success: true,
-              data: result,
-            });
-          } else {
-            throw new Error('getMeterReadings関数の戻り値が予期しない形式です');
+          if (!result.success) {
+            return createCorsJsonResponse({ success: false, error: result.error });
           }
+
+          return createCorsJsonResponse({
+            success: true,
+            data: {
+              propertyName: result.propertyName || '物件名不明',
+              roomName: result.roomName || '部屋名不明',
+              readings: Array.isArray(result.readings) ? result.readings : [],
+            },
+          });
         } catch (error) {
           Logger.log(`[web_app_api] getMeterReadingsエラー: ${error.message}`);
           return createCorsJsonResponse({
@@ -232,6 +231,9 @@ function doGet(e) {
           }
 
           const roomsLightResult = getRoomsLight(e.parameter.propertyId, e.parameter.lastSync);
+          if (!roomsLightResult.success) {
+            return createCorsJsonResponse({ success: false, error: roomsLightResult.error });
+          }
           return createCorsJsonResponse({
             success: true,
             data: roomsLightResult,
@@ -674,14 +676,22 @@ function executeLegacyFallback(params) {
     const saveResult = updateMeterReadings(propertyId, currentRoomId, readings);
 
     if (!saveResult || !saveResult.success) {
-      throw new Error(`保存失敗: ${saveResult?.error || '不明なエラー'}`);
+      return createCorsJsonResponse({
+        success: false,
+        error: `保存失敗: ${saveResult?.error || '不明なエラー'}`,
+        fallbackMode: true,
+      });
     }
 
     // 2. 既存のgetMeterReadings実行
     const navResult = getMeterReadings(propertyId, targetRoomId);
 
     if (!navResult) {
-      throw new Error('ナビゲーションデータ取得失敗');
+      return createCorsJsonResponse({
+        success: false,
+        error: 'ナビゲーションデータ取得失敗',
+        fallbackMode: true,
+      });
     }
 
     // 3. レガシー形式でレスポンス構築
