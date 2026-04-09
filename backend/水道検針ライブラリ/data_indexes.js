@@ -12,7 +12,9 @@ function createPropertyIndex() {
   try {
     console.log('[createPropertyIndex] 物件マスタインデックス作成開始');
 
-    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('物件マスタ');
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(
+      CONFIG.SHEET_NAMES.PROPERTY_MASTER
+    );
     if (!sheet) {
       throw new Error('物件マスタシートが見つかりません');
     }
@@ -57,7 +59,9 @@ function createRoomIndex() {
   try {
     console.log('[createRoomIndex] 部屋マスタインデックス作成開始');
 
-    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('部屋マスタ');
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(
+      CONFIG.SHEET_NAMES.ROOM_MASTER
+    );
     if (!sheet) {
       throw new Error('部屋マスタシートが見つかりません');
     }
@@ -121,7 +125,9 @@ function createMeterReadingIndex() {
   try {
     console.log('[createMeterReadingIndex] 検針データインデックス作成開始');
 
-    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('inspection_data');
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(
+      CONFIG.SHEET_NAMES.INSPECTION_DATA
+    );
     if (!sheet) {
       throw new Error('検針データシートが見つかりません');
     }

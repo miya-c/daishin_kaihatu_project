@@ -27,7 +27,7 @@ function optimizedCleanupDuplicateInspectionData(ss = null, config = {}) {
     Logger.log('🧹 重複データクリーンアップを開始します...');
     const startTime = new Date();
 
-    const sheetName = config.inspectionDataSheetName || 'inspection_data';
+    const sheetName = config.inspectionDataSheetName || CONFIG.SHEET_NAMES.INSPECTION_DATA;
     const inspectionSheet = ss.getSheetByName(sheetName);
     if (!inspectionSheet) {
       const error = `${sheetName}シートが見つかりません`;
@@ -161,8 +161,12 @@ function cleanUpOrphanedRooms(ss = null, config = {}) {
     Logger.log('🔍 孤立した部屋データの削除を開始します...');
     const startTime = new Date();
 
-    const propertyMasterSheet = ss.getSheetByName(config.propertyMasterSheetName || '物件マスタ');
-    const roomMasterSheet = ss.getSheetByName(config.roomMasterSheetName || '部屋マスタ');
+    const propertyMasterSheet = ss.getSheetByName(
+      config.propertyMasterSheetName || CONFIG.SHEET_NAMES.PROPERTY_MASTER
+    );
+    const roomMasterSheet = ss.getSheetByName(
+      config.roomMasterSheetName || CONFIG.SHEET_NAMES.ROOM_MASTER
+    );
 
     if (!propertyMasterSheet) {
       const error = '物件マスタシートが見つかりません';

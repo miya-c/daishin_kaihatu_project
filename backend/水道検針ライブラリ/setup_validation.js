@@ -121,10 +121,10 @@ function validateSheetStructure(ss, options) {
 
   try {
     const requiredSheets = [
-      { name: '物件マスタ', required: true, score: 15 },
-      { name: '部屋マスタ', required: true, score: 15 },
-      { name: 'inspection_data', required: true, score: 20 },
-      { name: '設定値', required: false, score: 10 },
+      { name: CONFIG.SHEET_NAMES.PROPERTY_MASTER, required: true, score: 15 },
+      { name: CONFIG.SHEET_NAMES.ROOM_MASTER, required: true, score: 15 },
+      { name: CONFIG.SHEET_NAMES.INSPECTION_DATA, required: true, score: 20 },
+      { name: CONFIG.SHEET_NAMES.SETTINGS, required: false, score: 10 },
     ];
 
     requiredSheets.forEach((sheetDef) => {
@@ -316,7 +316,7 @@ function validatePropertyMasterData(ss) {
   };
 
   try {
-    const sheet = ss.getSheetByName('物件マスタ');
+    const sheet = ss.getSheetByName(CONFIG.SHEET_NAMES.PROPERTY_MASTER);
     if (!sheet) {
       validation.issues.push({
         type: 'error',
@@ -436,7 +436,7 @@ function validateRoomMasterData(ss) {
   };
 
   try {
-    const sheet = ss.getSheetByName('部屋マスタ');
+    const sheet = ss.getSheetByName(CONFIG.SHEET_NAMES.ROOM_MASTER);
     if (!sheet) {
       validation.issues.push({
         type: 'error',
@@ -553,9 +553,9 @@ function validateIdRelationships(ss) {
 
   try {
     // 物件マスタと部屋マスタの物件ID一致確認
-    const propertyMasterSheet = ss.getSheetByName('物件マスタ');
-    const roomMasterSheet = ss.getSheetByName('部屋マスタ');
-    const inspectionDataSheet = ss.getSheetByName('inspection_data');
+    const propertyMasterSheet = ss.getSheetByName(CONFIG.SHEET_NAMES.PROPERTY_MASTER);
+    const roomMasterSheet = ss.getSheetByName(CONFIG.SHEET_NAMES.ROOM_MASTER);
+    const inspectionDataSheet = ss.getSheetByName(CONFIG.SHEET_NAMES.INSPECTION_DATA);
 
     if (!propertyMasterSheet || !roomMasterSheet) {
       validation.issues.push({
@@ -757,7 +757,7 @@ function validateFunctionality(ss, options) {
     }
 
     // システム設定の確認
-    const configSheet = ss.getSheetByName('設定値');
+    const configSheet = ss.getSheetByName(CONFIG.SHEET_NAMES.SETTINGS);
     if (configSheet && configSheet.getLastRow() > 1) {
       validation.score += 15;
       validation.details.configAvailable = true;

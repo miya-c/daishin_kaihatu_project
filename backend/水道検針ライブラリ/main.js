@@ -45,8 +45,6 @@ function getLibraryInfo() {
       'populateInspectionDataFromMasters',
       'createInitialInspectionData',
       'processInspectionDataMonthlyImpl',
-      'updateInspectionData',
-      'searchInspectionData',
       'validateInspectionDataIntegrity',
       'formatPropertyIdsInPropertyMaster',
       'formatPropertyIdsInRoomMaster',

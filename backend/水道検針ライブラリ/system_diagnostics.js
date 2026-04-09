@@ -118,7 +118,7 @@ function runSystemDiagnostics(options = {}) {
       const startTime = Date.now();
 
       // 物件数カウント
-      if (spreadsheet.getSheetByName('物件マスタ')) {
+      if (spreadsheet.getSheetByName(CONFIG.SHEET_NAMES.PROPERTY_MASTER)) {
         const propertyCount = getProperties().length;
         diagnostics.performance.propertyCount = propertyCount;
       }

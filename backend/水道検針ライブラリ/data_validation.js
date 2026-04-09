@@ -13,7 +13,7 @@ function validateInspectionDataIntegrity(ss = null, config = {}) {
   if (!ss) {
     ss = SpreadsheetApp.getActiveSpreadsheet();
   }
-  
+
   if (!ss) {
     Logger.log('エラー: アクティブなスプレッドシートが見つかりません');
     return { success: false, error: 'スプレッドシートが見つかりません' };
@@ -24,9 +24,15 @@ function validateInspectionDataIntegrity(ss = null, config = {}) {
     const startTime = new Date();
 
     // 各マスタシートを取得
-    const propertyMasterSheet = ss.getSheetByName(config.propertyMasterSheetName || '物件マスタ');
-    const roomMasterSheet = ss.getSheetByName(config.roomMasterSheetName || '部屋マスタ');
-    const inspectionDataSheet = ss.getSheetByName(config.inspectionDataSheetName || 'inspection_data');
+    const propertyMasterSheet = ss.getSheetByName(
+      config.propertyMasterSheetName || CONFIG.SHEET_NAMES.PROPERTY_MASTER
+    );
+    const roomMasterSheet = ss.getSheetByName(
+      config.roomMasterSheetName || CONFIG.SHEET_NAMES.ROOM_MASTER
+    );
+    const inspectionDataSheet = ss.getSheetByName(
+      config.inspectionDataSheetName || CONFIG.SHEET_NAMES.INSPECTION_DATA
+    );
 
     if (!propertyMasterSheet || !roomMasterSheet || !inspectionDataSheet) {
       const error = '必要なシート（物件マスタ、部屋マスタ、inspection_data）が見つかりません';
@@ -92,7 +98,7 @@ function validateInspectionDataIntegrity(ss = null, config = {}) {
           row: i + 1,
           propertyId: propertyId,
           roomId: roomId,
-          issues: issues
+          issues: issues,
         });
       } else {
         validRecords++;
@@ -111,9 +117,9 @@ function validateInspectionDataIntegrity(ss = null, config = {}) {
         validPropertyIds: validPropertyIds.size,
         validRoomIds: validRoomIds.size,
         validCombinations: validPropertyRoomCombinations.size,
-        duration: duration
+        duration: duration,
       },
-      invalidRecords: invalidRecords
+      invalidRecords: invalidRecords,
     };
 
     Logger.log(`✅ データ整合性チェック完了`);
@@ -123,7 +129,6 @@ function validateInspectionDataIntegrity(ss = null, config = {}) {
     Logger.log(`⏱️ 処理時間: ${duration}ms`);
 
     return result;
-
   } catch (error) {
     Logger.log(`❌ データ整合性チェック中にエラーが発生しました: ${error.message}`);
     return { success: false, error: error.message };
@@ -140,14 +145,16 @@ function validatePropertyMasterDuplicates(ss = null, config = {}) {
   if (!ss) {
     ss = SpreadsheetApp.getActiveSpreadsheet();
   }
-  
+
   if (!ss) {
     Logger.log('エラー: スプレッドシートが見つかりません');
     return { success: false, error: 'スプレッドシートが見つかりません' };
   }
 
   try {
-    const propertyMasterSheet = ss.getSheetByName(config.propertyMasterSheetName || '物件マスタ');
+    const propertyMasterSheet = ss.getSheetByName(
+      config.propertyMasterSheetName || CONFIG.SHEET_NAMES.PROPERTY_MASTER
+    );
     if (!propertyMasterSheet) {
       return { success: false, error: '物件マスタシートが見つかりません' };
     }
@@ -162,7 +169,7 @@ function validatePropertyMasterDuplicates(ss = null, config = {}) {
         if (seenIds.has(propertyId)) {
           duplicates.push({
             propertyId: propertyId,
-            rows: [seenIds.get(propertyId), i + 1]
+            rows: [seenIds.get(propertyId), i + 1],
           });
         } else {
           seenIds.set(propertyId, i + 1);
@@ -174,9 +181,8 @@ function validatePropertyMasterDuplicates(ss = null, config = {}) {
       success: true,
       duplicates: duplicates,
       totalRecords: data.length - 1,
-      duplicateCount: duplicates.length
+      duplicateCount: duplicates.length,
     };
-
   } catch (error) {
     Logger.log(`❌ 物件マスタ重複チェック中にエラーが発生しました: ${error.message}`);
     return { success: false, error: error.message };
@@ -193,14 +199,16 @@ function validateRoomMasterDuplicates(ss = null, config = {}) {
   if (!ss) {
     ss = SpreadsheetApp.getActiveSpreadsheet();
   }
-  
+
   if (!ss) {
     Logger.log('エラー: スプレッドシートが見つかりません');
     return { success: false, error: 'スプレッドシートが見つかりません' };
   }
 
   try {
-    const roomMasterSheet = ss.getSheetByName(config.roomMasterSheetName || '部屋マスタ');
+    const roomMasterSheet = ss.getSheetByName(
+      config.roomMasterSheetName || CONFIG.SHEET_NAMES.ROOM_MASTER
+    );
     if (!roomMasterSheet) {
       return { success: false, error: '部屋マスタシートが見つかりません' };
     }
@@ -213,13 +221,13 @@ function validateRoomMasterDuplicates(ss = null, config = {}) {
       const propertyId = String(data[i][0]).trim();
       const roomId = String(data[i][1]).trim();
       const combination = `${propertyId}|${roomId}`;
-      
+
       if (propertyId && roomId) {
         if (seenCombinations.has(combination)) {
           duplicates.push({
             propertyId: propertyId,
             roomId: roomId,
-            rows: [seenCombinations.get(combination), i + 1]
+            rows: [seenCombinations.get(combination), i + 1],
           });
         } else {
           seenCombinations.set(combination, i + 1);
@@ -231,9 +239,8 @@ function validateRoomMasterDuplicates(ss = null, config = {}) {
       success: true,
       duplicates: duplicates,
       totalRecords: data.length - 1,
-      duplicateCount: duplicates.length
+      duplicateCount: duplicates.length,
     };
-
   } catch (error) {
     Logger.log(`❌ 部屋マスタ重複チェック中にエラーが発生しました: ${error.message}`);
     return { success: false, error: error.message };
@@ -248,7 +255,7 @@ function validateRoomMasterDuplicates(ss = null, config = {}) {
  */
 function validateDataValues(data, rules = {}) {
   const errors = [];
-  
+
   try {
     // 物件IDの形式チェック
     if (rules.propertyIdFormat && data.propertyId) {
@@ -257,7 +264,7 @@ function validateDataValues(data, rules = {}) {
         errors.push('物件IDの形式が正しくありません');
       }
     }
-    
+
     // 部屋IDの形式チェック
     if (rules.roomIdFormat && data.roomId) {
       const roomIdPattern = new RegExp(rules.roomIdFormat);
@@ -265,7 +272,7 @@ function validateDataValues(data, rules = {}) {
         errors.push('部屋IDの形式が正しくありません');
       }
     }
-    
+
     // 検針値の数値チェック
     if (data.previousReading !== undefined && data.previousReading !== '') {
       const prevReading = Number(data.previousReading);
@@ -273,14 +280,14 @@ function validateDataValues(data, rules = {}) {
         errors.push('前回検針値が無効です');
       }
     }
-    
+
     if (data.currentReading !== undefined && data.currentReading !== '') {
       const currReading = Number(data.currentReading);
       if (isNaN(currReading) || currReading < 0) {
         errors.push('今回検針値が無効です');
       }
     }
-    
+
     // 使用量の妥当性チェック
     if (data.usage !== undefined && data.usage !== '') {
       const usage = Number(data.usage);
@@ -290,12 +297,11 @@ function validateDataValues(data, rules = {}) {
         errors.push(`使用量が上限値（${rules.maxUsage}）を超えています`);
       }
     }
-    
+
     return {
       success: errors.length === 0,
-      errors: errors
+      errors: errors,
     };
-    
   } catch (error) {
     Logger.log(`❌ データ値チェック中にエラーが発生しました: ${error.message}`);
     return { success: false, errors: [error.message] };

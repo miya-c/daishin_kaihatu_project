@@ -14,13 +14,13 @@ function formatPropertyIdsInPropertyMaster(ss = null, config = {}) {
   if (!ss) {
     ss = SpreadsheetApp.getActiveSpreadsheet();
   }
-  
+
   if (!ss) {
     Logger.log('エラー: アクティブなスプレッドシートが見つかりません');
     return { success: false, error: 'スプレッドシートが見つかりません' };
   }
-  
-  const sheetName = config.propertyMasterSheetName || '物件マスタ';
+
+  const sheetName = config.propertyMasterSheetName || CONFIG.SHEET_NAMES.PROPERTY_MASTER;
   const sheet = ss.getSheetByName(sheetName);
 
   if (!sheet) {
@@ -46,7 +46,7 @@ function formatPropertyIdsInPropertyMaster(ss = null, config = {}) {
   try {
     for (let i = 1; i < values.length; i++) {
       const currentId = String(values[i][0]).trim();
-      
+
       if (currentId && !currentId.startsWith('P')) {
         const formattedId = `P${currentId.padStart(6, '0')}`;
         values[i][0] = formattedId;
@@ -70,7 +70,6 @@ function formatPropertyIdsInPropertyMaster(ss = null, config = {}) {
       }
       return { success: true, updatedCount: 0, message: info };
     }
-
   } catch (error) {
     Logger.log(`❌ 物件IDフォーマット変更中にエラーが発生しました: ${error.message}`);
     const errorMessage = `処理中にエラーが発生しました: ${error.message}`;
@@ -91,13 +90,13 @@ function formatPropertyIdsInRoomMaster(ss = null, config = {}) {
   if (!ss) {
     ss = SpreadsheetApp.getActiveSpreadsheet();
   }
-  
+
   if (!ss) {
     Logger.log('エラー: アクティブなスプレッドシートが見つかりません');
     return { success: false, error: 'スプレッドシートが見つかりません' };
   }
 
-  const sheetName = config.roomMasterSheetName || '部屋マスタ';
+  const sheetName = config.roomMasterSheetName || CONFIG.SHEET_NAMES.ROOM_MASTER;
   const sheet = ss.getSheetByName(sheetName);
 
   if (!sheet) {
@@ -123,7 +122,7 @@ function formatPropertyIdsInRoomMaster(ss = null, config = {}) {
   try {
     for (let i = 1; i < values.length; i++) {
       const currentPropertyId = String(values[i][0]).trim();
-      
+
       if (currentPropertyId && !currentPropertyId.startsWith('P')) {
         const formattedId = `P${currentPropertyId.padStart(6, '0')}`;
         values[i][0] = formattedId;
@@ -147,7 +146,6 @@ function formatPropertyIdsInRoomMaster(ss = null, config = {}) {
       }
       return { success: true, updatedCount: 0, message: info };
     }
-
   } catch (error) {
     Logger.log(`❌ 部屋マスタ物件IDフォーマット変更中にエラーが発生しました: ${error.message}`);
     const errorMessage = `処理中にエラーが発生しました: ${error.message}`;
@@ -168,13 +166,13 @@ function formatPropertyIdsInInspectionData(ss = null, config = {}) {
   if (!ss) {
     ss = SpreadsheetApp.getActiveSpreadsheet();
   }
-  
+
   if (!ss) {
     Logger.log('エラー: アクティブなスプレッドシートが見つかりません');
     return { success: false, error: 'スプレッドシートが見つかりません' };
   }
 
-  const sheetName = config.inspectionDataSheetName || 'inspection_data';
+  const sheetName = config.inspectionDataSheetName || CONFIG.SHEET_NAMES.INSPECTION_DATA;
   const sheet = ss.getSheetByName(sheetName);
 
   if (!sheet) {
@@ -200,7 +198,7 @@ function formatPropertyIdsInInspectionData(ss = null, config = {}) {
   try {
     for (let i = 1; i < values.length; i++) {
       const currentPropertyId = String(values[i][0]).trim();
-      
+
       if (currentPropertyId && !currentPropertyId.startsWith('P')) {
         const formattedId = `P${currentPropertyId.padStart(6, '0')}`;
         values[i][0] = formattedId;
@@ -224,9 +222,10 @@ function formatPropertyIdsInInspectionData(ss = null, config = {}) {
       }
       return { success: true, updatedCount: 0, message: info };
     }
-
   } catch (error) {
-    Logger.log(`❌ inspection_data物件IDフォーマット変更中にエラーが発生しました: ${error.message}`);
+    Logger.log(
+      `❌ inspection_data物件IDフォーマット変更中にエラーが発生しました: ${error.message}`
+    );
     const errorMessage = `処理中にエラーが発生しました: ${error.message}`;
     if (typeof safeAlert === 'function') {
       safeAlert('エラー', errorMessage);
@@ -245,7 +244,7 @@ function formatAllPropertyIds(ss = null, config = {}) {
   if (!ss) {
     ss = SpreadsheetApp.getActiveSpreadsheet();
   }
-  
+
   if (!ss) {
     Logger.log('エラー: アクティブなスプレッドシートが見つかりません');
     return { success: false, error: 'スプレッドシートが見つかりません' };
@@ -253,56 +252,59 @@ function formatAllPropertyIds(ss = null, config = {}) {
 
   try {
     Logger.log('🔄 全シートの物件IDフォーマット変更を開始します...');
-    
+
     const results = {
       propertyMaster: formatPropertyIdsInPropertyMaster(ss, config),
       roomMaster: formatPropertyIdsInRoomMaster(ss, config),
-      inspectionData: formatPropertyIdsInInspectionData(ss, config)
+      inspectionData: formatPropertyIdsInInspectionData(ss, config),
     };
 
-    const totalUpdated = 
+    const totalUpdated =
       (results.propertyMaster.updatedCount || 0) +
       (results.roomMaster.updatedCount || 0) +
       (results.inspectionData.updatedCount || 0);
 
-    const allSuccess = results.propertyMaster.success && 
-                      results.roomMaster.success && 
-                      results.inspectionData.success;
+    const allSuccess =
+      results.propertyMaster.success &&
+      results.roomMaster.success &&
+      results.inspectionData.success;
 
     if (allSuccess) {
       Logger.log(`✅ 全シートの物件IDフォーマット変更完了: 合計${totalUpdated}件`);
-      const message = `全シートの物件IDフォーマット変更が完了しました。\n` +
-                     `物件マスタ: ${results.propertyMaster.updatedCount || 0}件\n` +
-                     `部屋マスタ: ${results.roomMaster.updatedCount || 0}件\n` +
-                     `inspection_data: ${results.inspectionData.updatedCount || 0}件\n` +
-                     `合計: ${totalUpdated}件`;
-      
+      const message =
+        `全シートの物件IDフォーマット変更が完了しました。\n` +
+        `物件マスタ: ${results.propertyMaster.updatedCount || 0}件\n` +
+        `部屋マスタ: ${results.roomMaster.updatedCount || 0}件\n` +
+        `inspection_data: ${results.inspectionData.updatedCount || 0}件\n` +
+        `合計: ${totalUpdated}件`;
+
       if (typeof safeAlert === 'function') {
         safeAlert('完了', message);
       }
-      
+
       return {
         success: true,
         totalUpdated: totalUpdated,
         results: results,
-        message: message
+        message: message,
       };
     } else {
       const errors = [];
-      if (!results.propertyMaster.success) errors.push(`物件マスタ: ${results.propertyMaster.error}`);
+      if (!results.propertyMaster.success)
+        errors.push(`物件マスタ: ${results.propertyMaster.error}`);
       if (!results.roomMaster.success) errors.push(`部屋マスタ: ${results.roomMaster.error}`);
-      if (!results.inspectionData.success) errors.push(`inspection_data: ${results.inspectionData.error}`);
-      
+      if (!results.inspectionData.success)
+        errors.push(`inspection_data: ${results.inspectionData.error}`);
+
       const errorMessage = `一部のシートでエラーが発生しました:\n${errors.join('\n')}`;
       Logger.log(`❌ ${errorMessage}`);
-      
+
       return {
         success: false,
         error: errorMessage,
-        results: results
+        results: results,
       };
     }
-
   } catch (error) {
     Logger.log(`❌ 全シート物件IDフォーマット変更中にエラーが発生しました: ${error.message}`);
     return { success: false, error: error.message };
@@ -320,7 +322,7 @@ function cleanupSheetData(ss = null, sheetName, options = {}) {
   if (!ss) {
     ss = SpreadsheetApp.getActiveSpreadsheet();
   }
-  
+
   if (!ss) {
     Logger.log('エラー: スプレッドシートが見つかりません');
     return { success: false, error: 'スプレッドシートが見つかりません' };
@@ -345,15 +347,15 @@ function cleanupSheetData(ss = null, sheetName, options = {}) {
     // データ行をクリーンアップ
     for (let i = 1; i < values.length; i++) {
       const row = values[i];
-      
+
       // 空白行のスキップ
-      if (options.removeEmptyRows && row.every(cell => !cell || String(cell).trim() === '')) {
+      if (options.removeEmptyRows && row.every((cell) => !cell || String(cell).trim() === '')) {
         removedRows++;
         continue;
       }
 
       // データの正規化
-      const cleanedRow = row.map(cell => {
+      const cleanedRow = row.map((cell) => {
         if (options.trimWhitespace && typeof cell === 'string') {
           return cell.trim();
         }
@@ -370,19 +372,20 @@ function cleanupSheetData(ss = null, sheetName, options = {}) {
       // 余剰行をクリア
       const lastRow = sheet.getLastRow();
       if (lastRow > cleanedData.length) {
-        sheet.getRange(cleanedData.length + 1, 1, lastRow - cleanedData.length, cleanedData[0].length).clearContent();
+        sheet
+          .getRange(cleanedData.length + 1, 1, lastRow - cleanedData.length, cleanedData[0].length)
+          .clearContent();
       }
     }
 
     Logger.log(`✅ ${sheetName}のデータクリーンアップ完了: ${removedRows}行削除`);
-    
+
     return {
       success: true,
       removedRows: removedRows,
       totalRows: cleanedData.length - 1, // ヘッダー行を除く
-      message: `${sheetName}のデータクリーンアップが完了しました。削除行数: ${removedRows}`
+      message: `${sheetName}のデータクリーンアップが完了しました。削除行数: ${removedRows}`,
     };
-
   } catch (error) {
     Logger.log(`❌ ${sheetName}データクリーンアップ中にエラーが発生しました: ${error.message}`);
     return { success: false, error: error.message };
@@ -400,13 +403,13 @@ function generateRoomIds(ss = null, config = {}) {
   if (!ss) {
     ss = SpreadsheetApp.getActiveSpreadsheet();
   }
-  
+
   if (!ss) {
     Logger.log('エラー: アクティブなスプレッドシートが見つかりません');
     return { success: false, error: 'スプレッドシートが見つかりません' };
   }
-  
-  const sheetName = config.roomMasterSheetName || '部屋マスタ';
+
+  const sheetName = config.roomMasterSheetName || CONFIG.SHEET_NAMES.ROOM_MASTER;
   const sheet = ss.getSheetByName(sheetName);
 
   if (!sheet) {
@@ -419,7 +422,7 @@ function generateRoomIds(ss = null, config = {}) {
 
   const dataRange = sheet.getDataRange();
   const values = dataRange.getValues();
-  
+
   if (values.length <= 1) {
     const info = `${sheetName}シートにデータがありません。`;
     if (typeof safeAlert === 'function') {
@@ -432,7 +435,7 @@ function generateRoomIds(ss = null, config = {}) {
   const headers = values[0];
   const propertyIdIndex = headers.indexOf('物件ID');
   const roomIdIndex = headers.indexOf('部屋ID');
-  
+
   if (propertyIdIndex === -1) {
     const error = `${sheetName}シートに「物件ID」列が見つかりません。`;
     if (typeof safeAlert === 'function') {
@@ -440,7 +443,7 @@ function generateRoomIds(ss = null, config = {}) {
     }
     return { success: false, error: error };
   }
-  
+
   if (roomIdIndex === -1) {
     const error = `${sheetName}シートに「部屋ID」列が見つかりません。`;
     if (typeof safeAlert === 'function') {
@@ -452,10 +455,10 @@ function generateRoomIds(ss = null, config = {}) {
   try {
     // 物件IDごとに部屋をグループ化
     const propertyGroups = new Map();
-    
+
     for (let i = 1; i < values.length; i++) {
       const propertyId = String(values[i][propertyIdIndex] || '').trim();
-      
+
       if (propertyId) {
         if (!propertyGroups.has(propertyId)) {
           propertyGroups.set(propertyId, []);
@@ -465,7 +468,7 @@ function generateRoomIds(ss = null, config = {}) {
     }
 
     let updatedCount = 0;
-    
+
     // 各物件に対して部屋IDを連番で生成
     propertyGroups.forEach((rowIndexes, propertyId) => {
       // 部屋データを部屋名でソート（もしあれば）
@@ -477,12 +480,12 @@ function generateRoomIds(ss = null, config = {}) {
           return nameA.localeCompare(nameB);
         });
       }
-      
+
       // 連番で部屋IDを生成
       rowIndexes.forEach((rowIndex, counter) => {
         const newRoomId = `R${String(counter + 1).padStart(3, '0')}`;
         const currentRoomId = String(values[rowIndex][roomIdIndex] || '').trim();
-        
+
         if (currentRoomId !== newRoomId) {
           values[rowIndex][roomIdIndex] = newRoomId;
           updatedCount++;
@@ -506,7 +509,6 @@ function generateRoomIds(ss = null, config = {}) {
       }
       return { success: true, updatedCount: 0, message: info };
     }
-    
   } catch (error) {
     Logger.log(`❌ 部屋ID自動生成中にエラーが発生: ${error.message}`);
     const errorMessage = `部屋ID自動生成中にエラーが発生しました: ${error.message}`;
