@@ -43,7 +43,7 @@ function createWaterMeterMenu() {
     const mainMenu = ui.createMenu('🚰 水道検針システム');
     
     // 基本機能
-    mainMenu.addItem('📱 水道検針アプリを開く', 'showWaterMeterApp');
+    mainMenu.addItem('📱 水道検針アプリを開く', 'showWaterMeterWebApp');
     mainMenu.addSeparator();
     mainMenu.addItem('📋 物件一覧を表示', 'showPropertiesList');
     mainMenu.addItem('🏠 部屋一覧を表示', 'showRoomsList');
@@ -65,11 +65,10 @@ function createWaterMeterMenu() {
     // データ品質管理サブメニュー
     const qualityMenu = ui.createMenu('🔍 データ品質管理');
     qualityMenu.addItem('1. 重複データ削除', 'menuCleanupDuplicateData');
-    qualityMenu.addItem('2. データ整合性チェック', 'menuValidateDataIntegrity');
-    qualityMenu.addItem('3. 検索インデックス作成', 'createDataIndexes');
+    qualityMenu.addItem('2. データ整合性チェック', 'validateDataIntegrity');
+    qualityMenu.addItem('3. 検索インデックス作成', 'createAllIndexes');
     qualityMenu.addSeparator();
-    qualityMenu.addItem('4. 検索機能テスト', 'testSearchFunctions');
-    qualityMenu.addItem('5. 検索ガイド表示', 'showSearchUsageGuide');
+    qualityMenu.addItem('4. 検索ガイド表示', 'showSearchUsageGuide');
     
     mainMenu.addSubMenu(qualityMenu);
     
@@ -94,6 +93,20 @@ function createWaterMeterMenu() {
 // =====================================================
 // UI機能（メニューから呼び出される関数）
 // =====================================================
+
+/**
+ * 水道検針アプリをブラウザで開く
+ */
+function showWaterMeterWebApp() {
+  try {
+    return cmlibrary.showWaterMeterWebApp();
+  } catch (error) {
+    console.error('水道検針アプリ表示エラー:', error);
+    SpreadsheetApp.getUi().alert('エラー',
+      `アプリの表示に失敗しました:\n${error.message}`,
+      SpreadsheetApp.getUi().ButtonSet.OK);
+  }
+}
 
 /**
  * 物件一覧を表示
@@ -293,9 +306,9 @@ function menuCleanupDuplicateData() {
  * データ整合性チェック
  * cmlibraryのdata_validation.gsの関数を使用
  */
-function menuValidateDataIntegrity() {
+function validateDataIntegrity() {
   try {
-    return cmlibrary.menuValidateDataIntegrity();
+    return cmlibrary.validateInspectionDataIntegrity();
   } catch (error) {
     console.error('データ整合性チェックエラー:', error);
     throw error;
@@ -306,24 +319,11 @@ function menuValidateDataIntegrity() {
  * データ高速検索インデックス作成
  * cmlibraryのdata_indexes.gsの関数を使用
  */
-function createDataIndexes() {
+function createAllIndexes() {
   try {
-    return cmlibrary.createDataIndexes();
+    return cmlibrary.createAllIndexes();
   } catch (error) {
     console.error('インデックス作成エラー:', error);
-    throw error;
-  }
-}
-
-/**
- * 高速検索機能テスト
- * cmlibraryのbatch_processing.gsの関数を使用
- */
-function testSearchFunctions() {
-  try {
-    return cmlibrary.testSearchFunctions();
-  } catch (error) {
-    console.error('検索機能テストエラー:', error);
     throw error;
   }
 }
@@ -456,15 +456,14 @@ function showAvailableFunctions() {
       '',
       '【データ品質管理】',
       '- menuCleanupDuplicateData(): 重複データクリーンアップ',
-      '- menuValidateDataIntegrity(): データ整合性チェック',
-      '- createDataIndexes(): インデックス作成',
-      '- testSearchFunctions(): 検索機能テスト',
+      '- validateDataIntegrity(): データ整合性チェック',
+      '- createAllIndexes(): インデックス作成',
       '- showSearchUsageGuide(): 検索ガイド表示',
       '',
       '【Web App機能】',
       '- doGet(e): Web App GET処理',
       '- doPost(e): Web App POST処理',
-      '- showWaterMeterApp(): 水道検針アプリ表示'
+      '- showWaterMeterWebApp(): 水道検針アプリ表示'
     ];
     
     functions.forEach(func => console.log(func));

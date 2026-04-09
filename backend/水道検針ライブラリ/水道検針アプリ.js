@@ -636,8 +636,8 @@ function runSystemDiagnosticsFromMenu() {
 
     const result = runSystemDiagnostics();
 
-    if (result && typeof displaySystemDiagnosticsResult === 'function') {
-      displaySystemDiagnosticsResult();
+    if (result && typeof showSystemDiagnostics === 'function') {
+      showSystemDiagnostics(result);
     } else {
       let message = '🔍 システム診断が完了しました。\n\n';
 
