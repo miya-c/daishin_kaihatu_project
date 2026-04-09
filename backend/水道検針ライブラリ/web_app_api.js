@@ -236,9 +236,9 @@ function doGet(e) {
           }
           return createCorsJsonResponse({
             success: true,
-            data: roomsLightResult,
-            compressionRatio: roomsLightResult.compression || 0,
-            message: `${roomsLightResult.totalCount || 0}件の軽量部屋データを取得しました`,
+            data: roomsLightResult.data,
+            compressionRatio: roomsLightResult.data.compression || 0,
+            message: `${roomsLightResult.data.totalCount || 0}件の軽量部屋データを取得しました`,
           });
         } catch (error) {
           Logger.log(`getRoomsLight API エラー: ${error.message}`);
@@ -686,7 +686,7 @@ function executeLegacyFallback(params) {
     // 2. 既存のgetMeterReadings実行
     const navResult = getMeterReadings(propertyId, targetRoomId);
 
-    if (!navResult) {
+    if (!navResult || !navResult.success) {
       return createCorsJsonResponse({
         success: false,
         error: 'ナビゲーションデータ取得失敗',

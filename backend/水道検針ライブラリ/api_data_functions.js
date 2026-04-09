@@ -499,17 +499,20 @@ function getRoomsLight(propertyId, lastSync = null) {
     }
 
     return {
-      hasChanges: lightRooms.length > 0,
-      property: propertyInfo,
-      rooms: lightRooms,
-      lastModified: maxTimestamp.toISOString(),
-      totalCount: lightRooms.length,
-      compression: Math.round(
-        (1 -
-          JSON.stringify({ property: propertyInfo, rooms: lightRooms }).length /
-            JSON.stringify(roomData).length) *
-          100
-      ),
+      success: true,
+      data: {
+        hasChanges: lightRooms.length > 0,
+        property: propertyInfo,
+        rooms: lightRooms,
+        lastModified: maxTimestamp.toISOString(),
+        totalCount: lightRooms.length,
+        compression: Math.round(
+          (1 -
+            JSON.stringify({ property: propertyInfo, rooms: lightRooms }).length /
+              JSON.stringify(roomData).length) *
+            100
+        ),
+      },
     };
   } catch (error) {
     Logger.log(`[getRoomsLight] エラー: ${error.message}`);
@@ -591,6 +594,7 @@ function getMeterReadings(propertyId, roomId) {
     if (!propertyIndex || !propertyIndex[roomId]) {
       const fbNames = getFallbackNames(propertyId, roomId);
       return {
+        success: true,
         propertyName: fbNames.propertyName,
         roomName: fbNames.roomName,
         readings: [],
@@ -1479,7 +1483,6 @@ function validateSaveAndNavigateParams(params) {
         for (const field of requiredReadingFields) {
           if (reading[field] === undefined || reading[field] === null) {
             return {
-              success: true,
               success: false,
               error: `検針データ[${i}]に必須フィールド「${field}」がありません`,
               details: {

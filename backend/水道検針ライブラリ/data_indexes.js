@@ -109,8 +109,10 @@ function createRoomIndex() {
     console.log(`[createRoomIndex] ${Object.keys(roomIndex).length}件の部屋をインデックス化`);
     return {
       success: true,
-      roomIndex,
-      propertyRoomIndex,
+      data: {
+        roomIndex,
+        propertyRoomIndex,
+      },
     };
   } catch (error) {
     console.error('[createRoomIndex] エラー:', error);
@@ -187,9 +189,11 @@ function createMeterReadingIndex() {
     );
     return {
       success: true,
-      meterIndex,
-      roomMeterIndex,
-      dateIndex,
+      data: {
+        meterIndex,
+        roomMeterIndex,
+        dateIndex,
+      },
     };
   } catch (error) {
     console.error('[createMeterReadingIndex] エラー:', error);
@@ -216,11 +220,11 @@ function createAllIndexes() {
 
     const allIndexes = {
       property: propertyResult.data,
-      room: roomResult.roomIndex,
-      propertyRoom: roomResult.propertyRoomIndex,
-      meter: meterResult.meterIndex,
-      roomMeter: meterResult.roomMeterIndex,
-      dateMeter: meterResult.dateIndex,
+      room: roomResult.data.roomIndex,
+      propertyRoom: roomResult.data.propertyRoomIndex,
+      meter: meterResult.data.meterIndex,
+      roomMeter: meterResult.data.roomMeterIndex,
+      dateMeter: meterResult.data.dateIndex,
       created: new Date(),
     };
 
