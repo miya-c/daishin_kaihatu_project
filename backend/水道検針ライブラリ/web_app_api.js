@@ -170,6 +170,12 @@ function doGet(e) {
             error: 'propertyIdとroomIdが必要です',
           });
         }
+        {
+          const meterAuth = validateApiKey(e.parameter, false);
+          if (!meterAuth.authorized) {
+            return createCorsJsonResponse({ success: false, error: meterAuth.error });
+          }
+        }
 
         try {
           const result = getMeterReadings(e.parameter.propertyId, e.parameter.roomId);
@@ -200,67 +206,17 @@ function doGet(e) {
         }
 
       case 'updateMeterReadings':
-        // 書き込み操作: API key必須
-        const updateAuth = validateApiKey(e.parameter, true);
-        if (!updateAuth.authorized) {
-          return createCorsJsonResponse({ success: false, error: updateAuth.error });
-        }
-        // 入力バリデーション
-        const updateSanitize = sanitizeApiParams(e.parameter);
-        if (!updateSanitize.valid) {
-          return createCorsJsonResponse({ success: false, error: updateSanitize.error });
-        }
-        if (!e.parameter.propertyId || !e.parameter.roomId || !e.parameter.readings) {
-          return createCorsJsonResponse({
-            success: false,
-            error: '必須パラメータが不足しています',
-          });
-        }
-
-        try {
-          const readings = JSON.parse(e.parameter.readings);
-          if (!Array.isArray(readings) || readings.length === 0) {
-            throw new Error('readings配列が無効です');
-          }
-
-          const result = updateMeterReadings(e.parameter.propertyId, e.parameter.roomId, readings);
-          return createCorsJsonResponse(result);
-        } catch (parseError) {
-          return createCorsJsonResponse({
-            success: false,
-            error: `データ処理エラー: ${parseError.message}`,
-          });
-        }
+        return createCorsJsonResponse({
+          success: false,
+          error: 'updateMeterReadings requires POST method',
+        });
 
       case 'completeInspection':
       case 'completePropertyInspection':
-        // 書き込み操作: API key必須
-        const completeAuth = validateApiKey(e.parameter, true);
-        if (!completeAuth.authorized) {
-          return createCorsJsonResponse({ success: false, error: completeAuth.error });
-        }
-        const propertyId = e.parameter.propertyId;
-        const completionDate = e.parameter.completionDate;
-
-        if (!propertyId) {
-          return createCorsJsonResponse({
-            success: false,
-            error: 'propertyIdが必要です',
-            apiVersion: API_VERSION,
-          });
-        }
-
-        try {
-          const result = completePropertyInspectionSimple(propertyId, completionDate);
-          return createCorsJsonResponse(result);
-        } catch (error) {
-          console.error(`[検針完了] エラー: ${error.message}`);
-          return createCorsJsonResponse({
-            success: false,
-            error: `検針完了処理に失敗しました: ${error.message}`,
-            apiVersion: API_VERSION,
-          });
-        }
+        return createCorsJsonResponse({
+          success: false,
+          error: 'completeInspection requires POST method',
+        });
 
       case 'getRoomsLight':
         try {
@@ -269,6 +225,10 @@ function doGet(e) {
               success: false,
               error: 'propertyIdが必要です',
             });
+          }
+          const roomsLightAuth = validateApiKey(e.parameter, false);
+          if (!roomsLightAuth.authorized) {
+            return createCorsJsonResponse({ success: false, error: roomsLightAuth.error });
           }
 
           const roomsLightResult = getRoomsLight(e.parameter.propertyId, e.parameter.lastSync);
@@ -492,6 +452,12 @@ function doPost(e) {
           error: 'propertyIdが必要です',
         });
       }
+      if (propertyId) {
+        const completeSanitize = sanitizeApiParams({ propertyId });
+        if (!completeSanitize.valid) {
+          return createCorsJsonResponse({ success: false, error: completeSanitize.error });
+        }
+      }
 
       try {
         const result = completePropertyInspectionSimple(propertyId, completionDate);
@@ -565,6 +531,12 @@ function doPost(e) {
           return createCorsJsonResponse({
             success: false,
             error: 'batchDataは空でない配列である必要があります',
+          });
+        }
+        if (entries.length > 50) {
+          return createCorsJsonResponse({
+            success: false,
+            error: `バッチサイズが上限を超えています（${entries.length}件、上限50件）`,
           });
         }
 

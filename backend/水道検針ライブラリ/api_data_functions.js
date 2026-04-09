@@ -521,22 +521,22 @@ function getMeterReadings(propertyId, roomId) {
       throw new Error('物件IDと部屋IDが必要です');
     }
 
-    var CACHE_TTL = 300;
-    var cacheKey = 'mr_idx_' + propertyId;
-    var roomIndex = getFastCache(cacheKey);
+    const CACHE_TTL = 300;
+    const cacheKey = 'mr_idx_' + propertyId;
+    const roomIndex = getFastCache(cacheKey);
 
     if (!roomIndex) {
       Logger.log('[getMeterReadings] キャッシュミス - インデックス構築開始');
-      var ss = SpreadsheetApp.getActiveSpreadsheet();
-      var inspectionSheet = ss.getSheetByName(CONFIG.SHEET_NAMES.INSPECTION_DATA);
+      const ss = SpreadsheetApp.getActiveSpreadsheet();
+      const inspectionSheet = ss.getSheetByName(CONFIG.SHEET_NAMES.INSPECTION_DATA);
 
       if (!inspectionSheet) {
         throw new Error('inspection_dataシートが見つかりません');
       }
 
-      var inspectionData = inspectionSheet.getDataRange().getValues();
+      const inspectionData = inspectionSheet.getDataRange().getValues();
       if (inspectionData.length <= 1) {
-        var fallbackNames = getFallbackNames(propertyId, roomId);
+        const fallbackNames = getFallbackNames(propertyId, roomId);
         return {
           propertyName: fallbackNames.propertyName,
           roomName: fallbackNames.roomName,
@@ -544,19 +544,19 @@ function getMeterReadings(propertyId, roomId) {
         };
       }
 
-      var headers = inspectionData[0];
-      var propertyIdCol = headers.indexOf('物件ID');
-      var roomIdCol = headers.indexOf('部屋ID');
+      const headers = inspectionData[0];
+      const propertyIdCol = headers.indexOf('物件ID');
+      const roomIdCol = headers.indexOf('部屋ID');
 
       if (propertyIdCol === -1 || roomIdCol === -1) {
         throw new Error('必要な列（物件ID、部屋ID）が見つかりません');
       }
 
       roomIndex = {};
-      for (var i = 1; i < inspectionData.length; i++) {
-        var row = inspectionData[i];
-        var rowPropId = String(row[propertyIdCol]).trim();
-        var rowRoomId = String(row[roomIdCol]).trim();
+      for (let i = 1; i < inspectionData.length; i++) {
+        const row = inspectionData[i];
+        const rowPropId = String(row[propertyIdCol]).trim();
+        const rowRoomId = String(row[roomIdCol]).trim();
 
         if (rowPropId && !roomIndex[rowPropId]) {
           roomIndex[rowPropId] = {};
@@ -565,7 +565,7 @@ function getMeterReadings(propertyId, roomId) {
           if (!roomIndex[rowPropId][rowRoomId]) {
             roomIndex[rowPropId][rowRoomId] = [];
           }
-          var reading = {};
+          const reading = {};
           headers.forEach(function (header, index) {
             reading[header] = row[index];
           });
@@ -576,9 +576,9 @@ function getMeterReadings(propertyId, roomId) {
       setFastCache(cacheKey, roomIndex, CACHE_TTL);
     }
 
-    var propertyIndex = roomIndex[propertyId];
+    const propertyIndex = roomIndex[propertyId];
     if (!propertyIndex || !propertyIndex[roomId]) {
-      var fbNames = getFallbackNames(propertyId, roomId);
+      const fbNames = getFallbackNames(propertyId, roomId);
       return {
         propertyName: fbNames.propertyName,
         roomName: fbNames.roomName,
@@ -586,17 +586,17 @@ function getMeterReadings(propertyId, roomId) {
       };
     }
 
-    var readings = propertyIndex[roomId];
+    const readings = propertyIndex[roomId];
 
-    var propertyName = '';
-    var roomName = '';
+    const propertyName = '';
+    const roomName = '';
     if (readings.length > 0) {
       propertyName = readings[0]['物件名'] || '';
       roomName = readings[0]['部屋名'] || '';
     }
 
     if (!propertyName || !roomName) {
-      var fallbackNames2 = getFallbackNames(propertyId, roomId);
+      const fallbackNames2 = getFallbackNames(propertyId, roomId);
       if (!propertyName) propertyName = fallbackNames2.propertyName;
       if (!roomName) roomName = fallbackNames2.roomName;
     }

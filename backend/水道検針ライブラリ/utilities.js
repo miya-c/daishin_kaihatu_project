@@ -427,8 +427,8 @@ function getCacheStats() {
  */
 function getFastCache(key) {
   try {
-    var cache = CacheService.getScriptCache();
-    var cached = cache.get(key);
+    const cache = CacheService.getScriptCache();
+    const cached = cache.get(key);
     if (!cached) return null;
     return JSON.parse(cached);
   } catch (error) {
@@ -446,7 +446,7 @@ function getFastCache(key) {
  */
 function setFastCache(key, data, ttl) {
   try {
-    var cache = CacheService.getScriptCache();
+    const cache = CacheService.getScriptCache();
     cache.put(key, JSON.stringify(data), ttl || 3600);
     return true;
   } catch (error) {
@@ -461,7 +461,7 @@ function setFastCache(key, data, ttl) {
  */
 function invalidateFastCache(key) {
   try {
-    var cache = CacheService.getScriptCache();
+    const cache = CacheService.getScriptCache();
     cache.remove(key);
   } catch (error) {
     Logger.log('[invalidateFastCache] エラー: ' + error.message);
