@@ -20,6 +20,7 @@ export default defineConfig({
         { src: resolve(projectRoot, 'gas_scripts'), dest: '.' },
         { src: resolve(projectRoot, 'src/pwa-utils.js'), dest: '.' },
         { src: resolve(projectRoot, 'src/sw/service-worker.js'), dest: '.' },
+        { src: resolve(projectRoot, 'public/icons/*'), dest: 'icons' },
       ],
     }),
     isAnalyze && visualizer({ open: true, filename: 'bundle-analysis.html' }),
