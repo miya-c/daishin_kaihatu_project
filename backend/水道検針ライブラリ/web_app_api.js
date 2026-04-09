@@ -24,7 +24,12 @@ function validateApiKey(params, requireAuth) {
   }
 
   if (!storedKey) {
-    // API key未設定時は読み込み操作のみスキップ
+    if (requireAuth) {
+      return {
+        authorized: false,
+        error: 'API keyが設定されていません。スクリプトプロパティにAPI_KEYを設定してください。',
+      };
+    }
     return { authorized: true };
   }
 
@@ -294,7 +299,7 @@ function doGet(e) {
           }
           try {
             const adminToken = PropertiesService.getScriptProperties().getProperty('ADMIN_TOKEN');
-            if (adminToken && e.parameter.adminToken !== adminToken) {
+            if (!adminToken || e.parameter.adminToken !== adminToken) {
               return createCorsJsonResponse({
                 success: false,
                 error: '管理者トークンが無効です',
@@ -338,7 +343,7 @@ function doGet(e) {
           }
           try {
             const adminToken = PropertiesService.getScriptProperties().getProperty('ADMIN_TOKEN');
-            if (adminToken && e.parameter.adminToken !== adminToken) {
+            if (!adminToken || e.parameter.adminToken !== adminToken) {
               return createCorsJsonResponse({
                 success: false,
                 error: '管理者トークンが無効です',
@@ -346,7 +351,7 @@ function doGet(e) {
               });
             }
             const ss = SpreadsheetApp.getActiveSpreadsheet();
-            const propertySheet = ss.getSheetByName('物件マスタ');
+            const propertySheet = ss.getSheetByName(CONFIG.SHEET_NAMES.PROPERTY_MASTER);
 
             if (!propertySheet) {
               throw new Error('物件マスタシートが見つかりません');
@@ -403,7 +408,13 @@ function doPost(e) {
       try {
         const jsonData = JSON.parse(e.postData.contents);
         params = { ...params, ...jsonData };
-      } catch (parseError) {}
+      } catch (parseError) {
+        console.error('[doPost] JSON parse error:', parseError.message);
+        return createCorsJsonResponse({
+          success: false,
+          error: 'Invalid JSON in request body',
+        });
+      }
     }
 
     const action = params.action;
@@ -627,12 +638,10 @@ function doPost(e) {
       }
     }
 
-    // 通常のPOSTリクエスト処理
+    // 不明なPOSTアクション
     return createCorsJsonResponse({
-      success: true,
-      message: 'POST request received successfully',
-      timestamp: new Date().toISOString(),
-      method: 'POST',
+      success: false,
+      error: `Unknown action: ${action || 'none'}`,
       receivedAction: action || 'none',
     });
   } catch (error) {

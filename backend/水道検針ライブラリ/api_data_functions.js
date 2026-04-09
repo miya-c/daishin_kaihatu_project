@@ -11,7 +11,7 @@
 function getProperties() {
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const sheet = ss.getSheetByName('物件マスタ');
+    const sheet = ss.getSheetByName(CONFIG.SHEET_NAMES.PROPERTY_MASTER);
 
     if (!sheet) {
       throw new Error('物件マスタシートが見つかりません');
@@ -48,8 +48,8 @@ function getRooms(propertyId) {
     }
 
     const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const propertySheet = ss.getSheetByName('物件マスタ');
-    const roomSheet = ss.getSheetByName('部屋マスタ');
+    const propertySheet = ss.getSheetByName(CONFIG.SHEET_NAMES.PROPERTY_MASTER);
+    const roomSheet = ss.getSheetByName(CONFIG.SHEET_NAMES.ROOM_MASTER);
 
     if (!propertySheet) {
       throw new Error('物件マスタシートが見つかりません');
@@ -123,7 +123,7 @@ function getRooms(propertyId) {
 
     // inspection_dataから検針完了状況と検針不要フラグを確認
     // inspection_data.csv: 記録ID,物件名,物件ID,部屋ID,部屋名,検針日時,警告フラグ,標準偏差値,今回使用量,今回の指示数,前回指示数,前々回指示数,前々々回指示数,検針不要
-    const inspectionSheet = ss.getSheetByName('inspection_data');
+    const inspectionSheet = ss.getSheetByName(CONFIG.SHEET_NAMES.INSPECTION_DATA);
     if (inspectionSheet) {
       try {
         const inspectionData = inspectionSheet.getDataRange().getValues();
@@ -268,8 +268,8 @@ function getRoomsLight(propertyId, lastSync = null) {
     }
 
     const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const propertySheet = ss.getSheetByName('物件マスタ');
-    const roomSheet = ss.getSheetByName('部屋マスタ');
+    const propertySheet = ss.getSheetByName(CONFIG.SHEET_NAMES.PROPERTY_MASTER);
+    const roomSheet = ss.getSheetByName(CONFIG.SHEET_NAMES.ROOM_MASTER);
 
     if (!propertySheet || !roomSheet) {
       throw new Error('必要なシートが見つかりません');
@@ -370,7 +370,7 @@ function getRoomsLight(propertyId, lastSync = null) {
     }
 
     // inspection_dataから検針完了状況と検針不要フラグを確認
-    const inspectionSheet = ss.getSheetByName('inspection_data');
+    const inspectionSheet = ss.getSheetByName(CONFIG.SHEET_NAMES.INSPECTION_DATA);
     if (inspectionSheet) {
       try {
         const inspectionData = inspectionSheet.getDataRange().getValues();
@@ -528,7 +528,7 @@ function getMeterReadings(propertyId, roomId) {
     if (!roomIndex) {
       Logger.log('[getMeterReadings] キャッシュミス - インデックス構築開始');
       var ss = SpreadsheetApp.getActiveSpreadsheet();
-      var inspectionSheet = ss.getSheetByName('inspection_data');
+      var inspectionSheet = ss.getSheetByName(CONFIG.SHEET_NAMES.INSPECTION_DATA);
 
       if (!inspectionSheet) {
         throw new Error('inspection_dataシートが見つかりません');
@@ -626,7 +626,7 @@ function getFallbackNames(propertyId, roomId) {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
 
     // 物件名を物件マスタから取得
-    const propertySheet = ss.getSheetByName('物件マスタ');
+    const propertySheet = ss.getSheetByName(CONFIG.SHEET_NAMES.PROPERTY_MASTER);
     if (propertySheet) {
       const propertyData = propertySheet.getDataRange().getValues();
       if (propertyData.length > 1) {
@@ -646,7 +646,7 @@ function getFallbackNames(propertyId, roomId) {
     }
 
     // 部屋名を部屋マスタから取得
-    const roomSheet = ss.getSheetByName('部屋マスタ');
+    const roomSheet = ss.getSheetByName(CONFIG.SHEET_NAMES.ROOM_MASTER);
     if (roomSheet) {
       const roomData = roomSheet.getDataRange().getValues();
       if (roomData.length > 1) {
@@ -705,7 +705,7 @@ function updateMeterReadings(propertyId, roomId, readings) {
     }
 
     const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const sheet = ss.getSheetByName('inspection_data');
+    const sheet = ss.getSheetByName(CONFIG.SHEET_NAMES.INSPECTION_DATA);
 
     if (!sheet) {
       throw new Error('inspection_dataシートが見つかりません');
@@ -893,7 +893,7 @@ function completePropertyInspectionSimple(propertyId, completionDate) {
     }
 
     const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const sheet = ss.getSheetByName('物件マスタ');
+    const sheet = ss.getSheetByName(CONFIG.SHEET_NAMES.PROPERTY_MASTER);
 
     if (!sheet) {
       throw new Error('物件マスタシートが見つかりません');
@@ -1348,12 +1348,10 @@ function saveAndNavigate(params) {
     Logger.log('[saveAndNavigate] ❌ 予期しないエラー: ' + error.toString());
     Logger.log('[saveAndNavigate] エラースタック:', error.stack);
 
-    return createErrorResponse('SYSTEM_ERROR', error.toString(), {
+    return createErrorResponse('SYSTEM_ERROR', error.message, {
       processingTime: totalProcessingTime,
       apiVersion: 'v1.0.0-integrated',
       errorDetails: {
-        errorType: error.name,
-        errorStack: error.stack,
         timeoutExceeded: totalProcessingTime > timeout,
       },
     });
@@ -1528,10 +1526,6 @@ function validateSaveAndNavigateParams(params) {
     return {
       success: false,
       error: `パラメータ検証エラー: ${error.message}`,
-      details: {
-        errorType: error.name,
-        errorStack: error.stack,
-      },
     };
   }
 }
@@ -1650,9 +1644,6 @@ function performSaveOperation(params) {
       error: `保存処理中に予期しないエラーが発生しました: ${error.message}`,
       errorType: 'UNEXPECTED_ERROR',
       details: {
-        errorName: error.name,
-        errorMessage: error.message,
-        errorStack: error.stack,
         operationTime: operationDuration,
         failedAt: 'performSaveOperation',
       },
@@ -1765,9 +1756,6 @@ function performNavigationOperation(params) {
       error: `ナビゲーション処理中に予期しないエラーが発生しました: ${error.message}`,
       errorType: 'UNEXPECTED_ERROR',
       details: {
-        errorName: error.name,
-        errorMessage: error.message,
-        errorStack: error.stack,
         operationTime: operationDuration,
         targetRoom: targetRoomId,
         failedAt: 'performNavigationOperation',
