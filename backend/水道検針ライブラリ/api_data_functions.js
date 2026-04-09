@@ -37,12 +37,15 @@ function getProperties() {
 }
 
 /**
- * 指定された物件の部屋一覧と検針状況を取得する（CSV構造完全対応版）
- * room_select.html用の形式で返却
+ * 部屋一覧取得の内部実装（統合版）
+ * getRooms/getRoomsLight両方の処理を統合
  * @param {string} propertyId - 物件ID
- * @returns {Object} {property: {...}, rooms: [...]} 形式
+ * @param {Object} options - オプション
+ * @param {string} options.lastSync - 差分同期用タイムスタンプ（省略時は全件取得）
+ * @param {boolean} options.includeMetadata - hasChanges/compression等のメタデータを含める
+ * @returns {Object} {success, data}
  */
-function getRooms(propertyId) {
+function _getRoomsImpl(propertyId, options = {}) {
   try {
     if (!propertyId) {
       return { success: false, error: '物件IDが指定されていません' };
@@ -52,42 +55,39 @@ function getRooms(propertyId) {
     const propertySheet = ss.getSheetByName(CONFIG.SHEET_NAMES.PROPERTY_MASTER);
     const roomSheet = ss.getSheetByName(CONFIG.SHEET_NAMES.ROOM_MASTER);
 
+    // --- Phase 1 fix: add sheet existence check ---
     if (!propertySheet) {
       return { success: false, error: '物件マスタシートが見つかりません' };
     }
-
     if (!roomSheet) {
       return { success: false, error: '部屋マスタシートが見つかりません' };
     }
 
-    // 物件情報取得（物件マスタ.csv: 物件ID,物件名,検針完了日）
+    // --- Property info extraction ---
     const propertyData = propertySheet.getDataRange().getValues();
+    // --- Phase 1 fix: add empty data guard ---
     if (propertyData.length <= 1) {
       return { success: false, error: '物件マスタにデータがありません' };
     }
 
     const propertyHeaders = propertyData[0];
-    const propertyIdIndex = propertyHeaders.indexOf('物件ID'); // 列A (0)
-    const propertyNameIndex = propertyHeaders.indexOf('物件名'); // 列B (1)
+    const propertyIdIndex = propertyHeaders.indexOf('物件ID');
+    const propertyNameIndex = propertyHeaders.indexOf('物件名');
 
+    // --- Phase 1 fix: add column validation ---
     if (propertyIdIndex === -1) {
       return { success: false, error: '物件マスタに「物件ID」列が見つかりません' };
     }
-
     if (propertyNameIndex === -1) {
       return { success: false, error: '物件マスタに「物件名」列が見つかりません' };
     }
 
-    // 指定された物件IDの物件情報を検索
     const propertyRow = propertyData
       .slice(1)
       .find((row) => String(row[propertyIdIndex]).trim() === String(propertyId).trim());
 
     if (!propertyRow) {
-      return {
-        success: false,
-        error: `指定された物件ID「${propertyId}」が物件マスタに見つかりません`,
-      };
+      return { success: false, error: `物件ID「${propertyId}」が物件マスタに見つかりません` };
     }
 
     const propertyInfo = {
@@ -95,23 +95,32 @@ function getRooms(propertyId) {
       name: String(propertyRow[propertyNameIndex] || '物件名不明').trim(),
     };
 
-    // 部屋情報取得（部屋マスタ.csv: 物件ID,部屋ID,部屋名）
+    // --- Room data extraction ---
     const roomData = roomSheet.getDataRange().getValues();
+    // --- Phase 1 fix: add empty data guard ---
     if (roomData.length <= 1) {
       return {
         success: true,
         data: {
           property: propertyInfo,
           rooms: [],
+          ...(options.includeMetadata
+            ? {
+                hasChanges: false,
+                lastModified: new Date(0).toISOString(),
+                totalCount: 0,
+              }
+            : {}),
         },
       };
     }
 
     const roomHeaders = roomData[0];
-    const roomPropertyIdIndex = roomHeaders.indexOf('物件ID'); // 列A (0)
-    const roomIdIndex = roomHeaders.indexOf('部屋ID'); // 列B (1)
-    const roomNameIndex = roomHeaders.indexOf('部屋名'); // 列C (2)
+    const roomPropertyIdIndex = roomHeaders.indexOf('物件ID');
+    const roomIdIndex = roomHeaders.indexOf('部屋ID');
+    const roomNameIndex = roomHeaders.indexOf('部屋名');
 
+    // --- Phase 1 fix: add column validation ---
     if (roomPropertyIdIndex === -1 || roomIdIndex === -1 || roomNameIndex === -1) {
       return {
         success: false,
@@ -119,201 +128,11 @@ function getRooms(propertyId) {
       };
     }
 
-    const rooms = roomData
-      .slice(1)
-      .filter((row) => String(row[roomPropertyIdIndex]).trim() === String(propertyId).trim())
-      .map((row) => ({
-        id: String(row[roomIdIndex] || '').trim(),
-        name: String(row[roomNameIndex] || '').trim(),
-        readingStatus: 'not-completed', // HTMLが期待するフィールド
-        isCompleted: false, // HTMLが期待するフィールド
-        readingDateFormatted: null, // HTMLが期待するフィールド
-        isNotNeeded: false, // 検針不要フラグ（デフォルトは必要）
-      }));
-
-    // inspection_dataから検針完了状況と検針不要フラグを確認
-    // inspection_data.csv: 記録ID,物件名,物件ID,部屋ID,部屋名,検針日時,警告フラグ,標準偏差値,今回使用量,今回の指示数,前回指示数,前々回指示数,前々々回指示数,検針不要
-    const inspectionSheet = ss.getSheetByName(CONFIG.SHEET_NAMES.INSPECTION_DATA);
-    if (inspectionSheet) {
-      try {
-        const inspectionData = inspectionSheet.getDataRange().getValues();
-
-        if (inspectionData.length > 1) {
-          const inspHeaders = inspectionData[0];
-          const inspPropertyIdIndex = inspHeaders.indexOf('物件ID'); // 列C (2)
-          const inspRoomIdIndex = inspHeaders.indexOf('部屋ID'); // 列D (3)
-          const inspValueIndex = inspHeaders.indexOf('今回の指示数'); // 列J (9)
-          const inspDateIndex = inspHeaders.indexOf('検針日時'); // 列F (5)
-          const inspNotNeededIndex = inspHeaders.indexOf('検針不要'); // 列N (13)
-
-          if (inspPropertyIdIndex !== -1 && inspRoomIdIndex !== -1 && inspValueIndex !== -1) {
-            const readingMap = new Map(); // 部屋IDと検針日のマップ
-            const notNeededMap = new Map(); // 部屋IDと検針不要フラグのマップ
-
-            // inspection_dataの各行を検索
-            inspectionData.slice(1).forEach((row) => {
-              // 物件IDが一致する場合
-              if (String(row[inspPropertyIdIndex]).trim() === String(propertyId).trim()) {
-                const roomIdRaw = String(row[inspRoomIdIndex]).trim();
-
-                // 部屋IDを正規化（R000001 → R001, R000002 → R002 など）
-                let roomId = roomIdRaw;
-                if (roomIdRaw.startsWith('R') && roomIdRaw.length > 4) {
-                  // R000001 → R001 に変換
-                  const numPart = roomIdRaw.substring(1); // 000001
-                  const normalizedNum = String(parseInt(numPart, 10)).padStart(3, '0'); // 001
-                  roomId = 'R' + normalizedNum; // R001
-                }
-
-                // 検針完了データを確認（検針値が入力されている場合）
-                if (
-                  row[inspValueIndex] !== null &&
-                  row[inspValueIndex] !== undefined &&
-                  String(row[inspValueIndex]).trim() !== ''
-                ) {
-                  // 検針日時をフォーマット（2025/05/31 → 5月31日）
-                  let readingDateFormatted = null;
-                  if (inspDateIndex !== -1 && row[inspDateIndex]) {
-                    try {
-                      const dateStr = String(row[inspDateIndex]).trim();
-                      if (dateStr) {
-                        const date = new Date(dateStr);
-                        if (!isNaN(date.getTime())) {
-                          readingDateFormatted = `${date.getMonth() + 1}月${date.getDate()}日`;
-                        }
-                      }
-                    } catch (e) {
-                      Logger.log(`[getRooms] 日付変換エラー: ${e.message}`);
-                    }
-                  }
-
-                  // 日付がない場合のフォールバック
-                  if (!readingDateFormatted) {
-                    const today = new Date();
-                    readingDateFormatted = `${today.getMonth() + 1}月${today.getDate()}日`;
-                  }
-
-                  readingMap.set(roomId, readingDateFormatted);
-                }
-
-                // 検針不要フラグを確認
-                if (inspNotNeededIndex !== -1) {
-                  const notNeededValue = row[inspNotNeededIndex];
-                  if (notNeededValue !== null && notNeededValue !== undefined) {
-                    const notNeededStr = String(notNeededValue).trim().toLowerCase();
-                    // 空文字でない値が入っている場合は検針不要とする（'true', '1', 'yes', 'on'など）
-                    const isNotNeeded =
-                      notNeededStr !== '' &&
-                      (notNeededStr === 'true' ||
-                        notNeededStr === '1' ||
-                        notNeededStr === 'yes' ||
-                        notNeededStr === 'on' ||
-                        notNeededStr === '○' ||
-                        notNeededStr === 'x' ||
-                        notNeededStr === '×');
-
-                    notNeededMap.set(roomId, isNotNeeded);
-                  }
-                }
-              }
-            });
-
-            // 検針完了状況と検針不要フラグを部屋データに反映
-            rooms.forEach((room) => {
-              // 検針完了状況の設定
-              if (readingMap.has(room.id)) {
-                room.readingStatus = 'completed';
-                room.isCompleted = true;
-                room.readingDateFormatted = readingMap.get(room.id);
-              }
-
-              // 検針不要フラグの設定
-              if (notNeededMap.has(room.id)) {
-                room.isNotNeeded = notNeededMap.get(room.id);
-                // 検針不要の場合は検針状況を'not-needed'に設定
-                if (room.isNotNeeded) {
-                  room.readingStatus = 'not-needed';
-                }
-              } else {
-                room.isNotNeeded = false; // デフォルトは検針必要
-              }
-            });
-          } else {
-            Logger.log('[getRooms] inspection_dataの必要な列が見つかりません');
-          }
-        }
-      } catch (inspectionError) {
-        Logger.log(
-          `[getRooms] inspection_data読み込みエラー（部屋一覧は継続）: ${inspectionError.message}`
-        );
-      }
-    } else {
-      Logger.log('[getRooms] inspection_dataシートが見つかりません（部屋一覧は継続）');
-    }
-
-    // HTMLが期待する形式で返却
-    const result = {
-      property: propertyInfo,
-      rooms: rooms,
-    };
-
-    return { success: true, data: result };
-  } catch (error) {
-    Logger.log(`getRooms エラー: ${error.message}`);
-    return { success: false, error: error.message };
-  }
-}
-
-/**
- * 指定物件の部屋一覧を取得（軽量版・速度改善用）
- * 必要最小限のフィールドのみを返却して通信量を削減
- * @param {string} propertyId - 物件ID
- * @param {string} lastSync - 最終同期日時（ISO形式、省略可）
- * @returns {Object} 軽量化された部屋データ
- */
-function getRoomsLight(propertyId, lastSync = null) {
-  try {
-    if (!propertyId) {
-      return { success: false, error: '物件IDが指定されていません' };
-    }
-
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const propertySheet = ss.getSheetByName(CONFIG.SHEET_NAMES.PROPERTY_MASTER);
-    const roomSheet = ss.getSheetByName(CONFIG.SHEET_NAMES.ROOM_MASTER);
-
-    if (!propertySheet || !roomSheet) {
-      return { success: false, error: '必要なシートが見つかりません' };
-    }
-
-    // 物件情報取得（軽量版）
-    const propertyData = propertySheet.getDataRange().getValues();
-    const propertyHeaders = propertyData[0];
-    const propertyIdIndex = propertyHeaders.indexOf('物件ID');
-    const propertyNameIndex = propertyHeaders.indexOf('物件名');
-
-    const propertyRow = propertyData
-      .slice(1)
-      .find((row) => String(row[propertyIdIndex]).trim() === String(propertyId).trim());
-
-    if (!propertyRow) {
-      return { success: false, error: `物件ID「${propertyId}」が見つかりません` };
-    }
-
-    const propertyInfo = {
-      id: String(propertyRow[propertyIdIndex]).trim(),
-      name: String(propertyRow[propertyNameIndex] || '物件名不明').trim(),
-    };
-
-    // 部屋情報取得（軽量版）
-    const roomData = roomSheet.getDataRange().getValues();
-    const roomHeaders = roomData[0];
+    // --- Phase 2: Delta sync support (from getRoomsLight) ---
     const lightFields = getConfig('PERFORMANCE.LIGHT_API.ROOMS_FIELDS', ['部屋ID', '部屋名']);
     const timestampCol = getConfig('PERFORMANCE.DELTA_SYNC.TIMESTAMP_COLUMN', '最終更新日時');
-
-    const roomPropertyIdIndex = roomHeaders.indexOf('物件ID');
     const timestampIndex = roomHeaders.indexOf(timestampCol);
 
-    // 必要な列インデックスを取得
     const fieldIndexes = {};
     lightFields.forEach((field) => {
       const index = roomHeaders.indexOf(field);
@@ -322,10 +141,9 @@ function getRoomsLight(propertyId, lastSync = null) {
       }
     });
 
-    const lightRooms = [];
+    const rooms = [];
     let maxTimestamp = new Date(0);
 
-    // 対象物件の部屋を抽出
     for (let i = 1; i < roomData.length; i++) {
       const row = roomData[i];
 
@@ -333,16 +151,27 @@ function getRoomsLight(propertyId, lastSync = null) {
         continue;
       }
 
-      const room = {};
+      const room = {
+        // --- Phase 1 fix: always .trim() room ID and name ---
+        id: String(row[roomIdIndex] || '').trim(),
+        name: String(row[roomNameIndex] || '').trim(),
+        readingStatus: 'not-completed',
+        isCompleted: false,
+        readingDateFormatted: null,
+        isNotNeeded: false,
+      };
 
-      // 指定されたフィールドのみ抽出
+      // Also include light fields if configured
       lightFields.forEach((field) => {
         if (fieldIndexes[field] !== undefined) {
           room[field] = row[fieldIndexes[field]];
         }
       });
+      // Override id/name with trimmed versions (fixes the trim bug)
+      room.id = String(row[roomIdIndex] || '').trim();
+      room.name = String(row[roomNameIndex] || '').trim();
 
-      // タイムスタンプ処理
+      // Timestamp processing (for delta sync)
       let rowTimestamp = new Date();
       if (timestampIndex !== -1 && row[timestampIndex]) {
         try {
@@ -355,169 +184,201 @@ function getRoomsLight(propertyId, lastSync = null) {
         }
       }
 
-      // 差分同期チェック
-      if (lastSync) {
-        const lastSyncDate = new Date(lastSync);
+      // Delta sync filtering
+      if (options.lastSync) {
+        const lastSyncDate = new Date(options.lastSync);
         if (rowTimestamp <= lastSyncDate) {
           continue;
         }
       }
 
-      // HTMLが期待するフィールド構造で初期化
-      room.id = room['部屋ID'] || '';
-      room.name = room['部屋名'] || '';
-      room.readingStatus = 'not-completed'; // デフォルト未完了
-      room.isCompleted = false; // HTMLが期待するフィールド
-      room.readingDateFormatted = null; // HTMLが期待するフィールド
-      room.isNotNeeded = false; // 検針不要フラグ（デフォルトは必要）
       room.lastModified = rowTimestamp.toISOString();
-
-      lightRooms.push(room);
+      rooms.push(room);
 
       if (rowTimestamp > maxTimestamp) {
         maxTimestamp = rowTimestamp;
       }
     }
 
-    // inspection_dataから検針完了状況と検針不要フラグを確認
-    const inspectionSheet = ss.getSheetByName(CONFIG.SHEET_NAMES.INSPECTION_DATA);
-    if (inspectionSheet) {
-      try {
-        const inspectionData = inspectionSheet.getDataRange().getValues();
+    // --- Phase 3: Column-slim inspection_data read ---
+    _applyInspectionStatus(ss, propertyId, rooms);
 
-        if (inspectionData.length > 1) {
-          const inspHeaders = inspectionData[0];
-          const inspPropertyIdIndex = inspHeaders.indexOf('物件ID'); // 列C (2)
-          const inspRoomIdIndex = inspHeaders.indexOf('部屋ID'); // 列D (3)
-          const inspValueIndex = inspHeaders.indexOf('今回の指示数'); // 列J (9)
-          const inspDateIndex = inspHeaders.indexOf('検針日時'); // 列F (5)
-          const inspNotNeededIndex = inspHeaders.indexOf('検針不要'); // 列N (13)
+    // --- Build response ---
+    const result = {
+      property: propertyInfo,
+      rooms: rooms,
+    };
 
-          if (inspPropertyIdIndex !== -1 && inspRoomIdIndex !== -1 && inspValueIndex !== -1) {
-            const readingMap = new Map(); // 部屋IDと検針日のマップ
-            const notNeededMap = new Map(); // 部屋IDと検針不要フラグのマップ
-
-            // inspection_dataの各行を検索
-            inspectionData.slice(1).forEach((row) => {
-              // 物件IDが一致する場合
-              if (String(row[inspPropertyIdIndex]).trim() === String(propertyId).trim()) {
-                const roomIdRaw = String(row[inspRoomIdIndex]).trim();
-
-                // 部屋IDを正規化（R000001 → R001, R000002 → R002 など）
-                let roomId = roomIdRaw;
-                if (roomIdRaw.startsWith('R') && roomIdRaw.length > 4) {
-                  // R000001 → R001 に変換
-                  const numPart = roomIdRaw.substring(1); // 000001
-                  const normalizedNum = String(parseInt(numPart, 10)).padStart(3, '0'); // 001
-                  roomId = 'R' + normalizedNum; // R001
-                }
-
-                // 検針完了データを確認（検針値が入力されている場合）
-                if (
-                  row[inspValueIndex] !== null &&
-                  row[inspValueIndex] !== undefined &&
-                  String(row[inspValueIndex]).trim() !== ''
-                ) {
-                  // 検針日時をフォーマット（2025/05/31 → 5月31日）
-                  let readingDateFormatted = null;
-                  if (inspDateIndex !== -1 && row[inspDateIndex]) {
-                    try {
-                      const dateStr = String(row[inspDateIndex]).trim();
-                      if (dateStr) {
-                        const date = new Date(dateStr);
-                        if (!isNaN(date.getTime())) {
-                          readingDateFormatted = `${date.getMonth() + 1}月${date.getDate()}日`;
-                        }
-                      }
-                    } catch (e) {
-                      Logger.log(`[getRoomsLight] 日付変換エラー: ${e.message}`);
-                    }
-                  }
-
-                  // 日付がない場合のフォールバック
-                  if (!readingDateFormatted) {
-                    const today = new Date();
-                    readingDateFormatted = `${today.getMonth() + 1}月${today.getDate()}日`;
-                  }
-
-                  readingMap.set(roomId, readingDateFormatted);
-                }
-
-                // 検針不要フラグを確認
-                if (inspNotNeededIndex !== -1) {
-                  const notNeededValue = row[inspNotNeededIndex];
-                  if (notNeededValue !== null && notNeededValue !== undefined) {
-                    const notNeededStr = String(notNeededValue).trim().toLowerCase();
-                    // 空文字でない値が入っている場合は検針不要とする（'true', '1', 'yes', 'on'など）
-                    const isNotNeeded =
-                      notNeededStr !== '' &&
-                      (notNeededStr === 'true' ||
-                        notNeededStr === '1' ||
-                        notNeededStr === 'yes' ||
-                        notNeededStr === 'on' ||
-                        notNeededStr === '○' ||
-                        notNeededStr === 'x' ||
-                        notNeededStr === '×');
-
-                    notNeededMap.set(roomId, isNotNeeded);
-                  }
-                }
-              }
-            });
-
-            // 検針完了状況と検針不要フラグを部屋データに反映
-            lightRooms.forEach((room) => {
-              // 検針完了状況の設定
-              if (readingMap.has(room.id)) {
-                room.readingStatus = 'completed';
-                room.isCompleted = true;
-                room.readingDateFormatted = readingMap.get(room.id);
-              }
-
-              // 検針不要フラグの設定
-              if (notNeededMap.has(room.id)) {
-                room.isNotNeeded = notNeededMap.get(room.id);
-                // 検針不要の場合は検針状況を'not-needed'に設定
-                if (room.isNotNeeded) {
-                  room.readingStatus = 'not-needed';
-                }
-              } else {
-                room.isNotNeeded = false; // デフォルトは検針必要
-              }
-            });
-          } else {
-            Logger.log('[getRoomsLight] inspection_dataの必要な列が見つかりません');
-          }
-        }
-      } catch (inspectionError) {
-        Logger.log(
-          `[getRoomsLight] inspection_data読み込みエラー（部屋一覧は継続）: ${inspectionError.message}`
-        );
-      }
-    } else {
-      Logger.log('[getRoomsLight] inspection_dataシートが見つかりません（部屋一覧は継続）');
+    if (options.includeMetadata) {
+      result.hasChanges = rooms.length > 0;
+      result.lastModified = maxTimestamp.toISOString();
+      result.totalCount = rooms.length;
+      result.compression = Math.round(
+        (1 -
+          JSON.stringify({ property: propertyInfo, rooms: rooms }).length /
+            JSON.stringify(roomData).length) *
+          100
+      );
     }
 
-    return {
-      success: true,
-      data: {
-        hasChanges: lightRooms.length > 0,
-        property: propertyInfo,
-        rooms: lightRooms,
-        lastModified: maxTimestamp.toISOString(),
-        totalCount: lightRooms.length,
-        compression: Math.round(
-          (1 -
-            JSON.stringify({ property: propertyInfo, rooms: lightRooms }).length /
-              JSON.stringify(roomData).length) *
-            100
-        ),
-      },
-    };
+    return { success: true, data: result };
   } catch (error) {
-    Logger.log(`[getRoomsLight] エラー: ${error.message}`);
+    Logger.log(`[getRooms] エラー: ${error.message}`);
     return { success: false, error: error.message };
   }
+}
+
+/**
+ * inspection_dataから検針完了状況と検針不要フラグを部屋データに反映
+ * Phase 3: 列スリム読込を実装（5列のみ読込）
+ * @param {Spreadsheet} ss - スプレッドシートオブジェクト
+ * @param {string} propertyId - 物件ID
+ * @param {Array} rooms - 部屋データ配列（参照渡しで更新）
+ */
+function _applyInspectionStatus(ss, propertyId, rooms) {
+  const inspectionSheet = ss.getSheetByName(CONFIG.SHEET_NAMES.INSPECTION_DATA);
+  if (!inspectionSheet) {
+    Logger.log('[getRooms] inspection_dataシートが見つかりません（部屋一覧は継続）');
+    return;
+  }
+
+  try {
+    // --- Phase 3: Column-slim read ---
+    // Only read the 5 columns we need: 物件ID(C=3), 部屋ID(D=4), 検針日時(F=6), 今回の指示数(J=10), 検針不要(N=14)
+    // Columns are 1-indexed in GAS getRange: C=3, D=4, F=6, J=10, N=14
+    // We read from column 3 to column 14 (12 columns) to get all needed fields in one contiguous range
+    const lastRow = inspectionSheet.getLastRow();
+    if (lastRow <= 1) return; // Only headers or empty
+
+    const inspectionData = inspectionSheet.getRange(1, 3, lastRow, 12).getValues();
+    // Within this sub-range:
+    // Index 0 = column C (物件ID)
+    // Index 1 = column D (部屋ID)
+    // Index 3 = column F (検針日時)
+    // Index 7 = column J (今回の指示数)
+    // Index 11 = column N (検針不要)
+
+    if (inspectionData.length <= 1) return;
+
+    // Map sub-range column headers to confirm positions
+    const inspHeaders = inspectionData[0];
+    const inspPropertyIdIndex = inspHeaders.indexOf('物件ID');
+    const inspRoomIdIndex = inspHeaders.indexOf('部屋ID');
+    const inspValueIndex = inspHeaders.indexOf('今回の指示数');
+    const inspDateIndex = inspHeaders.indexOf('検針日時');
+    const inspNotNeededIndex = inspHeaders.indexOf('検針不要');
+
+    if (inspPropertyIdIndex === -1 || inspRoomIdIndex === -1 || inspValueIndex === -1) {
+      Logger.log('[getRooms] inspection_dataの必要な列が見つかりません');
+      return;
+    }
+
+    const readingMap = new Map();
+    const notNeededMap = new Map();
+
+    inspectionData.slice(1).forEach((row) => {
+      if (String(row[inspPropertyIdIndex]).trim() === String(propertyId).trim()) {
+        const roomIdRaw = String(row[inspRoomIdIndex]).trim();
+
+        // 部屋ID正規化（R000001 → R001等）
+        let roomId = roomIdRaw;
+        if (roomIdRaw.startsWith('R') && roomIdRaw.length > 4) {
+          const numPart = roomIdRaw.substring(1);
+          const normalizedNum = String(parseInt(numPart, 10)).padStart(3, '0');
+          roomId = 'R' + normalizedNum;
+        }
+
+        // 検針完了データ確認
+        if (
+          row[inspValueIndex] !== null &&
+          row[inspValueIndex] !== undefined &&
+          String(row[inspValueIndex]).trim() !== ''
+        ) {
+          let readingDateFormatted = null;
+          if (inspDateIndex !== -1 && row[inspDateIndex]) {
+            try {
+              const dateStr = String(row[inspDateIndex]).trim();
+              if (dateStr) {
+                const date = new Date(dateStr);
+                if (!isNaN(date.getTime())) {
+                  readingDateFormatted = `${date.getMonth() + 1}月${date.getDate()}日`;
+                }
+              }
+            } catch (e) {
+              Logger.log(`[getRooms] 日付変換エラー: ${e.message}`);
+            }
+          }
+
+          if (!readingDateFormatted) {
+            const today = new Date();
+            readingDateFormatted = `${today.getMonth() + 1}月${today.getDate()}日`;
+          }
+
+          readingMap.set(roomId, readingDateFormatted);
+        }
+
+        // 検針不要フラグ確認
+        if (inspNotNeededIndex !== -1) {
+          const notNeededValue = row[inspNotNeededIndex];
+          if (notNeededValue !== null && notNeededValue !== undefined) {
+            const notNeededStr = String(notNeededValue).trim().toLowerCase();
+            const isNotNeeded =
+              notNeededStr !== '' &&
+              (notNeededStr === 'true' ||
+                notNeededStr === '1' ||
+                notNeededStr === 'yes' ||
+                notNeededStr === 'on' ||
+                notNeededStr === '○' ||
+                notNeededStr === 'x' ||
+                notNeededStr === '×');
+
+            notNeededMap.set(roomId, isNotNeeded);
+          }
+        }
+      }
+    });
+
+    // 部屋データに検針状況を反映
+    rooms.forEach((room) => {
+      if (readingMap.has(room.id)) {
+        room.readingStatus = 'completed';
+        room.isCompleted = true;
+        room.readingDateFormatted = readingMap.get(room.id);
+      }
+
+      if (notNeededMap.has(room.id)) {
+        room.isNotNeeded = notNeededMap.get(room.id);
+        if (room.isNotNeeded) {
+          room.readingStatus = 'not-needed';
+        }
+      } else {
+        room.isNotNeeded = false;
+      }
+    });
+  } catch (inspectionError) {
+    Logger.log(
+      `[getRooms] inspection_data読み込みエラー（部屋一覧は継続）: ${inspectionError.message}`
+    );
+  }
+}
+
+/**
+ * 指定物件の部屋一覧を取得
+ * @param {string} propertyId - 物件ID
+ * @returns {Object} {success, data: {property, rooms}}
+ */
+function getRooms(propertyId) {
+  return _getRoomsImpl(propertyId, { includeMetadata: false });
+}
+
+/**
+ * 指定物件の部屋一覧を取得（軽量版・差分同期対応）
+ * @param {string} propertyId - 物件ID
+ * @param {string} lastSync - 最終同期日時（ISO形式、省略可）
+ * @returns {Object} {success, data: {property, rooms, hasChanges, lastModified, totalCount, compression}}
+ */
+function getRoomsLight(propertyId, lastSync = null) {
+  return _getRoomsImpl(propertyId, { lastSync: lastSync, includeMetadata: true });
 }
 
 /**
@@ -702,7 +563,7 @@ function getFallbackNames(propertyId, roomId) {
  * @param {Array} readings - 更新する検針データ
  * @return {Object} 更新結果
  */
-function updateMeterReadings(propertyId, roomId, readings) {
+function updateMeterReadings(propertyId, roomId, readings, options = {}) {
   const lock = LockService.getScriptLock();
   try {
     if (!propertyId || !roomId || !Array.isArray(readings) || readings.length === 0) {
@@ -856,7 +717,9 @@ function updateMeterReadings(propertyId, roomId, readings) {
       }
     }
 
-    invalidateFastCache('mr_idx_' + propertyId);
+    if (!options.skipCacheInvalidation) {
+      invalidateFastCache('mr_idx_' + propertyId);
+    }
 
     return {
       success: true,
@@ -1298,7 +1161,7 @@ function saveAndNavigate(params) {
     if (Date.now() - startTime > saveTimeLimit) {
     }
 
-    const saveResult = performSaveOperation(params);
+    const saveResult = performSaveOperation(params, { skipCacheInvalidation: true });
     const saveOperationTime = Date.now() - saveStartTime;
 
     if (!saveResult.success) {
@@ -1321,7 +1184,7 @@ function saveAndNavigate(params) {
       // 20%未満で警告
     }
 
-    const navigationResult = performNavigationOperation(params);
+    const navigationResult = performNavigationOperation(params, null, null, null);
     const navOperationTime = Date.now() - navStartTime;
 
     if (!navigationResult.success) {
@@ -1555,7 +1418,7 @@ function validateSaveAndNavigateParams(params) {
  * @param {Object} params - リクエストパラメータ
  * @returns {Object} 保存結果
  */
-function performSaveOperation(params) {
+function performSaveOperation(params, saveOptions = {}) {
   const { propertyId, currentRoomId, meterReadingsData } = params;
   const operationStartTime = Date.now();
 
@@ -1616,7 +1479,7 @@ function performSaveOperation(params) {
     }
 
     // 既存の updateMeterReadings ロジックを再利用（詳細エラー監視）
-    const result = updateMeterReadings(propertyId, currentRoomId, readings);
+    const result = updateMeterReadings(propertyId, currentRoomId, readings, saveOptions);
     const operationDuration = Date.now() - operationStartTime;
 
     if (result && result.success) {
@@ -1676,8 +1539,14 @@ function performSaveOperation(params) {
  * @param {Object} params - リクエストパラメータ
  * @returns {Object} ナビゲーション結果
  */
-function performNavigationOperation(params) {
-  const { propertyId, targetRoomId } = params;
+function performNavigationOperation(
+  params,
+  preloadedPropertyId,
+  preloadedTargetRoomId,
+  preloadedInspectionData = null
+) {
+  const propertyId = preloadedPropertyId || params.propertyId;
+  const targetRoomId = preloadedTargetRoomId || params.targetRoomId;
   const operationStartTime = Date.now();
 
   try {
@@ -1695,8 +1564,8 @@ function performNavigationOperation(params) {
       };
     }
 
-    // 既存の getMeterReadings ロジックを再利用（詳細エラー監視）
-    const result = getMeterReadings(propertyId, targetRoomId);
+    // Use preloaded data if available, otherwise fetch
+    const result = preloadedInspectionData || getMeterReadings(propertyId, targetRoomId);
     const operationDuration = Date.now() - operationStartTime;
 
     if (!result || !result.success) {
