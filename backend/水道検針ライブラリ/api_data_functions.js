@@ -151,25 +151,19 @@ function _getRoomsImpl(propertyId, options = {}) {
         continue;
       }
 
-      const room = {
-        // --- Phase 1 fix: always .trim() room ID and name ---
-        id: String(row[roomIdIndex] || '').trim(),
-        name: String(row[roomNameIndex] || '').trim(),
-        readingStatus: 'not-completed',
-        isCompleted: false,
-        readingDateFormatted: null,
-        isNotNeeded: false,
-      };
-
-      // Also include light fields if configured
+      const room = {};
       lightFields.forEach((field) => {
         if (fieldIndexes[field] !== undefined) {
           room[field] = row[fieldIndexes[field]];
         }
       });
-      // Override id/name with trimmed versions (fixes the trim bug)
+
       room.id = String(row[roomIdIndex] || '').trim();
       room.name = String(row[roomNameIndex] || '').trim();
+      room.readingStatus = 'not-completed';
+      room.isCompleted = false;
+      room.readingDateFormatted = null;
+      room.isNotNeeded = false;
 
       // Timestamp processing (for delta sync)
       let rowTimestamp = new Date();
