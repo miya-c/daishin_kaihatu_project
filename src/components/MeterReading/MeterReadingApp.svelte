@@ -7,7 +7,7 @@
   import { createToast } from './hooks/useToast.svelte';
   import { gasFetch } from '../../utils/gasClient';
   import { updateRoomInBothCaches } from '../../utils/roomCache';
-  import { CACHE_STALE_THRESHOLD_MS } from '../../utils/config';
+  import { CACHE_STALE_THRESHOLD_MS, API_TIMEOUT_MS } from '../../utils/config';
   import {
     saveToQueue,
     registerOnlineListener,
@@ -416,15 +416,23 @@
 
     try {
       if (isCurrentlySyncing()) throw new Error('sync in progress');
-      const result = (await gasFetch(
-        'updateMeterReadings',
-        {
-          propertyId,
-          roomId,
-          readings: JSON.stringify(updatedReadings),
-        },
-        'POST'
-      )) as Record<string, unknown>;
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
+      let result: Record<string, unknown>;
+      try {
+        result = (await gasFetch(
+          'updateMeterReadings',
+          {
+            propertyId,
+            roomId,
+            readings: JSON.stringify(updatedReadings),
+          },
+          'POST',
+          controller.signal
+        )) as Record<string, unknown>;
+      } finally {
+        clearTimeout(timeoutId);
+      }
 
       if (result.success) {
         hasSaved = true;

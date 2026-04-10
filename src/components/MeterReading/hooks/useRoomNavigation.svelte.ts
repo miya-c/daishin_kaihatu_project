@@ -24,7 +24,7 @@ interface NavigationRoom {
 
 interface GasApiResponse {
   success?: boolean;
-  data?: unknown[];
+  data?: unknown[] | { rooms?: unknown[]; [key: string]: unknown };
   rooms?: unknown[];
   [key: string]: unknown;
 }
@@ -90,10 +90,6 @@ export const createRoomNavigation = (options: CreateRoomNavigationParams) => {
     _rId: string,
     maxRetries: number = 3
   ): Promise<void> => {
-    const currentGasUrl = options.gasWebAppUrl || sessionStorage.getItem('gasWebAppUrl');
-    if (!currentGasUrl) return;
-
-    // Cancel any in-flight request
     if (abortController) {
       abortController.abort();
     }
@@ -102,19 +98,21 @@ export const createRoomNavigation = (options: CreateRoomNavigationParams) => {
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        const fetchUrl = `${currentGasUrl}?action=getRooms&propertyId=${encodeURIComponent(propId)}`;
-        const response = await fetch(fetchUrl, { method: 'GET', signal: controller.signal });
-        if (!response.ok) {
-          if (response.status === 503 && attempt < maxRetries) {
-            await new Promise((resolve) => setTimeout(resolve, 1000 * Math.pow(2, attempt - 1)));
-            continue;
-          }
-          return;
-        }
-        const result: GasApiResponse = await response.json();
+        const result = (await gasFetch(
+          'getRooms',
+          { propertyId: propId },
+          'GET',
+          controller.signal
+        )) as GasApiResponse;
         let roomsArray: unknown[];
-        if (result && result.success === true && Array.isArray(result.data)) {
-          roomsArray = result.data;
+        if (result && result.success === true && result.data) {
+          if (Array.isArray(result.data)) {
+            roomsArray = result.data;
+          } else if (result.data.rooms && Array.isArray(result.data.rooms)) {
+            roomsArray = result.data.rooms;
+          } else {
+            return;
+          }
         } else if (Array.isArray(result)) {
           roomsArray = result as unknown[];
         } else if (result && Array.isArray(result.rooms)) {
@@ -171,7 +169,31 @@ export const createRoomNavigation = (options: CreateRoomNavigationParams) => {
         }
         return true;
       }
-      return false;
+      // API returned { success: false } — fallback to offline queue to prevent data loss
+      try {
+        saveToQueue({
+          action: 'updateMeterReadings',
+          propertyId: options.propertyId,
+          roomId: targetRoomId,
+          readings,
+        });
+      } catch {
+        if (!silent) {
+          options.displayToast('保存に失敗しました。保存領域が一杯の可能性があります。');
+        }
+        return false;
+      }
+      updateSessionCacheForSavedRoom(targetRoomId);
+      if (options.invalidatePrefetch) {
+        options.invalidatePrefetch(options.propertyId, targetRoomId);
+      }
+      if (options.updateOfflineCache) {
+        options.updateOfflineCache(options.propertyId, targetRoomId, readings);
+      }
+      if (!silent) {
+        options.displayToast('保存に失敗しました。オンライン復帰時に自動送信します。');
+      }
+      return true;
     } catch (err) {
       if (controller.signal.aborted) return false;
       // API failed — fallback to offline queue
@@ -247,16 +269,25 @@ export const createRoomNavigation = (options: CreateRoomNavigationParams) => {
           )) as Record<string, unknown>;
           clearTimeout(timeoutId);
 
-          if (result.success && result.navigationResult) {
+          if (result.success) {
             consecutiveSaveAndNavigateFailures = 0;
             updateSessionCacheForSavedRoom(currentRoomId);
             if (options.invalidatePrefetch) {
               options.invalidatePrefetch(options.propertyId, currentRoomId);
             }
-            options.onNavigateToRoom!(
-              targetRoomId,
-              result.navigationResult as Record<string, unknown>
-            );
+            if (result.navigationResult) {
+              options.onNavigateToRoom!(
+                targetRoomId,
+                result.navigationResult as Record<string, unknown>
+              );
+              return;
+            }
+            if (options.onNavigateToRoom) {
+              options.onNavigateToRoom(targetRoomId);
+            } else {
+              window.location.href = `/reading/?propertyId=${options.propertyId}&roomId=${targetRoomId}`;
+            }
+            updating = false;
             return;
           }
           consecutiveSaveAndNavigateFailures++;

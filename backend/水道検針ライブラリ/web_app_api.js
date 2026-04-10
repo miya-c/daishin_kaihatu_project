@@ -365,8 +365,9 @@ function doPost(e) {
       params = { ...e.parameter };
     }
 
-    // JSON POSTデータの場合
-    if (e.postData && e.postData.contents) {
+    // JSON POSTデータの場合（application/json のみJSON.parse）
+    // application/x-www-form-urlencoded は e.parameter に自動パース済みのためスキップ
+    if (e.postData && e.postData.contents && (e.postData.type || '').includes('json')) {
       try {
         const jsonData = JSON.parse(e.postData.contents);
         params = { ...params, ...jsonData };

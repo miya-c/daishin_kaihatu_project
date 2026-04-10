@@ -1155,7 +1155,7 @@ function saveAndNavigate(params) {
     if (Date.now() - startTime > saveTimeLimit) {
     }
 
-    const saveResult = performSaveOperation(params, { skipCacheInvalidation: true });
+    const saveResult = performSaveOperation(params);
     const saveOperationTime = Date.now() - saveStartTime;
 
     if (!saveResult.success) {
