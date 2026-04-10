@@ -128,11 +128,11 @@ describe('updateMeterReadings', () => {
     const callArgs = mockFetch.mock.calls[0];
     expect(callArgs[0]).toBe(MOCK_URL);
     expect(callArgs[1].method).toBe('POST');
-    const body = String(callArgs[1].body);
-    expect(body).toContain('action=updateMeterReadings');
-    expect(body).toContain('propertyId=prop-1');
-    expect(body).toContain('roomId=room-1');
-    expect(body).toContain(encodeURIComponent(JSON.stringify(readings)));
+    const body = JSON.parse(callArgs[1].body);
+    expect(body.action).toBe('updateMeterReadings');
+    expect(body.propertyId).toBe('prop-1');
+    expect(body.roomId).toBe('room-1');
+    expect(JSON.parse(body.readings)).toEqual(readings);
     vi.restoreAllMocks();
   });
 });

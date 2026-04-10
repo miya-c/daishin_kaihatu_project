@@ -365,19 +365,14 @@ function doPost(e) {
       params = { ...e.parameter };
     }
 
-    // JSON POSTデータの場合（application/json のみJSON.parse）
-    // application/x-www-form-urlencoded は e.parameter に自動パース済みのためスキップ
-    if (e.postData && e.postData.contents && (e.postData.type || '').includes('json')) {
+    // JSON POSTデータの解析（text/plainでもJSON文字列の場合があるため常に試行）
+    if (e.postData && e.postData.contents) {
       try {
         const jsonData = JSON.parse(e.postData.contents);
-        params = { ...params, ...jsonData };
-      } catch (parseError) {
-        console.error('[doPost] JSON parse error:', parseError.message);
-        return createCorsJsonResponse({
-          success: false,
-          error: 'Invalid JSON in request body',
-        });
-      }
+        if (typeof jsonData === 'object' && jsonData !== null) {
+          params = { ...params, ...jsonData };
+        }
+      } catch (parseError) {}
     }
 
     const action = params.action;

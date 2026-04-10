@@ -58,7 +58,7 @@ export const gasFetch = async (
     method === 'POST'
       ? await fetch(url, {
           method: 'POST',
-          body: searchParams,
+          body: JSON.stringify(Object.fromEntries(searchParams.entries())),
           signal,
         })
       : await fetch(`${url}?${searchParams}`, { signal });
@@ -213,7 +213,7 @@ export const updateMeterReadings = async (
 
   const response = await fetch(url, {
     method: 'POST',
-    body: params,
+    body: JSON.stringify(Object.fromEntries(params.entries())),
   });
 
   if (!response.ok) {
