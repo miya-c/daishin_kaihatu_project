@@ -1,7 +1,7 @@
 // Service Worker for Water Meter Reading PWA
 // Version: 2.1.0 - Phase 3: Background Sync for offline queue
 
-const CACHE_VERSION = 'v2';
+const CACHE_VERSION = 'v3';
 const CACHE_NAME = `meter-reading-${CACHE_VERSION}`;
 const SYNC_TAG = 'offline-sync';
 
