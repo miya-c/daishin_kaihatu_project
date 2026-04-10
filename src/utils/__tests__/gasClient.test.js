@@ -128,7 +128,6 @@ describe('updateMeterReadings', () => {
     const callArgs = mockFetch.mock.calls[0];
     expect(callArgs[0]).toBe(MOCK_URL);
     expect(callArgs[1].method).toBe('POST');
-    expect(callArgs[1].headers['Content-Type']).toBe('application/x-www-form-urlencoded');
     const body = callArgs[1].body;
     expect(body).toContain('action=updateMeterReadings');
     expect(body).toContain('propertyId=prop-1');

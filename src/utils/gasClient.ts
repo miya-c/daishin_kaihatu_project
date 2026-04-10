@@ -58,7 +58,6 @@ export const gasFetch = async (
     method === 'POST'
       ? await fetch(url, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
           body: searchParams.toString(),
           signal,
         })
@@ -214,7 +213,6 @@ export const updateMeterReadings = async (
 
   const response = await fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: params.toString(),
   });
 
