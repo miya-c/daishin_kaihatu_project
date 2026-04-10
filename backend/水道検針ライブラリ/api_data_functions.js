@@ -391,7 +391,7 @@ function getMeterReadings(propertyId, roomId) {
 
     const CACHE_TTL = 300;
     const cacheKey = 'mr_idx_' + propertyId;
-    const roomIndex = getFastCache(cacheKey);
+    let roomIndex = getFastCache(cacheKey);
 
     if (!roomIndex) {
       Logger.log('[getMeterReadings] キャッシュミス - インデックス構築開始');
@@ -458,8 +458,8 @@ function getMeterReadings(propertyId, roomId) {
 
     const readings = propertyIndex[roomId];
 
-    const propertyName = '';
-    const roomName = '';
+    let propertyName = '';
+    let roomName = '';
     if (readings.length > 0) {
       propertyName = readings[0]['物件名'] || '';
       roomName = readings[0]['部屋名'] || '';
