@@ -313,11 +313,15 @@ export function registerOnlineListener(
 export function registerSync(): void {
   if (!('serviceWorker' in navigator)) return;
   navigator.serviceWorker.ready
-    .then((registration) => {
+    .then(async (registration) => {
       if ('sync' in registration) {
-        (registration as unknown as { sync: { register: (tag: string) => void } }).sync.register(
-          'offline-sync'
-        );
+        try {
+          await (
+            registration as unknown as { sync: { register: (tag: string) => Promise<void> } }
+          ).sync.register('offline-sync');
+        } catch {
+          // Background Sync may be disallowed (NotAllowedError) — non-critical
+        }
       }
     })
     .catch(() => {});
