@@ -124,15 +124,12 @@ describe('updateMeterReadings', () => {
     const readings = [{ date: '2025-06-18', currentReading: '100' }];
     await updateMeterReadings(MOCK_URL, 'prop-1', 'room-1', readings);
 
-    // POSTリクエストの検証
     const callArgs = mockFetch.mock.calls[0];
-    expect(callArgs[0]).toBe(MOCK_URL);
-    expect(callArgs[1].method).toBe('POST');
-    const body = JSON.parse(callArgs[1].body);
-    expect(body.action).toBe('updateMeterReadings');
-    expect(body.propertyId).toBe('prop-1');
-    expect(body.roomId).toBe('room-1');
-    expect(JSON.parse(body.readings)).toEqual(readings);
+    const requestUrl = callArgs[0];
+    expect(requestUrl).toContain('action=updateMeterReadings');
+    expect(requestUrl).toContain('propertyId=prop-1');
+    expect(requestUrl).toContain('roomId=room-1');
+    expect(requestUrl).toContain(encodeURIComponent(JSON.stringify(readings)));
     vi.restoreAllMocks();
   });
 });

@@ -204,18 +204,180 @@ function doGet(e) {
           });
         }
 
-      case 'updateMeterReadings':
-        return createCorsJsonResponse({
-          success: false,
-          error: 'updateMeterReadings requires POST method',
-        });
+      case 'updateMeterReadings': {
+        const updateAuth = validateApiKey(e.parameter, true);
+        if (!updateAuth.authorized) {
+          return createCorsJsonResponse({ success: false, error: updateAuth.error });
+        }
+        const updateSanitize = sanitizeApiParams(e.parameter);
+        if (!updateSanitize.valid) {
+          return createCorsJsonResponse({ success: false, error: updateSanitize.error });
+        }
+        if (!e.parameter.propertyId || !e.parameter.roomId || !e.parameter.readings) {
+          return createCorsJsonResponse({
+            success: false,
+            error: 'propertyId, roomId, readings が必要です',
+          });
+        }
+        try {
+          const readings = JSON.parse(e.parameter.readings);
+          const result = updateMeterReadings(e.parameter.propertyId, e.parameter.roomId, readings);
+          return createCorsJsonResponse(result);
+        } catch (error) {
+          return createCorsJsonResponse({
+            success: false,
+            error: `検針データ更新エラー: ${error.message}`,
+          });
+        }
+      }
+
+      case 'saveAndNavigate': {
+        const saveNavAuth = validateApiKey(e.parameter, true);
+        if (!saveNavAuth.authorized) {
+          return createCorsJsonResponse({ success: false, error: saveNavAuth.error });
+        }
+        const featureFlags = {
+          integratedApiEnabled: getFeatureFlag('INTEGRATED_API_ENABLED', true),
+          legacyFallbackEnabled: getFeatureFlag('LEGACY_FALLBACK_ENABLED', true),
+        };
+        if (!featureFlags.integratedApiEnabled) {
+          return executeLegacyFallback(e.parameter);
+        }
+        try {
+          const result = saveAndNavigate(e.parameter);
+          return createCorsJsonResponse(ensureResponseCompatibility(result));
+        } catch (error) {
+          if (featureFlags.legacyFallbackEnabled) {
+            try {
+              return executeLegacyFallback(e.parameter);
+            } catch (e2) {}
+          }
+          return createCorsJsonResponse({
+            success: false,
+            error: `統合APIエラー: ${error.message}`,
+          });
+        }
+      }
+
+      case 'batchUpdateReadings': {
+        const batchAuth = validateApiKey(e.parameter, true);
+        if (!batchAuth.authorized) {
+          return createCorsJsonResponse({ success: false, error: batchAuth.error });
+        }
+        if (!e.parameter.batchData) {
+          return createCorsJsonResponse({ success: false, error: 'batchDataが必要です' });
+        }
+        try {
+          const entries =
+            typeof e.parameter.batchData === 'string'
+              ? JSON.parse(e.parameter.batchData)
+              : e.parameter.batchData;
+          if (!Array.isArray(entries) || entries.length === 0) {
+            return createCorsJsonResponse({
+              success: false,
+              error: 'batchDataは空でない配列である必要があります',
+            });
+          }
+          if (entries.length > 50) {
+            return createCorsJsonResponse({
+              success: false,
+              error: `バッチサイズ上限超過（${entries.length}件、上限50件）`,
+            });
+          }
+          const results = [];
+          let successCount = 0;
+          let failCount = 0;
+          for (const entry of entries) {
+            try {
+              if (entry.action === 'updateMeterReadings') {
+                const readings = entry.readings
+                  ? typeof entry.readings === 'string'
+                    ? JSON.parse(entry.readings)
+                    : entry.readings
+                  : [];
+                if (
+                  !entry.propertyId ||
+                  !entry.roomId ||
+                  !Array.isArray(readings) ||
+                  readings.length === 0
+                ) {
+                  results.push({ action: entry.action, success: false, error: 'パラメータ不足' });
+                  failCount++;
+                  continue;
+                }
+                const r = updateMeterReadings(entry.propertyId, entry.roomId, readings);
+                results.push({
+                  action: entry.action,
+                  propertyId: entry.propertyId,
+                  roomId: entry.roomId,
+                  success: r.success !== false,
+                });
+                if (r.success !== false) successCount++;
+                else failCount++;
+              } else if (entry.action === 'completeInspection') {
+                if (!entry.propertyId || !entry.completionDate) {
+                  results.push({ action: entry.action, success: false, error: 'パラメータ不足' });
+                  failCount++;
+                  continue;
+                }
+                const r = completePropertyInspectionSimple(entry.propertyId, entry.completionDate);
+                results.push({
+                  action: entry.action,
+                  propertyId: entry.propertyId,
+                  success: r.success !== false,
+                });
+                if (r.success !== false) successCount++;
+                else failCount++;
+              } else {
+                results.push({ action: entry.action, success: false, error: '未知のアクション' });
+                failCount++;
+              }
+            } catch (entryError) {
+              results.push({ action: entry.action, success: false, error: entryError.message });
+              failCount++;
+            }
+          }
+          return createCorsJsonResponse({
+            success: failCount === 0,
+            processed: successCount,
+            failed: failCount,
+            results,
+            total: entries.length,
+          });
+        } catch (batchError) {
+          return createCorsJsonResponse({
+            success: false,
+            error: `バッチ処理エラー: ${batchError.message}`,
+          });
+        }
+      }
 
       case 'completeInspection':
-      case 'completePropertyInspection':
-        return createCorsJsonResponse({
-          success: false,
-          error: 'completeInspection requires POST method',
-        });
+      case 'completePropertyInspection': {
+        const completeAuth = validateApiKey(e.parameter, true);
+        if (!completeAuth.authorized) {
+          return createCorsJsonResponse({ success: false, error: completeAuth.error });
+        }
+        if (!e.parameter.propertyId) {
+          return createCorsJsonResponse({ success: false, error: 'propertyIdが必要です' });
+        }
+        const completeSanitize = sanitizeApiParams(e.parameter);
+        if (!completeSanitize.valid) {
+          return createCorsJsonResponse({ success: false, error: completeSanitize.error });
+        }
+        try {
+          const result = completePropertyInspectionSimple(
+            e.parameter.propertyId,
+            e.parameter.completionDate
+          );
+          return createCorsJsonResponse(result);
+        } catch (error) {
+          return createCorsJsonResponse({
+            success: false,
+            error: `検針完了処理に失敗しました: ${error.message}`,
+          });
+        }
+      }
 
       case 'getRoomsLight':
         try {

@@ -47,21 +47,14 @@ const withApiKey = (params: URLSearchParams): URLSearchParams => {
 export const gasFetch = async (
   action: string,
   params: Record<string, string> = {},
-  method: 'GET' | 'POST' = 'GET',
+  _method: 'GET' | 'POST' = 'GET',
   signal?: AbortSignal
 ): Promise<unknown> => {
   const url = getGasUrl();
   const searchParams = new URLSearchParams({ action, ...params });
   withApiKey(searchParams);
 
-  const response =
-    method === 'POST'
-      ? await fetch(url, {
-          method: 'POST',
-          body: JSON.stringify(Object.fromEntries(searchParams.entries())),
-          signal,
-        })
-      : await fetch(`${url}?${searchParams}`, { signal });
+  const response = await fetch(`${url}?${searchParams}`, { signal });
 
   if (!response.ok) {
     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -211,10 +204,7 @@ export const updateMeterReadings = async (
   });
   withApiKey(params);
 
-  const response = await fetch(url, {
-    method: 'POST',
-    body: JSON.stringify(Object.fromEntries(params.entries())),
-  });
+  const response = await fetch(`${url}?${params}`);
 
   if (!response.ok) {
     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
