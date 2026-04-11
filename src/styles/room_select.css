@@ -567,25 +567,6 @@ body.loading {
   white-space: nowrap;
 }
 
-/* Complete Button Container */
-.complete-button-container {
-  display: flex;
-  justify-content: center;
-  margin-top: 32px;
-  margin-bottom: 32px;
-}
-
-.complete-button {
-  gap: 10px;
-  padding: 18px 36px;
-  font-size: 1.15rem;
-  border-radius: 8px;
-  font-weight: 600;
-  box-shadow: var(--mui-shadows-2);
-  min-width: 320px;
-  letter-spacing: 0.04em;
-}
-
 /* Ripple Effect (Material UI風) */
 .ripple {
   position: absolute;
@@ -691,11 +672,6 @@ body.loading {
   .app-title {
     font-size: 1.5rem; /* 24px */
   }
-
-  .complete-button {
-    font-size: 1.125rem; /* 18px */
-    padding: 14px 28px;
-  }
 }
 
 @media (max-width: 480px) {
@@ -723,11 +699,6 @@ body.loading {
     padding: 8px;
     min-height: 44px;
     min-width: 44px;
-  }
-
-  .complete-button {
-    min-width: 240px;
-    font-size: 0.875rem;
   }
 }
 

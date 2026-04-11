@@ -391,7 +391,31 @@
         </div>
       {/if}
 
-      <div style="display: flex; justify-content: flex-end; padding: 4px 8px 8px;">
+      <div
+        style="display: flex; justify-content: space-between; align-items: center; padding: 4px 8px 8px;"
+      >
+        {#if rooms.length > 0}
+          {@const allDone = rooms.every(
+            (r) => r.readingStatus === 'completed' || r.isCompleted || r.isNotNeeded === true
+          )}
+          <button
+            onclick={handleCompleteInspection}
+            disabled={completing}
+            style="display: flex; align-items: center; gap: 4px; padding: 8px 14px; background: {allDone
+              ? '#2e7d32'
+              : 'var(--mui-palette-primary-main, #1976d2)'}; border: none; border-radius: 8px; font-size: 0.85rem; color: #fff; cursor: pointer; min-height: 36px; font-weight: 600;"
+            aria-label={allDone ? '全件完了 - 完了登録する' : 'この物件の検針を完了する'}
+          >
+            <span
+              class="material-icons MuiSvgIcon-root"
+              aria-hidden="true"
+              style="font-size: 18px;"
+            >
+              {completing ? 'hourglass_empty' : 'check_circle'}
+            </span>
+            {completing ? '処理中...' : allDone ? '完了登録' : '物件完了'}
+          </button>
+        {/if}
         <button
           onclick={() => (sortAsc = !sortAsc)}
           style="display: flex; align-items: center; gap: 4px; padding: 8px 14px; background: #f5f5f5; border: 1px solid #ddd; border-radius: 8px; font-size: 0.85rem; color: #495057; cursor: pointer; min-height: 36px;"
@@ -460,32 +484,6 @@
           {/each}
         {/if}
       </section>
-
-      {#if rooms.length > 0}
-        {@const allDone = rooms.every(
-          (r) => r.readingStatus === 'completed' || r.isCompleted || r.isNotNeeded === true
-        )}
-        <div class="complete-button-container">
-          <button
-            class="MuiButton-root MuiButton-contained MuiButton-sizeLarge complete-button"
-            style={allDone ? 'background-color: #2e7d32;' : ''}
-            onclick={handleCompleteInspection}
-            disabled={completing}
-            aria-label={allDone ? '全件完了 - 完了登録する' : 'この物件の検針を完了する'}
-          >
-            <span class="material-icons MuiSvgIcon-root" aria-hidden="true">
-              {completing ? 'hourglass_empty' : 'check_circle'}
-            </span>
-            <span class="MuiButton-label">
-              {completing
-                ? '処理中...'
-                : allDone
-                  ? '全件完了 - 完了登録する'
-                  : 'この物件の検針を完了する'}
-            </span>
-          </button>
-        </div>
-      {/if}
     </main>
 
     {#if showToast}
