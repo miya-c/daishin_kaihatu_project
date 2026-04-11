@@ -448,9 +448,17 @@
             {@const statusText = isSkipInspection
               ? '検針不要'
               : isCompleted
-                ? room.readingDateFormatted
-                  ? `検針済み：${String(room.readingDateFormatted)}`
-                  : '検針済み'
+                ? (() => {
+                    const prev = parseFloat(String(room.previousReading));
+                    const curr = parseFloat(String(room.currentReading));
+                    if (!isNaN(curr) && !isNaN(prev) && prev > 0) {
+                      return `前回 ${prev}  今回 ${curr}  ${curr - prev}`;
+                    }
+                    if (!isNaN(curr)) {
+                      return `今回 ${curr}  検針済み`;
+                    }
+                    return '検針済み';
+                  })()
                 : '未検針'}
             {@const cardClasses = isSkipInspection
               ? 'MuiCard-root MuiPaper-root MuiPaper-elevation1 MuiCardActionArea-root room-card status-skip'
@@ -462,7 +470,9 @@
               class={cardClasses}
               disabled={isSkipInspection}
               aria-label={String(room.name || room['部屋名'] || room.id || '不明') +
-                (isSkipInspection ? ' 検針不要' : isCompleted ? ' 検針済み' : ' 未検針')}
+                (isSkipInspection ? ' 検針不要' : isCompleted ? ' 検針済み' : ' 未検針') +
+                ' ' +
+                statusText}
               onclick={() => handleRoomClick(room)}
             >
               <div class="MuiCardContent-root room-info-row">

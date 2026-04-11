@@ -255,6 +255,7 @@ function _applyInspectionStatus(ss, propertyId, rooms) {
     const inspValueIndex = inspHeaders.indexOf('今回の指示数');
     const inspDateIndex = inspHeaders.indexOf('検針日時');
     const inspNotNeededIndex = inspHeaders.indexOf('検針不要');
+    const inspPreviousReadingIndex = inspHeaders.indexOf('前回指示数');
 
     if (inspPropertyIdIndex === -1 || inspRoomIdIndex === -1 || inspValueIndex === -1) {
       Logger.log('[getRooms] inspection_dataの必要な列が見つかりません');
@@ -302,7 +303,11 @@ function _applyInspectionStatus(ss, propertyId, rooms) {
             readingDateFormatted = `${today.getMonth() + 1}月${today.getDate()}日`;
           }
 
-          readingMap.set(roomId, readingDateFormatted);
+          readingMap.set(roomId, {
+            date: readingDateFormatted,
+            currentReading: row[inspValueIndex],
+            previousReading: inspPreviousReadingIndex !== -1 ? row[inspPreviousReadingIndex] : null,
+          });
         }
 
         // 検針不要フラグ確認
@@ -329,9 +334,12 @@ function _applyInspectionStatus(ss, propertyId, rooms) {
     // 部屋データに検針状況を反映
     rooms.forEach((room) => {
       if (readingMap.has(room.id)) {
+        const readingData = readingMap.get(room.id);
         room.readingStatus = 'completed';
         room.isCompleted = true;
-        room.readingDateFormatted = readingMap.get(room.id);
+        room.readingDateFormatted = readingData.date;
+        room.currentReading = readingData.currentReading;
+        room.previousReading = readingData.previousReading;
       }
 
       if (notNeededMap.has(room.id)) {
