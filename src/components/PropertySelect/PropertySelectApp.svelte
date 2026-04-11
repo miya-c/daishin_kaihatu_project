@@ -131,8 +131,6 @@
     // Save property info to sessionStorage for the room page
     sessionStorage.setItem('selectedPropertyId', String(property.id));
     sessionStorage.setItem('selectedPropertyName', String(property.name));
-    localStorage.setItem('last_property_id', String(property.id));
-    localStorage.setItem('last_property_name', String(property.name));
 
     // Navigate immediately — room page handles fetching room data from API
     window.location.href = `/room/?propertyId=${encodeURIComponent(property.id)}`;
