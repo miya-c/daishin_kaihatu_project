@@ -401,7 +401,6 @@ function doGet(e) {
           return createCorsJsonResponse({
             success: true,
             data: roomsLightResult.data,
-            compressionRatio: roomsLightResult.data.compression || 0,
             message: `${roomsLightResult.data.totalCount || 0}件の軽量部屋データを取得しました`,
           });
         } catch (error) {

@@ -207,12 +207,6 @@ function _getRoomsImpl(propertyId, options = {}) {
       result.hasChanges = rooms.length > 0;
       result.lastModified = maxTimestamp.toISOString();
       result.totalCount = rooms.length;
-      result.compression = Math.round(
-        (1 -
-          JSON.stringify({ property: propertyInfo, rooms: rooms }).length /
-            JSON.stringify(roomData).length) *
-          100
-      );
     }
 
     return { success: true, data: result };
@@ -510,7 +504,7 @@ function getFallbackNames(propertyId, roomId) {
             .slice(1)
             .find((row) => String(row[propertyIdIndex]).trim() === String(propertyId).trim());
           if (propertyRow) {
-            propertyName = propertyRow[propertyNameIndex] || '';
+            propertyName = String(propertyRow[propertyNameIndex] || '').trim();
           }
         }
       }
@@ -535,7 +529,7 @@ function getFallbackNames(propertyId, roomId) {
                 String(row[roomIdIndex]).trim() === String(roomId).trim()
             );
           if (roomRow) {
-            roomName = roomRow[roomNameIndex] || '';
+            roomName = String(roomRow[roomNameIndex] || '').trim();
           }
         }
       }
@@ -857,9 +851,27 @@ function validateRoomId(propertyId, roomId) {
   try {
     if (!propertyId || !roomId) return false;
 
-    const roomResult = getRooms(propertyId);
-    if (!roomResult.success || !roomResult.data) return false;
-    return roomResult.data.rooms.some((room) => String(room.id).trim() === String(roomId).trim());
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName(CONFIG.SHEET_NAMES.ROOM_MASTER);
+    if (!sheet) return false;
+
+    const data = sheet.getDataRange().getValues();
+    if (data.length <= 1) return false;
+
+    const headers = data[0];
+    const propIdCol = headers.indexOf('物件ID');
+    const roomIdCol = headers.indexOf('部屋ID');
+    if (propIdCol === -1 || roomIdCol === -1) return false;
+
+    const pid = String(propertyId).trim();
+    const rid = String(roomId).trim();
+
+    for (let i = 1; i < data.length; i++) {
+      if (String(data[i][propIdCol]).trim() === pid && String(data[i][roomIdCol]).trim() === rid) {
+        return true;
+      }
+    }
+    return false;
   } catch (error) {
     return false;
   }
