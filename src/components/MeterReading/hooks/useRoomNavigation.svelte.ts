@@ -167,6 +167,13 @@ export const createRoomNavigation = (options: CreateRoomNavigationParams) => {
         if (!silent) {
           options.displayToast('検針データを保存しました');
         }
+        updateSessionCacheForSavedRoom(targetRoomId);
+        if (options.invalidatePrefetch) {
+          options.invalidatePrefetch(options.propertyId, targetRoomId);
+        }
+        if (options.updateOfflineCache) {
+          options.updateOfflineCache(options.propertyId, targetRoomId, readings);
+        }
         return true;
       }
       // API returned { success: false } — fallback to offline queue to prevent data loss
@@ -274,6 +281,9 @@ export const createRoomNavigation = (options: CreateRoomNavigationParams) => {
             updateSessionCacheForSavedRoom(currentRoomId);
             if (options.invalidatePrefetch) {
               options.invalidatePrefetch(options.propertyId, currentRoomId);
+            }
+            if (options.updateOfflineCache) {
+              options.updateOfflineCache(options.propertyId, currentRoomId, meterReadingsData);
             }
             if (result.navigationResult) {
               options.onNavigateToRoom!(
