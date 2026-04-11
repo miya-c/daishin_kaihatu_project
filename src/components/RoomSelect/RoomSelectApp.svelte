@@ -413,7 +413,7 @@
             >
               {completing ? 'hourglass_empty' : 'check_circle'}
             </span>
-            {completing ? '処理中...' : allDone ? '完了登録' : '物件完了'}
+            {completing ? '処理中...' : allDone ? '完了登録' : '検針完了にする'}
           </button>
         {/if}
         <button
