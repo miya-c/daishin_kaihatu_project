@@ -55,16 +55,23 @@
   $effect(() => {
     const current = readings.meterReadings;
     if (current.length > 0) {
+      const rvCache = readings.getReadingValuesFromCache(readings.propertyId, readings.roomId);
       const updated = { ...readingValues };
       let changed = false;
       current.forEach((reading: MeterReading) => {
         if (!(reading.date in updated)) {
-          updated[reading.date] = formatReading(reading.currentReading);
+          const cached = rvCache?.[reading.date];
+          if (cached && cached.trim() !== '') {
+            updated[reading.date] = cached;
+          } else {
+            updated[reading.date] = formatReading(reading.currentReading);
+          }
           changed = true;
         }
       });
       if (!('' in updated)) {
-        updated[''] = '';
+        const cachedInit = rvCache?.[''];
+        updated[''] = cachedInit && cachedInit.trim() !== '' ? cachedInit : '';
         changed = true;
       }
       if (changed) readingValues = updated;
@@ -181,6 +188,15 @@
           newReadings.forEach((reading: MeterReading) => {
             newValues[reading.date] = formatReading(reading.currentReading);
           });
+          const rvCache = readings.getReadingValuesFromCache(readings.propertyId, targetRoomId);
+          if (rvCache) {
+            Object.keys(rvCache).forEach((key) => {
+              const cached = rvCache[key];
+              if (cached && cached.trim() !== '' && key in newValues) {
+                newValues[key] = cached;
+              }
+            });
+          }
           readingValues = newValues;
           inputErrors = {};
           usageStates = {};
@@ -200,6 +216,15 @@
             if (newReadings && Array.isArray(newReadings)) {
               newReadings.forEach((reading: MeterReading) => {
                 newValues[reading.date] = formatReading(reading.currentReading);
+              });
+            }
+            const rvCache = readings.getReadingValuesFromCache(readings.propertyId, targetRoomId);
+            if (rvCache) {
+              Object.keys(rvCache).forEach((key) => {
+                const cached = rvCache[key];
+                if (cached && cached.trim() !== '' && key in newValues) {
+                  newValues[key] = cached;
+                }
               });
             }
             readingValues = newValues;
@@ -226,6 +251,15 @@
         }
         return false;
       };
+    },
+    get saveReadingValuesCache() {
+      return readings.saveReadingValuesToCache;
+    },
+    get getReadingValuesFromCache() {
+      return readings.getReadingValuesFromCache;
+    },
+    get collectReadingValues() {
+      return () => ({ ...readingValues });
     },
   });
 

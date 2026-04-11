@@ -44,6 +44,33 @@ interface PrefetchEntry {
 }
 
 const PREFETCH_TTL = 5 * 60 * 1000;
+const RV_CACHE_PREFIX = 'rv_';
+
+function saveReadingValuesToCache(
+  propId: string,
+  rId: string,
+  values: Record<string, string>
+): void {
+  try {
+    sessionStorage.setItem(`${RV_CACHE_PREFIX}${propId}_${rId}`, JSON.stringify(values));
+  } catch {}
+}
+
+function getReadingValuesFromCache(propId: string, rId: string): Record<string, string> | null {
+  try {
+    const raw = sessionStorage.getItem(`${RV_CACHE_PREFIX}${propId}_${rId}`);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+function clearReadingValuesCache(propId: string, rId: string): void {
+  try {
+    sessionStorage.removeItem(`${RV_CACHE_PREFIX}${propId}_${rId}`);
+  } catch {}
+}
 
 export function createMeterReadings() {
   let loading = $state(true);
@@ -185,6 +212,8 @@ export function createMeterReadings() {
             roomName = parsed.rName;
             meterReadings = parsed.resultReadings;
             cacheAgeMs = null;
+            // Fresh API data arrived — clear stale readingValues cache
+            clearReadingValuesCache(propId, rId);
           }
         })
         .catch(() => {});
@@ -221,6 +250,7 @@ export function createMeterReadings() {
         roomId = rId || NOT_AVAILABLE;
         roomName = parsed.rName;
         meterReadings = parsed.resultReadings;
+        clearReadingValuesCache(propId, rId);
 
         if (!silent) loading = false;
         return parsed.resultReadings;
@@ -398,5 +428,8 @@ export function createMeterReadings() {
     get cacheAgeMs() {
       return cacheAgeMs;
     },
+    saveReadingValuesToCache,
+    getReadingValuesFromCache,
+    clearReadingValuesCache,
   };
 }

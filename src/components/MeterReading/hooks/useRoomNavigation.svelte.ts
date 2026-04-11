@@ -14,6 +14,9 @@ interface CreateRoomNavigationParams {
   updateOfflineCache?: (propId: string, rId: string, readings: Record<string, unknown>[]) => void;
   hasPrefetch?: (propId: string, rId: string) => boolean;
   checkZeroUsage?: () => boolean;
+  saveReadingValuesCache?: (propId: string, roomId: string, values: Record<string, string>) => void;
+  getReadingValuesFromCache?: (propId: string, roomId: string) => Record<string, string> | null;
+  collectReadingValues?: () => Record<string, string>;
 }
 
 interface NavigationRoom {
@@ -131,6 +134,12 @@ export const createRoomNavigation = (options: CreateRoomNavigationParams) => {
     }
   };
 
+  const saveReadingValuesForRoom = (rId: string): void => {
+    if (!options.saveReadingValuesCache || !options.collectReadingValues) return;
+    const values = options.collectReadingValues();
+    options.saveReadingValuesCache(options.propertyId, rId, values);
+  };
+
   const saveReadings = async (
     readings: Record<string, unknown>[],
     silent: boolean = false,
@@ -174,6 +183,7 @@ export const createRoomNavigation = (options: CreateRoomNavigationParams) => {
         if (options.updateOfflineCache) {
           options.updateOfflineCache(options.propertyId, targetRoomId, readings);
         }
+        saveReadingValuesForRoom(targetRoomId);
         return true;
       }
       // API returned { success: false } — fallback to offline queue to prevent data loss
@@ -200,6 +210,7 @@ export const createRoomNavigation = (options: CreateRoomNavigationParams) => {
       if (!silent) {
         options.displayToast('保存に失敗しました。オンライン復帰時に自動送信します。');
       }
+      saveReadingValuesForRoom(targetRoomId);
       return true;
     } catch (err) {
       if (controller.signal.aborted) return false;
@@ -225,6 +236,7 @@ export const createRoomNavigation = (options: CreateRoomNavigationParams) => {
       if (!silent) {
         options.displayToast('保存しました（オンライン復帰時に同期します）');
       }
+      saveReadingValuesForRoom(targetRoomId);
       return true;
     }
   };
@@ -288,6 +300,7 @@ export const createRoomNavigation = (options: CreateRoomNavigationParams) => {
             if (options.updateOfflineCache) {
               options.updateOfflineCache(options.propertyId, currentRoomId, meterReadingsData);
             }
+            saveReadingValuesForRoom(currentRoomId);
             if (result.navigationResult) {
               options.onNavigateToRoom!(
                 targetRoomId,
