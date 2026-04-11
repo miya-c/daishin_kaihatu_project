@@ -140,6 +140,7 @@ function doGet(e) {
           success: true,
           data: propResult.data,
           count: propResult.data.length,
+          _meta: { dataVersion: new Date().toISOString() },
         });
 
       case 'getRooms':
@@ -404,6 +405,7 @@ function doGet(e) {
             success: true,
             data: roomsLightResult.data,
             message: `${roomsLightResult.data.totalCount || 0}件の軽量部屋データを取得しました`,
+            _meta: { dataVersion: new Date().toISOString() },
           });
         } catch (error) {
           Logger.log(`getRoomsLight API エラー: ${error.message}`);
