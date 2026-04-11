@@ -567,6 +567,13 @@ body.loading {
   white-space: nowrap;
 }
 
+.room-readings {
+  font-size: 0.85rem;
+  color: var(--mui-palette-grey-800, #424242);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
 /* Ripple Effect (Material UI風) */
 .ripple {
   position: absolute;

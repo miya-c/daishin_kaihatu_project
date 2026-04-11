@@ -445,20 +445,25 @@
               : isCompleted
                 ? '#2e7d32'
                 : '#ed6c02'}
-            {@const statusText = isSkipInspection
-              ? '検針不要'
+            {@const readingsText = isSkipInspection
+              ? ''
               : isCompleted
                 ? (() => {
                     const prev = parseFloat(String(room.previousReading));
                     const curr = parseFloat(String(room.currentReading));
                     if (!isNaN(curr) && !isNaN(prev) && prev > 0) {
-                      return `前回 ${prev}  今回 ${curr}  ${curr - prev}  検針済み`;
+                      return `前回 ${prev}  今回 ${curr}  ${curr - prev}`;
                     }
                     if (!isNaN(curr)) {
-                      return `今回 ${curr}  検針済み`;
+                      return `今回 ${curr}`;
                     }
-                    return '検針済み';
+                    return '';
                   })()
+                : ''}
+            {@const statusText = isSkipInspection
+              ? '検針不要'
+              : isCompleted
+                ? '検針済み'
                 : '未検針'}
             {@const cardClasses = isSkipInspection
               ? 'MuiCard-root MuiPaper-root MuiPaper-elevation1 MuiCardActionArea-root room-card status-skip'
@@ -486,6 +491,11 @@
                 <span class="MuiTypography-root MuiTypography-h6 room-name">
                   {String(room.name || room['部屋名'] || room.id || '不明')}
                 </span>
+                {#if readingsText}
+                  <span class="MuiTypography-root MuiTypography-body2 room-readings">
+                    {readingsText}
+                  </span>
+                {/if}
                 <span class="MuiTypography-root MuiTypography-body2 room-status">
                   {statusText}
                 </span>
