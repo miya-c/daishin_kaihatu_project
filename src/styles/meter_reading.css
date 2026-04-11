@@ -455,9 +455,9 @@ body {
   grid-template-columns: 1fr 1fr;
   grid-template-areas:
     'date date'
+    'status history'
     'reading history'
-    'usage history'
-    'status .';
+    'usage history';
   gap: 8px;
   margin-bottom: 2em;
   margin-left: 0;
