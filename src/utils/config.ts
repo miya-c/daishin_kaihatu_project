@@ -1,6 +1,6 @@
 export const TOAST_DISPLAY_MS = 3000;
 
-export const API_TIMEOUT_MS = 5000;
+export const API_TIMEOUT_MS = 30000;
 
 export const SYNC_LOCK_TTL_MS = 30000;
 

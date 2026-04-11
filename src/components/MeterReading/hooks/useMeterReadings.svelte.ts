@@ -1,5 +1,6 @@
 import { mapReadingFromApi } from '../utils/readingMapper';
 import { validateId } from '../../../utils/validateParams';
+import { gasFetch } from '../../../utils/gasClient';
 import { NOT_AVAILABLE, ROOM_NAME_UNKNOWN } from '../../../constants/messages';
 
 import type { MeterReading } from '../../../types';
@@ -94,15 +95,16 @@ export function createMeterReadings() {
     const currentGasUrl = gasWebAppUrl || sessionStorage.getItem('gasWebAppUrl');
     if (!currentGasUrl) return null;
 
-    const fetchUrl = `${currentGasUrl}?action=getMeterReadings&propertyId=${propId}&roomId=${rId}`;
-    const response = await fetch(fetchUrl, { signal });
+    const responseObject = (await gasFetch(
+      'getMeterReadings',
+      { propertyId: propId, roomId: rId },
+      'GET',
+      signal
+    )) as Record<string, unknown>;
 
-    if (!response.ok) return null;
+    if (!responseObject || !responseObject.success) return null;
 
-    const responseObject = await response.json();
-    if (!responseObject.success) return null;
-
-    const data = responseObject.data;
+    const data = responseObject.data as Record<string, unknown>;
     if (!data) return null;
 
     let pName: string, rName: string, readings: Record<string, unknown>[];
@@ -111,9 +113,9 @@ export function createMeterReadings() {
       Object.prototype.hasOwnProperty.call(data, 'roomName') &&
       Object.prototype.hasOwnProperty.call(data, 'readings')
     ) {
-      pName = data.propertyName || NOT_AVAILABLE;
-      rName = data.roomName || ROOM_NAME_UNKNOWN;
-      readings = data.readings || [];
+      pName = String(data.propertyName || NOT_AVAILABLE);
+      rName = String(data.roomName || ROOM_NAME_UNKNOWN);
+      readings = (data.readings as Record<string, unknown>[]) || [];
     } else if (Array.isArray(data)) {
       if (data.length > 0 && data[0]) {
         pName = data[0]['物件名'] || data[0].propertyName || NOT_AVAILABLE;
@@ -122,7 +124,7 @@ export function createMeterReadings() {
         pName = NOT_AVAILABLE;
         rName = ROOM_NAME_UNKNOWN;
       }
-      readings = data;
+      readings = data as unknown as Record<string, unknown>[];
     } else {
       return null;
     }
@@ -146,7 +148,7 @@ export function createMeterReadings() {
   async function loadMeterReadings(
     propId: string,
     rId: string,
-    maxRetries: number = 3,
+    maxRetries: number = 5,
     silent: boolean = false
   ): Promise<MeterReading[] | null> {
     const currentGasUrl = gasWebAppUrl || sessionStorage.getItem('gasWebAppUrl');

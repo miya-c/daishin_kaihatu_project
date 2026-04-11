@@ -2,7 +2,16 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { flushSync } from 'svelte';
 import { render, screen } from '@testing-library/svelte';
 
+vi.mock('../../../utils/gasClient', async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    gasFetch: vi.fn(),
+  };
+});
+
 import MeterReadingApp from '../MeterReadingApp.svelte';
+import { gasFetch } from '../../../utils/gasClient';
 
 describe('MeterReadingApp', () => {
   const originalLocation = window.location;
@@ -10,6 +19,7 @@ describe('MeterReadingApp', () => {
 
   beforeEach(() => {
     vi.useFakeTimers();
+    gasFetch.mockReset();
     store = {};
     vi.stubGlobal('sessionStorage', {
       getItem: vi.fn((key) => store[key] ?? null),
@@ -33,7 +43,7 @@ describe('MeterReadingApp', () => {
 
   it('shows loading state when gasWebAppUrl is set', () => {
     store['gasWebAppUrl'] = 'https://script.google.com/test';
-    vi.stubGlobal('fetch', vi.fn().mockReturnValue(new Promise(() => {})));
+    gasFetch.mockReturnValue(new Promise(() => {}));
 
     const cleanup = $effect.root(() => {
       render(MeterReadingApp);
@@ -45,7 +55,6 @@ describe('MeterReadingApp', () => {
   });
 
   it('shows error when gasWebAppUrl is missing', () => {
-    // No gasWebAppUrl in store
     const cleanup = $effect.root(() => {
       render(MeterReadingApp);
       flushSync();
@@ -73,27 +82,20 @@ describe('MeterReadingApp', () => {
     store['gasWebAppUrl'] = 'https://script.google.com/test';
     store['selectedRooms'] = JSON.stringify([{ id: 'r1' }, { id: 'r2' }]);
 
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue({
-        ok: true,
-        json: () =>
-          Promise.resolve({
-            success: true,
-            data: {
-              propertyName: 'テスト物件',
-              roomName: '101号室',
-              readings: [
-                {
-                  date: '2024-01-15',
-                  currentReading: 100,
-                  previousReading: 90,
-                },
-              ],
-            },
-          }),
-      })
-    );
+    gasFetch.mockResolvedValue({
+      success: true,
+      data: {
+        propertyName: 'テスト物件',
+        roomName: '101号室',
+        readings: [
+          {
+            date: '2024-01-15',
+            currentReading: 100,
+            previousReading: 90,
+          },
+        ],
+      },
+    });
 
     const cleanup = $effect.root(() => {
       render(MeterReadingApp);
@@ -113,27 +115,20 @@ describe('MeterReadingApp', () => {
     store['gasWebAppUrl'] = 'https://script.google.com/test';
     store['selectedRooms'] = JSON.stringify([{ id: 'r1' }]);
 
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue({
-        ok: true,
-        json: () =>
-          Promise.resolve({
-            success: true,
-            data: {
-              propertyName: '新規物件',
-              roomName: '201号室',
-              readings: [
-                {
-                  date: '2024-06-01',
-                  currentReading: '',
-                  previousReading: '',
-                },
-              ],
-            },
-          }),
-      })
-    );
+    gasFetch.mockResolvedValue({
+      success: true,
+      data: {
+        propertyName: '新規物件',
+        roomName: '201号室',
+        readings: [
+          {
+            date: '2024-06-01',
+            currentReading: '',
+            previousReading: '',
+          },
+        ],
+      },
+    });
 
     const cleanup = $effect.root(() => {
       render(MeterReadingApp);
@@ -151,21 +146,14 @@ describe('MeterReadingApp', () => {
   it('renders back button', async () => {
     store['gasWebAppUrl'] = 'https://script.google.com/test';
 
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue({
-        ok: true,
-        json: () =>
-          Promise.resolve({
-            success: true,
-            data: {
-              propertyName: 'テスト物件',
-              roomName: '101号室',
-              readings: [],
-            },
-          }),
-      })
-    );
+    gasFetch.mockResolvedValue({
+      success: true,
+      data: {
+        propertyName: 'テスト物件',
+        roomName: '101号室',
+        readings: [],
+      },
+    });
 
     const cleanup = $effect.root(() => {
       render(MeterReadingApp);
