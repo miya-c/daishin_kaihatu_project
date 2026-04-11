@@ -92,9 +92,6 @@ export function createMeterReadings() {
     rId: string,
     signal?: AbortSignal
   ): Promise<{ pName: string; rName: string; resultReadings: MeterReading[] } | null> {
-    const currentGasUrl = gasWebAppUrl || sessionStorage.getItem('gasWebAppUrl');
-    if (!currentGasUrl) return null;
-
     const responseObject = (await gasFetch(
       'getMeterReadings',
       { propertyId: propId, roomId: rId },

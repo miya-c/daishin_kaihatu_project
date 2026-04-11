@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { getGasUrl, fetchProperties } from '../../utils/gasClient';
+  import { getGasUrl, gasFetch } from '../../utils/gasClient';
   import NetworkStatusBar from '../NetworkStatusBar.svelte';
   import type { Property } from '../../types';
 
@@ -57,7 +57,10 @@
       }
 
       try {
-        const data = (await fetchProperties(currentUrl)) as Record<string, unknown>;
+        const data = (await gasFetch('getProperties', { cache: String(Date.now()) })) as Record<
+          string,
+          unknown
+        >;
         const actualData = data.data || data.properties || (Array.isArray(data) ? data : null);
         if (!actualData || !Array.isArray(actualData)) {
           throw new Error('物件データの形式が正しくありません。');

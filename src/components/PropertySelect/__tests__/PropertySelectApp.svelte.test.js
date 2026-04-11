@@ -4,15 +4,16 @@ import { render, screen, fireEvent } from '@testing-library/svelte';
 
 vi.mock('../../../utils/gasClient', () => ({
   getGasUrl: vi.fn(),
-  fetchProperties: vi.fn(),
+  gasFetch: vi.fn(),
 }));
 
 import PropertySelectApp from '../PropertySelectApp.svelte';
-import { getGasUrl, fetchProperties } from '../../../utils/gasClient';
+import { getGasUrl, gasFetch } from '../../../utils/gasClient';
 
 describe('PropertySelectApp', () => {
   beforeEach(() => {
     vi.useFakeTimers();
+    gasFetch.mockReset();
     const store = {};
     vi.stubGlobal('sessionStorage', {
       getItem: vi.fn((key) => store[key] ?? null),
@@ -34,7 +35,6 @@ describe('PropertySelectApp', () => {
       }),
       clear: vi.fn(() => Object.keys(store).forEach((k) => delete store[k])),
     });
-    vi.stubGlobal('fetch', vi.fn());
   });
 
   afterEach(() => {
@@ -44,7 +44,7 @@ describe('PropertySelectApp', () => {
 
   it('shows loading state initially', () => {
     getGasUrl.mockReturnValue('https://script.google.com/test');
-    fetchProperties.mockReturnValue(new Promise(() => {})); // never resolves
+    gasFetch.mockReturnValue(new Promise(() => {}));
 
     const cleanup = $effect.root(() => {
       render(PropertySelectApp);
@@ -70,7 +70,7 @@ describe('PropertySelectApp', () => {
 
   it('renders properties after successful fetch', async () => {
     getGasUrl.mockReturnValue('https://script.google.com/test');
-    fetchProperties.mockResolvedValue({
+    gasFetch.mockResolvedValue({
       data: [
         { id: 'p1', name: 'テスト物件A' },
         { id: 'p2', name: 'テスト物件B' },
@@ -93,7 +93,7 @@ describe('PropertySelectApp', () => {
 
   it('shows error when fetch fails', async () => {
     getGasUrl.mockReturnValue('https://script.google.com/test');
-    fetchProperties.mockRejectedValue(new Error('Failed to fetch'));
+    gasFetch.mockRejectedValue(new Error('Failed to fetch'));
 
     const cleanup = $effect.root(() => {
       render(PropertySelectApp);
@@ -110,7 +110,7 @@ describe('PropertySelectApp', () => {
 
   it('shows empty state when no properties', async () => {
     getGasUrl.mockReturnValue('https://script.google.com/test');
-    fetchProperties.mockResolvedValue({ data: [] });
+    gasFetch.mockResolvedValue({ data: [] });
 
     const cleanup = $effect.root(() => {
       render(PropertySelectApp);
@@ -127,7 +127,7 @@ describe('PropertySelectApp', () => {
 
   it('filters properties by search term', async () => {
     getGasUrl.mockReturnValue('https://script.google.com/test');
-    fetchProperties.mockResolvedValue({
+    gasFetch.mockResolvedValue({
       data: [
         { id: 'p1', name: 'テスト物件A' },
         { id: 'p2', name: 'テスト物件B' },
@@ -154,7 +154,7 @@ describe('PropertySelectApp', () => {
 
   it('shows "no match" when search filter has no results', async () => {
     getGasUrl.mockReturnValue('https://script.google.com/test');
-    fetchProperties.mockResolvedValue({
+    gasFetch.mockResolvedValue({
       data: [{ id: 'p1', name: 'テスト物件A' }],
     });
 
