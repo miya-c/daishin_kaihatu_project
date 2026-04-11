@@ -1,7 +1,7 @@
 // Service Worker for Water Meter Reading PWA
 // Version: 2.1.0 - Phase 3: Background Sync for offline queue
 
-const CACHE_VERSION = 'v3';
+const CACHE_VERSION = 'v4';
 const CACHE_NAME = `meter-reading-${CACHE_VERSION}`;
 const SYNC_TAG = 'offline-sync';
 
@@ -51,20 +51,11 @@ self.addEventListener('fetch', (event) => {
   if (!url.protocol.startsWith('http')) return;
 
   // GAS API: Network only (always fresh data)
+  // GAS ContentService returns 302 → script.googleusercontent.com which causes CORS errors
+  // when the page follows the redirect. We handle the redirect manually in the SW where
+  // cross-origin fetches succeed, then relay the final response back to the page.
   if (url.hostname.includes('script.google.com')) {
-    event.respondWith(
-      fetch(request).catch(
-        () =>
-          new Response(
-            JSON.stringify({
-              success: false,
-              error: 'インターネット接続を確認してください。',
-              offline: true,
-            }),
-            { headers: { 'Content-Type': 'application/json' }, status: 503 }
-          )
-      )
-    );
+    event.respondWith(fetchGasRequest(request));
     return;
   }
 
@@ -148,5 +139,45 @@ async function processOfflineQueue() {
   const allClients = await self.clients.matchAll({ includeUncontrolled: true, type: 'window' });
   for (const client of allClients) {
     client.postMessage({ type: 'PROCESS_OFFLINE_QUEUE' });
+  }
+}
+
+// GAS ContentService uses a 302 redirect to script.googleusercontent.com to
+// deliver the response body. The page's fetch (mode: cors) cannot follow this
+// cross-origin redirect, so we handle it here in the SW where fetch is not
+// subject to page-level CORS restrictions.
+async function fetchGasRequest(request) {
+  try {
+    // Step 1: Send the request with redirect:manual to capture the 302
+    const firstResponse = await fetch(request, { redirect: 'manual' });
+
+    if (firstResponse.status !== 302) {
+      // No redirect — return as-is (some GAS responses don't redirect)
+      return firstResponse;
+    }
+
+    // Step 2: Follow the redirect URL manually
+    const redirectUrl = firstResponse.headers.get('Location');
+    if (!redirectUrl) {
+      return firstResponse;
+    }
+
+    const finalResponse = await fetch(redirectUrl);
+    // Relay the final response body and content-type to the page
+    const body = await finalResponse.text();
+    return new Response(body, {
+      status: 200,
+      headers: { 'Content-Type': finalResponse.headers.get('Content-Type') || 'application/json' },
+    });
+  } catch (error) {
+    // Network error (truly offline)
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: 'インターネット接続を確認してください。',
+        offline: true,
+      }),
+      { headers: { 'Content-Type': 'application/json' }, status: 503 }
+    );
   }
 }

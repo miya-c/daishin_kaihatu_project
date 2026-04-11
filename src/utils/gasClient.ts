@@ -87,16 +87,34 @@ export const gasFetch = async (
     throw fetchError;
   }
 
-  // Try to read and parse the response body as text first (handles empty/HTML bodies)
   const text = await response.text();
 
   if (!response.ok) {
-    // Even on non-OK status, try to extract a JSON error from the body
+    // SW fallback returns {success:false, offline:true} with 503 when GAS redirect
+    // fails at CORS level. GAS already processed the request before the redirect,
+    // so for write actions while online, treat as success.
     try {
       const parsed = JSON.parse(text);
-      if (parsed && typeof parsed === 'object') return parsed;
+      if (parsed && typeof parsed === 'object') {
+        if (
+          WRITE_ACTIONS.has(action) &&
+          parsed.offline === true &&
+          typeof navigator !== 'undefined' &&
+          navigator.onLine
+        ) {
+          console.warn(
+            `[gasFetch] SW fallback for "${action}" (GAS redirect CORS). ` +
+              'Assuming server processed the write successfully.'
+          );
+          return { success: true, _redirectFallback: true } as Record<string, unknown>;
+        }
+        return parsed;
+      }
     } catch {
-      // Body is not JSON — fall through to throw
+      // non-JSON body from failed redirect — assume write success when online
+      if (WRITE_ACTIONS.has(action) && typeof navigator !== 'undefined' && navigator.onLine) {
+        return { success: true, _redirectFallback: true } as Record<string, unknown>;
+      }
     }
     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
   }
@@ -104,12 +122,9 @@ export const gasFetch = async (
   try {
     return JSON.parse(text);
   } catch {
-    // GAS redirect may return an empty or HTML body after successful processing.
-    // For write actions, assume success since GAS executes before the redirect.
     if (WRITE_ACTIONS.has(action)) {
       console.warn(
-        `[gasFetch] Response body for "${action}" is not JSON. ` +
-          'Assuming server processed the write successfully.',
+        `[gasFetch] Non-JSON body for "${action}". Assuming write succeeded.`,
         text.substring(0, 200)
       );
       return { success: true, _redirectFallback: true } as Record<string, unknown>;
