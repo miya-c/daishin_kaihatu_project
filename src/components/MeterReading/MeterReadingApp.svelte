@@ -302,15 +302,14 @@
     const numericValue = parseFloat(value);
 
     if (value === '') {
-      inputErrors = { ...inputErrors, [date]: '' };
-      usageStates = { ...usageStates, [date]: calculateUsageDisplay(value, previousValue) };
+      inputErrors[date] = '';
+      usageStates[date] = calculateUsageDisplay(value, previousValue);
     } else if (isNaN(numericValue) || numericValue < 0) {
-      inputErrors = { ...inputErrors, [date]: '0以上の数値を入力' };
-      usageStates = { ...usageStates, [date]: '-' };
+      inputErrors[date] = '0以上の数値を入力';
+      usageStates[date] = '-';
     } else {
-      inputErrors = { ...inputErrors, [date]: '' };
-      const usageDisplay = calculateUsageDisplay(value, previousValue);
-      usageStates = { ...usageStates, [date]: usageDisplay };
+      inputErrors[date] = '';
+      usageStates[date] = calculateUsageDisplay(value, previousValue);
 
       // Real-time warning flag calculation
       const previousReadingValue = parseFloat(String(reading.previousReading)) || 0;
@@ -342,17 +341,14 @@
     const numericValue = parseFloat(value);
 
     if (value === '') {
-      inputErrors = {
-        ...inputErrors,
-        [dateForDataAttribute]: '初回検針では指示数の入力が必須です。',
-      };
-      usageStates = { ...usageStates, [dateForDataAttribute]: '-' };
+      inputErrors[dateForDataAttribute] = '初回検針では指示数の入力が必須です。';
+      usageStates[dateForDataAttribute] = '-';
     } else if (isNaN(numericValue) || numericValue < 0) {
-      inputErrors = { ...inputErrors, [dateForDataAttribute]: '0以上の数値を入力してください。' };
-      usageStates = { ...usageStates, [dateForDataAttribute]: '-' };
+      inputErrors[dateForDataAttribute] = '0以上の数値を入力してください。';
+      usageStates[dateForDataAttribute] = '-';
     } else {
-      inputErrors = { ...inputErrors, [dateForDataAttribute]: '' };
-      usageStates = { ...usageStates, [dateForDataAttribute]: calculateUsageDisplay(value, '') };
+      inputErrors[dateForDataAttribute] = '';
+      usageStates[dateForDataAttribute] = calculateUsageDisplay(value, '');
     }
   }
 
