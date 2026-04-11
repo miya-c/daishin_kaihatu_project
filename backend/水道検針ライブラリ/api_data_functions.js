@@ -1170,6 +1170,9 @@ function saveAndNavigate(params) {
       });
     }
 
+    // Mark that save completed so catch block can skip redundant save in fallback
+    params._saveCompleted = true;
+
     // 3. ナビゲーションデータ取得（残り時間監視付き）
     const navStartTime = Date.now();
     const remainingTime = timeout - (Date.now() - startTime);
@@ -1224,6 +1227,9 @@ function saveAndNavigate(params) {
     const totalProcessingTime = Date.now() - startTime;
     Logger.log('[saveAndNavigate] ❌ 予期しないエラー: ' + error.toString());
     Logger.log('[saveAndNavigate] エラースタック:', error.stack);
+    if (params._saveCompleted) {
+      error._saveCompleted = true;
+    }
 
     return createErrorResponse('SYSTEM_ERROR', error.message, {
       processingTime: totalProcessingTime,

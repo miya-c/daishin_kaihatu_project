@@ -258,6 +258,8 @@ export const createRoomNavigation = (options: CreateRoomNavigationParams) => {
 
       const targetHasPrefetch = options.hasPrefetch?.(options.propertyId, targetRoomId);
 
+      let saveDoneByIntegratedApi = false;
+
       if (shouldTryIntegratedApi && !targetHasPrefetch) {
         try {
           const controller = new AbortController();
@@ -278,6 +280,7 @@ export const createRoomNavigation = (options: CreateRoomNavigationParams) => {
 
           if (result.success) {
             consecutiveSaveAndNavigateFailures = 0;
+            saveDoneByIntegratedApi = true;
             updateSessionCacheForSavedRoom(currentRoomId);
             if (options.invalidatePrefetch) {
               options.invalidatePrefetch(options.propertyId, currentRoomId);
@@ -313,8 +316,8 @@ export const createRoomNavigation = (options: CreateRoomNavigationParams) => {
       }
       updating = false;
 
-      if (meterReadingsData.length > 0) {
-        saveReadings(meterReadingsData, true, currentRoomId).then((saveOk) => {
+      if (meterReadingsData.length > 0 && !saveDoneByIntegratedApi) {
+        await saveReadings(meterReadingsData, true, currentRoomId).then((saveOk) => {
           if (saveOk) {
             updateSessionCacheForSavedRoom(currentRoomId);
             if (options.invalidatePrefetch) {

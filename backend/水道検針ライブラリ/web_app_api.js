@@ -251,7 +251,7 @@ function doGet(e) {
         } catch (error) {
           if (featureFlags.legacyFallbackEnabled) {
             try {
-              return executeLegacyFallback(e.parameter);
+              return executeLegacyFallback(e.parameter, error._saveCompleted || false);
             } catch (e2) {}
           }
           return createCorsJsonResponse({
@@ -576,7 +576,7 @@ function doPost(e) {
         // Phase 2.3: エラー時のレガシーフォールバック
         if (featureFlags.legacyFallbackEnabled) {
           try {
-            return executeLegacyFallback(params);
+            return executeLegacyFallback(params, error._saveCompleted || false);
           } catch (fallbackError) {
             Logger.log(`[doPost] フォールバックも失敗: ${fallbackError.message}`);
           }
@@ -827,20 +827,22 @@ function getFeatureFlag(flagName, defaultValue = false) {
  * @param {Object} params - リクエストパラメータ
  * @returns {Object} レスポンス
  */
-function executeLegacyFallback(params) {
+function executeLegacyFallback(params, skipSave) {
   try {
     const { propertyId, currentRoomId, targetRoomId, meterReadingsData } = params;
 
-    // 1. 既存のupdateMeterReadings実行
-    const readings = JSON.parse(meterReadingsData);
-    const saveResult = updateMeterReadings(propertyId, currentRoomId, readings);
+    // 1. 既存のupdateMeterReadings実行（統合APIで保存済みの場合はスキップ）
+    if (!skipSave) {
+      const readings = JSON.parse(meterReadingsData);
+      const saveResult = updateMeterReadings(propertyId, currentRoomId, readings);
 
-    if (!saveResult || !saveResult.success) {
-      return createCorsJsonResponse({
-        success: false,
-        error: `保存失敗: ${saveResult?.error || '不明なエラー'}`,
-        fallbackMode: true,
-      });
+      if (!saveResult || !saveResult.success) {
+        return createCorsJsonResponse({
+          success: false,
+          error: `保存失敗: ${saveResult?.error || '不明なエラー'}`,
+          fallbackMode: true,
+        });
+      }
     }
 
     // 2. 既存のgetMeterReadings実行
