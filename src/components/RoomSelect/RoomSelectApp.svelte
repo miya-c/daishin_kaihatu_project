@@ -452,7 +452,7 @@
                     const prev = parseFloat(String(room.previousReading));
                     const curr = parseFloat(String(room.currentReading));
                     if (!isNaN(curr) && !isNaN(prev) && prev > 0) {
-                      return `前回 ${prev}  今回 ${curr}  ${curr - prev}`;
+                      return `前回 ${prev}  今回 ${curr}  ${curr - prev}  検針済み`;
                     }
                     if (!isNaN(curr)) {
                       return `今回 ${curr}  検針済み`;
