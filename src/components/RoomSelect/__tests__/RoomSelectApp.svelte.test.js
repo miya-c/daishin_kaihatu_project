@@ -7,11 +7,12 @@ vi.mock('../../../utils/gasClient', async (importOriginal) => {
   return {
     ...actual,
     getGasUrl: vi.fn(),
+    gasFetch: vi.fn(),
   };
 });
 
 import RoomSelectApp from '../RoomSelectApp.svelte';
-import { getGasUrl } from '../../../utils/gasClient';
+import { getGasUrl, gasFetch } from '../../../utils/gasClient';
 
 describe('RoomSelectApp', () => {
   const originalLocation = window.location;
@@ -19,6 +20,7 @@ describe('RoomSelectApp', () => {
 
   beforeEach(() => {
     vi.useFakeTimers();
+    gasFetch.mockReset();
     store = {};
     vi.stubGlobal('sessionStorage', {
       getItem: vi.fn((key) => store[key] ?? null),
@@ -53,7 +55,7 @@ describe('RoomSelectApp', () => {
 
   it('shows loading state initially', () => {
     store['gasWebAppUrl'] = 'https://script.google.com/test';
-    vi.stubGlobal('fetch', vi.fn().mockReturnValue(new Promise(() => {}))); // never resolves
+    gasFetch.mockReturnValue(new Promise(() => {}));
 
     const cleanup = $effect.root(() => {
       render(RoomSelectApp);
@@ -86,23 +88,16 @@ describe('RoomSelectApp', () => {
     store['selectedPropertyId'] = 'prop1';
     store['gasWebAppUrl'] = 'https://script.google.com/test';
 
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue({
-        ok: true,
-        json: () =>
-          Promise.resolve({
-            success: true,
-            data: {
-              rooms: [
-                { id: 'r1', name: '101号室', readingStatus: 'pending' },
-                { id: 'r2', name: '102号室', readingStatus: 'completed', isCompleted: true },
-              ],
-              propertyName: 'テスト物件',
-            },
-          }),
-      })
-    );
+    gasFetch.mockResolvedValue({
+      success: true,
+      data: {
+        rooms: [
+          { id: 'r1', name: '101号室', readingStatus: 'pending' },
+          { id: 'r2', name: '102号室', readingStatus: 'completed', isCompleted: true },
+        ],
+        propertyName: 'テスト物件',
+      },
+    });
 
     const cleanup = $effect.root(() => {
       render(RoomSelectApp);
@@ -122,23 +117,16 @@ describe('RoomSelectApp', () => {
   it('renders rooms from API when no cache', async () => {
     store['gasWebAppUrl'] = 'https://script.google.com/test';
 
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue({
-        ok: true,
-        json: () =>
-          Promise.resolve({
-            success: true,
-            data: {
-              rooms: [
-                { id: 'r1', name: '201号室' },
-                { id: 'r2', name: '202号室' },
-              ],
-              propertyName: 'API物件',
-            },
-          }),
-      })
-    );
+    gasFetch.mockResolvedValue({
+      success: true,
+      data: {
+        rooms: [
+          { id: 'r1', name: '201号室' },
+          { id: 'r2', name: '202号室' },
+        ],
+        propertyName: 'API物件',
+      },
+    });
 
     const cleanup = $effect.root(() => {
       render(RoomSelectApp);
@@ -158,24 +146,17 @@ describe('RoomSelectApp', () => {
   it('shows room status correctly', async () => {
     store['gasWebAppUrl'] = 'https://script.google.com/test';
 
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue({
-        ok: true,
-        json: () =>
-          Promise.resolve({
-            success: true,
-            data: {
-              rooms: [
-                { id: 'r1', name: '101号室', readingStatus: 'pending' },
-                { id: 'r2', name: '102号室', readingStatus: 'completed', isCompleted: true },
-                { id: 'r3', name: '103号室', isNotNeeded: true },
-              ],
-              propertyName: 'テスト物件',
-            },
-          }),
-      })
-    );
+    gasFetch.mockResolvedValue({
+      success: true,
+      data: {
+        rooms: [
+          { id: 'r1', name: '101号室', readingStatus: 'pending' },
+          { id: 'r2', name: '102号室', readingStatus: 'completed', isCompleted: true },
+          { id: 'r3', name: '103号室', isNotNeeded: true },
+        ],
+        propertyName: 'テスト物件',
+      },
+    });
 
     const cleanup = $effect.root(() => {
       render(RoomSelectApp);
@@ -195,20 +176,13 @@ describe('RoomSelectApp', () => {
   it('shows "no rooms" message when rooms are empty', async () => {
     store['gasWebAppUrl'] = 'https://script.google.com/test';
 
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue({
-        ok: true,
-        json: () =>
-          Promise.resolve({
-            success: true,
-            data: {
-              rooms: [],
-              propertyName: '空の物件',
-            },
-          }),
-      })
-    );
+    gasFetch.mockResolvedValue({
+      success: true,
+      data: {
+        rooms: [],
+        propertyName: '空の物件',
+      },
+    });
 
     const cleanup = $effect.root(() => {
       render(RoomSelectApp);
