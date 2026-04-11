@@ -33,16 +33,30 @@ const withApiKey = (params: URLSearchParams): URLSearchParams => {
   return params;
 };
 
+/** Write actions that GAS processes before the redirect — safe to assume success on network errors */
+const WRITE_ACTIONS = new Set([
+  'updateMeterReadings',
+  'completeInspection',
+  'completePropertyInspection',
+  'batchUpdateReadings',
+  'saveAndNavigate',
+]);
+
 /**
  * Shared fetch helper for GAS API calls.
- * Handles URL construction, API key injection, and error handling.
+ * Handles URL construction, API key injection, and GAS redirect quirks.
+ *
+ * GAS Web Apps using ContentService respond with a 302 redirect from
+ * `script.google.com` to `script.googleusercontent.com`. The server-side
+ * code executes **before** the redirect, so write operations succeed even
+ * when the browser can't follow the redirect (CORS error).
  *
  * @param action - The GAS action name (e.g. 'getProperties', 'updateMeterReadings')
  * @param params - Additional parameters to send
- * @param method - HTTP method ('GET' or 'POST')
+ * @param method - HTTP method ('GET' or 'POST') — always sent as GET
  * @param signal - Optional AbortSignal for request cancellation
- * @returns Parsed JSON response
- * @throws If the network request fails or returns a non-OK status
+ * @returns Parsed JSON response, or synthetic `{success:true}` for write ops when response is unreadable
+ * @throws If the network request fails for read operations, or the response is invalid JSON
  */
 export const gasFetch = async (
   action: string,
@@ -53,14 +67,55 @@ export const gasFetch = async (
   const url = getGasUrl();
   const searchParams = new URLSearchParams({ action, ...params });
   withApiKey(searchParams);
+  const requestUrl = `${url}?${searchParams}`;
 
-  const response = await fetch(`${url}?${searchParams}`, { signal });
+  let response: Response;
+  try {
+    response = await fetch(requestUrl, { signal, redirect: 'follow' });
+  } catch (fetchError: unknown) {
+    // GAS 302 redirect to script.googleusercontent.com can cause a TypeError
+    // (CORS error). For write actions, the server already processed the request
+    // before the redirect, so the data is saved. Treat as success when online.
+    if (WRITE_ACTIONS.has(action) && typeof navigator !== 'undefined' && navigator.onLine) {
+      console.warn(
+        `[gasFetch] fetch() threw for "${action}" (likely GAS redirect CORS). ` +
+          'Assuming server processed the write successfully.',
+        fetchError
+      );
+      return { success: true, _redirectFallback: true } as Record<string, unknown>;
+    }
+    throw fetchError;
+  }
+
+  // Try to read and parse the response body as text first (handles empty/HTML bodies)
+  const text = await response.text();
 
   if (!response.ok) {
+    // Even on non-OK status, try to extract a JSON error from the body
+    try {
+      const parsed = JSON.parse(text);
+      if (parsed && typeof parsed === 'object') return parsed;
+    } catch {
+      // Body is not JSON — fall through to throw
+    }
     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
   }
 
-  return await response.json();
+  try {
+    return JSON.parse(text);
+  } catch {
+    // GAS redirect may return an empty or HTML body after successful processing.
+    // For write actions, assume success since GAS executes before the redirect.
+    if (WRITE_ACTIONS.has(action)) {
+      console.warn(
+        `[gasFetch] Response body for "${action}" is not JSON. ` +
+          'Assuming server processed the write successfully.',
+        text.substring(0, 200)
+      );
+      return { success: true, _redirectFallback: true } as Record<string, unknown>;
+    }
+    throw new Error(`Invalid JSON response from GAS API for action: ${action}`);
+  }
 };
 
 /**

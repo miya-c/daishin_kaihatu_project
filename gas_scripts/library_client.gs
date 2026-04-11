@@ -369,6 +369,14 @@ function doGet(e) {
   try {
     console.log('doGet called with parameters:', e.parameter);
     
+    // Inject client's API_KEY from script properties (always override to prevent URL injection)
+    const clientStoredKey = PropertiesService.getScriptProperties().getProperty('API_KEY');
+    if (clientStoredKey) {
+      e.parameter._storedApiKey = clientStoredKey;
+    } else {
+      delete e.parameter._storedApiKey;
+    }
+    
     // ライブラリのdoGet関数を呼び出し
     return cmlibrary.doGet(e);
     
@@ -393,6 +401,13 @@ function doGet(e) {
  */
 function doPost(e) {
   try {
+    // Inject client's API_KEY from script properties (always override to prevent URL injection)
+    const clientStoredKey = PropertiesService.getScriptProperties().getProperty('API_KEY');
+    if (clientStoredKey) {
+      e.parameter._storedApiKey = clientStoredKey;
+    } else {
+      delete e.parameter._storedApiKey;
+    }
     return cmlibrary.doPost(e);
   } catch (error) {
     console.error('doPost エラー:', error);

@@ -16,7 +16,9 @@ const LAST_UPDATED = '2025-06-26 JST';
  */
 function validateApiKey(params, requireAuth) {
   const apiKey = params.apiKey || params.api_key;
-  const storedKey = PropertiesService.getScriptProperties().getProperty('API_KEY');
+  // Library clients inject _storedApiKey from their own script properties
+  const storedKey =
+    params._storedApiKey || PropertiesService.getScriptProperties().getProperty('API_KEY');
 
   // 書き込み操作（requireAuth=true）は、API key未設定でもkey必須
   if (requireAuth && !apiKey) {
