@@ -401,7 +401,7 @@
           <button
             onclick={handleCompleteInspection}
             disabled={completing}
-            style="display: flex; flex: 1; justify-content: center; align-items: center; gap: 4px; padding: 8px 14px; background: {allDone
+            style="display: flex; flex: 1; max-width: calc(50% - 4px); justify-content: center; align-items: center; gap: 4px; padding: 8px 14px; background: {allDone
               ? '#2e7d32'
               : 'var(--mui-palette-primary-main, #1976d2)'}; border: none; border-radius: 8px; font-size: 0.85rem; color: #fff; cursor: pointer; min-height: 36px; font-weight: 600;"
             aria-label={allDone ? '全件完了 - 完了登録する' : 'この物件の検針を完了する'}
