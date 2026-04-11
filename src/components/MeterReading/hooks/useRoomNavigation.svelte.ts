@@ -268,11 +268,9 @@ export const createRoomNavigation = (options: CreateRoomNavigationParams) => {
         meterReadingsData.length > 0 &&
         consecutiveSaveAndNavigateFailures < MAX_CONSECUTIVE_FAILURES;
 
-      const targetHasPrefetch = options.hasPrefetch?.(options.propertyId, targetRoomId);
-
       let saveDoneByIntegratedApi = false;
 
-      if (shouldTryIntegratedApi && !targetHasPrefetch) {
+      if (shouldTryIntegratedApi) {
         try {
           const controller = new AbortController();
           const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
