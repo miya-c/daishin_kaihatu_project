@@ -190,7 +190,7 @@ describe('createRoomNavigation', () => {
 
       expect(result).toBe(true);
       expect(mockToast).toHaveBeenCalled();
-      expect(mockToast.mock.calls[0][0]).toContain('オフラインで保存しました');
+      expect(mockToast.mock.calls[0][0]).toContain('保存しました');
 
       const queueRaw = localStore[QUEUE_KEY];
       expect(queueRaw).toBeTruthy();

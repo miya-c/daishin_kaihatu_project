@@ -457,7 +457,7 @@
       }
       hasSaved = true;
       pendingCount = getQueueStatus().pendingCount;
-      toast.displayToast('オフラインで保存しました（オンライン復帰時に自動送信します）');
+      toast.displayToast('保存しました（オンライン復帰時に同期します）');
       inputErrors = {};
       readings.invalidatePrefetch(readings.propertyId, readings.roomId);
 
@@ -644,7 +644,7 @@
           onclick={handleUpdateReadings}
           disabled={navigation.updating || navigation.isNavigating}
           title={offlineMode
-            ? 'オフラインで保存（オンライン復帰時に自動送信）'
+            ? '保存（オンライン復帰時に同期）'
             : hasReadingsWithPrevious
               ? '指示数を更新'
               : '初回検針データを保存'}

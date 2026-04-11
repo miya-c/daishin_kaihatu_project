@@ -223,7 +223,7 @@ export const createRoomNavigation = (options: CreateRoomNavigationParams) => {
         options.updateOfflineCache(options.propertyId, targetRoomId, readings);
       }
       if (!silent) {
-        options.displayToast('オフラインで保存しました（オンライン復帰時に自動送信します）');
+        options.displayToast('保存しました（オンライン復帰時に同期します）');
       }
       return true;
     }
