@@ -8,17 +8,19 @@
 const API_VERSION = 'v3.0.0-library';
 const LAST_UPDATED = '2025-06-26 JST';
 
-/**
- * API key認証を検証
- * @param {Object} params - リクエストパラメータ
- * @param {boolean} requireAuth - trueの場合、API key必須
- * @returns {Object} {authorized: boolean, error?: string}
- */
+// Per-request caches (GAS re-initializes globals on each invocation)
+let _cachedApiKey = null;
+let _apiKeyFetched = false;
+let _cachedFeatureFlags = null;
+
 function validateApiKey(params, requireAuth) {
   const apiKey = params.apiKey || params.api_key;
-  // Library clients inject _storedApiKey from their own script properties
-  const storedKey =
-    params._storedApiKey || PropertiesService.getScriptProperties().getProperty('API_KEY');
+  if (!_apiKeyFetched) {
+    _cachedApiKey =
+      params._storedApiKey || PropertiesService.getScriptProperties().getProperty('API_KEY');
+    _apiKeyFetched = true;
+  }
+  const storedKey = _cachedApiKey;
 
   // 書き込み操作（requireAuth=true）は、API key未設定でもkey必須
   if (requireAuth && !apiKey) {
@@ -800,20 +802,22 @@ function doPost(e) {
  */
 function getFeatureFlag(flagName, defaultValue = false) {
   try {
-    // PropertiesServiceから設定値を取得（Phase 2.3: 設定管理）
-    const properties = PropertiesService.getScriptProperties();
-    const flagValue = properties.getProperty(`FEATURE_${flagName}`);
-
-    if (flagValue === null) {
+    if (!_cachedFeatureFlags) {
+      const allProps = PropertiesService.getScriptProperties().getProperties();
+      _cachedFeatureFlags = {};
+      for (const key in allProps) {
+        if (key.startsWith('FEATURE_')) {
+          _cachedFeatureFlags[key] = allProps[key];
+        }
+      }
+    }
+    const flagValue = _cachedFeatureFlags[`FEATURE_${flagName}`];
+    if (flagValue === undefined || flagValue === null) {
       return defaultValue;
     }
-
-    // 文字列からブール値への変換
     if (typeof defaultValue === 'boolean') {
-      const boolValue = flagValue === 'true' || flagValue === '1';
-      return boolValue;
+      return flagValue === 'true' || flagValue === '1';
     }
-
     return flagValue;
   } catch (error) {
     Logger.log(`[getFeatureFlag] エラー - ${flagName}: ${error.message}`);

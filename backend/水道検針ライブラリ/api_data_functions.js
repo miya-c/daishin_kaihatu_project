@@ -436,7 +436,10 @@ function getMeterReadings(propertyId, roomId) {
         }
       }
 
-      setFastCache(cacheKey, roomIndex, CACHE_TTL);
+      const cacheOk = setFastCache(cacheKey, roomIndex, CACHE_TTL);
+      if (!cacheOk) {
+        Logger.log(`[getMeterReadings] setFastCache failed for key: ${cacheKey}`);
+      }
     }
 
     const propertyIndex = roomIndex[propertyId];
