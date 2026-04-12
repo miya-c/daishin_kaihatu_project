@@ -169,3 +169,12 @@ function buildAdminDashboardData() {
     return { success: false, error: error.message };
   }
 }
+
+function adminAction(action, params) {
+  params = params || {};
+  var storedToken = PropertiesService.getScriptProperties().getProperty('ADMIN_TOKEN');
+  if (storedToken) {
+    params._storedAdminToken = storedToken;
+  }
+  return adminDispatch(action, params);
+}
