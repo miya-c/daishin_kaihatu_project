@@ -17,6 +17,6 @@ export function callAdminAPI(action, params) {
       .withFailureHandler(function (error) {
         reject(error);
       })
-      .adminDispatch(action, params);
+      .adminAction(action, params);
   });
 }

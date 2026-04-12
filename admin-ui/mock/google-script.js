@@ -10,7 +10,7 @@
     var successHandler = null;
     var failureHandler = null;
 
-    function adminDispatch(action, params) {
+    function adminAction(action, params) {
       var capturedSuccess = successHandler;
       var capturedFailure = failureHandler;
 
@@ -50,17 +50,17 @@
       return null;
     }
 
-    adminDispatch.withSuccessHandler = function (handler) {
+    adminAction.withSuccessHandler = function (handler) {
       successHandler = typeof handler === 'function' ? handler : null;
-      return adminDispatch;
+      return adminAction;
     };
 
-    adminDispatch.withFailureHandler = function (handler) {
+    adminAction.withFailureHandler = function (handler) {
       failureHandler = typeof handler === 'function' ? handler : null;
-      return adminDispatch;
+      return adminAction;
     };
 
-    return adminDispatch;
+    return adminAction;
   }
 
   window.google.script.run = createMockRun();
