@@ -97,24 +97,10 @@ function doGet(e) {
   try {
     const action = e?.parameter?.action;
     if (!action) {
-      // テストページ表示（簡素版）
-      return HtmlService.createHtmlOutput(
-        `
-        <html>
-          <head><title>水道検針ライブラリ API</title></head>
-          <body>
-            <h1>🚰 水道検針ライブラリ API</h1>
-            <p>現在時刻: ${new Date().toISOString()}</p>
-            <p>APIバージョン: ${API_VERSION}</p>
-            <ul>
-              <li><a href="?action=getProperties">物件一覧を取得</a></li>
-              <li>部屋一覧: ?action=getRooms&propertyId=物件ID</li>
-              <li>検針データ: ?action=getMeterReadings&propertyId=物件ID&roomId=部屋ID</li>
-            </ul>
-          </body>
-        </html>
-      `
-      ).setTitle('水道検針ライブラリ API');
+      return HtmlService.createHtmlOutputFromFile('admin')
+        .setTitle('水道検針 管理画面')
+        .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
+        .addMetaTag('viewport', 'width=device-width, initial-scale=1');
     }
 
     // API処理
@@ -416,99 +402,6 @@ function doGet(e) {
         }
 
       default:
-        // デバッグ用API処理
-        if (action === 'getSpreadsheetInfo') {
-          // セキュリティ: 管理者トークン必須
-          if (!e.parameter.adminToken) {
-            return createCorsJsonResponse({
-              success: false,
-              error: '管理者トークンが必要です',
-              timestamp: new Date().toISOString(),
-            });
-          }
-          try {
-            const adminToken = PropertiesService.getScriptProperties().getProperty('ADMIN_TOKEN');
-            if (!adminToken || e.parameter.adminToken !== adminToken) {
-              return createCorsJsonResponse({
-                success: false,
-                error: '管理者トークンが無効です',
-                timestamp: new Date().toISOString(),
-              });
-            }
-            const ss = SpreadsheetApp.getActiveSpreadsheet();
-            const sheets = ss.getSheets().map((sheet) => ({
-              name: sheet.getName(),
-              rowCount: sheet.getLastRow(),
-              columnCount: sheet.getLastColumn(),
-            }));
-
-            return createCorsJsonResponse({
-              success: true,
-              message: 'スプレッドシート情報取得成功',
-              data: {
-                spreadsheetId: ss.getId(),
-                spreadsheetName: ss.getName(),
-                sheets: sheets,
-              },
-              timestamp: new Date().toISOString(),
-            });
-          } catch (error) {
-            return createCorsJsonResponse({
-              success: false,
-              error: `スプレッドシート情報取得エラー: ${error.message}`,
-              timestamp: new Date().toISOString(),
-            });
-          }
-        }
-
-        if (action === 'getPropertyMaster') {
-          // セキュリティ: 管理者トークン必須
-          if (!e.parameter.adminToken) {
-            return createCorsJsonResponse({
-              success: false,
-              error: '管理者トークンが必要です',
-              timestamp: new Date().toISOString(),
-            });
-          }
-          try {
-            const adminToken = PropertiesService.getScriptProperties().getProperty('ADMIN_TOKEN');
-            if (!adminToken || e.parameter.adminToken !== adminToken) {
-              return createCorsJsonResponse({
-                success: false,
-                error: '管理者トークンが無効です',
-                timestamp: new Date().toISOString(),
-              });
-            }
-            const ss = SpreadsheetApp.getActiveSpreadsheet();
-            const propertySheet = ss.getSheetByName(CONFIG.SHEET_NAMES.PROPERTY_MASTER);
-
-            if (!propertySheet) {
-              throw new Error('物件マスタシートが見つかりません');
-            }
-
-            const data = propertySheet.getDataRange().getValues();
-            const headers = data[0];
-            const rows = data.slice(1);
-
-            return createCorsJsonResponse({
-              success: true,
-              message: '物件マスタデータ取得成功',
-              data: {
-                headers: headers,
-                rowCount: rows.length,
-                sampleRows: rows.slice(0, 5), // 最初の5行のみ返す
-              },
-              timestamp: new Date().toISOString(),
-            });
-          } catch (error) {
-            return createCorsJsonResponse({
-              success: false,
-              error: `物件マスタデータ取得エラー: ${error.message}`,
-              timestamp: new Date().toISOString(),
-            });
-          }
-        }
-
         return createCorsJsonResponse({
           success: false,
           error: `未知のアクション: ${action}`,

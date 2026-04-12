@@ -1,0 +1,509 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <base target="_top" />
+    <title>水道検針 管理画面</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1/css/bulma.min.css" />
+    <style>
+      .sidebar {
+        min-height: 100vh;
+        background: #f5f5f5;
+        padding: 1rem;
+      }
+      .sidebar-menu {
+        padding-top: 1rem;
+      }
+      .sidebar-menu .menu-label {
+        font-size: 0.75rem;
+        letter-spacing: 0.05em;
+      }
+      .sidebar-menu .menu-list a {
+        padding: 0.5em 0.75em;
+        border-radius: 4px;
+      }
+      .sidebar-menu .menu-list a.is-active {
+        background: #00d1b2;
+        color: #fff;
+      }
+      .sidebar-menu .menu-list a:hover {
+        background: #e8e8e8;
+      }
+      .main-content {
+        padding: 2rem;
+      }
+      .section-placeholder {
+        padding: 3rem;
+        text-align: center;
+        color: #999;
+      }
+      .admin-header {
+        background: #363636;
+        color: #fff;
+        padding: 0.75rem 1.5rem;
+      }
+      .admin-header .navbar-item {
+        color: #fff;
+      }
+    </style>
+
+    <!-- Mock system (dev only — stripped by Vite plugin in production build) -->
+            
+    <!-- App code (single ES module entry — Vite bundles all imports) -->
+    <script type="module" crossorigin>(function(){const t=document.createElement("link").relList;if(t&&t.supports&&t.supports("modulepreload"))return;for(const r of document.querySelectorAll('link[rel="modulepreload"]'))o(r);new MutationObserver(r=>{for(const i of r)if(i.type==="childList")for(const a of i.addedNodes)a.tagName==="LINK"&&a.rel==="modulepreload"&&o(a)}).observe(document,{childList:!0,subtree:!0});function n(r){const i={};return r.integrity&&(i.integrity=r.integrity),r.referrerPolicy&&(i.referrerPolicy=r.referrerPolicy),r.crossOrigin==="use-credentials"?i.credentials="include":r.crossOrigin==="anonymous"?i.credentials="omit":i.credentials="same-origin",i}function o(r){if(r.ep)return;r.ep=!0;const i=n(r);fetch(r.href,i)}})();function s(e,t){return t=t||{},new Promise(function(n,o){var r=sessionStorage.getItem("ADMIN_TOKEN");r&&(t.adminToken=r),google.script.run.withSuccessHandler(function(i){i&&i.code==="INVALID_TOKEN"&&sessionStorage.removeItem("ADMIN_TOKEN"),n(i)}).withFailureHandler(function(i){o(i)}).adminAction(e,t)})}document.addEventListener("alpine:init",function(){Alpine.store("app",{loading:!1,error:null,activeTab:"dashboard",setActiveTab:function(t){this.activeTab=t},clearError:function(){this.error=null}}),Alpine.store("auth",{authenticated:!1,token:null,logout:function(){sessionStorage.removeItem("ADMIN_TOKEN"),this.authenticated=!1,this.token=null}});var e=sessionStorage.getItem("ADMIN_TOKEN");e&&s("verifyToken",{}).then(function(t){t&&t.success?(Alpine.store("auth").authenticated=!0,Alpine.store("auth").token=e):sessionStorage.removeItem("ADMIN_TOKEN")})});document.addEventListener("alpine:init",function(){Alpine.data("authGate",function(){return{token:"",error:"",loading:!1,submit:function(){var e=this;e.error="",e.loading=!0,sessionStorage.setItem("ADMIN_TOKEN",e.token),s("verifyToken",{}).then(function(t){t&&t.success?(Alpine.store("auth").authenticated=!0,Alpine.store("auth").token=e.token):(e.error=t&&t.message?t.message:"認証に失敗しました",sessionStorage.removeItem("ADMIN_TOKEN"))}).catch(function(t){e.error="通信エラーが発生しました: "+t.message,sessionStorage.removeItem("ADMIN_TOKEN")}).finally(function(){e.loading=!1})}}})});document.addEventListener("alpine:init",function(){Alpine.data("adminApp",function(){return{tabs:[{id:"dashboard",label:"ダッシュボード",icon:"📊"},{id:"monthly",label:"月次処理",icon:"📅"},{id:"setup",label:"初期設定",icon:"⚙️"},{id:"maintenance",label:"データメンテ",icon:"🔧"},{id:"diagnostics",label:"システム診断",icon:"🔍"}],init:function(){var e=sessionStorage.getItem("ADMIN_TOKEN");e&&s("verifyToken",{}).then(function(t){t&&t.success?(Alpine.store("auth").authenticated=!0,Alpine.store("auth").token=e):Alpine.store("auth").logout()}).catch(function(){Alpine.store("auth").logout()})},get authenticated(){return Alpine.store("auth").authenticated},get activeTab(){return Alpine.store("app").activeTab},switchTab:function(e){Alpine.store("app").setActiveTab(e)},isActive:function(e){return Alpine.store("app").activeTab===e},logout:function(){Alpine.store("auth").logout(),Alpine.store("app").setActiveTab("dashboard")}}})});document.addEventListener("alpine:init",function(){Alpine.data("dashboard",function(){return{loading:!0,data:null,properties:[],error:"",init:function(){this.refresh()},refresh:function(){var e=this;e.loading=!0,e.error="",Promise.all([s("getAdminDashboardData"),s("getProperties")]).then(function(t){var n=t[0],o=t[1];n&&n.success&&(e.data=n.data),o&&o.success&&(e.properties=o.data||[])}).catch(function(t){e.error="データの取得に失敗しました: "+(t.message||t)}).finally(function(){e.loading=!1})},completionColor:function(){if(!this.data)return"is-danger";var e=this.data.completionRate||0;return e>=80?"is-success":e>=50?"is-warning":"is-danger"}}})});document.addEventListener("alpine:init",function(){Alpine.data("monthlyProcess",function(){return{step:"idle",checkResults:null,executeResult:null,error:"",runPreCheck:function(){var e=this;e.step="checking",e.error="",s("preCheckMonthlyProcess").then(function(t){t&&t.success?(e.checkResults=t.data,e.step="confirm"):(e.error=t&&t.error||"事前チェックに失敗しました",e.step="error")}).catch(function(t){e.error=t.message||"事前チェックでエラーが発生しました",e.step="error"})},runExecute:function(){var e=this;e.step="executing",e.error="",s("executeMonthlyProcess").then(function(t){t&&t.success?(e.executeResult=t.data,e.step="done"):(e.error=t&&t.error||"月次処理に失敗しました",e.step="error")}).catch(function(t){e.error=t.message||"月次処理でエラーが発生しました",e.step="error"})},reset:function(){this.step="idle",this.checkResults=null,this.executeResult=null,this.error=""},getCategoryClass:function(e){var t={error:"is-danger",warning:"is-warning",success:"is-success",info:"is-info"};return t[e]||"is-info"},getCategoryIcon:function(e){var t={error:"❌",warning:"⚠️",success:"✅",info:"ℹ️"};return t[e]||"ℹ️"},getCategoryLabel:function(e){var t={error:"エラー",warning:"警告",success:"成功",info:"情報"};return t[e]||"情報"},get errorCount(){return this.checkResults&&this.checkResults.errorCount||0},get warningCount(){return this.checkResults&&this.checkResults.warningCount||0},get canExecute(){return this.checkResults&&this.errorCount===0}}})});document.addEventListener("alpine:init",function(){Alpine.data("dataMaintenance",function(){return{tools:[{id:"validateInspectionDataIntegrity",label:"整合性チェック",description:"🔍 検針データの整合性を検証します",icon:"🔍",destructive:!1,loading:!1,result:null,error:"",confirmPending:!1},{id:"cleanupDuplicateData",label:"重複データ削除",description:"🗑️ 重複する検針データを削除します",icon:"🗑️",destructive:!0,loading:!1,result:null,error:"",confirmPending:!1},{id:"generateRoomIds",label:"部屋ID自動生成",description:"🔢 部屋IDを自動採番します",icon:"🔢",destructive:!0,loading:!1,result:null,error:"",confirmPending:!1},{id:"formatAllPropertyIds",label:"物件IDフォーマット",description:"📝 物件IDを正規フォーマットに変換します",icon:"📝",destructive:!0,loading:!1,result:null,error:"",confirmPending:!1},{id:"cleanUpOrphanedRooms",label:"孤立データ削除",description:"🧹 物件に紐づかない孤立部屋を削除します",icon:"🧹",destructive:!0,loading:!1,result:null,error:"",confirmPending:!1}],findTool:function(e){return this.tools.find(function(t){return t.id===e})},executeTool:function(e){var t=this.findTool(e);if(t){if(t.destructive){t.confirmPending=!0;return}this.confirmTool(e)}},confirmTool:function(e){var t=this.findTool(e);t&&(t.loading=!0,t.error="",t.result=null,t.confirmPending=!1,s(e).then(function(n){t.loading=!1,n.success?t.result=n.data||n.message||"完了しました":t.error=n.error||n.message||"エラーが発生しました"}).catch(function(n){t.loading=!1,t.error=n.message||n||"エラーが発生しました"}))},cancelTool:function(e){var t=this.findTool(e);t&&(t.confirmPending=!1)},resetTool:function(e){var t=this.findTool(e);t&&(t.result=null,t.error="",t.confirmPending=!1)}}})});document.addEventListener("alpine:init",function(){Alpine.data("setupWizard",function(){return{currentStep:0,steps:[{id:"validate",label:"システム確認",action:"validateSystemSetup",icon:"🔍"},{id:"templates",label:"マスタテンプレート作成",action:"createMasterSheetTemplates",icon:"📋"},{id:"propertyIds",label:"物件ID採番",action:"formatAllPropertyIds",icon:"🏷️"},{id:"roomIds",label:"部屋ID生成",action:"generateRoomIds",icon:"🔢"},{id:"initialData",label:"検針データ作成",action:"createInitialInspectionData",icon:"📊"},{id:"populate",label:"データ反映",action:"populateInspectionDataFromMasters",icon:"📤"},{id:"finalCheck",label:"最終確認",action:"validateSystemSetup",icon:"✅"}],results:{},loading:!1,error:"",executeCurrentStep:function(){var e=this,t=e.steps[e.currentStep];e.loading=!0,e.error="",s(t.action).then(function(n){e.results[t.id]={success:n&&n.success,data:n,timestamp:new Date().toISOString()},(!n||!n.success)&&(e.error=n&&n.error||"ステップの実行に失敗しました")}).catch(function(n){e.results[t.id]={success:!1,error:n.message||n,timestamp:new Date().toISOString()},e.error="エラーが発生しました: "+(n.message||n)}).finally(function(){e.loading=!1})},goToStep:function(e){e>=0&&e<this.steps.length&&(this.currentStep=e,this.error="")},nextStep:function(){this.isLastStep()||(this.currentStep++,this.error="")},prevStep:function(){this.isFirstStep()||(this.currentStep--,this.error="")},isFirstStep:function(){return this.currentStep===0},isLastStep:function(){return this.currentStep===this.steps.length-1},getStepResult:function(e){return this.results[e]||null},getStepStatus:function(e){if(this.loading){var t=this.steps[this.currentStep];if(t&&t.id===e)return"running"}var n=this.results[e];return n?n.success?"success":"error":"pending"},getStatusIcon:function(e){switch(e){case"running":return"⏳";case"success":return"✅";case"error":return"❌";default:return"⏳"}},reset:function(){this.results={},this.currentStep=0,this.loading=!1,this.error=""}}})});document.addEventListener("alpine:init",function(){Alpine.data("diagnostics",function(){return{loading:!1,data:null,error:"",lastRun:null,runDiagnostics:function(){var e=this;e.loading=!0,e.error="",s("runSystemDiagnostics").then(function(t){t&&t.success?(e.data=t.data,e.lastRun=t.data.timestamp||new Date().toISOString()):e.error="診断の実行に失敗しました"}).catch(function(t){e.error="診断の実行に失敗しました: "+(t.message||t)}).finally(function(){e.loading=!1})},getOverallStatus:function(){return this.data&&this.data.overall||"UNKNOWN"},getStatusClass:function(e){switch(e){case"HEALTHY":case"OK":return"is-success";case"WARNING":return"is-warning";case"ERROR":case"CRITICAL":return"is-danger";default:return"is-info"}},getStatusLabel:function(e){switch(e){case"HEALTHY":return"正常";case"WARNING":return"警告";case"ERROR":return"エラー";default:return"不明"}},getSeverityIcon:function(e){switch(e){case"error":return"🔴";case"warning":return"🟡";case"info":return"🔵";default:return"⚪"}}}})});console.log("Admin UI loaded");</script>
+  </head>
+  <body>
+    <!-- Auth Gate -->
+    <template x-if="!$store.auth.authenticated">
+      <section class="hero is-fullheight">
+        <div class="hero-body">
+          <div class="container has-text-centered" style="max-width: 400px">
+            <div class="box">
+              <h1 class="title is-4">水道検針 管理画面</h1>
+              <p class="subtitle is-6 has-text-grey">管理者トークンを入力してください</p>
+
+              <div x-data="authGate">
+                <div class="field">
+                  <div class="control">
+                    <input
+                      class="input"
+                      type="password"
+                      placeholder="管理者トークン"
+                      x-model="token"
+                      x-on:keydown.enter="submit"
+                      x-bind:disabled="loading"
+                    />
+                  </div>
+                </div>
+
+                <div
+                  x-show="error"
+                  x-text="error"
+                  class="notification is-danger is-light mb-3"
+                  style="font-size: 0.85rem"
+                ></div>
+
+                <button
+                  class="button is-primary is-fullwidth"
+                  x-bind:class="{ 'is-loading': loading }"
+                  x-on:click="submit"
+                  x-text="loading ? '認証中...' : 'ログイン'"
+                ></button>
+
+                <p class="mt-4 is-size-7 has-text-grey">※ ローカル開発時は「test-token」を入力</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </template>
+
+    <!-- Main Admin UI -->
+    <template x-if="$store.auth.authenticated">
+      <div x-data="adminApp">
+        <div class="columns is-gapless">
+          <!-- Sidebar -->
+          <div class="column is-2 sidebar">
+            <div class="admin-header mb-4">
+              <strong class="has-text-white">🚰 管理画面</strong>
+            </div>
+
+            <aside class="menu sidebar-menu">
+              <p class="menu-label">メニュー</p>
+              <ul class="menu-list">
+                <template x-for="tab in tabs" :key="tab.id">
+                  <li>
+                    <a
+                      x-bind:class="{ 'is-active': activeTab === tab.id }"
+                      x-on:click="switchTab(tab.id)"
+                      x-text="tab.icon + ' ' + tab.label"
+                    ></a>
+                  </li>
+                </template>
+              </ul>
+            </aside>
+
+            <div class="mt-6">
+              <button class="button is-small is-light" x-on:click="logout">ログアウト</button>
+            </div>
+          </div>
+
+          <!-- Content Area -->
+          <div class="column main-content">
+            <!-- Dashboard -->
+            <div x-show="activeTab === 'dashboard'" x-data="dashboard">
+              <div x-show="loading" class="has-text-centered py-6">
+                <button class="button is-loading is-large is-static"></button>
+                <p class="mt-3 has-text-grey">読み込み中...</p>
+              </div>
+              <div x-show="!loading && error" class="notification is-danger">
+                <p x-text="error"></p>
+                <button class="button is-small mt-2" x-on:click="refresh()">再試行</button>
+              </div>
+              <div x-show="!loading && data">
+                <div class="columns is-multiline">
+                  <div class="column is-3">
+                    <div class="box has-text-centered">
+                      <p class="heading">物件数</p>
+                      <p class="title has-text-primary" x-text="data ? data.propertyCount : 0"></p>
+                    </div>
+                  </div>
+                  <div class="column is-3">
+                    <div class="box has-text-centered">
+                      <p class="heading">総部屋数</p>
+                      <p class="title" x-text="data ? data.totalRooms : 0"></p>
+                    </div>
+                  </div>
+                  <div class="column is-3">
+                    <div class="box has-text-centered">
+                      <p class="heading">検針済み</p>
+                      <p class="title has-text-success" x-text="data ? data.completedRooms : 0"></p>
+                    </div>
+                  </div>
+                  <div class="column is-3">
+                    <div class="box has-text-centered">
+                      <p class="heading">完了率</p>
+                      <p
+                        class="title"
+                        x-bind:class="completionColor()"
+                        x-text="data ? data.completionRate + '%' : '0%'"
+                      ></p>
+                    </div>
+                  </div>
+                </div>
+                <div x-show="data && data.spreadsheetInfo" class="box mb-4">
+                  <p class="heading">スプレッドシート</p>
+                  <p
+                    x-show="data && data.spreadsheetInfo"
+                    x-text="data && data.spreadsheetInfo ? data.spreadsheetInfo.name : ''"
+                  ></p>
+                  <a
+                    x-show="data && data.spreadsheetInfo && data.spreadsheetInfo.url"
+                    x-bind:href="data && data.spreadsheetInfo ? data.spreadsheetInfo.url : '#'"
+                    target="_blank"
+                    class="is-size-7"
+                    >シートを開く</a
+                  >
+                </div>
+                <div x-show="properties && properties.length > 0">
+                  <p class="heading mb-3">物件一覧</p>
+                  <table class="table is-fullwidth is-hoverable">
+                    <thead>
+                      <tr>
+                        <th>物件名</th>
+                        <th>部屋数</th>
+                        <th>検針済み</th>
+                        <th>状態</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <template x-for="prop in properties" :key="prop.id || prop.propertyId">
+                        <tr>
+                          <td x-text="prop.name || prop.propertyName"></td>
+                          <td x-text="prop.roomCount || '-'"></td>
+                          <td x-text="prop.completedCount || 0"></td>
+                          <td>
+                            <span
+                              class="tag"
+                              x-bind:class="prop.completedCount > 0 ? 'is-success' : 'is-light'"
+                              x-text="prop.completedCount > 0 ? '検針中' : '未着手'"
+                            ></span>
+                          </td>
+                        </tr>
+                      </template>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- Monthly Process -->
+            <div x-show="activeTab === 'monthly'" x-data="monthlyProcess">
+              <div class="box">
+                <div x-show="step === 'idle'">
+                  <p class="title is-4">📅 月次処理</p>
+                  <p class="mb-4">
+                    前月の検針データをアーカイブし、新しい月のデータを準備します。事前チェックを実行してください。
+                  </p>
+                  <button class="button is-primary" x-on:click="runPreCheck()">
+                    事前チェックを実行
+                  </button>
+                </div>
+
+                <div x-show="step === 'checking'" class="has-text-centered py-5">
+                  <button class="button is-loading is-large is-static"></button>
+                  <p class="mt-3 has-text-grey">事前チェック実行中...</p>
+                </div>
+
+                <div x-show="step === 'confirm'">
+                  <p class="title is-4">📋 事前チェック結果</p>
+                  <div class="mb-4">
+                    <template x-for="(check, i) in checkResults.checks || []" :key="i">
+                      <div class="notification mb-2" x-bind:class="getCategoryClass(check.type)">
+                        <span x-text="getCategoryIcon(check.type)"></span>
+                        <strong x-text="check.category"></strong>
+                        <span
+                          class="is-size-7"
+                          x-text="'（' + getCategoryLabel(check.type) + '）'"
+                        ></span>
+                        <p class="is-size-7 mt-1" x-text="check.message"></p>
+                      </div>
+                    </template>
+                  </div>
+                  <div x-show="errorCount > 0" class="notification is-danger mb-3">
+                    <strong
+                      x-text="errorCount + '件のエラーがあります。月次処理を実行する前に修正してください。'"
+                    ></strong>
+                  </div>
+                  <div
+                    x-show="warningCount > 0 && errorCount === 0"
+                    class="notification is-warning mb-3"
+                  >
+                    <strong x-text="warningCount + '件の警告があります。続行しますか？'"></strong>
+                  </div>
+                  <div class="field is-grouped">
+                    <button
+                      class="button is-primary"
+                      x-bind:disabled="!canExecute"
+                      x-on:click="runExecute()"
+                    >
+                      月次処理を実行
+                    </button>
+                    <button class="button is-light" x-on:click="reset()">戻る</button>
+                  </div>
+                </div>
+
+                <div x-show="step === 'executing'" class="has-text-centered py-5">
+                  <button class="button is-loading is-large is-static"></button>
+                  <p class="mt-3 has-text-grey">月次処理実行中...（30-60秒かかる場合があります）</p>
+                </div>
+
+                <div x-show="step === 'done'">
+                  <p class="title is-4">✅ 月次処理完了</p>
+                  <div class="notification is-success is-light">
+                    <p
+                      x-text="executeResult && executeResult.summary ? executeResult.summary.message : '月次処理が完了しました。'"
+                    ></p>
+                  </div>
+                  <div x-show="executeResult" class="content is-size-7">
+                    <p
+                      x-text="executeResult ? '実行時刻: ' + (executeResult.executedAt || '') : ''"
+                    ></p>
+                    <p
+                      x-text="executeResult ? '所要時間: ' + (executeResult.duration || '') : ''"
+                    ></p>
+                  </div>
+                  <button class="button is-light" x-on:click="reset()">戻る</button>
+                </div>
+
+                <div x-show="step === 'error'" class="notification is-danger">
+                  <p x-text="error"></p>
+                  <button class="button is-small mt-2" x-on:click="reset()">再試行</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Setup Wizard -->
+            <div x-show="activeTab === 'setup'" x-data="setupWizard">
+              <div class="box">
+                <p class="title is-4">⚙️ 初期設定ウィザード</p>
+                <div class="steps mb-4">
+                  <template x-for="(step, i) in steps" :key="step.id">
+                    <div
+                      class="steps-segment"
+                      x-bind:class="{ 'is-active': currentStep === i, 'is-completed': getStepResult(step.id) && getStepResult(step.id).success }"
+                    >
+                      <span
+                        x-text="getStatusIcon(getStepStatus(step.id)) + ' ' + (i + 1) + '. ' + step.label"
+                      ></span>
+                    </div>
+                  </template>
+                </div>
+                <div x-show="steps[currentStep]" class="mb-4">
+                  <p
+                    class="title is-5"
+                    x-text="steps[currentStep] ? steps[currentStep].icon + ' ' + steps[currentStep].label : ''"
+                  ></p>
+                  <button
+                    class="button is-primary"
+                    x-bind:class="{ 'is-loading': loading }"
+                    x-bind:disabled="loading"
+                    x-on:click="executeCurrentStep()"
+                  >
+                    このステップを実行
+                  </button>
+                </div>
+                <div
+                  x-show="getStepResult(steps[currentStep] ? steps[currentStep].id : '')"
+                  class="notification"
+                  x-bind:class="getStepResult(steps[currentStep] ? steps[currentStep].id : '') && getStepResult(steps[currentStep] ? steps[currentStep].id : '').success ? 'is-success is-light' : 'is-danger is-light'"
+                >
+                  <p
+                    x-text="getStepResult(steps[currentStep] ? steps[currentStep].id : '') ? JSON.stringify(getStepResult(steps[currentStep] ? steps[currentStep].id : '').data || getStepResult(steps[currentStep] ? steps[currentStep].id : '').error) : ''"
+                  ></p>
+                </div>
+                <div x-show="error" class="notification is-danger">
+                  <p x-text="error"></p>
+                </div>
+                <div class="field is-grouped mt-4">
+                  <button class="button" x-bind:disabled="isFirstStep()" x-on:click="prevStep()">
+                    前へ
+                  </button>
+                  <button
+                    class="button is-primary"
+                    x-bind:disabled="isLastStep()"
+                    x-on:click="nextStep()"
+                  >
+                    次へ
+                  </button>
+                  <button class="button is-light" x-on:click="reset()">リセット</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Data Maintenance -->
+            <div x-show="activeTab === 'maintenance'" x-data="dataMaintenance">
+              <p class="title is-4">🔧 データメンテナンス</p>
+              <div class="columns is-multiline">
+                <template x-for="tool in tools" :key="tool.id">
+                  <div class="column is-6">
+                    <div class="box">
+                      <p class="title is-5" x-text="tool.icon + ' ' + tool.label"></p>
+                      <p class="subtitle is-6 has-text-grey" x-text="tool.description"></p>
+                      <div x-show="!tool.result && !tool.confirmPending && !tool.loading">
+                        <button
+                          class="button"
+                          x-bind:class="tool.destructive ? 'is-warning' : 'is-info'"
+                          x-on:click="executeTool(tool.id)"
+                        >
+                          実行
+                        </button>
+                      </div>
+                      <div x-show="tool.confirmPending" class="notification is-warning is-light">
+                        <p>この操作は元に戻せません。実行しますか？</p>
+                        <div class="field is-grouped mt-2">
+                          <button class="button is-danger" x-on:click="confirmTool(tool.id)">
+                            実行する
+                          </button>
+                          <button class="button is-light" x-on:click="cancelTool(tool.id)">
+                            キャンセル
+                          </button>
+                        </div>
+                      </div>
+                      <div x-show="tool.loading" class="has-text-centered">
+                        <button class="button is-loading is-static"></button>
+                        <p class="is-size-7 mt-2 has-text-grey">処理中...</p>
+                      </div>
+                      <div x-show="tool.result" class="notification is-success is-light">
+                        <p
+                          x-text="typeof tool.result === 'string' ? tool.result : tool.result.message || '完了しました。'"
+                        ></p>
+                        <button class="button is-small mt-2" x-on:click="resetTool(tool.id)">
+                          再実行
+                        </button>
+                      </div>
+                      <div x-show="tool.error" class="notification is-danger is-light">
+                        <p x-text="tool.error"></p>
+                        <button class="button is-small mt-2" x-on:click="resetTool(tool.id)">
+                          再試行
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </template>
+              </div>
+            </div>
+
+            <!-- Diagnostics -->
+            <div x-show="activeTab === 'diagnostics'" x-data="diagnostics">
+              <div class="box">
+                <div class="is-flex is-justify-content-space-between is-align-items-center mb-4">
+                  <p class="title is-4 mb-0">🔍 システム診断</p>
+                  <button
+                    class="button is-info"
+                    x-bind:class="{ 'is-loading': loading }"
+                    x-bind:disabled="loading"
+                    x-on:click="runDiagnostics()"
+                  >
+                    診断を実行
+                  </button>
+                </div>
+                <div x-show="!data && !loading && !error">
+                  <p class="has-text-grey has-text-centered py-6">診断を実行してください</p>
+                </div>
+                <div x-show="loading" class="has-text-centered py-5">
+                  <button class="button is-loading is-large is-static"></button>
+                  <p class="mt-3 has-text-grey">診断実行中...</p>
+                </div>
+                <div x-show="error" class="notification is-danger">
+                  <p x-text="error"></p>
+                </div>
+                <div x-show="data">
+                  <div class="mb-4">
+                    <span
+                      class="tag is-large"
+                      x-bind:class="getStatusClass(getOverallStatus())"
+                      x-text="getStatusLabel(getOverallStatus())"
+                    ></span>
+                    <span
+                      class="is-size-7 ml-2"
+                      x-text="data ? '実行時刻: ' + (data.timestamp || '') : ''"
+                    ></span>
+                  </div>
+                  <div x-show="data && data.sheets && data.sheets.length > 0" class="mb-4">
+                    <p class="heading">シート状態</p>
+                    <table class="table is-fullwidth is-hoverable">
+                      <thead>
+                        <tr>
+                          <th>シート名</th>
+                          <th>状態</th>
+                          <th>行数</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <template
+                          x-for="(sheet, i) in (data && data.sheets ? data.sheets : [])"
+                          :key="i"
+                        >
+                          <tr>
+                            <td x-text="sheet.name"></td>
+                            <td>
+                              <span
+                                class="tag"
+                                x-bind:class="sheet.healthy ? 'is-success' : 'is-danger'"
+                                x-text="sheet.healthy ? '正常' : '異常'"
+                              ></span>
+                            </td>
+                            <td x-text="sheet.rowCount || sheet.rows || '-'"></td>
+                          </tr>
+                        </template>
+                      </tbody>
+                    </table>
+                  </div>
+                  <div x-show="data && data.issues && data.issues.length > 0">
+                    <p class="heading">問題一覧</p>
+                    <template
+                      x-for="(issue, i) in (data && data.issues ? data.issues : [])"
+                      :key="i"
+                    >
+                      <div
+                        class="notification mb-2"
+                        x-bind:class="issue.severity === 'error' ? 'is-danger is-light' : issue.severity === 'warning' ? 'is-warning is-light' : 'is-info is-light'"
+                      >
+                        <span x-text="getSeverityIcon(issue.severity) + ' ' + issue.message"></span>
+                      </div>
+                    </template>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <!-- Alpine.js CSP build (loaded last, deferred) -->
+    <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/csp@3/dist/cdn.min.js"></script>
+  </body>
+</html>

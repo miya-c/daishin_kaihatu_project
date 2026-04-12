@@ -44,6 +44,7 @@ function createWaterMeterMenu() {
     
     // 基本機能
     mainMenu.addItem('📱 水道検針アプリを開く', 'showWaterMeterWebApp');
+    mainMenu.addItem('🔧 管理画面を開く', 'showAdminUI');
     mainMenu.addSeparator();
     mainMenu.addItem('📋 物件一覧を表示', 'showPropertiesList');
     mainMenu.addItem('🏠 部屋一覧を表示', 'showRoomsList');
@@ -104,6 +105,29 @@ function showWaterMeterWebApp() {
     console.error('水道検針アプリ表示エラー:', error);
     SpreadsheetApp.getUi().alert('エラー',
       `アプリの表示に失敗しました:\n${error.message}`,
+      SpreadsheetApp.getUi().ButtonSet.OK);
+  }
+}
+
+function showAdminUI() {
+  try {
+    var webAppUrl = cmlibrary.getWebAppUrl();
+    if (webAppUrl) {
+      var html = HtmlService.createHtmlOutput(
+        '<p>管理画面を開きます:</p>' +
+        '<p><a href="' + webAppUrl + '" target="_blank" style="font-size:1.2em">🔗 管理画面を開く</a></p>' +
+        '<p style="font-size:0.8em;color:#666">上記リンクをクリックしてください</p>'
+      ).setTitle('管理画面');
+      SpreadsheetApp.getUi().showModalDialog(html, '水道検針 管理画面');
+    } else {
+      SpreadsheetApp.getUi().alert('管理画面',
+        'Web App URLが設定されていません。\nスクリプトプロパティにWEB_APP_URLを設定してください。',
+        SpreadsheetApp.getUi().ButtonSet.OK);
+    }
+  } catch (error) {
+    console.error('管理画面表示エラー:', error);
+    SpreadsheetApp.getUi().alert('エラー',
+      '管理画面の表示に失敗しました:\n' + error.message,
       SpreadsheetApp.getUi().ButtonSet.OK);
   }
 }
@@ -399,7 +423,7 @@ function doGet(e) {
  * @param {Object} e - イベントオブジェクト
  * @returns {ContentService} JSONレスポンス
  */
-function doPost(e) {
+ function doPost(e) {
   try {
     // Inject client's API_KEY from script properties (always override to prevent URL injection)
     const clientStoredKey = PropertiesService.getScriptProperties().getProperty('API_KEY');
@@ -418,6 +442,21 @@ function doPost(e) {
       }))
       .setMimeType(ContentService.MimeType.JSON);
   }
+}
+
+// =====================================================
+// 管理画面API機能
+// =====================================================
+
+function adminAction(action, params) {
+  params = params || {};
+  const storedToken = PropertiesService.getScriptProperties().getProperty('ADMIN_TOKEN');
+  if (storedToken) {
+    params._storedAdminToken = storedToken;
+  } else {
+    delete params._storedAdminToken;
+  }
+  return cmlibrary.adminDispatch(action, params);
 }
 
 // =====================================================
