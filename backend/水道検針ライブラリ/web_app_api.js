@@ -401,15 +401,6 @@ function doGet(e) {
           });
         }
 
-      case 'adminAction': {
-        const adminSubAction = e.parameter.adminSubAction;
-        if (!adminSubAction) {
-          return createCorsJsonResponse({ success: false, error: 'adminSubActionが必要です' });
-        }
-        const adminResult = adminDispatch(adminSubAction, e.parameter);
-        return createCorsJsonResponse(adminResult);
-      }
-
       default:
         return createCorsJsonResponse({
           success: false,
