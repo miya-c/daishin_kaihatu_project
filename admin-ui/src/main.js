@@ -15,7 +15,7 @@ import './components/data-maintenance.js';
 import './components/setup-wizard.js';
 import './components/diagnostics.js';
 
-import Alpine from 'alpinejs';
+import Alpine from '@alpinejs/csp';
 window.Alpine = Alpine;
 Alpine.start();
 
