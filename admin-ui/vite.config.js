@@ -1,29 +1,31 @@
 import { defineConfig } from 'vite';
 import { viteSingleFile } from 'vite-plugin-singlefile';
 import { resolve } from 'path';
+import { readFileSync, writeFileSync } from 'fs';
 
-function stripMockScripts() {
-  let isBuild = false;
+function gasCompat() {
   return {
-    name: 'strip-mock-scripts',
-    configResolved(config) {
-      isBuild = config.command === 'build';
-    },
-    transformIndexHtml(html) {
-      if (isBuild) {
-        return html.replace(/<script\s+src="\/mock\/[^"]+"><\/script>\n?/g, '');
-      }
+    name: 'gas-compat',
+    closeBundle() {
+      const htmlPath = resolve(__dirname, 'dist/index.html');
+      let html = readFileSync(htmlPath, 'utf8');
+      html = html.replace(/<script\s+type="module"\s*crossorigin>/g, '<script>');
+      html = html.replace(/<script\s+src="\/mock\/[^"]+"><\/script>\n?/g, '');
+      writeFileSync(htmlPath, html);
     },
   };
 }
 
 export default defineConfig({
-  plugins: [viteSingleFile(), stripMockScripts()],
+  plugins: [viteSingleFile(), gasCompat()],
   root: '.',
   build: {
     outDir: 'dist',
     rollupOptions: {
       input: resolve(__dirname, 'index.html'),
+      output: {
+        format: 'iife',
+      },
     },
   },
 });
