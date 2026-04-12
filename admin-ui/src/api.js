@@ -1,11 +1,3 @@
-/**
- * Admin API — Promise-based wrapper around fetch() GET
- *
- * All calls go through callAdminAPI(action, params).
- * The server-side doGet handles action=adminAction and routes
- * to adminDispatch internally.
- */
-
 export function callAdminAPI(action, params) {
   params = params || {};
 
