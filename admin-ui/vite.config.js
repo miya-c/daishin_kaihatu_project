@@ -12,12 +12,27 @@ function gasCompat() {
       html = html.replace(/<script\s+type="module"\s*crossorigin>/g, '<script>');
       html = html.replace(/<script\s+src="\/mock\/[^"]+"><\/script>\n?/g, '');
 
-      const scriptMatch = html.match(/<script>[\s\S]*?<\/script>/);
-      if (scriptMatch && !html.includes('</body>')) return;
-      if (scriptMatch) {
-        const scriptBlock = scriptMatch[0];
-        html = html.replace(scriptBlock, '');
-        html = html.replace('</body>', scriptBlock + '\n  </body>');
+      // GAS strips </script> from large inline scripts. Workaround: store code
+      // in a non-executing <script type="text/plain"> and eval it dynamically.
+      const marker = '<script>(function()';
+      const blockStart = html.indexOf(marker);
+      if (blockStart !== -1) {
+        const contentStart = blockStart + '<script>'.length;
+        const realClose = html.lastIndexOf('</script>');
+        if (realClose > contentStart) {
+          const code = html.substring(contentStart, realClose);
+          html =
+            html.substring(0, blockStart) +
+            '<script type="text/plain" id="alpine-code">' +
+            code +
+            '</script>' +
+            '<script>document.addEventListener("DOMContentLoaded",function(){' +
+            'var c=document.getElementById("alpine-code").textContent;' +
+            'var s=document.createElement("script");' +
+            's.textContent=c;document.body.appendChild(s);' +
+            '});</script>' +
+            html.substring(realClose + '</script>'.length);
+        }
       }
 
       writeFileSync(htmlPath, html);

@@ -5,6 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <base target="_top" />
     <title>水道検針 管理画面</title>
+    <!-- TrustedTypes shim: GAS enforces Trusted Types CSP which blocks inline scripts -->
+    <script>
+      if (window.trustedTypes && window.trustedTypes.createPolicy) {
+        window.trustedTypes.createPolicy('default', {
+          createHTML: function (string) {
+            return string;
+          },
+          createScriptURL: function (string) {
+            return string;
+          },
+          createScript: function (string) {
+            return string;
+          },
+        });
+      }
+    </script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1/css/bulma.min.css" />
     <style>
       .sidebar {
@@ -54,455 +70,466 @@
     <script src="/mock/google-script.js"></script>
   </head>
   <body>
-    <!-- Auth Gate -->
-    <template x-if="!$store.auth.authenticated">
-      <section class="hero is-fullheight">
-        <div class="hero-body">
-          <div class="container has-text-centered" style="max-width: 400px">
-            <div class="box">
-              <h1 class="title is-4">水道検針 管理画面</h1>
-              <p class="subtitle is-6 has-text-grey">管理者トークンを入力してください</p>
-
-              <div x-data="authGate">
-                <div class="field">
-                  <div class="control">
-                    <input
-                      class="input"
-                      type="password"
-                      placeholder="管理者トークン"
-                      x-model="token"
-                      x-on:keydown.enter="submit"
-                      x-bind:disabled="loading"
-                    />
-                  </div>
-                </div>
-
-                <div
-                  x-show="error"
-                  x-text="error"
-                  class="notification is-danger is-light mb-3"
-                  style="font-size: 0.85rem"
-                ></div>
-
-                <button
-                  class="button is-primary is-fullwidth"
-                  x-bind:class="{ 'is-loading': loading }"
-                  x-on:click="submit"
-                  x-text="loading ? '認証中...' : 'ログイン'"
-                ></button>
-
-                <p class="mt-4 is-size-7 has-text-grey">※ ローカル開発時は「test-token」を入力</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-    </template>
-
-    <!-- Main Admin UI -->
-    <template x-if="$store.auth.authenticated">
-      <div x-data="adminApp">
-        <div class="columns is-gapless">
-          <!-- Sidebar -->
-          <div class="column is-2 sidebar">
-            <div class="admin-header mb-4">
-              <strong class="has-text-white">🚰 管理画面</strong>
-            </div>
-
-            <aside class="menu sidebar-menu">
-              <p class="menu-label">メニュー</p>
-              <ul class="menu-list">
-                <template x-for="tab in tabs" :key="tab.id">
-                  <li>
-                    <a
-                      x-bind:class="{ 'is-active': activeTab === tab.id }"
-                      x-on:click="switchTab(tab.id)"
-                      x-text="tab.icon + ' ' + tab.label"
-                    ></a>
-                  </li>
-                </template>
-              </ul>
-            </aside>
-
-            <div class="mt-6">
-              <button class="button is-small is-light" x-on:click="logout">ログアウト</button>
-            </div>
-          </div>
-
-          <!-- Content Area -->
-          <div class="column main-content">
-            <!-- Dashboard -->
-            <div x-show="activeTab === 'dashboard'" x-data="dashboard">
-              <div x-show="loading" class="has-text-centered py-6">
-                <button class="button is-loading is-large is-static"></button>
-                <p class="mt-3 has-text-grey">読み込み中...</p>
-              </div>
-              <div x-show="!loading && error" class="notification is-danger">
-                <p x-text="error"></p>
-                <button class="button is-small mt-2" x-on:click="refresh()">再試行</button>
-              </div>
-              <div x-show="!loading && data">
-                <div class="columns is-multiline">
-                  <div class="column is-3">
-                    <div class="box has-text-centered">
-                      <p class="heading">物件数</p>
-                      <p class="title has-text-primary" x-text="data ? data.propertyCount : 0"></p>
-                    </div>
-                  </div>
-                  <div class="column is-3">
-                    <div class="box has-text-centered">
-                      <p class="heading">総部屋数</p>
-                      <p class="title" x-text="data ? data.totalRooms : 0"></p>
-                    </div>
-                  </div>
-                  <div class="column is-3">
-                    <div class="box has-text-centered">
-                      <p class="heading">検針済み</p>
-                      <p class="title has-text-success" x-text="data ? data.completedRooms : 0"></p>
-                    </div>
-                  </div>
-                  <div class="column is-3">
-                    <div class="box has-text-centered">
-                      <p class="heading">完了率</p>
-                      <p
-                        class="title"
-                        x-bind:class="completionColor()"
-                        x-text="data ? data.completionRate + '%' : '0%'"
-                      ></p>
-                    </div>
-                  </div>
-                </div>
-                <div x-show="data && data.spreadsheetInfo" class="box mb-4">
-                  <p class="heading">スプレッドシート</p>
-                  <p
-                    x-show="data && data.spreadsheetInfo"
-                    x-text="data && data.spreadsheetInfo ? data.spreadsheetInfo.name : ''"
-                  ></p>
-                  <a
-                    x-show="data && data.spreadsheetInfo && data.spreadsheetInfo.url"
-                    x-bind:href="data && data.spreadsheetInfo ? data.spreadsheetInfo.url : '#'"
-                    target="_blank"
-                    class="is-size-7"
-                    >シートを開く</a
-                  >
-                </div>
-                <div x-show="properties && properties.length > 0">
-                  <p class="heading mb-3">物件一覧</p>
-                  <table class="table is-fullwidth is-hoverable">
-                    <thead>
-                      <tr>
-                        <th>物件名</th>
-                        <th>部屋数</th>
-                        <th>検針済み</th>
-                        <th>状態</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <template x-for="prop in properties" :key="prop.id || prop.propertyId">
-                        <tr>
-                          <td x-text="prop.name || prop.propertyName"></td>
-                          <td x-text="prop.roomCount || '-'"></td>
-                          <td x-text="prop.completedCount || 0"></td>
-                          <td>
-                            <span
-                              class="tag"
-                              x-bind:class="prop.completedCount > 0 ? 'is-success' : 'is-light'"
-                              x-text="prop.completedCount > 0 ? '検針中' : '未着手'"
-                            ></span>
-                          </td>
-                        </tr>
-                      </template>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-
-            <!-- Monthly Process -->
-            <div x-show="activeTab === 'monthly'" x-data="monthlyProcess">
+    <div x-data>
+      <!-- Auth Gate -->
+      <template x-if="!$store.auth.authenticated">
+        <section class="hero is-fullheight">
+          <div class="hero-body">
+            <div class="container has-text-centered" style="max-width: 400px">
               <div class="box">
-                <div x-show="step === 'idle'">
-                  <p class="title is-4">📅 月次処理</p>
-                  <p class="mb-4">
-                    前月の検針データをアーカイブし、新しい月のデータを準備します。事前チェックを実行してください。
-                  </p>
-                  <button class="button is-primary" x-on:click="runPreCheck()">
-                    事前チェックを実行
-                  </button>
-                </div>
+                <h1 class="title is-4">水道検針 管理画面</h1>
+                <p class="subtitle is-6 has-text-grey">管理者トークンを入力してください</p>
 
-                <div x-show="step === 'checking'" class="has-text-centered py-5">
-                  <button class="button is-loading is-large is-static"></button>
-                  <p class="mt-3 has-text-grey">事前チェック実行中...</p>
-                </div>
+                <div x-data="authGate">
+                  <div class="field">
+                    <div class="control">
+                      <input
+                        class="input"
+                        type="password"
+                        placeholder="管理者トークン"
+                        x-model="token"
+                        x-on:keydown.enter="submit"
+                        x-bind:disabled="loading"
+                      />
+                    </div>
+                  </div>
 
-                <div x-show="step === 'confirm'">
-                  <p class="title is-4">📋 事前チェック結果</p>
-                  <div class="mb-4">
-                    <template x-for="(check, i) in checkResults.checks || []" :key="i">
-                      <div class="notification mb-2" x-bind:class="getCategoryClass(check.type)">
-                        <span x-text="getCategoryIcon(check.type)"></span>
-                        <strong x-text="check.category"></strong>
-                        <span
-                          class="is-size-7"
-                          x-text="'（' + getCategoryLabel(check.type) + '）'"
-                        ></span>
-                        <p class="is-size-7 mt-1" x-text="check.message"></p>
-                      </div>
-                    </template>
-                  </div>
-                  <div x-show="errorCount > 0" class="notification is-danger mb-3">
-                    <strong
-                      x-text="errorCount + '件のエラーがあります。月次処理を実行する前に修正してください。'"
-                    ></strong>
-                  </div>
                   <div
-                    x-show="warningCount > 0 && errorCount === 0"
-                    class="notification is-warning mb-3"
-                  >
-                    <strong x-text="warningCount + '件の警告があります。続行しますか？'"></strong>
-                  </div>
-                  <div class="field is-grouped">
-                    <button
-                      class="button is-primary"
-                      x-bind:disabled="!canExecute"
-                      x-on:click="runExecute()"
-                    >
-                      月次処理を実行
-                    </button>
-                    <button class="button is-light" x-on:click="reset()">戻る</button>
-                  </div>
-                </div>
+                    x-show="error"
+                    x-text="error"
+                    class="notification is-danger is-light mb-3"
+                    style="font-size: 0.85rem"
+                  ></div>
 
-                <div x-show="step === 'executing'" class="has-text-centered py-5">
-                  <button class="button is-loading is-large is-static"></button>
-                  <p class="mt-3 has-text-grey">月次処理実行中...（30-60秒かかる場合があります）</p>
-                </div>
+                  <button
+                    class="button is-primary is-fullwidth"
+                    x-bind:class="{ 'is-loading': loading }"
+                    x-on:click="submit"
+                    x-text="loading ? '認証中...' : 'ログイン'"
+                  ></button>
 
-                <div x-show="step === 'done'">
-                  <p class="title is-4">✅ 月次処理完了</p>
-                  <div class="notification is-success is-light">
-                    <p
-                      x-text="executeResult && executeResult.summary ? executeResult.summary.message : '月次処理が完了しました。'"
-                    ></p>
-                  </div>
-                  <div x-show="executeResult" class="content is-size-7">
-                    <p
-                      x-text="executeResult ? '実行時刻: ' + (executeResult.executedAt || '') : ''"
-                    ></p>
-                    <p
-                      x-text="executeResult ? '所要時間: ' + (executeResult.duration || '') : ''"
-                    ></p>
-                  </div>
-                  <button class="button is-light" x-on:click="reset()">戻る</button>
-                </div>
-
-                <div x-show="step === 'error'" class="notification is-danger">
-                  <p x-text="error"></p>
-                  <button class="button is-small mt-2" x-on:click="reset()">再試行</button>
+                  <p class="mt-4 is-size-7 has-text-grey">※ ローカル開発時は「test-token」を入力</p>
                 </div>
               </div>
             </div>
+          </div>
+        </section>
+      </template>
 
-            <!-- Setup Wizard -->
-            <div x-show="activeTab === 'setup'" x-data="setupWizard">
-              <div class="box">
-                <p class="title is-4">⚙️ 初期設定ウィザード</p>
-                <div class="steps mb-4">
-                  <template x-for="(step, i) in steps" :key="step.id">
-                    <div
-                      class="steps-segment"
-                      x-bind:class="{ 'is-active': currentStep === i, 'is-completed': getStepResult(step.id) && getStepResult(step.id).success }"
-                    >
-                      <span
-                        x-text="getStatusIcon(getStepStatus(step.id)) + ' ' + (i + 1) + '. ' + step.label"
-                      ></span>
-                    </div>
+      <!-- Main Admin UI -->
+      <template x-if="$store.auth.authenticated">
+        <div x-data="adminApp">
+          <div class="columns is-gapless">
+            <!-- Sidebar -->
+            <div class="column is-2 sidebar">
+              <div class="admin-header mb-4">
+                <strong class="has-text-white">🚰 管理画面</strong>
+              </div>
+
+              <aside class="menu sidebar-menu">
+                <p class="menu-label">メニュー</p>
+                <ul class="menu-list">
+                  <template x-for="tab in tabs" :key="tab.id">
+                    <li>
+                      <a
+                        x-bind:class="{ 'is-active': activeTab === tab.id }"
+                        x-on:click="switchTab(tab.id)"
+                        x-text="tab.icon + ' ' + tab.label"
+                      ></a>
+                    </li>
                   </template>
-                </div>
-                <div x-show="steps[currentStep]" class="mb-4">
-                  <p
-                    class="title is-5"
-                    x-text="steps[currentStep] ? steps[currentStep].icon + ' ' + steps[currentStep].label : ''"
-                  ></p>
-                  <button
-                    class="button is-primary"
-                    x-bind:class="{ 'is-loading': loading }"
-                    x-bind:disabled="loading"
-                    x-on:click="executeCurrentStep()"
-                  >
-                    このステップを実行
-                  </button>
-                </div>
-                <div
-                  x-show="getStepResult(steps[currentStep] ? steps[currentStep].id : '')"
-                  class="notification"
-                  x-bind:class="getStepResult(steps[currentStep] ? steps[currentStep].id : '') && getStepResult(steps[currentStep] ? steps[currentStep].id : '').success ? 'is-success is-light' : 'is-danger is-light'"
-                >
-                  <p
-                    x-text="getStepResult(steps[currentStep] ? steps[currentStep].id : '') ? JSON.stringify(getStepResult(steps[currentStep] ? steps[currentStep].id : '').data || getStepResult(steps[currentStep] ? steps[currentStep].id : '').error) : ''"
-                  ></p>
-                </div>
-                <div x-show="error" class="notification is-danger">
-                  <p x-text="error"></p>
-                </div>
-                <div class="field is-grouped mt-4">
-                  <button class="button" x-bind:disabled="isFirstStep()" x-on:click="prevStep()">
-                    前へ
-                  </button>
-                  <button
-                    class="button is-primary"
-                    x-bind:disabled="isLastStep()"
-                    x-on:click="nextStep()"
-                  >
-                    次へ
-                  </button>
-                  <button class="button is-light" x-on:click="reset()">リセット</button>
-                </div>
+                </ul>
+              </aside>
+
+              <div class="mt-6">
+                <button class="button is-small is-light" x-on:click="logout">ログアウト</button>
               </div>
             </div>
 
-            <!-- Data Maintenance -->
-            <div x-show="activeTab === 'maintenance'" x-data="dataMaintenance">
-              <p class="title is-4">🔧 データメンテナンス</p>
-              <div class="columns is-multiline">
-                <template x-for="tool in tools" :key="tool.id">
-                  <div class="column is-6">
-                    <div class="box">
-                      <p class="title is-5" x-text="tool.icon + ' ' + tool.label"></p>
-                      <p class="subtitle is-6 has-text-grey" x-text="tool.description"></p>
-                      <div x-show="!tool.result && !tool.confirmPending && !tool.loading">
-                        <button
-                          class="button"
-                          x-bind:class="tool.destructive ? 'is-warning' : 'is-info'"
-                          x-on:click="executeTool(tool.id)"
-                        >
-                          実行
-                        </button>
-                      </div>
-                      <div x-show="tool.confirmPending" class="notification is-warning is-light">
-                        <p>この操作は元に戻せません。実行しますか？</p>
-                        <div class="field is-grouped mt-2">
-                          <button class="button is-danger" x-on:click="confirmTool(tool.id)">
-                            実行する
-                          </button>
-                          <button class="button is-light" x-on:click="cancelTool(tool.id)">
-                            キャンセル
-                          </button>
-                        </div>
-                      </div>
-                      <div x-show="tool.loading" class="has-text-centered">
-                        <button class="button is-loading is-static"></button>
-                        <p class="is-size-7 mt-2 has-text-grey">処理中...</p>
-                      </div>
-                      <div x-show="tool.result" class="notification is-success is-light">
+            <!-- Content Area -->
+            <div class="column main-content">
+              <!-- Dashboard -->
+              <div x-show="activeTab === 'dashboard'" x-data="dashboard">
+                <div x-show="loading" class="has-text-centered py-6">
+                  <button class="button is-loading is-large is-static"></button>
+                  <p class="mt-3 has-text-grey">読み込み中...</p>
+                </div>
+                <div x-show="!loading && error" class="notification is-danger">
+                  <p x-text="error"></p>
+                  <button class="button is-small mt-2" x-on:click="refresh()">再試行</button>
+                </div>
+                <div x-show="!loading && data">
+                  <div class="columns is-multiline">
+                    <div class="column is-3">
+                      <div class="box has-text-centered">
+                        <p class="heading">物件数</p>
                         <p
-                          x-text="typeof tool.result === 'string' ? tool.result : tool.result.message || '完了しました。'"
+                          class="title has-text-primary"
+                          x-text="data ? data.propertyCount : 0"
                         ></p>
-                        <button class="button is-small mt-2" x-on:click="resetTool(tool.id)">
-                          再実行
-                        </button>
                       </div>
-                      <div x-show="tool.error" class="notification is-danger is-light">
-                        <p x-text="tool.error"></p>
-                        <button class="button is-small mt-2" x-on:click="resetTool(tool.id)">
-                          再試行
-                        </button>
+                    </div>
+                    <div class="column is-3">
+                      <div class="box has-text-centered">
+                        <p class="heading">総部屋数</p>
+                        <p class="title" x-text="data ? data.totalRooms : 0"></p>
+                      </div>
+                    </div>
+                    <div class="column is-3">
+                      <div class="box has-text-centered">
+                        <p class="heading">検針済み</p>
+                        <p
+                          class="title has-text-success"
+                          x-text="data ? data.completedRooms : 0"
+                        ></p>
+                      </div>
+                    </div>
+                    <div class="column is-3">
+                      <div class="box has-text-centered">
+                        <p class="heading">完了率</p>
+                        <p
+                          class="title"
+                          x-bind:class="completionColor()"
+                          x-text="data ? data.completionRate + '%' : '0%'"
+                        ></p>
                       </div>
                     </div>
                   </div>
-                </template>
-              </div>
-            </div>
-
-            <!-- Diagnostics -->
-            <div x-show="activeTab === 'diagnostics'" x-data="diagnostics">
-              <div class="box">
-                <div class="is-flex is-justify-content-space-between is-align-items-center mb-4">
-                  <p class="title is-4 mb-0">🔍 システム診断</p>
-                  <button
-                    class="button is-info"
-                    x-bind:class="{ 'is-loading': loading }"
-                    x-bind:disabled="loading"
-                    x-on:click="runDiagnostics()"
-                  >
-                    診断を実行
-                  </button>
-                </div>
-                <div x-show="!data && !loading && !error">
-                  <p class="has-text-grey has-text-centered py-6">診断を実行してください</p>
-                </div>
-                <div x-show="loading" class="has-text-centered py-5">
-                  <button class="button is-loading is-large is-static"></button>
-                  <p class="mt-3 has-text-grey">診断実行中...</p>
-                </div>
-                <div x-show="error" class="notification is-danger">
-                  <p x-text="error"></p>
-                </div>
-                <div x-show="data">
-                  <div class="mb-4">
-                    <span
-                      class="tag is-large"
-                      x-bind:class="getStatusClass(getOverallStatus())"
-                      x-text="getStatusLabel(getOverallStatus())"
-                    ></span>
-                    <span
-                      class="is-size-7 ml-2"
-                      x-text="data ? '実行時刻: ' + (data.timestamp || '') : ''"
-                    ></span>
+                  <div x-show="data && data.spreadsheetInfo" class="box mb-4">
+                    <p class="heading">スプレッドシート</p>
+                    <p
+                      x-show="data && data.spreadsheetInfo"
+                      x-text="data && data.spreadsheetInfo ? data.spreadsheetInfo.name : ''"
+                    ></p>
+                    <a
+                      x-show="data && data.spreadsheetInfo && data.spreadsheetInfo.url"
+                      x-bind:href="data && data.spreadsheetInfo ? data.spreadsheetInfo.url : '#'"
+                      target="_blank"
+                      class="is-size-7"
+                      >シートを開く</a
+                    >
                   </div>
-                  <div x-show="data && data.sheets && data.sheets.length > 0" class="mb-4">
-                    <p class="heading">シート状態</p>
+                  <div x-show="properties && properties.length > 0">
+                    <p class="heading mb-3">物件一覧</p>
                     <table class="table is-fullwidth is-hoverable">
                       <thead>
                         <tr>
-                          <th>シート名</th>
+                          <th>物件名</th>
+                          <th>部屋数</th>
+                          <th>検針済み</th>
                           <th>状態</th>
-                          <th>行数</th>
                         </tr>
                       </thead>
                       <tbody>
-                        <template
-                          x-for="(sheet, i) in (data && data.sheets ? data.sheets : [])"
-                          :key="i"
-                        >
+                        <template x-for="prop in properties" :key="prop.id || prop.propertyId">
                           <tr>
-                            <td x-text="sheet.name"></td>
+                            <td x-text="prop.name || prop.propertyName"></td>
+                            <td x-text="prop.roomCount || '-'"></td>
+                            <td x-text="prop.completedCount || 0"></td>
                             <td>
                               <span
                                 class="tag"
-                                x-bind:class="sheet.healthy ? 'is-success' : 'is-danger'"
-                                x-text="sheet.healthy ? '正常' : '異常'"
+                                x-bind:class="prop.completedCount > 0 ? 'is-success' : 'is-light'"
+                                x-text="prop.completedCount > 0 ? '検針中' : '未着手'"
                               ></span>
                             </td>
-                            <td x-text="sheet.rowCount || sheet.rows || '-'"></td>
                           </tr>
                         </template>
                       </tbody>
                     </table>
                   </div>
-                  <div x-show="data && data.issues && data.issues.length > 0">
-                    <p class="heading">問題一覧</p>
-                    <template
-                      x-for="(issue, i) in (data && data.issues ? data.issues : [])"
-                      :key="i"
+                </div>
+              </div>
+
+              <!-- Monthly Process -->
+              <div x-show="activeTab === 'monthly'" x-data="monthlyProcess">
+                <div class="box">
+                  <div x-show="step === 'idle'">
+                    <p class="title is-4">📅 月次処理</p>
+                    <p class="mb-4">
+                      前月の検針データをアーカイブし、新しい月のデータを準備します。事前チェックを実行してください。
+                    </p>
+                    <button class="button is-primary" x-on:click="runPreCheck()">
+                      事前チェックを実行
+                    </button>
+                  </div>
+
+                  <div x-show="step === 'checking'" class="has-text-centered py-5">
+                    <button class="button is-loading is-large is-static"></button>
+                    <p class="mt-3 has-text-grey">事前チェック実行中...</p>
+                  </div>
+
+                  <div x-show="step === 'confirm'">
+                    <p class="title is-4">📋 事前チェック結果</p>
+                    <div class="mb-4">
+                      <template x-for="(check, i) in checkResults.checks || []" :key="i">
+                        <div class="notification mb-2" x-bind:class="getCategoryClass(check.type)">
+                          <span x-text="getCategoryIcon(check.type)"></span>
+                          <strong x-text="check.category"></strong>
+                          <span
+                            class="is-size-7"
+                            x-text="'（' + getCategoryLabel(check.type) + '）'"
+                          ></span>
+                          <p class="is-size-7 mt-1" x-text="check.message"></p>
+                        </div>
+                      </template>
+                    </div>
+                    <div x-show="errorCount > 0" class="notification is-danger mb-3">
+                      <strong
+                        x-text="errorCount + '件のエラーがあります。月次処理を実行する前に修正してください。'"
+                      ></strong>
+                    </div>
+                    <div
+                      x-show="warningCount > 0 && errorCount === 0"
+                      class="notification is-warning mb-3"
                     >
-                      <div
-                        class="notification mb-2"
-                        x-bind:class="issue.severity === 'error' ? 'is-danger is-light' : issue.severity === 'warning' ? 'is-warning is-light' : 'is-info is-light'"
+                      <strong x-text="warningCount + '件の警告があります。続行しますか？'"></strong>
+                    </div>
+                    <div class="field is-grouped">
+                      <button
+                        class="button is-primary"
+                        x-bind:disabled="!canExecute"
+                        x-on:click="runExecute()"
                       >
-                        <span x-text="getSeverityIcon(issue.severity) + ' ' + issue.message"></span>
+                        月次処理を実行
+                      </button>
+                      <button class="button is-light" x-on:click="reset()">戻る</button>
+                    </div>
+                  </div>
+
+                  <div x-show="step === 'executing'" class="has-text-centered py-5">
+                    <button class="button is-loading is-large is-static"></button>
+                    <p class="mt-3 has-text-grey">
+                      月次処理実行中...（30-60秒かかる場合があります）
+                    </p>
+                  </div>
+
+                  <div x-show="step === 'done'">
+                    <p class="title is-4">✅ 月次処理完了</p>
+                    <div class="notification is-success is-light">
+                      <p
+                        x-text="executeResult && executeResult.summary ? executeResult.summary.message : '月次処理が完了しました。'"
+                      ></p>
+                    </div>
+                    <div x-show="executeResult" class="content is-size-7">
+                      <p
+                        x-text="executeResult ? '実行時刻: ' + (executeResult.executedAt || '') : ''"
+                      ></p>
+                      <p
+                        x-text="executeResult ? '所要時間: ' + (executeResult.duration || '') : ''"
+                      ></p>
+                    </div>
+                    <button class="button is-light" x-on:click="reset()">戻る</button>
+                  </div>
+
+                  <div x-show="step === 'error'" class="notification is-danger">
+                    <p x-text="error"></p>
+                    <button class="button is-small mt-2" x-on:click="reset()">再試行</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Setup Wizard -->
+              <div x-show="activeTab === 'setup'" x-data="setupWizard">
+                <div class="box">
+                  <p class="title is-4">⚙️ 初期設定ウィザード</p>
+                  <div class="steps mb-4">
+                    <template x-for="(step, i) in steps" :key="step.id">
+                      <div
+                        class="steps-segment"
+                        x-bind:class="{ 'is-active': currentStep === i, 'is-completed': getStepResult(step.id) && getStepResult(step.id).success }"
+                      >
+                        <span
+                          x-text="getStatusIcon(getStepStatus(step.id)) + ' ' + (i + 1) + '. ' + step.label"
+                        ></span>
                       </div>
                     </template>
+                  </div>
+                  <div x-show="steps[currentStep]" class="mb-4">
+                    <p
+                      class="title is-5"
+                      x-text="steps[currentStep] ? steps[currentStep].icon + ' ' + steps[currentStep].label : ''"
+                    ></p>
+                    <button
+                      class="button is-primary"
+                      x-bind:class="{ 'is-loading': loading }"
+                      x-bind:disabled="loading"
+                      x-on:click="executeCurrentStep()"
+                    >
+                      このステップを実行
+                    </button>
+                  </div>
+                  <div
+                    x-show="getStepResult(steps[currentStep] ? steps[currentStep].id : '')"
+                    class="notification"
+                    x-bind:class="getStepResult(steps[currentStep] ? steps[currentStep].id : '') && getStepResult(steps[currentStep] ? steps[currentStep].id : '').success ? 'is-success is-light' : 'is-danger is-light'"
+                  >
+                    <p
+                      x-text="getStepResult(steps[currentStep] ? steps[currentStep].id : '') ? JSON.stringify(getStepResult(steps[currentStep] ? steps[currentStep].id : '').data || getStepResult(steps[currentStep] ? steps[currentStep].id : '').error) : ''"
+                    ></p>
+                  </div>
+                  <div x-show="error" class="notification is-danger">
+                    <p x-text="error"></p>
+                  </div>
+                  <div class="field is-grouped mt-4">
+                    <button class="button" x-bind:disabled="isFirstStep()" x-on:click="prevStep()">
+                      前へ
+                    </button>
+                    <button
+                      class="button is-primary"
+                      x-bind:disabled="isLastStep()"
+                      x-on:click="nextStep()"
+                    >
+                      次へ
+                    </button>
+                    <button class="button is-light" x-on:click="reset()">リセット</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Data Maintenance -->
+              <div x-show="activeTab === 'maintenance'" x-data="dataMaintenance">
+                <p class="title is-4">🔧 データメンテナンス</p>
+                <div class="columns is-multiline">
+                  <template x-for="tool in tools" :key="tool.id">
+                    <div class="column is-6">
+                      <div class="box">
+                        <p class="title is-5" x-text="tool.icon + ' ' + tool.label"></p>
+                        <p class="subtitle is-6 has-text-grey" x-text="tool.description"></p>
+                        <div x-show="!tool.result && !tool.confirmPending && !tool.loading">
+                          <button
+                            class="button"
+                            x-bind:class="tool.destructive ? 'is-warning' : 'is-info'"
+                            x-on:click="executeTool(tool.id)"
+                          >
+                            実行
+                          </button>
+                        </div>
+                        <div x-show="tool.confirmPending" class="notification is-warning is-light">
+                          <p>この操作は元に戻せません。実行しますか？</p>
+                          <div class="field is-grouped mt-2">
+                            <button class="button is-danger" x-on:click="confirmTool(tool.id)">
+                              実行する
+                            </button>
+                            <button class="button is-light" x-on:click="cancelTool(tool.id)">
+                              キャンセル
+                            </button>
+                          </div>
+                        </div>
+                        <div x-show="tool.loading" class="has-text-centered">
+                          <button class="button is-loading is-static"></button>
+                          <p class="is-size-7 mt-2 has-text-grey">処理中...</p>
+                        </div>
+                        <div x-show="tool.result" class="notification is-success is-light">
+                          <p
+                            x-text="typeof tool.result === 'string' ? tool.result : tool.result.message || '完了しました。'"
+                          ></p>
+                          <button class="button is-small mt-2" x-on:click="resetTool(tool.id)">
+                            再実行
+                          </button>
+                        </div>
+                        <div x-show="tool.error" class="notification is-danger is-light">
+                          <p x-text="tool.error"></p>
+                          <button class="button is-small mt-2" x-on:click="resetTool(tool.id)">
+                            再試行
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </template>
+                </div>
+              </div>
+
+              <!-- Diagnostics -->
+              <div x-show="activeTab === 'diagnostics'" x-data="diagnostics">
+                <div class="box">
+                  <div class="is-flex is-justify-content-space-between is-align-items-center mb-4">
+                    <p class="title is-4 mb-0">🔍 システム診断</p>
+                    <button
+                      class="button is-info"
+                      x-bind:class="{ 'is-loading': loading }"
+                      x-bind:disabled="loading"
+                      x-on:click="runDiagnostics()"
+                    >
+                      診断を実行
+                    </button>
+                  </div>
+                  <div x-show="!data && !loading && !error">
+                    <p class="has-text-grey has-text-centered py-6">診断を実行してください</p>
+                  </div>
+                  <div x-show="loading" class="has-text-centered py-5">
+                    <button class="button is-loading is-large is-static"></button>
+                    <p class="mt-3 has-text-grey">診断実行中...</p>
+                  </div>
+                  <div x-show="error" class="notification is-danger">
+                    <p x-text="error"></p>
+                  </div>
+                  <div x-show="data">
+                    <div class="mb-4">
+                      <span
+                        class="tag is-large"
+                        x-bind:class="getStatusClass(getOverallStatus())"
+                        x-text="getStatusLabel(getOverallStatus())"
+                      ></span>
+                      <span
+                        class="is-size-7 ml-2"
+                        x-text="data ? '実行時刻: ' + (data.timestamp || '') : ''"
+                      ></span>
+                    </div>
+                    <div x-show="data && data.sheets && data.sheets.length > 0" class="mb-4">
+                      <p class="heading">シート状態</p>
+                      <table class="table is-fullwidth is-hoverable">
+                        <thead>
+                          <tr>
+                            <th>シート名</th>
+                            <th>状態</th>
+                            <th>行数</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <template
+                            x-for="(sheet, i) in (data && data.sheets ? data.sheets : [])"
+                            :key="i"
+                          >
+                            <tr>
+                              <td x-text="sheet.name"></td>
+                              <td>
+                                <span
+                                  class="tag"
+                                  x-bind:class="sheet.healthy ? 'is-success' : 'is-danger'"
+                                  x-text="sheet.healthy ? '正常' : '異常'"
+                                ></span>
+                              </td>
+                              <td x-text="sheet.rowCount || sheet.rows || '-'"></td>
+                            </tr>
+                          </template>
+                        </tbody>
+                      </table>
+                    </div>
+                    <div x-show="data && data.issues && data.issues.length > 0">
+                      <p class="heading">問題一覧</p>
+                      <template
+                        x-for="(issue, i) in (data && data.issues ? data.issues : [])"
+                        :key="i"
+                      >
+                        <div
+                          class="notification mb-2"
+                          x-bind:class="issue.severity === 'error' ? 'is-danger is-light' : issue.severity === 'warning' ? 'is-warning is-light' : 'is-info is-light'"
+                        >
+                          <span
+                            x-text="getSeverityIcon(issue.severity) + ' ' + issue.message"
+                          ></span>
+                        </div>
+                      </template>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
-    </template>
-
+      </template>
+    </div>
     <!-- App code (single ES module entry — Vite bundles all imports) -->
     <script type="module" src="/src/main.js"></script>
   </body>
