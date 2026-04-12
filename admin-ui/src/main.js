@@ -15,4 +15,8 @@ import './components/data-maintenance.js';
 import './components/setup-wizard.js';
 import './components/diagnostics.js';
 
+import Alpine from 'alpinejs';
+window.Alpine = Alpine;
+Alpine.start();
+
 console.log('Admin UI loaded');
