@@ -20,71 +20,33 @@ function onOpen() {
     if (typeof cmlibrary !== 'undefined' && typeof cmlibrary.onOpen === 'function') {
       cmlibrary.onOpen();
       console.log('[onOpen] ライブラリのonOpen関数実行成功');
-    } else {
-      console.log('[onOpen] ライブラリのonOpen関数が見つからないため、独自メニューを作成');
-      createWaterMeterMenu();
     }
     
+    // クライアント独自メニュー（管理画面等）を常に追加
+    createWaterMeterMenu();
+    
   } catch (error) {
-    console.error('ライブラリのonOpen関数呼び出しエラー:', error);
+    console.error('onOpen エラー:', error);
     console.log('[onOpen] エラーのため独自メニューを作成');
     createWaterMeterMenu();
   }
 }
 
 /**
- * 水道検針システムのメニューを作成
+ * クライアント独自のメニューを作成
+ * ライブラリ側のメニューと重複しない、クライアント固有の機能のみ追加
  */
 function createWaterMeterMenu() {
   try {
     const ui = SpreadsheetApp.getUi();
     
-    // メインメニューを作成
-    const mainMenu = ui.createMenu('🚰 水道検針システム');
+    // クライアント固有メニュー（管理画面・Web App アクセス）
+    ui.createMenu('📱 アプリ・管理画面')
+      .addItem('📱 水道検針アプリを開く', 'showWaterMeterWebApp')
+      .addItem('🔧 管理画面を開く', 'showAdminUI')
+      .addToUi();
     
-    // 基本機能
-    mainMenu.addItem('📱 水道検針アプリを開く', 'showWaterMeterWebApp');
-    mainMenu.addItem('🔧 管理画面を開く', 'showAdminUI');
-    mainMenu.addSeparator();
-    mainMenu.addItem('📋 物件一覧を表示', 'showPropertiesList');
-    mainMenu.addItem('🏠 部屋一覧を表示', 'showRoomsList');
-    mainMenu.addSeparator();
-    
-    // データ管理サブメニュー
-    const dataMenu = ui.createMenu('📊 データ管理');
-    dataMenu.addItem('1. 物件IDフォーマット整理', 'formatPropertyIdsInPropertyMaster');
-    dataMenu.addItem('2. 部屋IDフォーマット整理', 'formatPropertyIdsInRoomMaster');
-    dataMenu.addItem('3. 部屋ID連番自動生成', 'generateRoomIds');
-    dataMenu.addItem('4. 孤立データ削除', 'cleanUpOrphanedRooms');
-    dataMenu.addSeparator();
-    dataMenu.addItem('5. 初期検針データ作成', 'createInitialInspectionData');
-    dataMenu.addItem('6. 新規部屋反映', 'populateInspectionDataFromMasters');
-    dataMenu.addItem('7. 月次処理実行', 'processInspectionDataMonthly');
-    
-    mainMenu.addSubMenu(dataMenu);
-    
-    // データ品質管理サブメニュー
-    const qualityMenu = ui.createMenu('🔍 データ品質管理');
-    qualityMenu.addItem('1. 重複データ削除', 'menuCleanupDuplicateData');
-    qualityMenu.addItem('2. データ整合性チェック', 'validateDataIntegrity');
-    qualityMenu.addItem('3. 検索インデックス作成', 'createAllIndexes');
-    qualityMenu.addSeparator();
-    qualityMenu.addItem('4. 検索ガイド表示', 'showSearchUsageGuide');
-    
-    mainMenu.addSubMenu(qualityMenu);
-    
-    // テスト・デバッグサブメニュー
-    const debugMenu = ui.createMenu('🧪 テスト・デバッグ');
-    debugMenu.addItem('1. ライブラリ接続テスト', 'testLibraryConnection');
-    debugMenu.addItem('2. 利用可能関数一覧', 'showAvailableFunctions');
-    debugMenu.addItem('3. 使用例実行', 'runUsageExample');
-    
-    mainMenu.addSubMenu(debugMenu);
-    
-    // メニューをUIに追加
-    mainMenu.addToUi();
-    
-    console.log('[createWaterMeterMenu] 水道検針システムメニュー作成完了');
+    console.log('[createWaterMeterMenu] クライアントメニュー作成完了');
     
   } catch (error) {
     console.error('[createWaterMeterMenu] メニュー作成エラー:', error);
