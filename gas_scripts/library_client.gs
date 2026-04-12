@@ -73,7 +73,13 @@ function showWaterMeterWebApp() {
 
 function showAdminUI() {
   try {
-    var webAppUrl = cmlibrary.getWebAppUrl();
+    var webAppUrl = PropertiesService.getScriptProperties().getProperty('WEB_APP_URL');
+    if (!webAppUrl) {
+      var scriptId = ScriptApp.getScriptId();
+      if (scriptId) {
+        webAppUrl = 'https://script.google.com/macros/s/' + scriptId + '/exec';
+      }
+    }
     if (webAppUrl) {
       var html = HtmlService.createHtmlOutput(
         '<p>管理画面を開きます:</p>' +
