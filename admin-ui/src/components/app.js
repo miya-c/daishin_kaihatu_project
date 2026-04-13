@@ -60,6 +60,9 @@ document.addEventListener('alpine:init', function () {
             })
           ) {
             Alpine.store('app').setActiveTab(h);
+            if (h === 'dashboard') {
+              window.dispatchEvent(new CustomEvent('dashboard:refresh'));
+            }
           }
         });
       },
@@ -76,6 +79,9 @@ document.addEventListener('alpine:init', function () {
         Alpine.store('app').setActiveTab(tabId);
         history.pushState(null, '', '#' + tabId);
         this.sidebarOpen = false;
+        if (tabId === 'dashboard') {
+          window.dispatchEvent(new CustomEvent('dashboard:refresh'));
+        }
       },
 
       isActive: function (tabId) {

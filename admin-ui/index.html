@@ -406,7 +406,11 @@
               </div>
               <div class="main-content">
                 <!-- Dashboard -->
-                <div x-show="activeTab === 'dashboard'" x-data="dashboard">
+                <div
+                  x-show="activeTab === 'dashboard'"
+                  x-data="dashboard"
+                  x-on:dashboard:refresh.window="refresh()"
+                >
                   <div x-show="loading" class="has-text-centered py-6">
                     <button class="button is-loading is-large is-static"></button>
                     <p class="mt-3 has-text-grey">読み込み中...</p>
