@@ -26,11 +26,11 @@ document.addEventListener('alpine:init', function () {
               self.data = result.data;
               self.lastRun = result.data.timestamp || new Date().toISOString();
             } else {
-              self.error = '診断の実行に失敗しました';
+              self.error = '確認の実行に失敗しました';
             }
           })
           .catch(function (err) {
-            self.error = '診断の実行に失敗しました: ' + (err.message || err);
+            self.error = '確認の実行に失敗しました: ' + (err.message || err);
           })
           .finally(function () {
             self.loading = false;

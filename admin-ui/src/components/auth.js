@@ -28,13 +28,16 @@ document.addEventListener('alpine:init', function () {
             if (result && result.success) {
               Alpine.store('auth').authenticated = true;
               Alpine.store('auth').token = self.token;
+              Alpine.store('toast').success('ログインしました');
             } else {
-              self.error = result && result.message ? result.message : '認証に失敗しました';
+              self.error =
+                result && result.message ? result.message : 'パスワードが正しくありません';
               sessionStorage.removeItem('ADMIN_TOKEN');
             }
           })
           .catch(function (err) {
-            self.error = '通信エラーが発生しました: ' + err.message;
+            self.error =
+              '通信エラーが発生しました。ネットワーク接続を確認してください: ' + err.message;
             sessionStorage.removeItem('ADMIN_TOKEN');
           })
           .finally(function () {

@@ -2,10 +2,8 @@
 
 function adminDispatch(action, params) {
   try {
-    const storedToken =
-      params._storedAdminToken ||
-      PropertiesService.getScriptProperties().getProperty('ADMIN_TOKEN');
-    if (!params.adminToken || !storedToken || params.adminToken !== storedToken) {
+    // クライアント経由の呼び出しのみ許可（_storedAdminToken はクライアントが検証後に設定）
+    if (!params._storedAdminToken) {
       return { success: false, error: '管理者トークンが無効です', code: 'INVALID_TOKEN' };
     }
 
@@ -139,31 +137,83 @@ function getAdminMonthlyProcessStatus() {
 
 function buildAdminDashboardData() {
   try {
-    const propResult = getProperties();
-    if (!propResult.success) {
-      return propResult;
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName(CONFIG.SHEET_NAMES.INSPECTION_DATA);
+
+    if (!sheet) {
+      return { success: false, error: '検針データシートが見つかりません' };
     }
-    const properties = propResult.data || [];
-    let totalRooms = 0;
-    let completedRooms = 0;
-    for (var i = 0; i < properties.length; i++) {
-      var p = properties[i];
-      if (p.roomCount) totalRooms += Number(p.roomCount);
-      if (p.completedCount) completedRooms += Number(p.completedCount);
+
+    var data = sheet.getDataRange().getValues();
+    if (data.length <= 1) {
+      var ssInfo = getSpreadsheetInfo();
+      return {
+        success: true,
+        data: {
+          propertyCount: 0,
+          totalRooms: 0,
+          completedRooms: 0,
+          pendingRooms: 0,
+          completionRate: 0,
+          spreadsheetInfo: ssInfo.success
+            ? { id: ssInfo.spreadsheetId, name: ssInfo.name, url: ssInfo.url }
+            : null,
+        },
+      };
     }
-    const ssInfo = getSpreadsheetInfo();
+
+    var headers = data[0];
+    var propIdCol = headers.indexOf('物件ID');
+    var propNameCol = headers.indexOf('物件名');
+    var dateCol = headers.indexOf('検針日時');
+    var skipCol = headers.indexOf('検針不要');
+
+    if (propIdCol === -1 || dateCol === -1) {
+      return { success: false, error: '検針データに必要な列が見つかりません' };
+    }
+
+    var propertyMap = {};
+    var totalRooms = 0;
+    var totalCompleted = 0;
+
+    for (var i = 1; i < data.length; i++) {
+      var isSkipped = skipCol !== -1 && !!data[i][skipCol];
+      if (isSkipped) continue;
+
+      var pId = String(data[i][propIdCol]).trim();
+      var pName = propNameCol !== -1 ? String(data[i][propNameCol] || '').trim() : '';
+      var readingDate = data[i][dateCol];
+      var isCompleted = !!readingDate;
+
+      totalRooms++;
+      if (isCompleted) totalCompleted++;
+
+      if (!propertyMap[pId]) {
+        propertyMap[pId] = { id: pId, name: pName, roomCount: 0, completedCount: 0 };
+      }
+      propertyMap[pId].roomCount++;
+      if (isCompleted) propertyMap[pId].completedCount++;
+    }
+
+    var properties = [];
+    for (var key in propertyMap) {
+      properties.push(propertyMap[key]);
+    }
+
+    var ssInfo2 = getSpreadsheetInfo();
     return {
       success: true,
       data: {
         propertyCount: properties.length,
         totalRooms: totalRooms,
-        completedRooms: completedRooms,
-        pendingRooms: totalRooms - completedRooms,
-        completionRate: totalRooms > 0 ? Math.round((completedRooms / totalRooms) * 100) : 0,
-        spreadsheetInfo: ssInfo.success
-          ? { id: ssInfo.spreadsheetId, name: ssInfo.name, url: ssInfo.url }
+        completedRooms: totalCompleted,
+        pendingRooms: totalRooms - totalCompleted,
+        completionRate: totalRooms > 0 ? Math.round((totalCompleted / totalRooms) * 100) : 0,
+        spreadsheetInfo: ssInfo2.success
+          ? { id: ssInfo2.spreadsheetId, name: ssInfo2.name, url: ssInfo2.url }
           : null,
       },
+      properties: properties,
     };
   } catch (error) {
     return { success: false, error: error.message };
@@ -172,9 +222,5 @@ function buildAdminDashboardData() {
 
 function adminAction(action, params) {
   params = params || {};
-  var storedToken = PropertiesService.getScriptProperties().getProperty('ADMIN_TOKEN');
-  if (storedToken) {
-    params._storedAdminToken = storedToken;
-  }
   return adminDispatch(action, params);
 }

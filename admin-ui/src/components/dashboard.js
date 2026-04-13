@@ -24,21 +24,15 @@ document.addEventListener('alpine:init', function () {
         self.loading = true;
         self.error = '';
 
-        Promise.all([callAdminAPI('getAdminDashboardData'), callAdminAPI('getProperties')])
-          .then(function (results) {
-            var dashboardResult = results[0];
-            var propertiesResult = results[1];
-
-            if (dashboardResult && dashboardResult.success) {
-              self.data = dashboardResult.data;
-            }
-
-            if (propertiesResult && propertiesResult.success) {
-              self.properties = propertiesResult.data || [];
+        callAdminAPI('getAdminDashboardData')
+          .then(function (result) {
+            if (result && result.success) {
+              self.data = result.data;
+              self.properties = result.properties || [];
             }
           })
           .catch(function (err) {
-            self.error = 'データの取得に失敗しました: ' + (err.message || err);
+            self.error = 'データの読み込みに失敗しました: ' + (err.message || err);
           })
           .finally(function () {
             self.loading = false;

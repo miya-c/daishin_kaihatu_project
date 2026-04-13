@@ -419,11 +419,10 @@ function doGet(e) {
 function adminAction(action, params) {
   params = params || {};
   const storedToken = PropertiesService.getScriptProperties().getProperty('ADMIN_TOKEN');
-  if (storedToken) {
-    params._storedAdminToken = storedToken;
-  } else {
-    delete params._storedAdminToken;
+  if (!params.adminToken || !storedToken || params.adminToken !== storedToken) {
+    return { success: false, error: '管理者トークンが無効です', code: 'INVALID_TOKEN' };
   }
+  params._storedAdminToken = storedToken;
   return cmlibrary.adminDispatch(action, params);
 }
 

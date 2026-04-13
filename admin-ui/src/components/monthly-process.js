@@ -19,12 +19,12 @@ document.addEventListener('alpine:init', function () {
               self.checkResults = result.data;
               self.step = 'confirm';
             } else {
-              self.error = (result && result.error) || '事前チェックに失敗しました';
+              self.error = (result && result.error) || '確認に失敗しました';
               self.step = 'error';
             }
           })
           .catch(function (err) {
-            self.error = err.message || '事前チェックでエラーが発生しました';
+            self.error = err.message || '確認でエラーが発生しました';
             self.step = 'error';
           });
       },
@@ -51,6 +51,9 @@ document.addEventListener('alpine:init', function () {
       },
 
       reset: function () {
+        if (this.checkResults || this.executeResult) {
+          if (!window.confirm('現在の結果を消去しますか？')) return;
+        }
         this.step = 'idle';
         this.checkResults = null;
         this.executeResult = null;
@@ -80,7 +83,7 @@ document.addEventListener('alpine:init', function () {
       getCategoryLabel: function (category) {
         var map = {
           error: 'エラー',
-          warning: '警告',
+          warning: '注意',
           success: '成功',
           info: '情報',
         };

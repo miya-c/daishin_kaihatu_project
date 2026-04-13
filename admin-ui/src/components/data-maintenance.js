@@ -6,8 +6,8 @@ document.addEventListener('alpine:init', function () {
       tools: [
         {
           id: 'validateInspectionDataIntegrity',
-          label: '整合性チェック',
-          description: '🔍 検針データの整合性を検証します',
+          label: 'データの確認',
+          description: '🔍 検針データに矛盾がないか確認します',
           icon: '🔍',
           destructive: false,
           loading: false,
@@ -17,8 +17,8 @@ document.addEventListener('alpine:init', function () {
         },
         {
           id: 'cleanupDuplicateData',
-          label: '重複データ削除',
-          description: '🗑️ 重複する検針データを削除します',
+          label: '重複データの削除',
+          description: '🗑️ 重複して登録された検針データを削除します',
           icon: '🗑️',
           destructive: true,
           loading: false,
@@ -28,8 +28,8 @@ document.addEventListener('alpine:init', function () {
         },
         {
           id: 'generateRoomIds',
-          label: '部屋ID自動生成',
-          description: '🔢 部屋IDを自動採番します',
+          label: '部屋番号の設定',
+          description: '🔢 部屋ごとの管理番号を自動で割り当てます',
           icon: '🔢',
           destructive: true,
           loading: false,
@@ -39,8 +39,8 @@ document.addEventListener('alpine:init', function () {
         },
         {
           id: 'formatAllPropertyIds',
-          label: '物件IDフォーマット',
-          description: '📝 物件IDを正規フォーマットに変換します',
+          label: '物件番号の修正',
+          description: '📝 物件番号を統一書式に整えます',
           icon: '📝',
           destructive: true,
           loading: false,
@@ -50,8 +50,8 @@ document.addEventListener('alpine:init', function () {
         },
         {
           id: 'cleanUpOrphanedRooms',
-          label: '孤立データ削除',
-          description: '🧹 物件に紐づかない孤立部屋を削除します',
+          label: '不要データの削除',
+          description: '🧹 どの物件にも属していない不要な部屋データを削除します',
           icon: '🧹',
           destructive: true,
           loading: false,
