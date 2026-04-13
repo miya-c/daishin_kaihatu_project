@@ -16,7 +16,14 @@ document.addEventListener('alpine:init', function () {
       error: '',
 
       init: function () {
+        var self = this;
         this.refresh();
+
+        this.$watch('$store.app.activeTab', function (v) {
+          if (v === 'dashboard') {
+            self.refresh();
+          }
+        });
       },
 
       refresh: function () {
