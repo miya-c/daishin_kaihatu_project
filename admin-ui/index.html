@@ -80,6 +80,21 @@
         --bulma-bold-invert-l: 12%;
         --bulma-primary-invert-l: 100%;
         --bulma-link-invert-l: 100%;
+
+        /* Color component overrides for tags, badges, notifications in dark mode */
+        --bulma-light-l: 15%;
+        --bulma-light-invert-l: 96%;
+        --bulma-success-l: 30%;
+        --bulma-success-invert-l: 96%;
+        --bulma-danger-l: 35%;
+        --bulma-danger-invert-l: 96%;
+        --bulma-warning-l: 35%;
+        --bulma-warning-invert-l: 10%;
+        --bulma-info-l: 35%;
+        --bulma-info-invert-l: 96%;
+        --bulma-primary-l: 35%;
+        --bulma-link-l: 35%;
+        --bulma-box-background-color: #141414;
       }
 
       /* ── Layout ── */
@@ -299,14 +314,16 @@
             <div class="container has-text-centered" style="max-width: 400px">
               <div class="box">
                 <h1 class="title is-4">水道検針 管理画面</h1>
-                <p class="subtitle is-6 has-text-grey">管理パスワードを入力してください</p>
+                <p class="subtitle is-6 has-text-grey-light">管理パスワードを入力してください</p>
 
                 <div x-data="authGate">
+                  <label class="is-sr-only" for="admin-password">管理パスワード</label>
                   <div class="field">
                     <div class="control">
                       <input
                         class="input"
                         type="password"
+                        id="admin-password"
                         placeholder="管理パスワード"
                         required
                         x-model="token"
@@ -320,6 +337,7 @@
                     x-show="error"
                     x-text="error"
                     class="notification is-danger is-light mb-3"
+                    role="alert"
                     style="font-size: 0.85rem"
                   ></div>
 
@@ -331,7 +349,7 @@
                   ></button>
 
                   <template x-if="!window.google">
-                    <p class="mt-4 is-size-7 has-text-grey">
+                    <p class="mt-4 is-size-7 has-text-grey-light">
                       ※ ローカル開発時は「test-token」を入力
                     </p>
                   </template>
@@ -354,7 +372,7 @@
             <!-- Sidebar -->
             <div class="column is-2 sidebar" x-bind:class="{ 'is-open': sidebarOpen }">
               <div class="admin-header mb-4 sidebar-header-desktop">
-                <strong class="has-text-white">🚰 水道検針 管理</strong>
+                <strong class="has-text-primary-invert">🚰 水道検針 管理</strong>
               </div>
 
               <nav class="menu sidebar-menu" aria-label="管理メニュー">
@@ -385,14 +403,18 @@
               >
                 <div class="is-flex is-align-items-center">
                   <button
-                    class="hamburger-btn button is-small is-ghost has-text-white mr-2"
+                    class="hamburger-btn button is-small is-ghost has-text-primary-invert mr-2"
+                    aria-label="メニューを開く"
+                    x-bind:aria-expanded="sidebarOpen"
                     x-on:click="toggleSidebar"
                   >
                     ☰
                   </button>
-                  <strong class="has-text-white">🚰 水道検針 管理</strong>
+                  <strong class="has-text-primary-invert is-hidden-desktop"
+                    >🚰 水道検針 管理</strong
+                  >
                   <span
-                    class="has-text-white"
+                    class="has-text-primary-invert"
                     style="opacity: 0.7"
                     x-text="'/ ' + activeTabLabel"
                   ></span>
@@ -409,11 +431,13 @@
                 <div x-show="activeTab === 'dashboard'" x-data="dashboard">
                   <div x-show="loading" class="has-text-centered py-6">
                     <button class="button is-loading is-large is-static"></button>
-                    <p class="mt-3 has-text-grey">読み込み中...</p>
+                    <p class="mt-3 has-text-grey-light">読み込み中...</p>
                   </div>
-                  <div x-show="!loading && error" class="notification is-danger">
+                  <div x-show="!loading && error" class="notification is-danger" role="alert">
                     <p x-text="error"></p>
-                    <button class="button is-small mt-2" x-on:click="refresh()">再試行</button>
+                    <button class="button is-small is-light mt-2" x-on:click="refresh()">
+                      再試行
+                    </button>
                   </div>
                   <div x-show="!loading && data">
                     <div
@@ -458,15 +482,15 @@
                             x-text="data ? data.completionRate + '%' : '0%'"
                           ></p>
                         </div>
-                        <div
-                          x-show="properties && properties.length === 0 && !loading"
-                          class="has-text-centered py-4"
-                        >
-                          <p class="has-text-grey">
-                            物件が登録されていません。初期設定ウィザードを実行してください。
-                          </p>
-                        </div>
                       </div>
+                    </div>
+                    <div
+                      x-show="properties && properties.length === 0 && !loading"
+                      class="has-text-centered py-4"
+                    >
+                      <p class="has-text-grey-light">
+                        物件が登録されていません。初期設定ウィザードを実行してください。
+                      </p>
                     </div>
                     <div x-show="data && data.spreadsheetInfo" class="box mb-4">
                       <p class="heading">スプレッドシート</p>
@@ -502,8 +526,8 @@
                               <td>
                                 <span
                                   class="tag"
-                                  x-bind:class="prop.completedCount > 0 ? 'is-success' : 'is-light'"
-                                  x-text="prop.completedCount > 0 ? '検針中' : '未着手'"
+                                  x-bind:class="prop.completedCount === prop.roomCount ? 'is-primary' : prop.completedCount > 0 ? 'is-success' : 'is-light'"
+                                  x-text="prop.completedCount === prop.roomCount ? '完了' : prop.completedCount > 0 ? '検針中' : '未着手'"
                                 ></span>
                               </td>
                             </tr>
@@ -529,7 +553,7 @@
 
                     <div x-show="step === 'checking'" class="has-text-centered py-5">
                       <button class="button is-loading is-large is-static"></button>
-                      <p class="mt-3 has-text-grey">確認中...</p>
+                      <p class="mt-3 has-text-grey-light">確認中...</p>
                     </div>
 
                     <div x-show="step === 'confirm'">
@@ -577,7 +601,7 @@
 
                     <div x-show="step === 'executing'" class="has-text-centered py-5">
                       <button class="button is-loading is-large is-static"></button>
-                      <p class="mt-3 has-text-grey">
+                      <p class="mt-3 has-text-grey-light">
                         月次処理実行中...（30-60秒かかる場合があります）
                       </p>
                     </div>
@@ -600,9 +624,23 @@
                       <button class="button is-light" x-on:click="reset()">戻る</button>
                     </div>
 
-                    <div x-show="step === 'error'" class="notification is-danger">
+                    <div x-show="confirmReset" class="notification is-warning is-light">
+                      <p>現在の結果を消去しますか？</p>
+                      <div class="field is-grouped mt-2">
+                        <button class="button is-danger" x-on:click="confirmResetAction()">
+                          消去する
+                        </button>
+                        <button class="button is-light" x-on:click="cancelReset()">
+                          キャンセル
+                        </button>
+                      </div>
+                    </div>
+
+                    <div x-show="step === 'error'" class="notification is-danger" role="alert">
                       <p x-text="error"></p>
-                      <button class="button is-small mt-2" x-on:click="reset()">再試行</button>
+                      <button class="button is-small is-light mt-2" x-on:click="reset()">
+                        再試行
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -611,7 +649,7 @@
                 <div x-show="activeTab === 'setup'" x-data="setupWizard">
                   <div class="box">
                     <p class="title is-4">⚙️ 初期設定ウィザード</p>
-                    <p class="mb-4 has-text-grey is-size-6">
+                    <p class="mb-4 has-text-grey-light is-size-6">
                       初めてご利用の場合は、以下の手順に沿って初期設定を行ってください。各ステップの「実行」ボタンを押すと自動的に処理が進みます。
                     </p>
                     <div class="steps mb-4">
@@ -632,7 +670,7 @@
                         x-text="steps[currentStep] ? steps[currentStep].icon + ' ' + steps[currentStep].label : ''"
                       ></p>
                       <p
-                        class="mb-3 has-text-grey is-size-6"
+                        class="mb-3 has-text-grey-light is-size-6"
                         x-text="steps[currentStep] ? steps[currentStep].description : ''"
                       ></p>
                       <button
@@ -653,12 +691,23 @@
                         x-text="formatStepResult(steps[currentStep] ? steps[currentStep].id : '')"
                       ></p>
                     </div>
-                    <div x-show="error" class="notification is-danger">
+                    <div x-show="error" class="notification is-danger" role="alert">
                       <p x-text="error"></p>
+                    </div>
+                    <div x-show="confirmReset" class="notification is-warning is-light">
+                      <p>入力内容をリセットしますか？</p>
+                      <div class="field is-grouped mt-2">
+                        <button class="button is-danger" x-on:click="confirmResetAction()">
+                          リセットする
+                        </button>
+                        <button class="button is-light" x-on:click="cancelReset()">
+                          キャンセル
+                        </button>
+                      </div>
                     </div>
                     <div class="field is-grouped mt-4">
                       <button
-                        class="button"
+                        class="button is-light"
                         x-bind:disabled="isFirstStep()"
                         x-on:click="prevStep()"
                       >
@@ -684,7 +733,10 @@
                       <div class="column is-6">
                         <div class="box">
                           <p class="title is-5" x-text="tool.icon + ' ' + tool.label"></p>
-                          <p class="subtitle is-6 has-text-grey" x-text="tool.description"></p>
+                          <p
+                            class="subtitle is-6 has-text-grey-light"
+                            x-text="tool.description"
+                          ></p>
                           <div x-show="!tool.result && !tool.confirmPending && !tool.loading">
                             <button
                               class="button"
@@ -709,28 +761,28 @@
                                 キャンセル
                               </button>
                             </div>
-                            <div
-                              x-show="data && (!data.issues || data.issues.length === 0)"
-                              class="has-text-centered py-3"
-                            >
-                              <p class="has-text-success">✅ 問題は見つかりませんでした</p>
-                            </div>
                           </div>
                           <div x-show="tool.loading" class="has-text-centered">
-                            <button class="button is-loading is-static"></button>
-                            <p class="is-size-7 mt-2 has-text-grey">処理中...</p>
+                            <button class="button is-loading is-static is-large"></button>
+                            <p class="is-size-7 mt-2 has-text-grey-light">処理中...</p>
                           </div>
                           <div x-show="tool.result" class="notification is-success is-light">
                             <p
                               x-text="typeof tool.result === 'string' ? tool.result : tool.result.message || '完了しました。'"
                             ></p>
-                            <button class="button is-small mt-2" x-on:click="resetTool(tool.id)">
+                            <button
+                              class="button is-small is-light mt-2"
+                              x-on:click="resetTool(tool.id)"
+                            >
                               再実行
                             </button>
                           </div>
                           <div x-show="tool.error" class="notification is-danger is-light">
                             <p x-text="tool.error"></p>
-                            <button class="button is-small mt-2" x-on:click="resetTool(tool.id)">
+                            <button
+                              class="button is-small is-light mt-2"
+                              x-on:click="resetTool(tool.id)"
+                            >
                               再試行
                             </button>
                           </div>
@@ -757,15 +809,15 @@
                       </button>
                     </div>
                     <div x-show="!data && !loading && !error">
-                      <p class="has-text-grey has-text-centered py-6">
+                      <p class="has-text-grey-light has-text-centered py-6">
                         「確認を実行」ボタンを押してください
                       </p>
                     </div>
                     <div x-show="loading" class="has-text-centered py-5">
                       <button class="button is-loading is-large is-static"></button>
-                      <p class="mt-3 has-text-grey">確認中...</p>
+                      <p class="mt-3 has-text-grey-light">確認中...</p>
                     </div>
-                    <div x-show="error" class="notification is-danger">
+                    <div x-show="error" class="notification is-danger" role="alert">
                       <p x-text="error"></p>
                     </div>
                     <div x-show="data">
@@ -840,7 +892,13 @@
         <template x-for="item in $store.toast.items" :key="item.id">
           <div class="toast-item" x-bind:class="'is-' + item.type">
             <span x-text="item.message"></span>
-            <button class="toast-dismiss" x-on:click="$store.toast.dismiss(item.id)">✕</button>
+            <button
+              class="toast-dismiss"
+              aria-label="通知を閉じる"
+              x-on:click="$store.toast.dismiss(item.id)"
+            >
+              ✕
+            </button>
           </div>
         </template>
       </div>

@@ -23,6 +23,9 @@ export function callAdminAPI(action, params) {
             Alpine.store('auth').authenticated = false;
             Alpine.store('auth').token = null;
           }
+          if (window.Alpine && Alpine.store('toast')) {
+            Alpine.store('toast').warning('ログインの有効期限が切れました');
+          }
         }
         resolve(result);
       })

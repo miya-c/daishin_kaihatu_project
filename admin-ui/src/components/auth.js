@@ -19,6 +19,10 @@ document.addEventListener('alpine:init', function () {
       submit: function () {
         var self = this;
         self.error = '';
+        if (!self.token || !self.token.trim()) {
+          self.error = '管理パスワードを入力してください';
+          return;
+        }
         self.loading = true;
 
         sessionStorage.setItem('ADMIN_TOKEN', self.token);

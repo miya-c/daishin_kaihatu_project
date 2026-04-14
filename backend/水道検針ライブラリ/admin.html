@@ -506,8 +506,8 @@ ${r?'Expression: "'+r+`"
                               <td>
                                 <span
                                   class="tag"
-                                  x-bind:class="prop.completedCount > 0 ? 'is-success' : 'is-light'"
-                                  x-text="prop.completedCount > 0 ? '検針中' : '未着手'"
+                                  x-bind:class="prop.completedCount === prop.roomCount ? 'is-primary' : prop.completedCount > 0 ? 'is-success' : 'is-light'"
+                                  x-text="prop.completedCount === prop.roomCount ? '完了' : prop.completedCount > 0 ? '検針中' : '未着手'"
                                 ></span>
                               </td>
                             </tr>

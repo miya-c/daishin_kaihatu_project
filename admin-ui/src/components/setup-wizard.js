@@ -64,6 +64,7 @@ document.addEventListener('alpine:init', function () {
       results: {},
       loading: false,
       error: '',
+      confirmReset: false,
 
       executeCurrentStep: function () {
         var self = this;
@@ -173,12 +174,24 @@ document.addEventListener('alpine:init', function () {
 
       reset: function () {
         if (Object.keys(this.results).length > 0) {
-          if (!window.confirm('入力内容をリセットしますか？')) return;
+          this.confirmReset = true;
+          return;
         }
         this.results = {};
         this.currentStep = 0;
         this.loading = false;
         this.error = '';
+        this.confirmReset = false;
+      },
+      confirmResetAction: function () {
+        this.results = {};
+        this.currentStep = 0;
+        this.loading = false;
+        this.error = '';
+        this.confirmReset = false;
+      },
+      cancelReset: function () {
+        this.confirmReset = false;
       },
     };
   });

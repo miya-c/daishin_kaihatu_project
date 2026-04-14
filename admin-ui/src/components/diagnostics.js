@@ -13,7 +13,6 @@ document.addEventListener('alpine:init', function () {
       loading: false,
       data: null,
       error: '',
-      lastRun: null,
 
       runDiagnostics: function () {
         var self = this;
@@ -24,7 +23,6 @@ document.addEventListener('alpine:init', function () {
           .then(function (result) {
             if (result && result.success) {
               self.data = result.data;
-              self.lastRun = result.data.timestamp || new Date().toISOString();
             } else {
               self.error = '確認の実行に失敗しました';
             }
@@ -60,11 +58,14 @@ document.addEventListener('alpine:init', function () {
       getStatusLabel: function (status) {
         switch (status) {
           case 'HEALTHY':
+          case 'OK':
             return '正常';
           case 'WARNING':
             return '警告';
           case 'ERROR':
             return 'エラー';
+          case 'CRITICAL':
+            return '重大エラー';
           default:
             return '不明';
         }

@@ -7,6 +7,7 @@ document.addEventListener('alpine:init', function () {
       checkResults: null,
       executeResult: null,
       error: '',
+      confirmReset: false,
 
       runPreCheck: function () {
         var self = this;
@@ -52,12 +53,24 @@ document.addEventListener('alpine:init', function () {
 
       reset: function () {
         if (this.checkResults || this.executeResult) {
-          if (!window.confirm('現在の結果を消去しますか？')) return;
+          this.confirmReset = true;
+          return;
         }
         this.step = 'idle';
         this.checkResults = null;
         this.executeResult = null;
         this.error = '';
+        this.confirmReset = false;
+      },
+      confirmResetAction: function () {
+        this.step = 'idle';
+        this.checkResults = null;
+        this.executeResult = null;
+        this.error = '';
+        this.confirmReset = false;
+      },
+      cancelReset: function () {
+        this.confirmReset = false;
       },
 
       getCategoryClass: function (category) {
