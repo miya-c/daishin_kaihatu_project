@@ -49,11 +49,11 @@ function formatPropertyIdsInPropertyMaster(ss = null, config = {}) {
 
   try {
     for (let i = 1; i < values.length; i++) {
-      const currentId = String(values[i][0]).trim();
+      const currentId = String(values[i][propertyIdColIndex]).trim();
 
       if (currentId && !currentId.startsWith('P')) {
         const formattedId = `P${currentId.padStart(6, '0')}`;
-        values[i][0] = formattedId;
+        values[i][propertyIdColIndex] = formattedId;
         updatedCount++;
         Logger.log(`行 ${i + 1}: ${currentId} → ${formattedId}`);
       }
@@ -114,6 +114,11 @@ function formatPropertyIdsInRoomMaster(ss = null, config = {}) {
   const dataRange = sheet.getDataRange();
   const values = dataRange.getValues();
   let updatedCount = 0;
+
+  const propertyIdColIndex = values[0] ? values[0].indexOf('物件ID') : -1;
+  if (propertyIdColIndex === -1) {
+    return { success: true, updatedCount: 0, message: '物件ID列が見つかりません' };
+  }
 
   if (values.length <= 1) {
     const info = `${sheetName}シートにデータがありません。`;

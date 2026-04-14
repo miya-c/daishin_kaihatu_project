@@ -336,19 +336,10 @@ ${r?'Expression: "'+r+`"
                         x-on:input="error = ''"
                       />
                     </div>
-
-                    <!-- Fix 4-3: Setup completion state -->
-                    <div x-show="allComplete" class="has-text-centered py-5">
-                      <p class="title is-4 has-text-success">✅ セットアップが完了しました</p>
-                      <p class="subtitle is-6">すべてのステップが正常に完了しました。</p>
-                      <button
-                        class="button is-primary"
-                        x-on:click="$store.app.setActiveTab('dashboard'); history.pushState(null, '', '#dashboard')"
-                      >
-                        ダッシュボードに移動
-                      </button>
-                    </div>
                   </div>
+                </div>
+
+                <!-- Data Maintenance -->
 
                   <div
                     x-show="error"
@@ -1179,6 +1170,16 @@ ${r?'Expression: "'+r+`"
                         次へ
                       </button>
                       <button class="button is-light" x-on:click="reset()">リセット</button>
+                    </div>
+                    <div x-show="allComplete" class="has-text-centered py-5">
+                      <p class="title is-4 has-text-success">✅ セットアップが完了しました</p>
+                      <p class="subtitle is-6">すべてのステップが正常に完了しました。</p>
+                      <button
+                        class="button is-primary"
+                        x-on:click="$store.app.setActiveTab('dashboard'); history.pushState(null, '', '#dashboard')"
+                      >
+                        ダッシュボードに移動
+                      </button>
                     </div>
                   </div>
                 </div>
