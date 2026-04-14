@@ -137,6 +137,31 @@ document.addEventListener('alpine:init', function () {
         return this.results[stepId] || null;
       },
 
+      isStepCompleted: function (stepId) {
+        var r = this.results[stepId];
+        return r && r.success;
+      },
+
+      getCurrentStepResult: function () {
+        var step = this.steps[this.currentStep];
+        return step ? this.results[step.id] || null : null;
+      },
+
+      getCurrentStepResultClass: function () {
+        var r = this.getCurrentStepResult();
+        return r && r.success ? 'is-success is-light' : 'is-danger is-light';
+      },
+
+      getCurrentStepLabel: function () {
+        var step = this.steps[this.currentStep];
+        return step ? step.icon + ' ' + step.label : '';
+      },
+
+      getCurrentStepDescription: function () {
+        var step = this.steps[this.currentStep];
+        return step ? step.description : '';
+      },
+
       getStepStatus: function (stepId) {
         if (this.loading) {
           var currentStep = this.steps[this.currentStep];

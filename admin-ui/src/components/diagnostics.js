@@ -83,6 +83,26 @@ document.addEventListener('alpine:init', function () {
             return '⚪';
         }
       },
+
+      hasSheets: function () {
+        return this.data && this.data.sheets && this.data.sheets.length > 0;
+      },
+
+      getSheetList: function () {
+        return this.data && this.data.sheets ? this.data.sheets : [];
+      },
+
+      hasIssues: function () {
+        return this.data && this.data.issues && this.data.issues.length > 0;
+      },
+
+      getIssueList: function () {
+        return this.data && this.data.issues ? this.data.issues : [];
+      },
+
+      getTimestamp: function () {
+        return this.data ? '実行時刻: ' + (this.data.timestamp || '') : '';
+      },
     };
   });
 });

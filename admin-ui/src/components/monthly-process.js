@@ -125,6 +125,28 @@ document.addEventListener('alpine:init', function () {
       get canExecute() {
         return this.checkResults && this.errorCount === 0;
       },
+
+      getCheckList: function () {
+        return this.checkResults && this.checkResults.checks ? this.checkResults.checks : [];
+      },
+
+      getExecuteMessage: function () {
+        return this.executeResult && this.executeResult.summary
+          ? this.executeResult.summary.message
+          : '月次処理が完了しました。先月のデータは保存されています。';
+      },
+
+      getExecutedAt: function () {
+        return this.executeResult ? '実行時刻: ' + (this.executeResult.executedAt || '') : '';
+      },
+
+      getExecutedDuration: function () {
+        return this.executeResult ? '所要時間: ' + (this.executeResult.duration || '') : '';
+      },
+
+      hasCheckIssues: function () {
+        return this.checkResults && this.checkResults.issues && this.checkResults.issues.length > 0;
+      },
     };
   });
 });

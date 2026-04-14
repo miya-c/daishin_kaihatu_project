@@ -291,11 +291,17 @@ document.addEventListener('alpine:init', function () {
       },
 
       getPropId: function (prop) {
+        if (!prop) return '';
         return prop.propertyId || prop['物件ID'] || '';
       },
 
       getPropName: function (prop) {
+        if (!prop) return '';
         return prop.propertyName || prop['物件名'] || '';
+      },
+
+      getSelectedPropHeading: function () {
+        return this.selectedProperty ? this.getPropName(this.selectedProperty) + ' の部屋一覧' : '';
       },
 
       getRoomCount: function (prop) {

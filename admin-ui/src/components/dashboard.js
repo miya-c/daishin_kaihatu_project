@@ -46,6 +46,24 @@ document.addEventListener('alpine:init', function () {
           });
       },
 
+      hasSheetInfo: function () {
+        return this.data && this.data.spreadsheetInfo;
+      },
+      getSheetName: function () {
+        return this.data && this.data.spreadsheetInfo ? this.data.spreadsheetInfo.name : '';
+      },
+      getSheetUrl: function () {
+        return this.data && this.data.spreadsheetInfo ? this.data.spreadsheetInfo.url : '#';
+      },
+      hasSheetUrl: function () {
+        return this.data && this.data.spreadsheetInfo && this.data.spreadsheetInfo.url;
+      },
+      getDataCount: function (field) {
+        return this.data ? this.data[field] || 0 : 0;
+      },
+      getCompletionRate: function () {
+        return this.data ? this.data.completionRate + '%' : '0%';
+      },
       completionColor: function () {
         if (!this.data) return 'is-danger';
         var rate = this.data.completionRate || 0;
