@@ -62,7 +62,9 @@ document.addEventListener('alpine:init', function () {
         return this.data ? this.data[field] || 0 : 0;
       },
       getCompletionRate: function () {
-        return this.data ? this.data.completionRate + '%' : '0%';
+        return this.data && this.data.completionRate != null
+          ? this.data.completionRate + '%'
+          : '0%';
       },
       completionColor: function () {
         if (!this.data) return 'is-danger';
