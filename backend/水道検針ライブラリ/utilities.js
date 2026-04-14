@@ -55,7 +55,7 @@ function parseDate(dateString) {
   if (!dateString || typeof dateString !== 'string') {
     return null;
   }
-  
+
   try {
     const date = new Date(dateString);
     return isNaN(date.getTime()) ? null : date;
@@ -75,7 +75,7 @@ function safeNumber(value, defaultValue = 0) {
   if (value === null || value === undefined || value === '') {
     return defaultValue;
   }
-  
+
   const num = Number(value);
   return isNaN(num) ? defaultValue : num;
 }
@@ -90,7 +90,7 @@ function safeString(value, defaultValue = '') {
   if (value === null || value === undefined) {
     return defaultValue;
   }
-  
+
   return String(value).trim();
 }
 
@@ -103,22 +103,22 @@ function deepCopy(obj) {
   if (obj === null || typeof obj !== 'object') {
     return obj;
   }
-  
+
   if (obj instanceof Date) {
     return new Date(obj.getTime());
   }
-  
+
   if (Array.isArray(obj)) {
-    return obj.map(item => deepCopy(item));
+    return obj.map((item) => deepCopy(item));
   }
-  
+
   const copied = {};
   for (const key in obj) {
     if (obj.hasOwnProperty(key)) {
       copied[key] = deepCopy(obj[key]);
     }
   }
-  
+
   return copied;
 }
 
@@ -131,13 +131,13 @@ function deepCopy(obj) {
 function logWithLevel(level, message, data = null) {
   const timestamp = formatDate(new Date(), 'YYYY-MM-DD HH:mm:ss');
   const logMessage = `[${timestamp}] [${level}] ${message}`;
-  
+
   Logger.log(logMessage);
-  
+
   if (data !== null) {
     Logger.log(`[${timestamp}] [${level}] Data: ${JSON.stringify(data)}`);
   }
-  
+
   // コンソールにも出力（デバッグ用）
   console.log(logMessage);
   if (data !== null) {
@@ -160,16 +160,16 @@ function isCacheValid(key, maxAge = null) {
   try {
     const cacheConfig = getConfig('PERFORMANCE.CACHE', {});
     const defaultMaxAge = maxAge || cacheConfig.MAX_AGE || 3600000; // 1時間
-    
+
     const cacheData = getCacheData(key);
     if (!cacheData) {
       return false;
     }
-    
+
     const now = new Date().getTime();
     const cacheTime = cacheData.timestamp || 0;
     const age = now - cacheTime;
-    
+
     return age < defaultMaxAge;
   } catch (error) {
     Logger.log(`[isCacheValid] エラー: ${error.message}`);
@@ -187,12 +187,12 @@ function getCacheData(key) {
     const cacheConfig = getConfig('PERFORMANCE.CACHE', {});
     const prefix = cacheConfig.STORAGE_PREFIX || 'suido_cache_';
     const fullKey = prefix + key;
-    
+
     const cached = PropertiesService.getScriptProperties().getProperty(fullKey);
     if (!cached) {
       return null;
     }
-    
+
     const cacheData = JSON.parse(cached);
     return cacheData;
   } catch (error) {
@@ -214,22 +214,22 @@ function setCacheData(key, data, customMaxAge = null) {
     const prefix = cacheConfig.STORAGE_PREFIX || 'suido_cache_';
     const maxSize = cacheConfig.MAX_SIZE || 5242880; // 5MB
     const fullKey = prefix + key;
-    
+
     const cacheData = {
       data: data,
       timestamp: new Date().getTime(),
       key: key,
-      maxAge: customMaxAge || cacheConfig.MAX_AGE || 3600000
+      maxAge: customMaxAge || cacheConfig.MAX_AGE || 3600000,
     };
-    
+
     const serialized = JSON.stringify(cacheData);
-    
+
     // サイズチェック
     if (serialized.length > maxSize) {
       Logger.log(`[setCacheData] キャッシュサイズが制限を超過: ${serialized.length} > ${maxSize}`);
       return false;
     }
-    
+
     PropertiesService.getScriptProperties().setProperty(fullKey, serialized);
     return true;
   } catch (error) {
@@ -247,15 +247,15 @@ function clearCache(pattern = 'all') {
   try {
     const cacheConfig = getConfig('PERFORMANCE.CACHE', {});
     const prefix = cacheConfig.STORAGE_PREFIX || 'suido_cache_';
-    
+
     const properties = PropertiesService.getScriptProperties();
     const allProps = properties.getProperties();
     let clearedCount = 0;
-    
-    Object.keys(allProps).forEach(key => {
+
+    Object.keys(allProps).forEach((key) => {
       if (key.startsWith(prefix)) {
         let shouldClear = false;
-        
+
         switch (pattern) {
           case 'all':
             shouldClear = true;
@@ -273,14 +273,14 @@ function clearCache(pattern = 'all') {
             shouldClear = key === prefix + pattern;
             break;
         }
-        
+
         if (shouldClear) {
           properties.deleteProperty(key);
           clearedCount++;
         }
       }
     });
-    
+
     Logger.log(`[clearCache] ${clearedCount}個のキャッシュをクリア（パターン: ${pattern}）`);
     return clearedCount;
   } catch (error) {
@@ -302,26 +302,28 @@ function mergeData(cachedData, deltaData, keyField = 'id') {
       Logger.log('[mergeData] 無効なデータ形式');
       return cachedData || [];
     }
-    
+
     // キャッシュデータを Map に変換（高速検索用）
     const cachedMap = new Map();
-    cachedData.forEach(item => {
+    cachedData.forEach((item) => {
       if (item[keyField]) {
         cachedMap.set(item[keyField], item);
       }
     });
-    
+
     // 差分データを適用
-    deltaData.forEach(deltaItem => {
+    deltaData.forEach((deltaItem) => {
       if (deltaItem[keyField]) {
         cachedMap.set(deltaItem[keyField], deltaItem);
       }
     });
-    
+
     // Map を配列に戻す
     const mergedData = Array.from(cachedMap.values());
-    
-    Logger.log(`[mergeData] マージ完了: キャッシュ${cachedData.length}件 + 差分${deltaData.length}件 = 結果${mergedData.length}件`);
+
+    Logger.log(
+      `[mergeData] マージ完了: キャッシュ${cachedData.length}件 + 差分${deltaData.length}件 = 結果${mergedData.length}件`
+    );
     return mergedData;
   } catch (error) {
     Logger.log(`[mergeData] エラー: ${error.message}`);
@@ -337,19 +339,19 @@ function cleanupExpiredCache() {
   try {
     const cacheConfig = getConfig('PERFORMANCE.CACHE', {});
     const prefix = cacheConfig.STORAGE_PREFIX || 'suido_cache_';
-    
+
     const properties = PropertiesService.getScriptProperties();
     const allProps = properties.getProperties();
     let cleanedCount = 0;
     const now = new Date().getTime();
-    
-    Object.keys(allProps).forEach(key => {
+
+    Object.keys(allProps).forEach((key) => {
       if (key.startsWith(prefix)) {
         try {
           const cacheData = JSON.parse(allProps[key]);
           const age = now - (cacheData.timestamp || 0);
           const maxAge = cacheData.maxAge || cacheConfig.MAX_AGE || 3600000;
-          
+
           if (age > maxAge) {
             properties.deleteProperty(key);
             cleanedCount++;
@@ -361,7 +363,7 @@ function cleanupExpiredCache() {
         }
       }
     });
-    
+
     Logger.log(`[cleanupExpiredCache] ${cleanedCount}個の期限切れキャッシュをクリーンアップ`);
     return cleanedCount;
   } catch (error) {
@@ -378,24 +380,24 @@ function getCacheStats() {
   try {
     const cacheConfig = getConfig('PERFORMANCE.CACHE', {});
     const prefix = cacheConfig.STORAGE_PREFIX || 'suido_cache_';
-    
+
     const properties = PropertiesService.getScriptProperties();
     const allProps = properties.getProperties();
-    
+
     let totalCaches = 0;
     let totalSize = 0;
     let expiredCount = 0;
     const now = new Date().getTime();
-    
-    Object.keys(allProps).forEach(key => {
+
+    Object.keys(allProps).forEach((key) => {
       if (key.startsWith(prefix)) {
         totalCaches++;
-        totalSize += Utilities.newBlob(allProps[key]).getBytes().length;        
+        totalSize += Utilities.newBlob(allProps[key]).getBytes().length;
         try {
           const cacheData = JSON.parse(allProps[key]);
           const age = now - (cacheData.timestamp || 0);
           const maxAge = cacheData.maxAge || cacheConfig.MAX_AGE || 3600000;
-          
+
           if (age > maxAge) {
             expiredCount++;
           }
@@ -404,15 +406,15 @@ function getCacheStats() {
         }
       }
     });
-    
+
     return {
       totalCaches: totalCaches,
       totalSizeBytes: totalSize,
-      totalSizeMB: Math.round(totalSize / 1024 / 1024 * 100) / 100,
+      totalSizeMB: Math.round((totalSize / 1024 / 1024) * 100) / 100,
       expiredCaches: expiredCount,
       validCaches: totalCaches - expiredCount,
-      maxSizeMB: Math.round((cacheConfig.MAX_SIZE || 5242880) / 1024 / 1024 * 100) / 100,
-      usagePercent: Math.round(totalSize / (cacheConfig.MAX_SIZE || 5242880) * 100)
+      maxSizeMB: Math.round(((cacheConfig.MAX_SIZE || 5242880) / 1024 / 1024) * 100) / 100,
+      usagePercent: Math.round((totalSize / (cacheConfig.MAX_SIZE || 5242880)) * 100),
     };
   } catch (error) {
     Logger.log(`[getCacheStats] エラー: ${error.message}`);
@@ -465,5 +467,24 @@ function invalidateFastCache(key) {
     cache.remove(key);
   } catch (error) {
     Logger.log('[invalidateFastCache] エラー: ' + error.message);
+  }
+}
+
+/**
+ * LockService wrapper for atomic operations
+ * Ensures exclusive access during spreadsheet write operations
+ * @param {Function} fn - Function to execute within lock
+ * @param {number} timeoutMs - Lock timeout in milliseconds (default: 30000)
+ * @returns {*} Return value of fn
+ */
+function withScriptLock(fn, timeoutMs) {
+  var lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(timeoutMs || 30000);
+    return fn();
+  } finally {
+    try {
+      lock.releaseLock();
+    } catch (e) {}
   }
 }
