@@ -549,8 +549,8 @@ function runUsageExample() {
       console.log('3. 部屋一覧取得...');
       const roomsResult = cmlibrary.getRooms(firstProperty.propertyId || firstProperty['物件ID']);
       if (roomsResult.success && roomsResult.data) {
-        const rooms = roomsResult.data;
-        console.log('   部屋数: ' + rooms.length + '件');
+        var roomsList = roomsResult.data.rooms || roomsResult.data;
+        console.log('   部屋数: ' + (Array.isArray(roomsList) ? roomsList.length : 0) + '件');
       } else {
         console.log('   部屋一覧取得失敗');
       }

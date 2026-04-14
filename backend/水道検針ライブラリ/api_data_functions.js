@@ -44,7 +44,11 @@ function getProperties() {
         for (var i = 1; i < inspData.length; i++) {
           var pid = String(inspData[i][inspPropIdCol]).trim();
           if (!pid) continue;
-          if (inspSkipCol !== -1 && inspData[i][inspSkipCol] === true) continue;
+          if (inspSkipCol !== -1) {
+            var skipVal = inspData[i][inspSkipCol];
+            var skipStr = skipVal != null ? String(skipVal).trim().toLowerCase() : '';
+            if (skipVal === true || skipStr === 'true' || skipStr === '1') continue;
+          }
 
           roomCounts[pid] = (roomCounts[pid] || 0) + 1;
           if (inspDateCol !== -1 && inspData[i][inspDateCol]) {
