@@ -13,10 +13,13 @@ export function callAdminAPI(action, params) {
       reject(new Error('通信がタイムアウトしました。もう一度お試しください。'));
     }, 30000);
 
+    console.log('[callAdminAPI] →', action, JSON.stringify(params));
+
     google.script.run
       .withSuccessHandler(function (result) {
         clearTimeout(timer);
         if (timedOut) return;
+        console.log('[callAdminAPI] ←', action, 'result:', JSON.stringify(result));
         if (result && result.code === 'INVALID_TOKEN') {
           sessionStorage.removeItem('ADMIN_TOKEN');
           if (window.Alpine && Alpine.store('auth')) {
@@ -32,6 +35,7 @@ export function callAdminAPI(action, params) {
       .withFailureHandler(function (error) {
         clearTimeout(timer);
         if (timedOut) return;
+        console.log('[callAdminAPI] ✗', action, 'error:', error);
         reject(error);
       })
       .adminAction(action, params);
