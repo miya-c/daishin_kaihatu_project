@@ -86,6 +86,18 @@ function runSystemDiagnostics(options = {}) {
       'createAllIndexes',
     ];
 
+    var functionMap = {
+      getProperties: typeof getProperties === 'function' ? getProperties : null,
+      getRooms: typeof getRooms === 'function' ? getRooms : null,
+      getMeterReadings: typeof getMeterReadings === 'function' ? getMeterReadings : null,
+      updateMeterReadings: typeof updateMeterReadings === 'function' ? updateMeterReadings : null,
+      validateInspectionDataIntegrity:
+        typeof validateInspectionDataIntegrity === 'function'
+          ? validateInspectionDataIntegrity
+          : null,
+      createAllIndexes: typeof createAllIndexes === 'function' ? createAllIndexes : null,
+    };
+
     coreFunctions.forEach((funcName) => {
       const funcInfo = {
         name: funcName,
@@ -94,7 +106,8 @@ function runSystemDiagnostics(options = {}) {
       };
 
       try {
-        if (typeof eval(funcName) === 'function') {
+        var fn = functionMap[funcName];
+        if (fn !== null) {
           funcInfo.exists = true;
           funcInfo.callable = true;
         }
@@ -277,12 +290,17 @@ function collectErrorLogs(options = {}) {
     }
 
     // 関数実行テスト
-    const testFunctions = ['getProperties', 'getSpreadsheetInfo'];
+    var testFunctions = ['getProperties', 'getSpreadsheetInfo'];
+    var testFunctionMap = {
+      getProperties: typeof getProperties === 'function' ? getProperties : null,
+      getSpreadsheetInfo: typeof getSpreadsheetInfo === 'function' ? getSpreadsheetInfo : null,
+    };
 
     testFunctions.forEach((funcName) => {
       try {
-        if (typeof eval(funcName) === 'function') {
-          eval(`${funcName}()`);
+        var fn = testFunctionMap[funcName];
+        if (fn) {
+          fn();
         }
       } catch (error) {
         logs.execution.push({

@@ -10,7 +10,7 @@
  */
 function createPropertyIndex() {
   try {
-    console.log('[createPropertyIndex] 物件マスタインデックス作成開始');
+    Logger.log('[createPropertyIndex] 物件マスタインデックス作成開始');
 
     const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(
       CONFIG.SHEET_NAMES.PROPERTY_MASTER
@@ -41,12 +41,12 @@ function createPropertyIndex() {
       }
     }
 
-    console.log(
+    Logger.log(
       `[createPropertyIndex] ${Object.keys(propertyIndex).length}件の物件をインデックス化`
     );
     return { success: true, data: propertyIndex };
   } catch (error) {
-    console.error('[createPropertyIndex] エラー:', error);
+    Logger.log('[createPropertyIndex] エラー: ' + error.message);
     return { success: false, error: error.message };
   }
 }
@@ -57,7 +57,7 @@ function createPropertyIndex() {
  */
 function createRoomIndex() {
   try {
-    console.log('[createRoomIndex] 部屋マスタインデックス作成開始');
+    Logger.log('[createRoomIndex] 部屋マスタインデックス作成開始');
 
     const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(
       CONFIG.SHEET_NAMES.ROOM_MASTER
@@ -106,7 +106,7 @@ function createRoomIndex() {
       }
     }
 
-    console.log(`[createRoomIndex] ${Object.keys(roomIndex).length}件の部屋をインデックス化`);
+    Logger.log(`[createRoomIndex] ${Object.keys(roomIndex).length}件の部屋をインデックス化`);
     return {
       success: true,
       data: {
@@ -115,7 +115,7 @@ function createRoomIndex() {
       },
     };
   } catch (error) {
-    console.error('[createRoomIndex] エラー:', error);
+    Logger.log('[createRoomIndex] エラー: ' + error.message);
     return { success: false, error: error.message };
   }
 }
@@ -126,7 +126,7 @@ function createRoomIndex() {
  */
 function createMeterReadingIndex() {
   try {
-    console.log('[createMeterReadingIndex] 検針データインデックス作成開始');
+    Logger.log('[createMeterReadingIndex] 検針データインデックス作成開始');
 
     const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(
       CONFIG.SHEET_NAMES.INSPECTION_DATA
@@ -184,7 +184,7 @@ function createMeterReadingIndex() {
       }
     }
 
-    console.log(
+    Logger.log(
       `[createMeterReadingIndex] ${Object.keys(meterIndex).length}件の検針データをインデックス化`
     );
     return {
@@ -196,7 +196,7 @@ function createMeterReadingIndex() {
       },
     };
   } catch (error) {
-    console.error('[createMeterReadingIndex] エラー:', error);
+    Logger.log('[createMeterReadingIndex] エラー: ' + error.message);
     return { success: false, error: error.message };
   }
 }
@@ -207,7 +207,7 @@ function createMeterReadingIndex() {
  */
 function createAllIndexes() {
   try {
-    console.log('[createAllIndexes] 全インデックス作成開始');
+    Logger.log('[createAllIndexes] 全インデックス作成開始');
 
     const propertyResult = createPropertyIndex();
     if (!propertyResult.success) return propertyResult;
@@ -228,10 +228,10 @@ function createAllIndexes() {
       created: new Date(),
     };
 
-    console.log('[createAllIndexes] 全インデックス作成完了');
+    Logger.log('[createAllIndexes] 全インデックス作成完了');
     return { success: true, data: allIndexes };
   } catch (error) {
-    console.error('[createAllIndexes] エラー:', error);
+    Logger.log('[createAllIndexes] エラー: ' + error.message);
     return { success: false, error: error.message };
   }
 }
@@ -266,10 +266,10 @@ function fastSearch(type, key, indexes = null) {
       };
     }
 
-    console.log(`[fastSearch] 検索開始: type="${type}", key="${key}"`);
+    Logger.log(`[fastSearch] 検索開始: type="${type}", key="${key}"`);
 
     if (!indexes) {
-      console.log('[fastSearch] インデックスを新規作成中...');
+      Logger.log('[fastSearch] インデックスを新規作成中...');
       const indexResult = createAllIndexes();
       if (!indexResult.success) return indexResult;
       indexes = indexResult.data;
@@ -300,7 +300,7 @@ function fastSearch(type, key, indexes = null) {
         return { success: false, error: '不明な検索タイプ: ' + type };
     }
   } catch (error) {
-    console.error('[fastSearch] エラー:', error);
+    Logger.log('[fastSearch] エラー: ' + error.message);
     return { success: false, error: error.message };
   }
 }

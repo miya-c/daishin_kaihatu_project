@@ -57,13 +57,17 @@ function validateMeterReadingRow(row, headers, options = {}) {
   const roomId = String(row[roomIdCol] || '').trim();
   if (!roomId) {
     errors.push('部屋IDが空です');
-  } else if (!/^R\d{3,6}$/.test(roomId)) {
+  } else if (!/^R\d{3}$/.test(roomId)) {
     errors.push(`部屋IDの形式が不正です: ${roomId}`);
   }
 
   // 今回指示数の検証
   const currentReading = row[currentReadingCol];
-  if (currentReading !== null && currentReading !== undefined && String(currentReading).trim() !== '') {
+  if (
+    currentReading !== null &&
+    currentReading !== undefined &&
+    String(currentReading).trim() !== ''
+  ) {
     const numReading = Number(currentReading);
     if (isNaN(numReading)) {
       errors.push(`今回の指示数が数値ではありません: ${currentReading}`);
@@ -78,8 +82,14 @@ function validateMeterReadingRow(row, headers, options = {}) {
   if (previousReadingCol !== -1 && currentReadingCol !== -1) {
     const prevReading = row[previousReadingCol];
     const currReading = row[currentReadingCol];
-    if (prevReading !== null && prevReading !== undefined && String(prevReading).trim() !== '' &&
-        currReading !== null && currReading !== undefined && String(currReading).trim() !== '') {
+    if (
+      prevReading !== null &&
+      prevReading !== undefined &&
+      String(prevReading).trim() !== '' &&
+      currReading !== null &&
+      currReading !== undefined &&
+      String(currReading).trim() !== ''
+    ) {
       const prevNum = Number(prevReading);
       const currNum = Number(currReading);
       if (!isNaN(prevNum) && !isNaN(currNum) && currNum < prevNum) {
@@ -123,7 +133,7 @@ function validateMeterReadingRow(row, headers, options = {}) {
 
   return {
     valid: errors.length === 0,
-    errors: errors
+    errors: errors,
   };
 }
 
@@ -139,7 +149,7 @@ function batchValidateMeterReadings(headers, dataRows, options = {}) {
     totalRows: dataRows.length,
     validRows: 0,
     invalidRows: 0,
-    errors: []
+    errors: [],
   };
 
   for (let i = 0; i < dataRows.length; i++) {
@@ -151,7 +161,7 @@ function batchValidateMeterReadings(headers, dataRows, options = {}) {
       results.errors.push({
         row: i + 2, // ヘッダー行+1始まりインデックス
         rowData: dataRows[i],
-        errors: validation.errors
+        errors: validation.errors,
       });
     }
   }

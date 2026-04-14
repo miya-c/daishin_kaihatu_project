@@ -67,13 +67,26 @@ function validateInspectionDataIntegrity(ss = null, config = {}) {
 
     // inspection_dataの整合性チェック
     const inspectionData = inspectionDataSheet.getDataRange().getValues();
+    const headers = inspectionData[0];
+    const propIdCol = headers.indexOf('物件ID');
+    const roomIdCol = headers.indexOf('部屋ID');
+    const readingDateCol = headers.indexOf('検針日時');
+    const currentReadingCol = headers.indexOf('今回の指示数');
+
+    if (propIdCol === -1 || roomIdCol === -1) {
+      return {
+        success: false,
+        error: 'inspection_dataに必要な列（物件ID、部屋ID）が見つかりません',
+      };
+    }
+
     const invalidRecords = [];
     let validRecords = 0;
 
     for (let i = 1; i < inspectionData.length; i++) {
       const row = inspectionData[i];
-      const propertyId = String(row[0]).trim();
-      const roomId = String(row[2]).trim();
+      const propertyId = String(row[propIdCol]).trim();
+      const roomId = String(row[roomIdCol]).trim();
       const combination = `${propertyId}|${roomId}`;
 
       const issues = [];
@@ -83,9 +96,35 @@ function validateInspectionDataIntegrity(ss = null, config = {}) {
         issues.push('無効な物件ID');
       }
 
+      // 物件ID形式チェック
+      if (propertyId && !/^P\d{6}$/.test(propertyId)) {
+        issues.push(`物件IDの形式が不正です: ${propertyId}`);
+      }
+
       // 部屋IDの検証
       if (!validRoomIds.has(roomId)) {
         issues.push('無効な部屋ID');
+      }
+
+      // 部屋ID形式チェック
+      if (roomId && !/^R\d{3}$/.test(roomId)) {
+        issues.push(`部屋IDの形式が不正です: ${roomId}`);
+      }
+
+      // 検針日時がある場合、今回の指示数が有効な数値かチェック
+      if (readingDateCol !== -1 && currentReadingCol !== -1) {
+        const readingDate = row[readingDateCol];
+        if (readingDate && String(readingDate).trim() !== '') {
+          const currentReading = row[currentReadingCol];
+          if (
+            currentReading === null ||
+            currentReading === undefined ||
+            String(currentReading).trim() === '' ||
+            isNaN(Number(currentReading))
+          ) {
+            issues.push('検針日時が入力されているのに今回の指示数が無効です');
+          }
+        }
       }
 
       // 物件-部屋の組み合わせ検証

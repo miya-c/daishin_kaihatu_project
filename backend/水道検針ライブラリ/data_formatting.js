@@ -34,6 +34,10 @@ function formatPropertyIdsInPropertyMaster(ss = null, config = {}) {
   const dataRange = sheet.getDataRange();
   const values = dataRange.getValues();
   let updatedCount = 0;
+  const propertyIdColIndex = values[0] ? values[0].indexOf('物件ID') : -1;
+  if (propertyIdColIndex === -1) {
+    return { success: true, updatedCount: 0, message: '物件ID列が見つかりません' };
+  }
 
   if (values.length <= 1) {
     const info = `${sheetName}シートにデータがありません。`;
@@ -121,11 +125,11 @@ function formatPropertyIdsInRoomMaster(ss = null, config = {}) {
 
   try {
     for (let i = 1; i < values.length; i++) {
-      const currentPropertyId = String(values[i][0]).trim();
+      const currentPropertyId = String(values[i][propertyIdColIndex]).trim();
 
       if (currentPropertyId && !currentPropertyId.startsWith('P')) {
         const formattedId = `P${currentPropertyId.padStart(6, '0')}`;
-        values[i][0] = formattedId;
+        values[i][propertyIdColIndex] = formattedId;
         updatedCount++;
         Logger.log(`行 ${i + 1}: ${currentPropertyId} → ${formattedId}`);
       }
@@ -196,12 +200,19 @@ function formatPropertyIdsInInspectionData(ss = null, config = {}) {
   }
 
   try {
+    var inspHeaders = values[0];
+    var inspPropertyIdCol = inspHeaders.indexOf('物件ID');
+    if (inspPropertyIdCol === -1) {
+      const error = `${sheetName}シートに「物件ID」列が見つかりません。`;
+      return { success: false, error: error };
+    }
+
     for (let i = 1; i < values.length; i++) {
-      const currentPropertyId = String(values[i][0]).trim();
+      const currentPropertyId = String(values[i][inspPropertyIdCol]).trim();
 
       if (currentPropertyId && !currentPropertyId.startsWith('P')) {
         const formattedId = `P${currentPropertyId.padStart(6, '0')}`;
-        values[i][0] = formattedId;
+        values[i][inspPropertyIdCol] = formattedId;
         updatedCount++;
         Logger.log(`行 ${i + 1}: ${currentPropertyId} → ${formattedId}`);
       }

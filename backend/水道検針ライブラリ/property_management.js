@@ -101,6 +101,16 @@ function addProperty(params) {
       }
       var propertyName = String(params.propertyName).trim();
 
+      // Prevent spreadsheet formula injection
+      if (
+        propertyName.startsWith('=') ||
+        propertyName.startsWith('+') ||
+        propertyName.startsWith('-') ||
+        propertyName.startsWith('@')
+      ) {
+        propertyName = "'" + propertyName;
+      }
+
       // Normalize or auto-assign property ID
       var propertyId;
       try {
@@ -162,6 +172,16 @@ function addRoom(params) {
 
       var propertyId = String(params.propertyId).trim();
       var roomName = String(params.roomName).trim();
+
+      // Prevent spreadsheet formula injection
+      if (
+        roomName.startsWith('=') ||
+        roomName.startsWith('+') ||
+        roomName.startsWith('-') ||
+        roomName.startsWith('@')
+      ) {
+        roomName = "'" + roomName;
+      }
 
       var ss = SpreadsheetApp.getActiveSpreadsheet();
 
@@ -242,6 +262,16 @@ function updateRoom(params) {
       var propertyId = String(params.propertyId).trim();
       var roomId = String(params.roomId).trim();
       var roomName = String(params.roomName).trim();
+
+      // Prevent spreadsheet formula injection
+      if (
+        roomName.startsWith('=') ||
+        roomName.startsWith('+') ||
+        roomName.startsWith('-') ||
+        roomName.startsWith('@')
+      ) {
+        roomName = "'" + roomName;
+      }
 
       var ss = SpreadsheetApp.getActiveSpreadsheet();
 

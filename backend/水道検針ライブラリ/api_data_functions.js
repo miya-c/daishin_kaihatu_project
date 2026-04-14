@@ -231,31 +231,24 @@ function _applyInspectionStatus(ss, propertyId, rooms) {
   }
 
   try {
-    // --- Phase 3: Column-slim read ---
-    // Only read the 5 columns we need: 物件ID(C=3), 部屋ID(D=4), 検針日時(F=6), 今回の指示数(J=10), 検針不要(N=14)
-    // Columns are 1-indexed in GAS getRange: C=3, D=4, F=6, J=10, N=14
-    // We read from column 3 to column 14 (12 columns) to get all needed fields in one contiguous range
-    const lastRow = inspectionSheet.getLastRow();
-    if (lastRow <= 1) return; // Only headers or empty
+    // ヘッダーベース列アクセス: 全データを読み込み、headers.indexOf()で列を特定
+    var lastRow = inspectionSheet.getLastRow();
+    if (lastRow <= 1) return;
 
-    const inspectionData = inspectionSheet.getRange(1, 3, lastRow, 12).getValues();
-    // Within this sub-range:
-    // Index 0 = column C (物件ID)
-    // Index 1 = column D (部屋ID)
-    // Index 3 = column F (検針日時)
-    // Index 7 = column J (今回の指示数)
-    // Index 11 = column N (検針不要)
-
+    var lastCol = inspectionSheet.getLastColumn();
+    var inspectionData = inspectionSheet.getRange(1, 1, lastRow, lastCol).getValues();
     if (inspectionData.length <= 1) return;
 
-    // Map sub-range column headers to confirm positions
-    const inspHeaders = inspectionData[0];
-    const inspPropertyIdIndex = inspHeaders.indexOf('物件ID');
-    const inspRoomIdIndex = inspHeaders.indexOf('部屋ID');
-    const inspValueIndex = inspHeaders.indexOf('今回の指示数');
-    const inspDateIndex = inspHeaders.indexOf('検針日時');
-    const inspNotNeededIndex = inspHeaders.indexOf('検針不要');
-    const inspPreviousReadingIndex = inspHeaders.indexOf('前回指示数');
+    var inspHeaders = inspectionData[0];
+    var inspPropertyIdIndex = inspHeaders.indexOf('物件ID');
+    var inspRoomIdIndex = inspHeaders.indexOf('部屋ID');
+    var inspRoomNameIndex = inspHeaders.indexOf('部屋名');
+    var inspDateIndex = inspHeaders.indexOf('検針日時');
+    var inspUsageIndex = inspHeaders.indexOf('今回使用量');
+    var inspValueIndex = inspHeaders.indexOf('今回の指示数');
+    var inspPreviousReadingIndex = inspHeaders.indexOf('前回指示数');
+    var inspNotNeededIndex = inspHeaders.indexOf('検針不要');
+    var inspNoBillIndex = inspHeaders.indexOf('請求不要');
 
     if (inspPropertyIdIndex === -1 || inspRoomIdIndex === -1 || inspValueIndex === -1) {
       Logger.log('[getRooms] inspection_dataの必要な列が見つかりません');
@@ -630,7 +623,12 @@ function updateMeterReadings(propertyId, roomId, readings, options = {}) {
     const now = new Date();
 
     readings.forEach((reading, readingIndex) => {
-      const currentValue = parseFloat(reading.currentReading) || 0;
+      var rawReading = reading.currentReading;
+      if (String(rawReading).indexOf('.') !== -1) {
+        Logger.log(`[updateMeterReadings] 小数点を含む指示数は許可されていません: ${rawReading}`);
+        return;
+      }
+      const currentValue = parseInt(rawReading, 10) || 0;
 
       // 警告フラグを確実に受信
       const receivedWarningFlag = reading.warningFlag || '正常';
@@ -843,7 +841,7 @@ function completePropertyInspectionSimple(propertyId, completionDate) {
       apiVersion: 'v2.9.0-simple-completion',
     };
   } catch (error) {
-    console.error(`[検針完了] エラー: ${error.message}`);
+    Logger.log(`[検針完了] エラー: ${error.message}`);
     return {
       success: false,
       error: error.message,
@@ -1312,7 +1310,7 @@ function validateSaveAndNavigateParams(params) {
     }
 
     // 部屋ID形式検証
-    if (!/^R\d{3,6}$/.test(params.currentRoomId) || !/^R\d{3,6}$/.test(params.targetRoomId)) {
+    if (!/^R\d{3}$/.test(params.currentRoomId) || !/^R\d{3}$/.test(params.targetRoomId)) {
       return {
         success: false,
         error: '部屋IDの形式が正しくありません（R001 形式である必要があります）',
@@ -1574,7 +1572,7 @@ function performNavigationOperation(
 
   try {
     // 移動先部屋の存在確認（Phase 2.2: 事前チェック）
-    if (!targetRoomId || !/^R\d{3,6}$/.test(targetRoomId)) {
+    if (!targetRoomId || !/^R\d{3}$/.test(targetRoomId)) {
       return {
         success: false,
         error: `移動先部屋IDが無効です: ${targetRoomId}`,

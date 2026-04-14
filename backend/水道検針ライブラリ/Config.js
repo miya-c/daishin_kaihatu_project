@@ -13,6 +13,7 @@ const CONFIG = {
     SETTINGS: '設定値',
   },
 
+  // ※ 参照用定義 - 実際の列アクセスは headers.indexOf() を使用してください
   // 物件マスタシートの列インデックス（1始まり）
   PROPERTY_MASTER_COLS: {
     PROPERTY_ID: 1, // 物件ID
@@ -20,6 +21,7 @@ const CONFIG = {
     COMPLETION_DATE: 3, // 検針完了日
   },
 
+  // ※ 参照用定義 - 実際の列アクセスは headers.indexOf() を使用してください
   // 部屋マスタシートの列インデックス（1始まり）
   ROOM_MASTER_COLS: {
     PROPERTY_ID: 1, // 物件ID
@@ -27,6 +29,7 @@ const CONFIG = {
     ROOM_NAME: 3, // 部屋名
   },
 
+  // ※ 参照用定義 - 実際の列アクセスは headers.indexOf() を使用してください
   // 検針データシートの列インデックス（1始まり）
   // 実際のCSV構造: 記録ID,物件名,物件ID,部屋ID,部屋名,検針日時,警告フラグ,標準偏差値,今回使用量,今回の指示数,前回指示数,前々回指示数,前々々回指示数
   INSPECTION_DATA_COLS: {

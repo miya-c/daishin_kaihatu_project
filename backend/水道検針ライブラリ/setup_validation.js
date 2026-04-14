@@ -721,9 +721,21 @@ function validateFunctionality(ss, options) {
     ];
 
     let availableFunctions = 0;
+    var functionMap = {
+      formatAllPropertyIds:
+        typeof formatAllPropertyIds === 'function' ? formatAllPropertyIds : null,
+      generateRoomIds: typeof generateRoomIds === 'function' ? generateRoomIds : null,
+      createInitialInspectionData:
+        typeof createInitialInspectionData === 'function' ? createInitialInspectionData : null,
+      runSystemDiagnostics:
+        typeof runSystemDiagnostics === 'function' ? runSystemDiagnostics : null,
+      validateSystemSetup: typeof validateSystemSetup === 'function' ? validateSystemSetup : null,
+    };
+
     basicFunctions.forEach((funcName) => {
       try {
-        if (typeof this[funcName] === 'function' || typeof eval(funcName) === 'function') {
+        var fn = functionMap[funcName];
+        if (typeof fn === 'function' || (fn === null && typeof this[funcName] === 'function')) {
           availableFunctions++;
         }
       } catch (error) {

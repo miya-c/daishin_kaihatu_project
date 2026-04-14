@@ -1746,8 +1746,8 @@ function preCheckMonthlyProcess(ss = null) {
             let warningCount = 0;
             const criticalRows = [];
 
-            // 最初の50行のみチェック（パフォーマンス向上）
-            const checkLimit = Math.min(values.length, 51);
+            // 全行チェック
+            const checkLimit = values.length;
 
             for (let i = 1; i < checkLimit; i++) {
               const row = values[i];

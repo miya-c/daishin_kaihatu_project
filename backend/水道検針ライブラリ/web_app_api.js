@@ -730,9 +730,10 @@ function executeLegacyFallback(params, skipSave) {
     const { propertyId, currentRoomId, targetRoomId, meterReadingsData } = params;
 
     // 1. 既存のupdateMeterReadings実行（統合APIで保存済みの場合はスキップ）
+    var saveResult = null;
     if (!skipSave) {
       const readings = JSON.parse(meterReadingsData);
-      const saveResult = updateMeterReadings(propertyId, currentRoomId, readings);
+      saveResult = updateMeterReadings(propertyId, currentRoomId, readings);
 
       if (!saveResult || !saveResult.success) {
         return createCorsJsonResponse({
@@ -759,7 +760,7 @@ function executeLegacyFallback(params, skipSave) {
       success: true,
       saveResult: {
         success: true,
-        updatedCount: saveResult.updatedRows || 1,
+        updatedCount: saveResult ? saveResult.updatedRows || 1 : 1,
       },
       navigationResult: {
         propertyName: navResult.propertyName,
