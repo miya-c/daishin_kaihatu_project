@@ -12,10 +12,11 @@ document.addEventListener('alpine:init', function () {
     return {
       tabs: [
         { id: 'dashboard', label: 'ダッシュボード', icon: '📊' },
+        { id: 'properties', label: '物件管理', icon: '🏠' },
         { id: 'monthly', label: '月次処理', icon: '📅' },
-        { id: 'setup', label: '初期設定', icon: '⚙️' },
         { id: 'maintenance', label: 'データ管理', icon: '🔧' },
         { id: 'diagnostics', label: '動作確認', icon: '🔍' },
+        { id: 'setup', label: '初期設定', icon: '⚙️' },
       ],
 
       sidebarOpen: false,

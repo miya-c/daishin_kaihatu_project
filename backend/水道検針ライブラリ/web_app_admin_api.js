@@ -104,6 +104,49 @@ function adminDispatch(action, params) {
         return { success: true, data: Object.assign({}, diagResult, { overall: overall }) };
       }
 
+      // ── Phase 7: Property Management ──
+      case 'addProperty': {
+        if (!params.propertyName || !String(params.propertyName).trim()) {
+          return { success: false, error: '物件名は必須です' };
+        }
+        return addProperty(params);
+      }
+
+      case 'addRoom': {
+        if (!params.propertyId || !params.roomName) {
+          return { success: false, error: '物件IDと部屋名は必須です' };
+        }
+        return addRoom(params);
+      }
+
+      case 'updateRoom': {
+        if (!params.propertyId || !params.roomId || !params.roomName) {
+          return { success: false, error: '物件ID・部屋ID・部屋名は必須です' };
+        }
+        return updateRoom(params);
+      }
+
+      case 'deleteRoom': {
+        if (!params.propertyId || !params.roomId) {
+          return { success: false, error: '物件IDと部屋IDは必須です' };
+        }
+        return deleteRoom(params);
+      }
+
+      case 'deleteProperty': {
+        if (!params.propertyId) {
+          return { success: false, error: '物件IDは必須です' };
+        }
+        return deleteProperty(params);
+      }
+
+      case 'getRoomsForManagement': {
+        if (!params.propertyId) {
+          return { success: false, error: '物件IDが必要です', code: 'MISSING_PARAM' };
+        }
+        return getRoomsForManagement(params.propertyId);
+      }
+
       default:
         return { success: false, error: '不明なアクション: ' + action, code: 'UNKNOWN_ACTION' };
     }

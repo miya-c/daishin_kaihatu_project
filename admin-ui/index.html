@@ -538,6 +538,356 @@
                   </div>
                 </div>
 
+                <!-- Property Management -->
+                <div x-show="activeTab === 'properties'" x-data="propertyManagement">
+                  <div class="is-flex is-justify-content-space-between is-align-items-center mb-4">
+                    <p class="title is-4 mb-0">🏠 物件管理</p>
+                    <button class="button is-primary" x-on:click="openAddProperty()">
+                      + 物件を追加
+                    </button>
+                  </div>
+
+                  <div x-show="loading" class="has-text-centered py-5">
+                    <button class="button is-loading is-large is-static"></button>
+                    <p class="mt-3 has-text-grey-light">読み込み中...</p>
+                  </div>
+
+                  <div x-show="!loading && error" class="notification is-danger" role="alert">
+                    <p x-text="error"></p>
+                    <button class="button is-small is-light mt-2" x-on:click="loadProperties()">
+                      再試行
+                    </button>
+                  </div>
+
+                  <div x-show="!loading && properties.length === 0" class="has-text-centered py-6">
+                    <p class="has-text-grey-light">
+                      物件が登録されていません。「+ 物件を追加」ボタンで物件を登録してください。
+                    </p>
+                  </div>
+
+                  <div x-show="!loading && properties.length > 0">
+                    <table class="table is-fullwidth is-hoverable">
+                      <thead>
+                        <tr>
+                          <th>物件ID</th>
+                          <th>物件名</th>
+                          <th>操作</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <template x-for="prop in properties" :key="getPropId(prop)">
+                          <tr>
+                            <td x-text="getPropId(prop)"></td>
+                            <td x-text="getPropName(prop)"></td>
+                            <td>
+                              <div class="field is-grouped">
+                                <button
+                                  class="button is-small is-info"
+                                  x-on:click="selectProperty(prop)"
+                                  x-text="selectedProperty && getPropId(selectedProperty) === getPropId(prop) ? '閉じる' : '部屋管理'"
+                                ></button>
+                                <button
+                                  class="button is-small is-danger is-light"
+                                  x-on:click="openDeleteConfirm('property', getPropId(prop), getPropName(prop), '')"
+                                >
+                                  削除
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        </template>
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <!-- Room management for selected property -->
+                  <div x-show="selectedProperty && !roomsLoading" class="box mt-4">
+                    <div
+                      class="is-flex is-justify-content-space-between is-align-items-center mb-3"
+                    >
+                      <p
+                        class="heading mb-0"
+                        x-text="getPropName(selectedProperty) + ' の部屋一覧'"
+                      ></p>
+                      <button class="button is-small is-primary" x-on:click="openAddRoom()">
+                        + 部屋を追加
+                      </button>
+                    </div>
+                    <div x-show="rooms.length === 0" class="has-text-centered py-3">
+                      <p class="has-text-grey-light is-size-7">部屋が登録されていません</p>
+                    </div>
+                    <table x-show="rooms.length > 0" class="table is-fullwidth is-hoverable">
+                      <thead>
+                        <tr>
+                          <th>部屋ID</th>
+                          <th>部屋名</th>
+                          <th>検針実績</th>
+                          <th>操作</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <template x-for="room in rooms" :key="room.roomId">
+                          <tr>
+                            <td x-text="room.roomId"></td>
+                            <td x-text="room.roomName"></td>
+                            <td>
+                              <span
+                                class="tag is-small"
+                                x-bind:class="room.hasInspectionResult ? 'is-success' : 'is-light'"
+                                x-text="room.hasInspectionResult ? 'あり' : 'なし'"
+                              ></span>
+                            </td>
+                            <td>
+                              <div class="field is-grouped">
+                                <button
+                                  class="button is-small is-light"
+                                  x-on:click="openEditRoom(room)"
+                                >
+                                  編集
+                                </button>
+                                <button
+                                  class="button is-small is-danger is-light"
+                                  x-bind:disabled="room.hasInspectionResult"
+                                  x-on:click="openDeleteConfirm('room', room.roomId, room.roomName, getPropId(selectedProperty))"
+                                >
+                                  削除
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        </template>
+                      </tbody>
+                    </table>
+                  </div>
+                  <div x-show="roomsLoading" class="has-text-centered py-3">
+                    <button class="button is-loading is-static"></button>
+                  </div>
+
+                  <!-- Property Management Modals -->
+                  <div class="modal" x-bind:class="{ 'is-active': activeModal === 'addProperty' }">
+                    <div class="modal-background" x-on:click="closeModal()"></div>
+                    <div class="modal-card">
+                      <header class="modal-card-head">
+                        <p class="modal-card-title">物件を追加</p>
+                        <button
+                          class="delete"
+                          aria-label="閉じる"
+                          x-on:click="closeModal()"
+                        ></button>
+                      </header>
+                      <section class="modal-card-body">
+                        <div
+                          x-show="error"
+                          class="notification is-danger is-light mb-3"
+                          role="alert"
+                        >
+                          <p x-text="error"></p>
+                        </div>
+                        <div class="field">
+                          <label class="label">物件ID</label>
+                          <div class="control">
+                            <label class="radio">
+                              <input
+                                type="radio"
+                                name="propIdMode"
+                                value="auto"
+                                x-model="addPropertyForm.idMode"
+                              />
+                              自動採番
+                            </label>
+                            <label class="radio ml-3">
+                              <input
+                                type="radio"
+                                name="propIdMode"
+                                value="manual"
+                                x-model="addPropertyForm.idMode"
+                              />
+                              手動入力
+                            </label>
+                          </div>
+                        </div>
+                        <div class="field">
+                          <div class="control">
+                            <input
+                              class="input"
+                              x-bind:readonly="addPropertyForm.idMode === 'auto'"
+                              x-bind:placeholder="addPropertyForm.idMode === 'auto' ? getAutoPropertyId() : '数字を入力（例: 5 → P000005）'"
+                              inputmode="numeric"
+                              x-on:input="onManualIdInput($event)"
+                              x-model="addPropertyForm.manualId"
+                            />
+                          </div>
+                          <p class="help" x-text="getDisplayPropertyId()"></p>
+                        </div>
+                        <div class="field">
+                          <label class="label">物件名 <span class="has-text-danger">*</span></label>
+                          <div class="control">
+                            <input
+                              class="input"
+                              placeholder="物件名を入力"
+                              x-model="addPropertyForm.name"
+                              x-on:keydown.enter="submitAddProperty()"
+                            />
+                          </div>
+                        </div>
+                      </section>
+                      <footer class="modal-card-foot">
+                        <button class="button is-primary" x-on:click="submitAddProperty()">
+                          登録する
+                        </button>
+                        <button class="button" x-on:click="closeModal()">キャンセル</button>
+                      </footer>
+                    </div>
+                  </div>
+
+                  <div class="modal" x-bind:class="{ 'is-active': activeModal === 'addRoom' }">
+                    <div class="modal-background" x-on:click="closeModal()"></div>
+                    <div class="modal-card">
+                      <header class="modal-card-head">
+                        <p class="modal-card-title">部屋を追加</p>
+                        <button
+                          class="delete"
+                          aria-label="閉じる"
+                          x-on:click="closeModal()"
+                        ></button>
+                      </header>
+                      <section class="modal-card-body">
+                        <div
+                          x-show="error"
+                          class="notification is-danger is-light mb-3"
+                          role="alert"
+                        >
+                          <p x-text="error"></p>
+                        </div>
+                        <div class="field">
+                          <label class="label">物件</label>
+                          <p x-text="selectedProperty ? getPropName(selectedProperty) : ''"></p>
+                        </div>
+                        <div class="field">
+                          <label class="label">部屋名 <span class="has-text-danger">*</span></label>
+                          <div class="control">
+                            <input
+                              class="input"
+                              placeholder="部屋名を入力（例: 101号室）"
+                              x-model="addRoomForm.name"
+                              x-on:keydown.enter="submitAddRoom()"
+                            />
+                          </div>
+                        </div>
+                      </section>
+                      <footer class="modal-card-foot">
+                        <button class="button is-primary" x-on:click="submitAddRoom()">
+                          登録する
+                        </button>
+                        <button class="button" x-on:click="closeModal()">キャンセル</button>
+                      </footer>
+                    </div>
+                  </div>
+
+                  <div class="modal" x-bind:class="{ 'is-active': activeModal === 'editRoom' }">
+                    <div class="modal-background" x-on:click="closeModal()"></div>
+                    <div class="modal-card">
+                      <header class="modal-card-head">
+                        <p class="modal-card-title">部屋を編集</p>
+                        <button
+                          class="delete"
+                          aria-label="閉じる"
+                          x-on:click="closeModal()"
+                        ></button>
+                      </header>
+                      <section class="modal-card-body">
+                        <div
+                          x-show="error"
+                          class="notification is-danger is-light mb-3"
+                          role="alert"
+                        >
+                          <p x-text="error"></p>
+                        </div>
+                        <div class="field">
+                          <label class="label">部屋ID</label>
+                          <p x-text="editRoomForm.roomId"></p>
+                        </div>
+                        <div class="field">
+                          <label class="label">部屋名 <span class="has-text-danger">*</span></label>
+                          <div class="control">
+                            <input
+                              class="input"
+                              x-model="editRoomForm.name"
+                              x-on:keydown.enter="submitEditRoom()"
+                            />
+                          </div>
+                        </div>
+                      </section>
+                      <footer class="modal-card-foot">
+                        <button class="button is-primary" x-on:click="submitEditRoom()">
+                          変更する
+                        </button>
+                        <button class="button" x-on:click="closeModal()">キャンセル</button>
+                      </footer>
+                    </div>
+                  </div>
+
+                  <div
+                    class="modal"
+                    x-bind:class="{ 'is-active': activeModal === 'deleteConfirm' }"
+                  >
+                    <div class="modal-background" x-on:click="closeModal()"></div>
+                    <div class="modal-card">
+                      <header class="modal-card-head">
+                        <p class="modal-card-title">削除の確認</p>
+                        <button
+                          class="delete"
+                          aria-label="閉じる"
+                          x-on:click="closeModal()"
+                        ></button>
+                      </header>
+                      <section class="modal-card-body">
+                        <div
+                          x-show="error"
+                          class="notification is-danger is-light mb-3"
+                          role="alert"
+                        >
+                          <p x-text="error"></p>
+                        </div>
+                        <template x-if="deleteTarget">
+                          <div>
+                            <p>
+                              <template x-if="deleteTarget.type === 'property'">
+                                <span
+                                  x-text="'' + deleteTarget.name + '（' + deleteTarget.id + '）を削除しますか？この物件に紐づく部屋データもすべて削除されます。'"
+                                ></span>
+                              </template>
+                              <template x-if="deleteTarget.type === 'room'">
+                                <span
+                                  x-text="'' + deleteTarget.name + '（' + deleteTarget.id + '）を削除しますか？'"
+                                ></span>
+                              </template>
+                            </p>
+                            <p class="is-size-7 has-text-grey-light mt-2">
+                              この操作は取り消せません。
+                            </p>
+                            <template
+                              x-if="deleteTarget.type === 'property' && deleteTarget.forceDelete"
+                            >
+                              <div class="notification is-warning is-light mt-3">
+                                <p>
+                                  この物件には検針実績があります。削除すると実績データも失われます。
+                                </p>
+                              </div>
+                            </template>
+                          </div>
+                        </template>
+                      </section>
+                      <footer class="modal-card-foot">
+                        <button class="button is-danger" x-on:click="executeDelete()">
+                          削除する
+                        </button>
+                        <button class="button" x-on:click="closeModal()">キャンセル</button>
+                      </footer>
+                    </div>
+                  </div>
+                </div>
+
                 <!-- Monthly Process -->
                 <div x-show="activeTab === 'monthly'" x-data="monthlyProcess">
                   <div class="box">
