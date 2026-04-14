@@ -443,15 +443,15 @@ function testLibraryConnection() {
     console.log('スプレッドシート情報取得成功:', spreadsheetInfo);
     
     // 物件一覧取得テスト
-    const properties = cmlibrary.getProperties();
-    console.log(`物件一覧取得成功: ${properties.length}件`);
+    const propResult = cmlibrary.getProperties();
+    console.log('物件一覧取得成功: ' + (propResult.success ? propResult.data.length : 0) + '件');
     
     console.log('=== ライブラリ接続テスト完了 ===');
     return {
       success: true,
       message: '水道検針アプリライブラリとの接続が正常に確認できました',
       spreadsheetInfo: spreadsheetInfo,
-      propertiesCount: properties.length
+      propertiesCount: propResult.success ? propResult.data.length : 0
     };
     
   } catch (error) {
@@ -533,19 +533,27 @@ function runUsageExample() {
     
     // 2. 物件一覧取得
     console.log('2. 物件一覧取得...');
-    const properties = cmlibrary.getProperties();
-    console.log(`   物件数: ${properties.length}件`);
+    const propResult = cmlibrary.getProperties();
+    if (!propResult.success) {
+      console.log('   物件一覧取得失敗: ' + propResult.error);
+      return { success: false, error: propResult.error };
+    }
+    const properties = propResult.data;
+    console.log('   物件数: ' + properties.length + '件');
     
     if (properties.length > 0) {
       const firstProperty = properties[0];
-      console.log(`   最初の物件ID: ${firstProperty['物件ID']}`);
-      console.log(`   最初の物件名: ${firstProperty['物件名']}`);
+      console.log('   最初の物件ID: ' + (firstProperty.propertyId || firstProperty['物件ID']));
+      console.log('   最初の物件名: ' + (firstProperty.propertyName || firstProperty['物件名']));
       
-      // 3. 部屋一覧取得（最初の物件の）
       console.log('3. 部屋一覧取得...');
-      const roomsData = cmlibrary.getRooms(firstProperty['物件ID']);
-      console.log(`   部屋数: ${roomsData.rooms.length}件`);
-      console.log(`   検針完了部屋数: ${roomsData.rooms.filter(r => r.isCompleted).length}件`);
+      const roomsResult = cmlibrary.getRooms(firstProperty.propertyId || firstProperty['物件ID']);
+      if (roomsResult.success && roomsResult.data) {
+        const rooms = roomsResult.data;
+        console.log('   部屋数: ' + rooms.length + '件');
+      } else {
+        console.log('   部屋一覧取得失敗');
+      }
     }
     
     console.log('=== 使用例実行完了 ===');

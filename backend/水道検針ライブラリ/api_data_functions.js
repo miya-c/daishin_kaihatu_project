@@ -5,31 +5,74 @@
  */
 
 /**
- * 物件一覧を取得（軽量版）
- * @returns {Array} 物件データの配列
+ * 物件一覧を取得
+ * inspection_dataから部屋数・検針済み数を集計
+ * @returns {Object} { success, data: [{ propertyId, propertyName, roomCount, completedCount, ... }] }
  */
 function getProperties() {
   try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const sheet = ss.getSheetByName(CONFIG.SHEET_NAMES.PROPERTY_MASTER);
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
 
-    if (!sheet) {
+    var propSheet = ss.getSheetByName(CONFIG.SHEET_NAMES.PROPERTY_MASTER);
+    if (!propSheet) {
       return { success: false, error: '物件マスタシートが見つかりません' };
     }
-
-    const data = sheet.getDataRange().getValues();
-    if (data.length <= 1) {
+    var propData = propSheet.getDataRange().getValues();
+    if (propData.length <= 1) {
       return { success: true, data: [] };
     }
 
-    const headers = data[0];
-    const properties = data.slice(1).map((row) => {
-      const property = {};
-      headers.forEach((header, colIndex) => {
-        property[header] = row[colIndex];
+    var propHeaders = propData[0];
+    var propIdCol = propHeaders.indexOf('物件ID');
+    var propNameCol = propHeaders.indexOf('物件名');
+    if (propIdCol === -1 || propNameCol === -1) {
+      return { success: false, error: '物件マスタのヘッダーが不正です' };
+    }
+
+    var roomCounts = {};
+    var completedCounts = {};
+
+    var inspSheet = ss.getSheetByName(CONFIG.SHEET_NAMES.INSPECTION_DATA);
+    if (inspSheet && inspSheet.getLastRow() > 1) {
+      var inspData = inspSheet.getDataRange().getValues();
+      var inspHeaders = inspData[0];
+      var inspPropIdCol = inspHeaders.indexOf('物件ID');
+      var inspDateCol = inspHeaders.indexOf('検針日時');
+      var inspSkipCol = inspHeaders.indexOf('検針不要');
+
+      if (inspPropIdCol !== -1) {
+        for (var i = 1; i < inspData.length; i++) {
+          var pid = String(inspData[i][inspPropIdCol]).trim();
+          if (!pid) continue;
+          if (inspSkipCol !== -1 && inspData[i][inspSkipCol] === true) continue;
+
+          roomCounts[pid] = (roomCounts[pid] || 0) + 1;
+          if (inspDateCol !== -1 && inspData[i][inspDateCol]) {
+            completedCounts[pid] = (completedCounts[pid] || 0) + 1;
+          }
+        }
+      }
+    }
+
+    var properties = [];
+    for (var j = 1; j < propData.length; j++) {
+      var row = propData[j];
+      var propertyId = String(row[propIdCol]).trim();
+      var propertyName = String(row[propNameCol]).trim();
+      if (!propertyId) continue;
+
+      var obj = {};
+      propHeaders.forEach(function (header, colIdx) {
+        obj[header] = row[colIdx];
       });
-      return property;
-    });
+      obj.propertyId = propertyId;
+      obj.propertyName = propertyName;
+      obj.roomCount = roomCounts[propertyId] || 0;
+      obj.completedCount = completedCounts[propertyId] || 0;
+
+      properties.push(obj);
+    }
+
     return { success: true, data: properties };
   } catch (error) {
     return { success: false, error: error.message };
