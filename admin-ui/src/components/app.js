@@ -63,6 +63,19 @@ document.addEventListener('alpine:init', function () {
             Alpine.store('app').setActiveTab(h);
           }
         });
+
+        this._keyHandler = function (e) {
+          if (e.key === 'Escape' && self.sidebarOpen) {
+            self.sidebarOpen = false;
+          }
+        };
+        document.addEventListener('keydown', this._keyHandler);
+      },
+
+      destroy: function () {
+        if (this._keyHandler) {
+          document.removeEventListener('keydown', this._keyHandler);
+        }
       },
 
       get authenticated() {

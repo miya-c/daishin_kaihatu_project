@@ -14,6 +14,7 @@ document.addEventListener('alpine:init', function () {
       selectedProperty: null,
       loading: false,
       roomsLoading: false,
+      roomsError: '',
       error: '',
 
       activeModal: '',
@@ -31,6 +32,19 @@ document.addEventListener('alpine:init', function () {
             self.loadProperties();
           }
         });
+
+        this._keyHandler = function (e) {
+          if (e.key === 'Escape' && self.activeModal) {
+            self.closeModal();
+          }
+        };
+        document.addEventListener('keydown', this._keyHandler);
+      },
+
+      destroy: function () {
+        if (this._keyHandler) {
+          document.removeEventListener('keydown', this._keyHandler);
+        }
       },
 
       loadProperties: function () {
@@ -64,16 +78,20 @@ document.addEventListener('alpine:init', function () {
         self.selectedProperty = prop;
         self.roomsLoading = true;
         self.error = '';
+        self.roomsError = '';
         callAdminAPI('getRoomsForManagement', { propertyId: propId })
           .then(function (result) {
             if (result && result.success) {
               self.rooms = result.data || [];
+              self.roomsError = '';
             } else {
-              self.error = (result && result.error) || '部屋一覧の取得に失敗しました';
+              self.roomsError = (result && result.error) || '部屋一覧の取得に失敗しました';
+              self.error = self.roomsError;
             }
           })
           .catch(function (err) {
-            self.error = '部屋一覧の取得に失敗しました: ' + (err.message || err);
+            self.roomsError = '部屋一覧の取得に失敗しました: ' + (err.message || err);
+            self.error = self.roomsError;
           })
           .finally(function () {
             self.roomsLoading = false;
