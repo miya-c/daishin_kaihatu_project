@@ -60,6 +60,16 @@ document.addEventListener('alpine:init', function () {
           confirmPending: false,
         },
       ],
+      // per-tool custom confirmation messages (Fix 4-5)
+      confirmMessages: {
+        validateInspectionDataIntegrity:
+          '全シートの検針データの整合性を検証します。問題があればレポートします。',
+        cleanupDuplicateData: '検針データの重複データを削除します。最初の1件のみ残ります。',
+        generateRoomIds: '全部屋のIDを再採番します。既存の部屋IDが変更されます。',
+        formatAllPropertyIds:
+          '全シートの物件IDをP000001形式にフォーマットします。既にフォーマット済みのIDは変更されません。',
+        cleanUpOrphanedRooms: '物件マスタに存在しない部屋データを削除します。',
+      },
 
       findTool: function (toolId) {
         return this.tools.find(function (t) {

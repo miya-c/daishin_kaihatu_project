@@ -569,9 +569,9 @@ function updateMeterReadings(propertyId, roomId, readings, options = {}) {
       return { success: false, error: '無効なパラメータ' };
     }
 
-    // 排他制御: ロック取得（30秒タイムアウト）
+    // 排他制御: ロック取得（60秒タイムアウト）
     try {
-      lock.waitLock(30000);
+      lock.waitLock(60000);
     } catch (lockError) {
       return {
         success: false,

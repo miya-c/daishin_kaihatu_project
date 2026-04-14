@@ -4,6 +4,7 @@ document.addEventListener('alpine:init', function () {
   Alpine.data('monthlyProcess', function () {
     return {
       step: 'idle',
+      confirmExecute: false,
       checkResults: null,
       executeResult: null,
       error: '',
@@ -32,22 +33,32 @@ document.addEventListener('alpine:init', function () {
 
       runExecute: function () {
         var self = this;
+        // Pre-execution confirmation gate
+        if (!self.confirmExecute) {
+          self.confirmExecute = true;
+          return;
+        }
         self.step = 'executing';
         self.error = '';
+        // reset the temporary confirmation flag on actual execution
+        // (will be reset again below if needed)
 
         callAdminAPI('executeMonthlyProcess')
           .then(function (result) {
             if (result && result.success) {
               self.executeResult = result.data;
               self.step = 'done';
+              self.confirmExecute = false;
             } else {
               self.error = (result && result.error) || '月次処理に失敗しました';
               self.step = 'error';
+              self.confirmExecute = false;
             }
           })
           .catch(function (err) {
             self.error = err.message || '月次処理でエラーが発生しました';
             self.step = 'error';
+            self.confirmExecute = false;
           });
       },
 

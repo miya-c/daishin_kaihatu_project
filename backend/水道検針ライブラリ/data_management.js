@@ -52,96 +52,105 @@ function populateInspectionDataFromMasters(config = {}, ss = null) {
     return false;
   }
 
-  try {
-    Logger.log('📊 inspection_dataの自動生成を開始します...');
+  return withScriptLock(function () {
+    try {
+      Logger.log('📊 inspection_dataの自動生成を開始します...');
 
-    // 1. 物件マスタのデータを読み込み、物件IDと物件名のマッピングを作成
-    const propertyMasterData = propertyMasterSheet
-      .getRange(2, 1, propertyMasterSheet.getLastRow() - 1, 2)
-      .getValues();
-    const propertyMap = {};
-    propertyMasterData.forEach((row) => {
-      const propertyId = String(row[0]).trim();
-      const propertyName = String(row[1]).trim();
-      if (propertyId && propertyName) {
-        propertyMap[propertyId] = propertyName;
+      // 1. 物件マスタのデータを読み込み、物件IDと物件名のマッピングを作成
+      const propertyMasterData = propertyMasterSheet
+        .getRange(2, 1, propertyMasterSheet.getLastRow() - 1, 2)
+        .getValues();
+      const propertyMap = {};
+      propertyMasterData.forEach((row) => {
+        const propertyId = String(row[0]).trim();
+        const propertyName = String(row[1]).trim();
+        if (propertyId && propertyName) {
+          propertyMap[propertyId] = propertyName;
+        }
+      });
+
+      Logger.log(`📋 物件マスタから ${Object.keys(propertyMap).length} 件の物件を取得しました`);
+
+      // 2. 部屋マスタのデータを読み込み
+      const roomMasterData = roomMasterSheet
+        .getRange(2, 1, roomMasterSheet.getLastRow() - 1, 3)
+        .getValues();
+
+      Logger.log(`🏠 部屋マスタから ${roomMasterData.length} 件の部屋データを取得しました`);
+
+      // 3. 既存のinspection_dataをクリア（ヘッダー行は保持）
+      const inspectionDataRange = inspectionDataSheet.getDataRange();
+      if (inspectionDataRange.getNumRows() > 1) {
+        inspectionDataSheet
+          .getRange(2, 1, inspectionDataRange.getNumRows() - 1, inspectionDataRange.getNumColumns())
+          .clearContent();
       }
-    });
 
-    Logger.log(`📋 物件マスタから ${Object.keys(propertyMap).length} 件の物件を取得しました`);
+      // 4. 新しい検針データを生成（ヘッダー列数に合わせた行を作成）
+      var inspHeaders = inspectionDataSheet
+        .getRange(1, 1, 1, inspectionDataSheet.getLastColumn())
+        .getValues()[0];
+      const newInspectionData = [];
+      const propIdCol = inspHeaders.indexOf('物件ID');
+      const propNameCol = inspHeaders.indexOf('物件名');
+      const roomIdCol = inspHeaders.indexOf('部屋ID');
+      const roomNameCol = inspHeaders.indexOf('部屋名');
 
-    // 2. 部屋マスタのデータを読み込み
-    const roomMasterData = roomMasterSheet
-      .getRange(2, 1, roomMasterSheet.getLastRow() - 1, 3)
-      .getValues();
+      roomMasterData.forEach((row) => {
+        const propertyId = String(row[0]).trim();
+        const roomId = String(row[1]).trim();
+        const roomName = String(row[2]).trim();
 
-    Logger.log(`🏠 部屋マスタから ${roomMasterData.length} 件の部屋データを取得しました`);
+        if (propertyId && roomId && propertyMap[propertyId]) {
+          var newRow = new Array(inspHeaders.length).fill('');
+          if (propIdCol !== -1) newRow[propIdCol] = propertyId;
+          if (propNameCol !== -1) newRow[propNameCol] = propertyMap[propertyId];
+          if (roomIdCol !== -1) newRow[roomIdCol] = roomId;
+          if (roomNameCol !== -1) newRow[roomNameCol] = roomName;
+          newInspectionData.push(newRow);
+        }
+      });
 
-    // 3. 既存のinspection_dataをクリア（ヘッダー行は保持）
-    const inspectionDataRange = inspectionDataSheet.getDataRange();
-    if (inspectionDataRange.getNumRows() > 1) {
-      inspectionDataSheet
-        .getRange(2, 1, inspectionDataRange.getNumRows() - 1, inspectionDataRange.getNumColumns())
-        .clearContent();
-    }
-
-    // 4. 新しい検針データを生成
-    const newInspectionData = [];
-    roomMasterData.forEach((row) => {
-      const propertyId = String(row[0]).trim();
-      const roomId = String(row[1]).trim();
-      const roomName = String(row[2]).trim();
-
-      if (propertyId && roomId && propertyMap[propertyId]) {
-        newInspectionData.push([
-          propertyId, // 物件ID
-          propertyMap[propertyId], // 物件名
-          roomId, // 部屋ID
-          roomName, // 部屋名
-          '', // 前回検針値
-          '', // 今回検針値
-          '', // 使用量
-          '', // 検針日
-          '', // 備考
-          'active', // ステータス
-        ]);
-      }
-    });
-
-    // 5. データをシートに書き込み
-    if (newInspectionData.length > 0) {
-      const targetRange = inspectionDataSheet.getRange(2, 1, newInspectionData.length, 10);
-      targetRange.setValues(newInspectionData);
-
-      Logger.log(
-        `✅ inspection_dataの生成完了: ${newInspectionData.length} 件のレコードを作成しました`
-      );
-
-      if (typeof safeAlert === 'function') {
-        safeAlert(
-          '完了',
-          `inspection_dataの自動生成が完了しました。\n作成件数: ${newInspectionData.length} 件`
+      // 5. データをシートに書き込み
+      if (newInspectionData.length > 0) {
+        const targetRange = inspectionDataSheet.getRange(
+          2,
+          1,
+          newInspectionData.length,
+          newInspectionData[0].length
         );
-      }
+        targetRange.setValues(newInspectionData);
 
-      return true;
-    } else {
-      Logger.log('⚠️ 生成するデータがありませんでした');
-      if (typeof safeAlert === 'function') {
-        safeAlert(
-          '情報',
-          '生成するデータがありませんでした。物件マスタと部屋マスタの内容を確認してください。'
+        Logger.log(
+          `✅ inspection_dataの生成完了: ${newInspectionData.length} 件のレコードを作成しました`
         );
+
+        if (typeof safeAlert === 'function') {
+          safeAlert(
+            '完了',
+            `inspection_dataの自動生成が完了しました。\n作成件数: ${newInspectionData.length} 件`
+          );
+        }
+
+        return true;
+      } else {
+        Logger.log('⚠️ 生成するデータがありませんでした');
+        if (typeof safeAlert === 'function') {
+          safeAlert(
+            '情報',
+            '生成するデータがありませんでした。物件マスタと部屋マスタの内容を確認してください。'
+          );
+        }
+        return false;
+      }
+    } catch (error) {
+      Logger.log(`❌ エラーが発生しました: ${error.message}`);
+      if (typeof safeAlert === 'function') {
+        safeAlert('エラー', `処理中にエラーが発生しました: ${error.message}`);
       }
       return false;
     }
-  } catch (error) {
-    Logger.log(`❌ エラーが発生しました: ${error.message}`);
-    if (typeof safeAlert === 'function') {
-      safeAlert('エラー', `処理中にエラーが発生しました: ${error.message}`);
-    }
-    return false;
-  }
+  }, 60000);
 }
 
 /**
@@ -866,9 +875,13 @@ function processInspectionDataMonthlyImpl(ss = null) {
       '部屋ID',
       '部屋名',
       '検針日時',
+      '警告フラグ',
+      '標準偏差値',
       '今回使用量',
       '今回の指示数',
       '前回指示数',
+      '前々回指示数',
+      '前々々回指示数',
       '検針不要',
       '請求不要',
     ];
@@ -1003,7 +1016,6 @@ function processInspectionDataMonthlyImpl(ss = null) {
       for (let rowIndex = 1; rowIndex < sourceValues.length; rowIndex++) {
         const row = sourceValues[rowIndex];
 
-        // 「検針不要」がTRUEの場合はスキップ
         const skipInspection =
           inspectionSkipIndex !== -1 &&
           (String(row[inspectionSkipIndex]).toLowerCase() === 'true' ||
@@ -1015,47 +1027,41 @@ function processInspectionDataMonthlyImpl(ss = null) {
           continue;
         }
 
-        // 検針値のシフト処理
         const currentReading = row[currentReadingIndex];
         const previousReading1 = row[previousReading1Index];
         const previousReading2 = row[previousReading2Index];
 
-        // 今回指示数が空でない場合のみリセット処理を実行
         if (currentReading && String(currentReading).trim() !== '') {
-          try {
-            // 値をシフト: 今回 → 前回 → 前々回 → 前々々回
-            sourceSheet
-              .getRange(rowIndex + 1, previousReading3Index + 1)
-              .setValue(previousReading2); // 前々々回
-            sourceSheet
-              .getRange(rowIndex + 1, previousReading2Index + 1)
-              .setValue(previousReading1); // 前々回
-            sourceSheet.getRange(rowIndex + 1, previousReading1Index + 1).setValue(currentReading); // 前回
-
-            // 今回の値をクリア
-            sourceSheet.getRange(rowIndex + 1, currentReadingIndex + 1).setValue('');
-
-            // 検針日時をクリア
-            if (readingDateIndex !== -1) {
-              sourceSheet.getRange(rowIndex + 1, readingDateIndex + 1).setValue('');
+          sourceValues[rowIndex][previousReading3Index] = previousReading2;
+          sourceValues[rowIndex][previousReading2Index] = previousReading1;
+          sourceValues[rowIndex][previousReading1Index] = currentReading;
+          sourceValues[rowIndex][currentReadingIndex] = '';
+          if (readingDateIndex !== -1) sourceValues[rowIndex][readingDateIndex] = '';
+          if (currentUsageIndex !== -1) {
+            var usageFormula = sourceSheet
+              .getRange(rowIndex + 1, currentUsageIndex + 1)
+              .getFormula();
+            if (!usageFormula) {
+              sourceValues[rowIndex][currentUsageIndex] = '';
             }
-
-            // 今回使用量をクリア（数式がある場合は再計算される）
-            if (currentUsageIndex !== -1) {
-              sourceSheet.getRange(rowIndex + 1, currentUsageIndex + 1).setValue('');
-            }
-
-            // 警告フラグをクリア
-            if (warningFlagIndex !== -1) {
-              sourceSheet.getRange(rowIndex + 1, warningFlagIndex + 1).setValue('');
-            }
-
-            resetCount++;
-          } catch (cellError) {
-            Logger.log(`行${rowIndex + 1}の更新でエラー: ${cellError.message}`);
-            // 個別の行でエラーが発生しても処理を続行
           }
+          if (warningFlagIndex !== -1) {
+            sourceValues[rowIndex][warningFlagIndex] = '';
+          }
+
+          resetCount++;
         }
+      }
+
+      if (resetCount > 0) {
+        var writeRange = sourceSheet.getRange(
+          2,
+          1,
+          sourceValues.length - 1,
+          sourceValues[0].length
+        );
+        writeRange.setValues(sourceValues.slice(1));
+        Logger.log('バッチ書き込み完了: ' + resetCount + '件のリセット');
       }
     } catch (resetError) {
       const error = `リセット処理中にエラーが発生しました: ${resetError.message}`;

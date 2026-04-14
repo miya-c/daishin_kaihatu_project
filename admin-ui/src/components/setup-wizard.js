@@ -65,6 +65,7 @@ document.addEventListener('alpine:init', function () {
       loading: false,
       error: '',
       confirmReset: false,
+      allComplete: false,
 
       executeCurrentStep: function () {
         var self = this;
@@ -93,6 +94,13 @@ document.addEventListener('alpine:init', function () {
           })
           .finally(function () {
             self.loading = false;
+            // Update overall completion state after each step run
+            self.allComplete =
+              self.steps.length > 0 &&
+              self.steps.every(function (s) {
+                var r = self.results[s.id];
+                return r && r.success;
+              });
           });
       },
 

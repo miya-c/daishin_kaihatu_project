@@ -329,7 +329,20 @@
                         x-model="token"
                         x-on:keydown.enter="submit"
                         x-bind:disabled="loading"
+                        x-on:input="error = ''"
                       />
+                    </div>
+
+                    <!-- Fix 4-3: Setup completion state -->
+                    <div x-show="allComplete" class="has-text-centered py-5">
+                      <p class="title is-4 has-text-success">✅ セットアップが完了しました</p>
+                      <p class="subtitle is-6">すべてのステップが正常に完了しました。</p>
+                      <button
+                        class="button is-primary"
+                        x-on:click="$store.app.setActiveTab('dashboard'); history.pushState(null, '', '#dashboard')"
+                      >
+                        ダッシュボードに移動
+                      </button>
                     </div>
                   </div>
 
@@ -955,6 +968,23 @@
                     </div>
 
                     <div x-show="step === 'confirm'">
+                      <!-- Confirmation panel for executing monthly process (Fix 4-1) -->
+                      <div x-show="confirmExecute" class="notification is-warning is-light mb-3">
+                        <p class="mb-2"><strong>⚠️ 確認</strong></p>
+                        <p class="mb-2">
+                          月次処理を実行すると、検針データの値がシフトされ、現在の検針値がクリアされます。この操作は取り消せません。
+                        </p>
+                        <div class="buttons">
+                          <button class="button is-danger" x-on:click="runExecute()">
+                            実行する
+                          </button>
+                          <button class="button is-light" x-on:click="confirmExecute = false">
+                            キャンセル
+                          </button>
+                        </div>
+                      </div>
+
+                      <!-- End of Fix 4-1: Confirmation panel -->
                       <p class="title is-4">📋 確認結果</p>
                       <div class="mb-4">
                         <template x-for="(check, i) in checkResults.checks || []" :key="i">
@@ -998,6 +1028,7 @@
                           class="button is-primary"
                           x-bind:disabled="!canExecute"
                           x-on:click="runExecute()"
+                          x-show="!confirmExecute"
                         >
                           月次処理を実行
                         </button>
@@ -1075,6 +1106,8 @@
                         <div
                           class="steps-segment"
                           x-bind:class="{ 'is-active': currentStep === i, 'is-completed': getStepResult(step.id) && getStepResult(step.id).success }"
+                          x-on:click="goToStep(i)"
+                          style="cursor: pointer"
                         >
                           <span
                             x-text="getStatusIcon(getStepStatus(step.id)) + ' ' + (i + 1) + '. ' + step.label"
@@ -1172,7 +1205,7 @@
                             class="notification is-warning is-light"
                           >
                             <p
-                              x-text="tool.label + 'を実行します。この操作は取り消せません。よろしいですか？'"
+                              x-text="(confirmMessages[tool.id] ? confirmMessages[tool.id] : (tool.label + 'を実行します。この操作は取り消せません。'))"
                             ></p>
                             <div class="field is-grouped mt-2">
                               <button class="button is-danger" x-on:click="confirmTool(tool.id)">
