@@ -15,6 +15,7 @@ document.addEventListener('alpine:init', function () {
       token: '',
       error: '',
       loading: false,
+      isLocalDev: typeof window === 'undefined' || !window.google,
 
       submit: function () {
         var self = this;

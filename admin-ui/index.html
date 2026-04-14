@@ -349,7 +349,7 @@
                     x-text="loading ? '認証中...' : 'ログイン'"
                   ></button>
 
-                  <template x-if="!window.google">
+                  <template x-if="isLocalDev">
                     <p class="mt-4 is-size-7 has-text-grey-light">
                       ※ ローカル開発時は「test-token」を入力
                     </p>
@@ -1219,9 +1219,7 @@
                             <p class="is-size-7 mt-2 has-text-grey-light">処理中...</p>
                           </div>
                           <div x-show="tool.result" class="notification is-success is-light">
-                            <p
-                              x-text="typeof tool.result === 'string' ? tool.result : tool.result.message || '完了しました。'"
-                            ></p>
+                            <p x-text="getResultText(tool)"></p>
                             <button
                               class="button is-small is-light mt-2"
                               x-on:click="resetTool(tool.id)"

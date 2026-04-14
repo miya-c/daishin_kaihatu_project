@@ -127,6 +127,14 @@ document.addEventListener('alpine:init', function () {
         tool.error = '';
         tool.confirmPending = false;
       },
+
+      getResultText: function (tool) {
+        if (!tool || tool.result == null) return '';
+        var r = tool.result;
+        if (typeof r === 'string') return r;
+        if (r && r.message) return r.message;
+        return '完了しました。';
+      },
     };
   });
 });
