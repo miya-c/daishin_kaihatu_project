@@ -488,3 +488,10 @@ function withScriptLock(fn, timeoutMs) {
     } catch (e) {}
   }
 }
+
+// google.script.run cannot serialize Date objects (returns null silently).
+// Always use this when returning spreadsheet cell values to the frontend.
+function safeValue(val) {
+  if (val instanceof Date) return val.toISOString();
+  return val;
+}

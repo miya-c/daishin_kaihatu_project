@@ -67,7 +67,7 @@ function getProperties() {
 
       var obj = {};
       propHeaders.forEach(function (header, colIdx) {
-        obj[header] = row[colIdx];
+        obj[header] = safeValue(row[colIdx]);
       });
       obj.propertyId = propertyId;
       obj.propertyName = propertyName;
@@ -201,7 +201,7 @@ function _getRoomsImpl(propertyId, options = {}) {
       const room = {};
       lightFields.forEach((field) => {
         if (fieldIndexes[field] !== undefined) {
-          room[field] = row[fieldIndexes[field]];
+          room[field] = safeValue(row[fieldIndexes[field]]);
         }
       });
 
@@ -478,7 +478,7 @@ function getMeterReadings(propertyId, roomId) {
           }
           const reading = {};
           headers.forEach(function (header, index) {
-            reading[header] = row[index];
+            reading[header] = safeValue(row[index]);
           });
           roomIndex[rowPropId][rowRoomId].push(reading);
         }

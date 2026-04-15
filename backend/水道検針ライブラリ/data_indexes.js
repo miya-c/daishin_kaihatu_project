@@ -36,7 +36,7 @@ function createPropertyIndex() {
 
         // 各列のデータをインデックスに追加
         headers.forEach((header, index) => {
-          propertyIndex[propertyId].data[header] = row[index];
+          propertyIndex[propertyId].data[header] = safeValue(row[index]);
         });
       }
     }
@@ -93,7 +93,7 @@ function createRoomIndex() {
 
         // 各列のデータをインデックスに追加
         headers.forEach((header, index) => {
-          roomIndex[roomId].data[header] = row[index];
+          roomIndex[roomId].data[header] = safeValue(row[index]);
         });
 
         // 物件ID別インデックスも作成
@@ -159,7 +159,7 @@ function createMeterReadingIndex() {
 
       // 各列のデータをインデックスに追加
       headers.forEach((header, index) => {
-        meterIndex[recordId].data[header] = row[index];
+        meterIndex[recordId].data[header] = safeValue(row[index]);
       });
 
       // 部屋ID別インデックス
@@ -225,7 +225,7 @@ function createAllIndexes() {
       meter: meterResult.data.meterIndex,
       roomMeter: meterResult.data.roomMeterIndex,
       dateMeter: meterResult.data.dateIndex,
-      created: new Date(),
+      created: new Date().toISOString(),
     };
 
     Logger.log('[createAllIndexes] 全インデックス作成完了');

@@ -53,25 +53,14 @@ document.addEventListener('alpine:init', function () {
         self.error = '';
         callAdminAPI('getProperties')
           .then(function (result) {
-            console.log('[PropertyManagement] getProperties result:', JSON.stringify(result));
             if (result && result.success) {
               self.properties = result.data || [];
             } else {
-              var errDetail = '';
-              if (result && result.error) {
-                errDetail = ': ' + result.error;
-              } else if (result) {
-                errDetail =
-                  ': success=' + result.success + ', keys=' + Object.keys(result).join(',');
-              } else {
-                errDetail = ': result is ' + result;
-              }
-              self.error = '物件一覧の取得に失敗しました' + errDetail;
+              self.error = (result && result.error) || '物件一覧の取得に失敗しました';
             }
           })
           .catch(function (err) {
-            console.log('[PropertyManagement] getProperties catch:', err);
-            self.error = '物件一覧の取得に失敗しました(catch): ' + (err.message || err);
+            self.error = '物件一覧の取得に失敗しました: ' + (err.message || err);
           })
           .finally(function () {
             self.loading = false;
