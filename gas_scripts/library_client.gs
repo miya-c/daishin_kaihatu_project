@@ -418,10 +418,39 @@ function doGet(e) {
 
 function adminAction(action, params) {
   params = params || {};
-  const storedToken = PropertiesService.getScriptProperties().getProperty('ADMIN_TOKEN');
+  var storedToken = PropertiesService.getScriptProperties().getProperty('ADMIN_TOKEN');
   if (!params.adminToken || !storedToken || params.adminToken !== storedToken) {
     return { success: false, error: '管理者トークンが無効です', code: 'INVALID_TOKEN' };
   }
+
+  // getProperties: ライブラリのgetProperties()を直接呼び出し
+  // adminDispatch経由だとnullが返るため直接呼び出しに変更
+  if (action === 'getProperties') {
+    try {
+      var propResult = cmlibrary.getProperties();
+      if (propResult !== null && propResult !== undefined && propResult.success) {
+        return propResult;
+      }
+      // getProperties失敗時: buildAdminDashboardDataから物件一覧を抽出
+      var dashResult = cmlibrary.buildAdminDashboardData();
+      if (dashResult && dashResult.success && dashResult.properties) {
+        // ダッシュボード形式 {id, name} → getProperties形式 {propertyId, propertyName} に変換
+        var props = dashResult.properties.map(function (p) {
+          return {
+            propertyId: p.id || p.propertyId || '',
+            propertyName: p.name || p.propertyName || '',
+            roomCount: p.roomCount || 0,
+            completedCount: p.completedCount || 0
+          };
+        });
+        return { success: true, data: props };
+      }
+      return { success: false, error: '物件データの取得に失敗しました' };
+    } catch (e) {
+      return { success: false, error: 'getPropertiesエラー: ' + e.message };
+    }
+  }
+
   params._storedAdminToken = storedToken;
   return cmlibrary.adminDispatch(action, params);
 }
