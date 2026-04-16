@@ -291,6 +291,18 @@
         }
       }
       /* ── Inspection Data Display ── */
+      .inspection-table tbody tr:nth-child(even),
+      .bulk-table tbody tr:nth-child(even) {
+        background: rgba(0, 0, 0, 0.03);
+      }
+      [data-theme='dark'] .inspection-table tbody tr:nth-child(even),
+      [data-theme='dark'] .bulk-table tbody tr:nth-child(even) {
+        background: rgba(255, 255, 255, 0.06);
+      }
+      .inspection-table tbody tr:hover,
+      .bulk-table tbody tr:hover {
+        background: var(--bulma-scheme-main-bis) !important;
+      }
       .summary-bar {
         display: flex;
         gap: 1rem;
@@ -360,7 +372,7 @@
         top: 50%;
         transform: translateY(-50%);
         font-size: 0.6rem;
-        color: var(--bulma-border);
+        color: var(--bulma-text-weak);
         line-height: 1;
       }
       .sort-icon.asc::after {
@@ -383,7 +395,10 @@
       }
       .inspection-expand {
         background: var(--bulma-scheme-main-bis);
-        border-left: 3px solid var(--bulma-primary);
+        border-left: 3px solid #b5b5b5;
+      }
+      .inspection-expand.warn-border {
+        border-left-color: #ff6b6b;
       }
       .inspection-expand td {
         padding: 0.5rem 0.75rem;
@@ -411,6 +426,9 @@
       }
       .highlight-col {
         background: var(--bulma-scheme-main);
+      }
+      [data-theme='dark'] .highlight-col {
+        background: rgba(255, 255, 255, 0.05);
       }
       .chevron {
         display: inline-block;
@@ -454,6 +472,9 @@
       .usage-bar-fixed.prev {
         background: var(--bulma-text-weak);
       }
+      [data-theme='dark'] .usage-bar-fixed.prev {
+        background: rgba(255, 255, 255, 0.25);
+      }
       .usage-bar-fixed.warn {
         background: #ff6b6b;
       }
@@ -469,12 +490,17 @@
       .bulk-table td {
         text-align: center !important;
         vertical-align: middle;
+        white-space: nowrap;
+      }
+      .bulk-table td:first-child {
+        text-align: left !important;
       }
       .bulk-table .warn-row {
         background: #fff8f0;
       }
       [data-theme='dark'] .bulk-table .warn-row {
-        background: #3d2200;
+        background: #4a2800;
+        border-left: 3px solid #ff6b6b;
       }
       .bulk-table td.usage-trend {
         white-space: nowrap;
@@ -899,7 +925,7 @@
                           <p class="has-text-grey-light is-size-7">部屋が登録されていません</p>
                         </div>
 
-                        <div x-show="rooms.length > 0">
+                        <div x-show="rooms.length > 0" class="content-scroll">
                           <!-- Summary Cards -->
                           <div class="summary-bar">
                             <div class="summary-card">
@@ -952,24 +978,31 @@
                           </div>
 
                           <!-- Expand View -->
-                          <div x-show="viewMode === 'expand'" class="content-scroll">
+                          <div x-show="viewMode === 'expand'">
                             <table
                               class="table is-fullwidth is-hoverable is-bordered inspection-table"
                             >
+                              <colgroup>
+                                <col style="width: 30px" />
+                                <col />
+                                <col style="width: 90px" />
+                                <col />
+                                <col />
+                                <col />
+                                <col />
+                                <col />
+                                <col style="width: 70px" />
+                              </colgroup>
                               <thead>
                                 <tr>
-                                  <th style="width: 30px"></th>
+                                  <th></th>
                                   <th class="sort-th" x-on:click="sortBy('roomName')">
                                     部屋名<span
                                       class="sort-icon"
                                       x-bind:class="getSortIcon('roomName')"
                                     ></span>
                                   </th>
-                                  <th
-                                    class="sort-th"
-                                    style="width: 90px"
-                                    x-on:click="sortBy('status')"
-                                  >
+                                  <th class="sort-th" x-on:click="sortBy('status')">
                                     検針実績<span
                                       class="sort-icon"
                                       x-bind:class="getSortIcon('status')"
@@ -1000,7 +1033,7 @@
                                     ></span>
                                   </th>
                                   <th class="sort-th" x-on:click="sortBy('standardDeviation')">
-                                    偏差<span
+                                    平均<span
                                       class="sort-icon"
                                       x-bind:class="getSortIcon('standardDeviation')"
                                     ></span>
@@ -1010,202 +1043,211 @@
                               </thead>
                               <tbody>
                                 <template x-for="room in getSortedRooms()" :key="room.roomId">
-                                  <template x-if="true">
-                                    <tr>
-                                      <td colspan="9" style="padding: 0; border: none">
-                                        <!-- Room Row -->
-                                        <table style="width: 100%; border: none; margin: 0">
-                                          <tr
-                                            class="room-row"
-                                            x-on:click="toggleRoomExpand(room.roomId)"
-                                          >
-                                            <td style="width: 30px; text-align: center">
-                                              <span
-                                                class="chevron"
-                                                x-bind:class="{ 'open': isRoomExpanded(room.roomId) }"
-                                                >▶</span
-                                              >
-                                            </td>
-                                            <td
-                                              x-text="room.roomName"
-                                              style="text-align: center"
-                                            ></td>
-                                            <td style="width: 90px; text-align: center">
-                                              <span
-                                                class="tag is-small"
-                                                x-bind:class="getRoomStatusClass(room)"
-                                                x-text="getRoomStatusLabel(room)"
-                                              ></span>
-                                            </td>
-                                            <td
-                                              style="text-align: center"
-                                              x-text="getReadingDate(room)"
-                                            ></td>
-                                            <td
-                                              style="text-align: center"
-                                              class="highlight-col"
-                                              x-text="formatNumber(room.currentReading)"
-                                            ></td>
-                                            <td
-                                              style="text-align: center"
-                                              x-text="formatNumber(room.previousReading)"
-                                            ></td>
-                                            <td
-                                              style="text-align: center"
-                                              x-text="getUsageDisplay(room)"
-                                            ></td>
-                                            <td
-                                              style="text-align: center"
-                                              x-text="formatNumber(room.standardDeviation)"
-                                            ></td>
-                                            <td style="text-align: center" x-on:click.stop>
-                                              <button
-                                                class="button is-small is-light"
-                                                x-on:click="openInspectionEdit(room)"
-                                              >
-                                                編集
-                                              </button>
-                                            </td>
-                                          </tr>
-                                        </table>
-
-                                        <!-- Expanded Detail -->
-                                        <div
-                                          x-show="isRoomExpanded(room.roomId)"
-                                          style="
-                                            background: var(--bulma-scheme-main-bis);
-                                            border-left: 3px solid var(--bulma-primary);
-                                            padding: 0.5rem 0.75rem;
-                                          "
+                                  <tr>
+                                    <td colspan="9" style="padding: 0; border: none">
+                                      <table
+                                        style="
+                                          width: 100%;
+                                          border: none;
+                                          margin: 0;
+                                          table-layout: fixed;
+                                        "
+                                      >
+                                        <colgroup>
+                                          <col style="width: 30px" />
+                                          <col />
+                                          <col style="width: 90px" />
+                                          <col />
+                                          <col />
+                                          <col />
+                                          <col />
+                                          <col />
+                                          <col style="width: 70px" />
+                                        </colgroup>
+                                        <tr
+                                          class="room-row"
+                                          x-on:click="toggleRoomExpand(room.roomId)"
                                         >
-                                          <!-- Warning notification for warning rooms -->
-                                          <template x-if="getRoomStatusTag(room) === 'warning'">
-                                            <div
-                                              class="notification is-warning is-light py-2 px-3 mb-2"
+                                          <td style="text-align: center">
+                                            <span
+                                              class="chevron"
+                                              x-bind:class="{ 'open': isRoomExpanded(room.roomId) }"
+                                              >▶</span
                                             >
-                                              <p class="is-size-7">
-                                                <strong>⚠️ 使用量警告:</strong>
-                                                今回の使用量が平均を大幅に超過しています。漏水の可能性があります。
-                                              </p>
-                                            </div>
-                                          </template>
+                                          </td>
+                                          <td
+                                            x-text="room.roomName"
+                                            style="text-align: center"
+                                          ></td>
+                                          <td style="text-align: center">
+                                            <span
+                                              class="tag is-small"
+                                              x-bind:class="getRoomStatusClass(room)"
+                                              x-text="getRoomStatusLabel(room)"
+                                            ></span>
+                                          </td>
+                                          <td
+                                            style="text-align: center"
+x-text="getReadingDateFull(room)"
+                                          ></td>
+                                          <td
+                                            style="text-align: center"
+                                            class="highlight-col"
+                                            x-text="formatNumber(room.currentReading)"
+                                          ></td>
+                                          <td
+                                            style="text-align: center"
+                                            x-text="formatNumber(room.previousReading)"
+                                          ></td>
+                                          <td
+                                            style="text-align: center"
+                                            x-bind:class="getUsageDisplayClass(room)"
+                                            x-text="getUsageDisplay(room)"
+                                          ></td>
+                                          <td
+                                            style="text-align: center"
+                                            x-text="formatNumber(room.standardDeviation)"
+                                          ></td>
+                                          <td x-on:click.stop>
+                                            <button
+                                              class="button is-small is-light"
+                                              x-on:click="openInspectionEdit(room)"
+                                            >
+                                              編集
+                                            </button>
+                                            <button
+                                              class="button is-small is-danger is-light"
+                                              x-on:click="openDeleteConfirm('room', room.roomId, room.roomName, getPropId(selectedProperty))"
+                                            >
+                                              削除
+                                            </button>
+                                          </td>
+                                        </tr>
+                                      </table>
 
-                                          <!-- Skip notification -->
-                                          <template x-if="getRoomStatusTag(room) === 'skip'">
-                                            <div class="notification is-light py-2 px-3 mb-2">
-                                              <p class="is-size-7">
-                                                この部屋は<strong>検針不要</strong>に設定されています。
-                                              </p>
-                                            </div>
-                                          </template>
+                                      <div
+                                        x-show="isRoomExpanded(room.roomId)"
+                                        x-bind:class="getRoomStatusTag(room) === 'warning' ? 'inspection-expand warn-border' : 'inspection-expand'"
+                                        style="padding: 0.5rem 0.75rem;"
+                                      >
+                                        <!-- Warning notification for warning rooms -->
+                                        <template x-if="getRoomStatusTag(room) === 'warning'">
+                                          <div
+                                            class="notification is-warning is-light py-2 px-3 mb-2"
+                                          >
+                                            <p class="is-size-7">
+                                              <strong>⚠️ 使用量警告:</strong>
+                                              今回の使用量が平均の<span x-text="getUsageMultiplier(room)"></span>倍を超過。漏水の可能性があります。
+                                            </p>
+                                          </div>
+                                        </template>
 
-                                          <!-- No data notification -->
-                                          <template x-if="getRoomStatusTag(room) === 'pending'">
-                                            <div class="has-text-centered py-3">
-                                              <p class="has-text-grey is-size-7">
-                                                📋 この部屋の検針データはまだ登録されていません。
-                                              </p>
-                                            </div>
-                                          </template>
+                                        <!-- Skip notification -->
+                                        <template x-if="getRoomStatusTag(room) === 'skip'">
+                                          <div class="notification is-light py-2 px-3 mb-2">
+                                            <p class="is-size-7">
+                                              この部屋は<strong>検針不要</strong>に設定されています。
+                                            </p>
+                                          </div>
+                                        </template>
 
-                                          <!-- Detail table for rooms with data -->
-                                          <template x-if="room.hasInspectionResult">
-                                            <div>
-                                              <table
-                                                class="detail-table table is-narrow is-borderless mb-0"
-                                              >
-                                                <thead>
-                                                  <tr>
-                                                    <th>検針日</th>
-                                                    <th>今回</th>
-                                                    <th>前回</th>
-                                                    <th>前々回</th>
-                                                    <th>3回前</th>
-                                                    <th>使用量</th>
-                                                    <th>標準偏差</th>
-                                                    <th>警告</th>
-                                                  </tr>
-                                                </thead>
-                                                <tbody>
-                                                  <tr>
-                                                    <td x-text="room.readingDate || '—'"></td>
-                                                    <td
-                                                      x-text="formatNumber(room.currentReading)"
-                                                    ></td>
-                                                    <td
-                                                      x-text="formatNumber(room.previousReading)"
-                                                    ></td>
-                                                    <td
-                                                      x-text="formatNumber(room.previousReading2)"
-                                                    ></td>
-                                                    <td
-                                                      x-text="formatNumber(room.previousReading3)"
-                                                    ></td>
-                                                    <td x-text="getUsageDisplay(room)"></td>
-                                                    <td
-                                                      x-text="formatNumber(room.standardDeviation)"
-                                                    ></td>
-                                                    <td>
-                                                      <template
-                                                        x-if="room.warningFlag === '要確認'"
+                                        <!-- No data notification -->
+                                        <template x-if="getRoomStatusTag(room) === 'pending'">
+                                          <div class="has-text-centered py-3">
+                                            <p class="has-text-grey is-size-7">
+                                              📋 この部屋の検針データはまだ登録されていません。
+                                            </p>
+                                          </div>
+                                        </template>
+
+                                        <!-- Detail table for rooms with data -->
+                                        <template x-if="room.hasInspectionResult">
+                                          <div>
+                                            <table
+                                              class="detail-table table is-narrow is-borderless mb-0"
+                                            >
+                                              <thead>
+                                                <tr>
+                                                  <th>検針日</th>
+                                                  <th>今回</th>
+                                                  <th>前回</th>
+                                                  <th>前々回</th>
+                                                  <th>3回前</th>
+                                                  <th>使用量</th>
+                                                  <th>標準偏差</th>
+                                                  <th>警告</th>
+                                                </tr>
+                                              </thead>
+                                              <tbody>
+                                                <tr>
+                                                  <td x-text="getReadingDateFull(room)"></td>
+                                                  <td
+                                                    x-text="formatNumber(room.currentReading)"
+                                                  ></td>
+                                                  <td
+                                                    x-text="formatNumber(room.previousReading)"
+                                                  ></td>
+                                                  <td
+                                                    x-text="formatNumber(room.previousReading2)"
+                                                  ></td>
+                                                  <td
+                                                    x-text="formatNumber(room.previousReading3)"
+                                                  ></td>
+                                                  <td x-text="getUsageDisplay(room)"></td>
+                                                  <td
+                                                    x-text="formatNumber(room.standardDeviation)"
+                                                  ></td>
+                                                  <td>
+                                                    <template x-if="room.warningFlag === '要確認'">
+                                                      <span
+                                                        class="tag is-warning is-rounded is-small"
+                                                        >使用量超過</span
                                                       >
-                                                        <span
-                                                          class="tag is-warning is-rounded is-small"
-                                                          >使用量超過</span
-                                                        >
-                                                      </template>
-                                                      <template
-                                                        x-if="room.warningFlag !== '要確認'"
+                                                    </template>
+                                                    <template x-if="room.warningFlag !== '要確認'">
+                                                      <span
+                                                        class="tag is-success is-light is-rounded is-small"
+                                                        >なし</span
                                                       >
-                                                        <span
-                                                          class="tag is-success is-light is-rounded is-small"
-                                                          >なし</span
-                                                        >
-                                                      </template>
-                                                    </td>
-                                                  </tr>
-                                                </tbody>
-                                              </table>
-                                              <div class="usage-section">
-                                                <span class="usage-label">使用量推移</span>
-                                                <template x-if="getUsageTrend(room) !== null">
-                                                  <span>
-                                                    <span class="usage-item">
-                                                      <span
-                                                        class="usage-bar-fixed"
-                                                        x-bind:class="{ 'warn': getUsageTrend(room).current > getUsageTrend(room).prev * 3 }"
-                                                      ></span>
-                                                      今月
-                                                      <strong
-                                                        x-text="getUsageTrend(room).current"
-                                                      ></strong>
-                                                    </span>
-                                                    <span class="usage-item">
-                                                      <span class="usage-bar-fixed prev"></span>
-                                                      先月
-                                                      <span
-                                                        x-text="getUsageTrend(room).prev"
-                                                      ></span>
-                                                    </span>
-                                                    <span class="usage-item">
-                                                      <span class="usage-bar-fixed prev"></span>
-                                                      先々月
-                                                      <span
-                                                        x-text="getUsageTrend(room).prev2"
-                                                      ></span>
-                                                    </span>
+                                                    </template>
+                                                  </td>
+                                                </tr>
+                                              </tbody>
+                                            </table>
+                                            <div class="usage-section">
+                                              <span class="usage-label">使用量推移</span>
+                                              <template x-if="getUsageTrend(room) !== null">
+                                                <span>
+                                                  <span class="usage-item">
+                                                    <span
+                                                      class="usage-bar-fixed"
+                                                      x-bind:class="{ 'warn': getUsageTrend(room).current > getUsageTrend(room).prev * 3 }"
+                                                    ></span>
+                                                    今月
+                                                    <strong
+                                                      x-text="getUsageTrend(room).current"
+                                                    ></strong>
                                                   </span>
-                                                </template>
-                                              </div>
+                                                  <span class="usage-item">
+                                                    <span class="usage-bar-fixed prev"></span>
+                                                    先月
+                                                    <span x-text="getUsageTrend(room).prev"></span>
+                                                  </span>
+                                                  <span class="usage-item">
+                                                    <span class="usage-bar-fixed prev"></span>
+                                                    先々月
+                                                    <span x-text="getUsageTrend(room).prev2"></span>
+                                                  </span>
+                                                </span>
+                                              </template>
                                             </div>
-                                          </template>
-                                        </div>
-                                      </td>
-                                    </tr>
-                                  </template>
+                                          </div>
+                                        </template>
+                                      </div>
+                                    </td>
+                                  </tr>
                                 </template>
                               </tbody>
-                            </table>
                           </div>
 
                           <!-- Bulk View -->
@@ -1239,7 +1281,7 @@
                                         x-text="getRoomStatusLabel(room)"
                                       ></span>
                                     </td>
-                                    <td x-text="room.readingDate || '—'"></td>
+                                    <td x-text="getReadingDate(room)"></td>
                                     <td
                                       class="highlight-col"
                                       x-text="formatNumber(room.currentReading)"
@@ -1247,7 +1289,10 @@
                                     <td x-text="formatNumber(room.previousReading)"></td>
                                     <td x-text="formatNumber(room.previousReading2)"></td>
                                     <td x-text="formatNumber(room.previousReading3)"></td>
-                                    <td x-text="getUsageDisplay(room)"></td>
+                                    <td
+                                      x-bind:class="getUsageDisplayClass(room)"
+                                      x-text="getUsageDisplay(room)"
+                                    ></td>
                                     <td x-text="formatNumber(room.standardDeviation)"></td>
                                     <td class="usage-trend">
                                       <template x-if="getUsageTrend(room) !== null">
@@ -1257,7 +1302,10 @@
                                               class="usage-bar-fixed"
                                               x-bind:class="{ 'warn': getUsageTrend(room).current > getUsageTrend(room).prev * 3 }"
                                             ></span>
-                                            <strong x-text="getUsageTrend(room).current"></strong>
+                                            <strong
+                                              x-bind:class="getUsageDisplayClass(room)"
+                                              x-text="getUsageTrend(room).current + (getRoomStatusTag(room) === 'warning' ? ' ⚠️' : '')"
+                                            ></strong>
                                           </span>
                                           <span class="usage-item">
                                             <span class="usage-bar-fixed prev"></span>
@@ -1276,6 +1324,12 @@
                                         x-on:click="openInspectionEdit(room)"
                                       >
                                         編集
+                                      </button>
+                                      <button
+                                        class="button is-small is-danger is-light"
+                                        x-on:click="openDeleteConfirm('room', room.roomId, room.roomName, getPropId(selectedProperty))"
+                                      >
+                                        削除
                                       </button>
                                     </td>
                                   </tr>

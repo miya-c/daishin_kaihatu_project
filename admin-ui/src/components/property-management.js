@@ -426,7 +426,14 @@ document.addEventListener('alpine:init', function () {
       getReadingDate: function (room) {
         var d = room.readingDate || '';
         if (!d) return '—';
-        if (d.length >= 10) return d.substring(5, 10);
+        if (d.length >= 10) return d.substring(5, 10).replace(/-/g, '/');
+        return d;
+      },
+
+      getReadingDateFull: function (room) {
+        var d = room.readingDate || '';
+        if (!d) return '—';
+        if (d.length >= 10) return d.substring(0, 10).replace(/-/g, '/');
         return d;
       },
 
@@ -440,6 +447,19 @@ document.addEventListener('alpine:init', function () {
         var u = room.usage;
         if (u === '' || u === null || u === undefined) return '—';
         return u + ' m\u00B3';
+      },
+
+      getUsageDisplayClass: function (room) {
+        if (!room.hasInspectionResult) return '';
+        if (room.warningFlag === '要確認') return 'has-text-danger has-text-weight-bold';
+        return '';
+      },
+
+      getUsageMultiplier: function (room) {
+        if (!room.hasInspectionResult) return '';
+        var sd = room.standardDeviation;
+        if (sd === '' || sd === null || sd === undefined || sd === 0) return '';
+        return (room.usage / sd).toFixed(1);
       },
 
       getUsageTrend: function (room) {
@@ -461,20 +481,23 @@ document.addEventListener('alpine:init', function () {
         var total = this.rooms.length;
         var done = 0,
           pending = 0,
-          warning = 0;
+          warning = 0,
+          skip = 0;
         this.rooms.forEach(function (r) {
-          var s = r.inspectionSkip
-            ? 'skip'
-            : r.hasInspectionResult
-              ? r.warningFlag === '要確認'
-                ? 'warning'
-                : 'done'
-              : 'pending';
-          if (s === 'done') done++;
-          else if (s === 'pending') pending++;
-          else if (s === 'warning') warning++;
+          if (r.inspectionSkip) {
+            skip++;
+            return;
+          }
+          if (r.hasInspectionResult) {
+            if (r.warningFlag === '要確認') warning++;
+            else done++;
+          } else {
+            pending++;
+          }
         });
-        var rate = total > 0 ? Math.round((done / total) * 100) : 0;
+        var inspectable = total - skip;
+        var completed = done + warning;
+        var rate = inspectable > 0 ? Math.round((completed / inspectable) * 100) : 0;
         return { total: total, done: done, pending: pending, warning: warning, rate: rate };
       },
 
