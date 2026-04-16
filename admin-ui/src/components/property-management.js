@@ -115,6 +115,7 @@ document.addEventListener('alpine:init', function () {
         }
         self.selectedProperty = prop;
         self.selectedPropertyId = propId;
+        self.expandedRooms = {};
         self.roomsLoading = true;
         self.error = '';
         self.roomsError = '';

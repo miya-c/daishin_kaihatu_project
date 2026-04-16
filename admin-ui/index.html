@@ -991,7 +991,7 @@
                                 <col />
                                 <col />
                                 <col />
-                                <col style="width: 70px" />
+                                <col style="width: 120px" />
                               </colgroup>
                               <thead>
                                 <tr>
@@ -1062,7 +1062,7 @@
                                           <col />
                                           <col />
                                           <col />
-                                          <col style="width: 70px" />
+                                          <col style="width: 120px" />
                                         </colgroup>
                                         <tr
                                           class="room-row"
@@ -1088,7 +1088,7 @@
                                           </td>
                                           <td
                                             style="text-align: center"
-x-text="getReadingDateFull(room)"
+                                            x-text="getReadingDate(room)"
                                           ></td>
                                           <td
                                             style="text-align: center"
@@ -1128,7 +1128,7 @@ x-text="getReadingDateFull(room)"
                                       <div
                                         x-show="isRoomExpanded(room.roomId)"
                                         x-bind:class="getRoomStatusTag(room) === 'warning' ? 'inspection-expand warn-border' : 'inspection-expand'"
-                                        style="padding: 0.5rem 0.75rem;"
+                                        style="padding: 0.5rem 0.75rem"
                                       >
                                         <!-- Warning notification for warning rooms -->
                                         <template x-if="getRoomStatusTag(room) === 'warning'">
@@ -1137,7 +1137,10 @@ x-text="getReadingDateFull(room)"
                                           >
                                             <p class="is-size-7">
                                               <strong>⚠️ 使用量警告:</strong>
-                                              今回の使用量が平均の<span x-text="getUsageMultiplier(room)"></span>倍を超過。漏水の可能性があります。
+                                              今回の使用量が平均の<span
+                                                x-text="getUsageMultiplier(room)"
+                                              ></span
+                                              >倍を超過。漏水の可能性があります。
                                             </p>
                                           </div>
                                         </template>
@@ -1248,6 +1251,7 @@ x-text="getReadingDateFull(room)"
                                   </tr>
                                 </template>
                               </tbody>
+                            </table>
                           </div>
 
                           <!-- Bulk View -->
