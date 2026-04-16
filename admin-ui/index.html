@@ -793,7 +793,7 @@
                               <td>
                                 <button
                                   class="button is-small is-info"
-                                  x-on:click="$store.app.setActiveTab('properties'); history.pushState(null, '', '#properties')"
+                                  x-on:click="$store.app.setActiveTab('properties'); history.pushState(null, '', '#properties/' + (prop.propertyId || prop.id || ''))"
                                 >
                                   管理
                                 </button>
@@ -808,11 +808,35 @@
 
                 <!-- Property Management -->
                 <div x-show="activeTab === 'properties'" x-data="propertyManagement">
-                  <div class="is-flex is-justify-content-space-between is-align-items-center mb-4">
-                    <p class="title is-4 mb-0">🏠 物件管理</p>
-                    <button class="button is-primary" x-on:click="openAddProperty()">
-                      + 物件を追加
-                    </button>
+                  <div class="is-flex is-justify-content-space-between is-align-items-center mb-1">
+                    <div>
+                      <p class="title is-4 mb-1">🏠 物件管理</p>
+                      <p class="heading has-text-grey mb-0" x-text="getPropertySubtitle()"></p>
+                    </div>
+                    <div class="field is-grouped">
+                      <div class="control">
+                        <div class="select is-small" x-bind:class="{ 'is-loading': loading }">
+                          <select
+                            x-model="selectedPropertyId"
+                            x-on:change="onPropertySelect()"
+                            x-bind:disabled="loading"
+                          >
+                            <option value="">— 物件を選択 —</option>
+                            <template x-for="prop in properties" :key="getPropId(prop)">
+                              <option
+                                x-bind:value="getPropId(prop)"
+                                x-text="getPropName(prop) + ' (' + getPropId(prop) + ')'"
+                              ></option>
+                            </template>
+                          </select>
+                        </div>
+                      </div>
+                      <div class="control">
+                        <button class="button is-primary is-small" x-on:click="openAddProperty()">
+                          + 物件を追加
+                        </button>
+                      </div>
+                    </div>
                   </div>
 
                   <div x-show="loading" class="has-text-centered py-5">
@@ -833,50 +857,23 @@
                     </p>
                   </div>
 
-                  <div x-show="!loading && properties.length > 0">
-                    <table class="table is-fullwidth is-hoverable">
-                      <thead>
-                        <tr>
-                          <th>物件ID</th>
-                          <th>物件名</th>
-                          <th>操作</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <template x-for="prop in properties" :key="getPropId(prop)">
-                          <tr>
-                            <td x-text="getPropId(prop)"></td>
-                            <td x-text="getPropName(prop)"></td>
-                            <td>
-                              <div class="field is-grouped">
-                                <button
-                                  class="button is-small is-info"
-                                  x-on:click="selectProperty(prop)"
-                                  x-text="selectedProperty && getPropId(selectedProperty) === getPropId(prop) ? '閉じる' : '部屋管理'"
-                                ></button>
-                                <button
-                                  class="button is-small is-danger is-light"
-                                  x-on:click="openDeleteConfirm('property', getPropId(prop), getPropName(prop), '')"
-                                >
-                                  削除
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        </template>
-                      </tbody>
-                    </table>
-                  </div>
-
                   <!-- Room management for selected property -->
                   <div x-show="selectedProperty" class="box mt-4">
                     <div
                       class="is-flex is-justify-content-space-between is-align-items-center mb-3"
                     >
                       <p class="heading mb-0" x-text="getSelectedPropHeading()"></p>
-                      <button class="button is-small is-primary" x-on:click="openAddRoom()">
-                        + 部屋を追加
-                      </button>
+                      <div class="field is-grouped">
+                        <button
+                          class="button is-small is-danger is-light"
+                          x-on:click="openDeletePropertyConfirm()"
+                        >
+                          物件削除
+                        </button>
+                        <button class="button is-small is-primary" x-on:click="openAddRoom()">
+                          + 部屋を追加
+                        </button>
+                      </div>
                     </div>
 
                     <!-- Loading -->

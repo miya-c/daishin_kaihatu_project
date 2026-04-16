@@ -12,6 +12,7 @@ document.addEventListener('alpine:init', function () {
       properties: [],
       rooms: [],
       selectedProperty: null,
+      selectedPropertyId: '',
       loading: false,
       roomsLoading: false,
       roomsError: '',
@@ -39,6 +40,7 @@ document.addEventListener('alpine:init', function () {
 
       init: function () {
         var self = this;
+        this._pendingPropertyId = '';
         this.loadProperties();
         this.$watch('$store.app.activeTab', function (v) {
           if (v === 'properties') {
@@ -64,10 +66,32 @@ document.addEventListener('alpine:init', function () {
         var self = this;
         self.loading = true;
         self.error = '';
+
+        if (!self._pendingPropertyId) {
+          var hash = window.location.hash.replace('#properties/', '').replace('#properties', '');
+          if (hash && hash !== 'properties') {
+            self._pendingPropertyId = hash.trim();
+          }
+        }
+
         callAdminAPI('getProperties')
           .then(function (result) {
             if (result && result.success) {
               self.properties = result.data || [];
+              if (self._pendingPropertyId) {
+                var pid = self._pendingPropertyId;
+                self._pendingPropertyId = '';
+                var found = null;
+                for (var i = 0; i < self.properties.length; i++) {
+                  if (self.getPropId(self.properties[i]) === pid) {
+                    found = self.properties[i];
+                    break;
+                  }
+                }
+                if (found) {
+                  self.selectProperty(found);
+                }
+              }
             } else {
               self.error = (result && result.error) || '物件一覧の取得に失敗しました';
             }
@@ -85,10 +109,12 @@ document.addEventListener('alpine:init', function () {
         var propId = self.getPropId(prop);
         if (self.selectedProperty && self.getPropId(self.selectedProperty) === propId) {
           self.selectedProperty = null;
+          self.selectedPropertyId = '';
           self.rooms = [];
           return;
         }
         self.selectedProperty = prop;
+        self.selectedPropertyId = propId;
         self.roomsLoading = true;
         self.error = '';
         self.roomsError = '';
@@ -283,6 +309,7 @@ document.addEventListener('alpine:init', function () {
               self.closeModal();
               if (self.deleteTarget && self.deleteTarget.type === 'property') {
                 self.selectedProperty = null;
+                self.selectedPropertyId = '';
                 self.rooms = [];
                 self.loadProperties();
               } else {
@@ -315,6 +342,51 @@ document.addEventListener('alpine:init', function () {
 
       getSelectedPropHeading: function () {
         return this.selectedProperty ? this.getPropName(this.selectedProperty) + ' の部屋一覧' : '';
+      },
+
+      getPropertySubtitle: function () {
+        if (this.selectedProperty) {
+          return (
+            this.getPropName(this.selectedProperty) +
+            ' — 全' +
+            this.rooms.length +
+            '部屋の検針データ一覧'
+          );
+        }
+        if (this.properties.length > 0) {
+          return '物件を選択してください';
+        }
+        return '';
+      },
+
+      onPropertySelect: function () {
+        var self = this;
+        var propId = self.selectedPropertyId;
+        if (!propId) {
+          self.selectedProperty = null;
+          self.rooms = [];
+          return;
+        }
+        var found = null;
+        for (var i = 0; i < self.properties.length; i++) {
+          if (self.getPropId(self.properties[i]) === propId) {
+            found = self.properties[i];
+            break;
+          }
+        }
+        if (found) {
+          self.selectProperty(found);
+        }
+      },
+
+      openDeletePropertyConfirm: function () {
+        if (!this.selectedProperty) return;
+        this.openDeleteConfirm(
+          'property',
+          this.getPropId(this.selectedProperty),
+          this.getPropName(this.selectedProperty),
+          ''
+        );
       },
 
       getRoomCount: function (prop) {
