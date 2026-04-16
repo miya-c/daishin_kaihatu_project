@@ -519,9 +519,9 @@ function deleteProperty(params) {
 }
 
 /**
- * Get rooms for a property (management view - includes inspection status)
+ * Get rooms for a property (management view - includes full inspection data)
  * @param {string} propertyId - Property ID
- * @returns {Object} { success, data: [{ roomId, roomName, hasInspectionResult }] }
+ * @returns {Object} { success, data: [{ roomId, roomName, hasInspectionResult, readingDate, warningFlag, standardDeviation, usage, currentReading, previousReading, previousReading2, previousReading3, inspectionSkip, billingSkip }] }
  */
 function getRoomsForManagement(propertyId) {
   try {
@@ -546,28 +546,70 @@ function getRoomsForManagement(propertyId) {
           roomId: String(roomData[i][1]).trim(),
           roomName: String(roomData[i][2]).trim(),
           hasInspectionResult: false,
+          readingDate: '',
+          warningFlag: '',
+          standardDeviation: '',
+          usage: '',
+          currentReading: '',
+          previousReading: '',
+          previousReading2: '',
+          previousReading3: '',
+          inspectionSkip: false,
+          billingSkip: false,
         });
       }
     }
 
-    // Check inspection results
     var inspSheet = ss.getSheetByName(CONFIG.SHEET_NAMES.INSPECTION_DATA);
     if (inspSheet && inspSheet.getLastRow() > 1 && rooms.length > 0) {
       var inspHeaders = inspSheet.getRange(1, 1, 1, inspSheet.getLastColumn()).getValues()[0];
       var inspPropIdCol = inspHeaders.indexOf('物件ID');
       var inspRoomIdCol = inspHeaders.indexOf('部屋ID');
       var inspDateCol = inspHeaders.indexOf('検針日時');
+      var inspWarningCol = inspHeaders.indexOf('警告フラグ');
+      var inspStdDevCol = inspHeaders.indexOf('標準偏差値');
+      var inspUsageCol = inspHeaders.indexOf('今回使用量');
+      var inspCurrentCol = inspHeaders.indexOf('今回の指示数');
+      var inspPrevCol = inspHeaders.indexOf('前回指示数');
+      var inspPrev2Col = inspHeaders.indexOf('前々回指示数');
+      var inspPrev3Col = inspHeaders.indexOf('前々々回指示数');
+      var inspSkipCol = inspHeaders.indexOf('検針不要');
+      var inspBillingCol = inspHeaders.indexOf('請求不要');
 
-      if (inspPropIdCol !== -1 && inspRoomIdCol !== -1 && inspDateCol !== -1) {
+      if (inspPropIdCol !== -1 && inspRoomIdCol !== -1) {
         var inspData = inspSheet.getDataRange().getValues();
         for (var j = 1; j < inspData.length; j++) {
           var iPropId = String(inspData[j][inspPropIdCol]).trim();
           var iRoomId = String(inspData[j][inspRoomIdCol]).trim();
-          var iDate = inspData[j][inspDateCol];
-          if (iPropId === propertyId && iDate) {
+
+          if (iPropId === propertyId) {
             for (var k = 0; k < rooms.length; k++) {
               if (rooms[k].roomId === iRoomId) {
-                rooms[k].hasInspectionResult = true;
+                var row = inspData[j];
+                var iDate = inspDateCol !== -1 ? row[inspDateCol] : '';
+                var iCurrent = inspCurrentCol !== -1 ? row[inspCurrentCol] : '';
+                var hasReading =
+                  (iDate !== '' && iDate !== null && iDate !== undefined) ||
+                  (iCurrent !== '' && iCurrent !== null && iCurrent !== undefined);
+
+                if (hasReading) {
+                  rooms[k].hasInspectionResult = true;
+                  rooms[k].readingDate = safeValue(inspDateCol !== -1 ? row[inspDateCol] : '');
+                  rooms[k].warningFlag =
+                    inspWarningCol !== -1 ? safeValue(row[inspWarningCol]) : '';
+                  rooms[k].standardDeviation =
+                    inspStdDevCol !== -1 ? _toInt(row[inspStdDevCol]) : '';
+                  rooms[k].usage = inspUsageCol !== -1 ? _toInt(row[inspUsageCol]) : '';
+                  rooms[k].currentReading =
+                    inspCurrentCol !== -1 ? _toInt(row[inspCurrentCol]) : '';
+                  rooms[k].previousReading = inspPrevCol !== -1 ? _toInt(row[inspPrevCol]) : '';
+                  rooms[k].previousReading2 = inspPrev2Col !== -1 ? _toInt(row[inspPrev2Col]) : '';
+                  rooms[k].previousReading3 = inspPrev3Col !== -1 ? _toInt(row[inspPrev3Col]) : '';
+                }
+
+                rooms[k].inspectionSkip = inspSkipCol !== -1 ? _isTruthy(row[inspSkipCol]) : false;
+                rooms[k].billingSkip =
+                  inspBillingCol !== -1 ? _isBillingSkip(row[inspBillingCol]) : false;
                 break;
               }
             }
@@ -580,4 +622,160 @@ function getRoomsForManagement(propertyId) {
   } catch (error) {
     return { success: false, error: error.message };
   }
+}
+
+/**
+ * Convert value to integer. Returns '' for empty/invalid values.
+ * @param {*} val - Value to convert
+ * @returns {number|string} Integer or ''
+ */
+function _toInt(val) {
+  if (val === '' || val === null || val === undefined) return '';
+  var num = parseInt(val, 10);
+  return isNaN(num) ? '' : num;
+}
+
+/**
+ * Check if a value represents a truthy inspection skip flag.
+ * @param {*} val - Value to check
+ * @returns {boolean}
+ */
+function _isTruthy(val) {
+  if (
+    val === true ||
+    val === 'true' ||
+    val === '1' ||
+    val === 'yes' ||
+    val === 'on' ||
+    val === '\u25CB' ||
+    val === 'x' ||
+    val === '\u00D7'
+  )
+    return true;
+  return false;
+}
+
+/**
+ * Check if billing skip flag is set (●).
+ * @param {*} val - Value to check
+ * @returns {boolean}
+ */
+function _isBillingSkip(val) {
+  return val === '\u25CF' || val === 'true' || val === '1' || val === true;
+}
+
+/**
+ * Update room master name + inspection data (current/prev readings, skip flags)
+ * @param {Object} params - { propertyId, roomId, roomName, currentReading, previousReading, inspectionSkip, billingSkip }
+ * @returns {Object} { success, message }
+ */
+function updateInspectionData(params) {
+  return withScriptLock(function () {
+    try {
+      if (!params.propertyId || !params.roomId) {
+        return { success: false, error: '物件ID・部屋IDは必須です' };
+      }
+      var propertyId = String(params.propertyId).trim();
+      var roomId = String(params.roomId).trim();
+      var roomName = params.roomName ? String(params.roomName).trim() : '';
+
+      if (
+        roomName.startsWith('=') ||
+        roomName.startsWith('+') ||
+        roomName.startsWith('-') ||
+        roomName.startsWith('@')
+      ) {
+        roomName = "'" + roomName;
+      }
+
+      var ss = SpreadsheetApp.getActiveSpreadsheet();
+
+      if (roomName) {
+        var roomSheet = ss.getSheetByName(CONFIG.SHEET_NAMES.ROOM_MASTER);
+        if (roomSheet) {
+          var roomData = roomSheet.getDataRange().getValues();
+          for (var i = 1; i < roomData.length; i++) {
+            if (
+              String(roomData[i][0]).trim() === propertyId &&
+              String(roomData[i][1]).trim() === roomId
+            ) {
+              roomSheet.getRange(i + 1, 3).setValue(roomName);
+              break;
+            }
+          }
+        }
+      }
+
+      var inspSheet = ss.getSheetByName(CONFIG.SHEET_NAMES.INSPECTION_DATA);
+      if (!inspSheet || inspSheet.getLastRow() <= 1) {
+        return { success: false, error: 'inspection_dataシートが見つかりません' };
+      }
+
+      var inspHeaders = inspSheet.getRange(1, 1, 1, inspSheet.getLastColumn()).getValues()[0];
+      var inspPropIdCol = inspHeaders.indexOf('物件ID');
+      var inspRoomIdCol = inspHeaders.indexOf('部屋ID');
+      var inspRoomNameCol = inspHeaders.indexOf('部屋名');
+      var inspCurrentCol = inspHeaders.indexOf('今回の指示数');
+      var inspPrevCol = inspHeaders.indexOf('前回指示数');
+      var inspSkipCol = inspHeaders.indexOf('検針不要');
+      var inspBillingCol = inspHeaders.indexOf('請求不要');
+
+      if (inspPropIdCol === -1 || inspRoomIdCol === -1) {
+        return { success: false, error: 'inspection_dataに必要な列が見つかりません' };
+      }
+
+      var inspData = inspSheet.getDataRange().getValues();
+      var rowUpdated = false;
+      for (var j = 1; j < inspData.length; j++) {
+        if (
+          String(inspData[j][inspPropIdCol]).trim() === propertyId &&
+          String(inspData[j][inspRoomIdCol]).trim() === roomId
+        ) {
+          if (roomName && inspRoomNameCol !== -1) {
+            inspSheet.getRange(j + 1, inspRoomNameCol + 1).setValue(roomName);
+          }
+          if (
+            params.currentReading !== undefined &&
+            params.currentReading !== '' &&
+            inspCurrentCol !== -1
+          ) {
+            var curVal = parseInt(params.currentReading, 10);
+            if (!isNaN(curVal)) {
+              inspSheet.getRange(j + 1, inspCurrentCol + 1).setValue(curVal);
+            }
+          }
+          if (
+            params.previousReading !== undefined &&
+            params.previousReading !== '' &&
+            inspPrevCol !== -1
+          ) {
+            var prevVal = parseInt(params.previousReading, 10);
+            if (!isNaN(prevVal)) {
+              inspSheet.getRange(j + 1, inspPrevCol + 1).setValue(prevVal);
+            }
+          }
+          if (inspSkipCol !== -1) {
+            var skipVal =
+              params.inspectionSkip === true || params.inspectionSkip === 'true' ? 'true' : '';
+            inspSheet.getRange(j + 1, inspSkipCol + 1).setValue(skipVal);
+          }
+          if (inspBillingCol !== -1) {
+            var billVal =
+              params.billingSkip === true || params.billingSkip === 'true' ? '\u25CF' : '';
+            inspSheet.getRange(j + 1, inspBillingCol + 1).setValue(billVal);
+          }
+          rowUpdated = true;
+          break;
+        }
+      }
+
+      if (!rowUpdated) {
+        return { success: false, error: '該当する部屋の検針データが見つかりません' };
+      }
+
+      return { success: true, message: '更新しました' };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  });
 }

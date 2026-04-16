@@ -1,0 +1,420 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>案B モーダル デザインモック</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css" />
+    <style>
+      body {
+        padding: 2rem;
+        background: #f5f5f5;
+      }
+      .mock-label {
+        position: fixed;
+        top: 10px;
+        right: 20px;
+        background: #ffdd57;
+        padding: 8px 16px;
+        border-radius: 4px;
+        font-weight: bold;
+        z-index: 100;
+      }
+      .inspection-detail-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.75rem;
+      }
+      .inspection-detail-grid .field-group {
+        background: #f8f8f8;
+        border-radius: 6px;
+        padding: 0.75rem;
+      }
+      .inspection-detail-grid .field-group .label {
+        font-size: 0.75rem;
+        color: #888;
+        margin-bottom: 0.25rem;
+        font-weight: 500;
+      }
+      .inspection-detail-grid .field-group .value {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #363636;
+      }
+      .full-width {
+        grid-column: 1 / -1;
+      }
+      .history-table {
+        width: 100%;
+      }
+      .history-table th {
+        font-size: 0.75rem;
+        color: #888;
+        font-weight: 500;
+      }
+      .history-table td {
+        font-size: 0.9rem;
+      }
+      .tag-warning {
+        background: #fff3cd;
+        color: #856404;
+      }
+      .room-selector {
+        max-height: 200px;
+        overflow-y: auto;
+      }
+      .room-selector .room-item {
+        padding: 0.5rem 0.75rem;
+        cursor: pointer;
+        border-radius: 4px;
+        transition: background 0.15s;
+      }
+      .room-selector .room-item:hover {
+        background: #eef3fc;
+      }
+      .room-selector .room-item.active {
+        background: #3273dc;
+        color: white;
+      }
+      .section-divider {
+        border-top: 1px solid #eee;
+        margin: 1rem 0;
+        padding-top: 1rem;
+      }
+      .usage-highlight {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #3273dc;
+      }
+      .usage-unit {
+        font-size: 0.85rem;
+        color: #888;
+        font-weight: 400;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="mock-label">📸 デザインモック — 案B</div>
+
+    <!-- ============================================ -->
+    <!-- パターン1: 検針済み部屋のモーダル -->
+    <!-- ============================================ -->
+    <h3 class="title is-5 mb-3">パターン1: 検針済み部屋（データあり）</h3>
+    <p class="mb-4 has-text-grey is-size-7">部屋一覧の「詳細」ボタン → モーダル表示</p>
+
+    <div class="modal is-active" style="position: relative">
+      <div
+        class="modal-background"
+        style="position: absolute; background: rgba(0, 0, 0, 0.3)"
+      ></div>
+      <div class="modal-card" style="width: 640px; max-width: 95vw">
+        <header class="modal-card-head">
+          <p class="modal-card-title is-size-5">🔍 検針データ詳細</p>
+          <button class="delete" aria-label="閉じる"></button>
+        </header>
+        <section class="modal-card-body">
+          <!-- 部屋情報ヘッダー -->
+          <div class="is-flex is-justify-content-space-between is-align-items-center mb-4">
+            <div>
+              <p class="heading mb-1 has-text-grey">パルハイツ平田</p>
+              <p class="title is-4 mb-0">
+                101号室 <span class="tag is-success is-light ml-2">検針済み</span>
+              </p>
+            </div>
+            <div class="has-text-right">
+              <p class="heading mb-1 has-text-grey">検針日時</p>
+              <p class="is-size-5 has-text-weight-semibold">2026年4月14日</p>
+            </div>
+          </div>
+
+          <!-- 使用量ハイライト -->
+          <div class="has-text-centered py-4 mb-4" style="background: #f0f5ff; border-radius: 8px">
+            <p class="heading has-text-grey mb-1">今回の使用量</p>
+            <p class="usage-highlight">5 <span class="usage-unit">m³</span></p>
+          </div>
+
+          <!-- 指示数グリッド -->
+          <div class="inspection-detail-grid mb-4">
+            <div class="field-group">
+              <p class="label">今回の指示数</p>
+              <p class="value">1,234</p>
+            </div>
+            <div class="field-group">
+              <p class="label">前回の指示数</p>
+              <p class="value">1,229</p>
+            </div>
+            <div class="field-group">
+              <p class="label">前々回の指示数</p>
+              <p class="value">1,220</p>
+            </div>
+            <div class="field-group">
+              <p class="label">前々々回の指示数</p>
+              <p class="value">1,215</p>
+            </div>
+          </div>
+
+          <!-- 分析情報 -->
+          <div class="section-divider">
+            <p class="heading has-text-grey mb-3">分析情報</p>
+            <div class="inspection-detail-grid">
+              <div class="field-group">
+                <p class="label">標準偏差値</p>
+                <p class="value">2.3</p>
+              </div>
+              <div class="field-group">
+                <p class="label">警告</p>
+                <p class="value">
+                  <span class="tag is-success is-light is-rounded">なし</span>
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- 使用量推移テーブル -->
+          <div class="section-divider">
+            <p class="heading has-text-grey mb-3">使用量推移</p>
+            <table class="history-table table is-narrow is-hoverable">
+              <thead>
+                <tr>
+                  <th>期間</th>
+                  <th>指示数</th>
+                  <th>使用量</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>今月</td>
+                  <td>1,234</td>
+                  <td><strong>5 m³</strong></td>
+                </tr>
+                <tr>
+                  <td>先月</td>
+                  <td>1,229</td>
+                  <td>9 m³</td>
+                </tr>
+                <tr>
+                  <td>先々月</td>
+                  <td>1,220</td>
+                  <td>5 m³</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+        <footer class="modal-card-foot is-justify-content-flex-end">
+          <button class="button">閉じる</button>
+        </footer>
+      </div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- パターン2: 警告あり部屋のモーダル -->
+    <!-- ============================================ -->
+    <div style="margin-top: 3rem">
+      <h3 class="title is-5 mb-3 mt-6">パターン2: 警告あり部屋</h3>
+      <p class="mb-4 has-text-grey is-size-7">使用量が標準偏差を超過している場合</p>
+
+      <div class="modal is-active" style="position: relative">
+        <div
+          class="modal-background"
+          style="position: absolute; background: rgba(0, 0, 0, 0.3)"
+        ></div>
+        <div class="modal-card" style="width: 640px; max-width: 95vw">
+          <header class="modal-card-head" style="background: #fff5f5">
+            <p class="modal-card-title is-size-5">🔍 検針データ詳細</p>
+            <button class="delete" aria-label="閉じる"></button>
+          </header>
+          <section class="modal-card-body">
+            <div class="is-flex is-justify-content-space-between is-align-items-center mb-4">
+              <div>
+                <p class="heading mb-1 has-text-grey">メゾンソレイユ</p>
+                <p class="title is-4 mb-0">
+                  305号室 <span class="tag is-warning is-light ml-2">⚠️ 警告</span>
+                </p>
+              </div>
+              <div class="has-text-right">
+                <p class="heading mb-1 has-text-grey">検針日時</p>
+                <p class="is-size-5 has-text-weight-semibold">2026年4月14日</p>
+              </div>
+            </div>
+
+            <!-- 警告バナー -->
+            <div class="notification is-warning is-light py-3 mb-4">
+              <p class="is-size-6">
+                <strong>⚠️ 使用量警告:</strong> 今回の使用量（28 m³）が平均使用量（5.2 m³）の
+                <strong>5.4倍</strong>を超過しています。漏水の可能性があります。
+              </p>
+            </div>
+
+            <div
+              class="has-text-centered py-4 mb-4"
+              style="background: #fff8f0; border-radius: 8px"
+            >
+              <p class="heading has-text-grey mb-1">今回の使用量</p>
+              <p class="usage-highlight" style="color: #ff6b6b">
+                28 <span class="usage-unit">m³</span>
+              </p>
+            </div>
+
+            <div class="inspection-detail-grid mb-4">
+              <div class="field-group">
+                <p class="label">今回の指示数</p>
+                <p class="value">1,258</p>
+              </div>
+              <div class="field-group">
+                <p class="label">前回の指示数</p>
+                <p class="value">1,230</p>
+              </div>
+              <div class="field-group">
+                <p class="label">前々回の指示数</p>
+                <p class="value">1,224</p>
+              </div>
+              <div class="field-group">
+                <p class="label">前々々回の指示数</p>
+                <p class="value">1,220</p>
+              </div>
+            </div>
+
+            <div class="section-divider">
+              <p class="heading has-text-grey mb-3">分析情報</p>
+              <div class="inspection-detail-grid">
+                <div class="field-group">
+                  <p class="label">標準偏差値</p>
+                  <p class="value">5.2</p>
+                </div>
+                <div class="field-group">
+                  <p class="label">警告</p>
+                  <p class="value">
+                    <span class="tag is-warning is-rounded">⚠️ 使用量超過</span>
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div class="section-divider">
+              <p class="heading has-text-grey mb-3">使用量推移</p>
+              <table class="history-table table is-narrow is-hoverable">
+                <thead>
+                  <tr>
+                    <th>期間</th>
+                    <th>指示数</th>
+                    <th>使用量</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="has-text-weight-bold" style="background: #fff5f5">
+                    <td>今月</td>
+                    <td>1,258</td>
+                    <td><strong style="color: #e03131">28 m³ ⚠️</strong></td>
+                  </tr>
+                  <tr>
+                    <td>先月</td>
+                    <td>1,230</td>
+                    <td>6 m³</td>
+                  </tr>
+                  <tr>
+                    <td>先々月</td>
+                    <td>1,224</td>
+                    <td>4 m³</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+          <footer class="modal-card-foot is-justify-content-flex-end">
+            <button class="button">閉じる</button>
+          </footer>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- パターン3: 未検針部屋のモーダル -->
+    <!-- ============================================ -->
+    <div style="margin-top: 3rem">
+      <h3 class="title is-5 mb-3 mt-6">パターン3: 未検針部屋（データなし）</h3>
+      <p class="mb-4 has-text-grey is-size-7">まだ検針されていない部屋</p>
+
+      <div class="modal is-active" style="position: relative">
+        <div
+          class="modal-background"
+          style="position: absolute; background: rgba(0, 0, 0, 0.3)"
+        ></div>
+        <div class="modal-card" style="width: 640px; max-width: 95vw">
+          <header class="modal-card-head">
+            <p class="modal-card-title is-size-5">🔍 検針データ詳細</p>
+            <button class="delete" aria-label="閉じる"></button>
+          </header>
+          <section class="modal-card-body">
+            <div class="is-flex is-justify-content-space-between is-align-items-center mb-4">
+              <div>
+                <p class="heading mb-1 has-text-grey">ユートピア内間</p>
+                <p class="title is-4 mb-0">201号室 <span class="tag is-light ml-2">未検針</span></p>
+              </div>
+            </div>
+
+            <div class="has-text-centered py-6">
+              <p class="is-size-3 mb-2">📋</p>
+              <p class="has-text-grey">この部屋の検針データはまだ登録されていません。</p>
+              <p class="is-size-7 has-text-grey-light mt-2">
+                検針員の検針後にデータが反映されます。
+              </p>
+            </div>
+          </section>
+          <footer class="modal-card-foot is-justify-content-flex-end">
+            <button class="button">閉じる</button>
+          </footer>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- パターン4: 検針不要部屋のモーダル -->
+    <!-- ============================================ -->
+    <div style="margin-top: 3rem">
+      <h3 class="title is-5 mb-3 mt-6">パターン4: 検針不要部屋</h3>
+      <p class="mb-4 has-text-grey is-size-7">検針不要フラグが設定されている部屋</p>
+
+      <div class="modal is-active" style="position: relative">
+        <div
+          class="modal-background"
+          style="position: absolute; background: rgba(0, 0, 0, 0.3)"
+        ></div>
+        <div class="modal-card" style="width: 640px; max-width: 95vw">
+          <header class="modal-card-head">
+            <p class="modal-card-title is-size-5">🔍 検針データ詳細</p>
+            <button class="delete" aria-label="閉じる"></button>
+          </header>
+          <section class="modal-card-body">
+            <div class="is-flex is-justify-content-space-between is-align-items-center mb-4">
+              <div>
+                <p class="heading mb-1 has-text-grey">サンハウス</p>
+                <p class="title is-4 mb-0">
+                  B101号室 <span class="tag is-medium tag-warning ml-2">検針不要</span>
+                </p>
+              </div>
+            </div>
+
+            <div class="notification is-light py-3">
+              <p>この部屋は<strong>検針不要</strong>に設定されています。</p>
+            </div>
+
+            <div class="inspection-detail-grid mt-4">
+              <div class="field-group">
+                <p class="label">今回の指示数</p>
+                <p class="value has-text-grey-light">—</p>
+              </div>
+              <div class="field-group">
+                <p class="label">前回の指示数</p>
+                <p class="value has-text-grey-light">—</p>
+              </div>
+            </div>
+          </section>
+          <footer class="modal-card-foot is-justify-content-flex-end">
+            <button class="button">閉じる</button>
+          </footer>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

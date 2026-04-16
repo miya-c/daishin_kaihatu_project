@@ -78,7 +78,14 @@
       "branchingStrategy": null
     }
   },
-  "customNotes": [],
+  "customNotes": [
+    {
+      "timestamp": 1776252210527,
+      "source": "manual",
+      "category": "architecture",
+      "content": "**CRITICAL: google.script.run Date serialization** - google.script.run CANNOT serialize Date objects. It silently returns null instead. Any function returning data via google.script.run must convert Date objects to strings (toISOString()) before returning. This applies to all GAS functions called from HtmlService-served HTML. The getProperties() bug (returning null) was caused by the 検針完了日 column containing Date objects."
+    }
+  ],
   "directoryMap": {
     "backend": {
       "path": "backend",

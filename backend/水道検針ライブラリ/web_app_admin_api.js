@@ -147,6 +147,13 @@ function adminDispatch(action, params) {
         return getRoomsForManagement(params.propertyId);
       }
 
+      case 'updateInspectionData': {
+        if (!params.propertyId || !params.roomId) {
+          return { success: false, error: '物件ID・部屋IDが必要です', code: 'MISSING_PARAM' };
+        }
+        return updateInspectionData(params);
+      }
+
       default:
         return { success: false, error: '不明なアクション: ' + action, code: 'UNKNOWN_ACTION' };
     }

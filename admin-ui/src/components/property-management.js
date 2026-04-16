@@ -24,6 +24,19 @@ document.addEventListener('alpine:init', function () {
       editRoomForm: { roomId: '', name: '' },
       deleteTarget: null,
 
+      viewMode: 'expand',
+      sortState: { key: null, dir: null },
+      expandedRooms: {},
+      editInspectionForm: {
+        roomId: '',
+        roomName: '',
+        currentReading: '',
+        previousReading: '',
+        inspectionSkip: false,
+        billingSkip: false,
+        hasInspectionData: false,
+      },
+
       init: function () {
         var self = this;
         this.loadProperties();
@@ -306,6 +319,214 @@ document.addEventListener('alpine:init', function () {
 
       getRoomCount: function (prop) {
         return prop.roomCount || 0;
+      },
+
+      getRoomField: function (room, field) {
+        if (!room) return '';
+        return room[field] || '';
+      },
+
+      getRoomStatusTag: function (room) {
+        if (room.inspectionSkip) return 'skip';
+        if (room.hasInspectionResult) {
+          if (room.warningFlag === '要確認') return 'warning';
+          return 'done';
+        }
+        return 'pending';
+      },
+
+      getRoomStatusLabel: function (room) {
+        var status = this.getRoomStatusTag(room);
+        if (status === 'skip') return '不要';
+        if (status === 'warning') return '⚠️ 警告';
+        if (status === 'done') return '✅ 済';
+        return '未';
+      },
+
+      getRoomStatusClass: function (room) {
+        var status = this.getRoomStatusTag(room);
+        if (status === 'skip') return 'is-light';
+        if (status === 'warning') return 'is-warning is-light';
+        if (status === 'done') return 'is-success is-light';
+        return 'is-light';
+      },
+
+      getReadingDate: function (room) {
+        var d = room.readingDate || '';
+        if (!d) return '—';
+        if (d.length >= 10) return d.substring(5, 10);
+        return d;
+      },
+
+      formatNumber: function (val) {
+        if (val === '' || val === null || val === undefined) return '—';
+        return Number(val).toLocaleString();
+      },
+
+      getUsageDisplay: function (room) {
+        if (!room.hasInspectionResult) return '—';
+        var u = room.usage;
+        if (u === '' || u === null || u === undefined) return '—';
+        return u + ' m\u00B3';
+      },
+
+      getUsageTrend: function (room) {
+        if (!room.hasInspectionResult) return null;
+        var pr = room.previousReading;
+        var pr2 = room.previousReading2;
+        var pr3 = room.previousReading3;
+        var hasPr = pr !== '' && pr !== null && pr !== undefined;
+        var hasPr2 = pr2 !== '' && pr2 !== null && pr2 !== undefined;
+        var hasPr3 = pr3 !== '' && pr3 !== null && pr3 !== undefined;
+        return {
+          current: room.usage || 0,
+          prev: hasPr && hasPr2 ? pr - pr2 : 0,
+          prev2: hasPr2 && hasPr3 ? pr2 - pr3 : 0,
+        };
+      },
+
+      getSummaryCards: function () {
+        var total = this.rooms.length;
+        var done = 0,
+          pending = 0,
+          warning = 0;
+        this.rooms.forEach(function (r) {
+          var s = r.inspectionSkip
+            ? 'skip'
+            : r.hasInspectionResult
+              ? r.warningFlag === '要確認'
+                ? 'warning'
+                : 'done'
+              : 'pending';
+          if (s === 'done') done++;
+          else if (s === 'pending') pending++;
+          else if (s === 'warning') warning++;
+        });
+        var rate = total > 0 ? Math.round((done / total) * 100) : 0;
+        return { total: total, done: done, pending: pending, warning: warning, rate: rate };
+      },
+
+      switchView: function (mode) {
+        this.viewMode = mode;
+      },
+
+      toggleRoomExpand: function (roomId) {
+        if (this.expandedRooms[roomId]) {
+          this.expandedRooms[roomId] = false;
+        } else {
+          this.expandedRooms[roomId] = true;
+        }
+      },
+
+      isRoomExpanded: function (roomId) {
+        return this.expandedRooms[roomId] === true;
+      },
+
+      sortBy: function (key) {
+        if (this.sortState.key === key) {
+          if (this.sortState.dir === 'asc') {
+            this.sortState = { key: key, dir: 'desc' };
+          } else {
+            this.sortState = { key: null, dir: null };
+          }
+        } else {
+          this.sortState = { key: key, dir: 'asc' };
+        }
+      },
+
+      getSortedRooms: function () {
+        var self = this;
+        var rooms = this.rooms.slice();
+        var state = this.sortState;
+        if (!state.key) return rooms;
+        var key = state.key;
+        var dir = state.dir;
+        rooms.sort(function (a, b) {
+          var va, vb;
+          if (key === 'status') {
+            var order = { warning: 0, done: 1, pending: 2, skip: 3 };
+            va = order[self.getRoomStatusTag(a)];
+            vb = order[self.getRoomStatusTag(b)];
+            return dir === 'asc' ? va - vb : vb - va;
+          }
+          if (
+            key === 'currentReading' ||
+            key === 'previousReading' ||
+            key === 'usage' ||
+            key === 'standardDeviation'
+          ) {
+            va = parseFloat(a[key]) || 0;
+            vb = parseFloat(b[key]) || 0;
+            return dir === 'asc' ? va - vb : vb - va;
+          }
+          if (key === 'roomName') {
+            va = a.roomName || '';
+            vb = b.roomName || '';
+          } else if (key === 'readingDate') {
+            va = a.readingDate || '';
+            vb = b.readingDate || '';
+          } else {
+            va = a[key] || '';
+            vb = b[key] || '';
+          }
+          if (dir === 'asc') return va < vb ? -1 : va > vb ? 1 : 0;
+          return va > vb ? -1 : va < vb ? 1 : 0;
+        });
+        return rooms;
+      },
+
+      getSortIcon: function (key) {
+        if (this.sortState.key !== key) return 'neutral';
+        return this.sortState.dir;
+      },
+
+      openInspectionEdit: function (room) {
+        this.editInspectionForm = {
+          roomId: room.roomId || '',
+          roomName: room.roomName || '',
+          currentReading: room.currentReading !== '' ? room.currentReading : '',
+          previousReading: room.previousReading !== '' ? room.previousReading : '',
+          inspectionSkip: room.inspectionSkip || false,
+          billingSkip: room.billingSkip || false,
+          hasInspectionData: room.hasInspectionResult || false,
+        };
+        this.error = '';
+        this.activeModal = 'editInspection';
+      },
+
+      submitInspectionEdit: function () {
+        var self = this;
+        var form = self.editInspectionForm;
+        if (!form.roomName || !form.roomName.trim()) {
+          self.error = '部屋名を入力してください';
+          return;
+        }
+        var params = {
+          propertyId: self.getPropId(self.selectedProperty),
+          roomId: form.roomId,
+          roomName: form.roomName.trim(),
+          inspectionSkip: form.inspectionSkip,
+          billingSkip: form.billingSkip,
+        };
+        if (form.hasInspectionData) {
+          params.currentReading = form.currentReading;
+          params.previousReading = form.previousReading;
+        }
+        callAdminAPI('updateInspectionData', params)
+          .then(function (result) {
+            if (result && result.success) {
+              self.closeModal();
+              self.selectProperty(self.selectedProperty);
+              if (window.Alpine && Alpine.store('toast')) {
+                Alpine.store('toast').success('更新しました');
+              }
+            } else {
+              self.error = (result && result.error) || '更新に失敗しました';
+            }
+          })
+          .catch(function (err) {
+            self.error = '更新に失敗しました: ' + (err.message || err);
+          });
       },
     };
   });

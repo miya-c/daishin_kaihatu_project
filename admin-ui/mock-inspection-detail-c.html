@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>案C 一括テーブル デザインモック</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css" />
+    <style>
+      body {
+        padding: 2rem;
+        background: #f5f5f5;
+      }
+      .mock-label {
+        position: fixed;
+        top: 10px;
+        right: 20px;
+        background: #ffdd57;
+        padding: 8px 16px;
+        border-radius: 4px;
+        font-weight: bold;
+        z-index: 100;
+      }
+      .data-table {
+        font-size: 0.85rem;
+      }
+      .data-table th {
+        font-size: 0.75rem;
+        color: #666;
+        white-space: nowrap;
+        vertical-align: bottom;
+      }
+      .data-table td {
+        vertical-align: middle;
+      }
+      .data-table tr.group-header {
+        background: #f0f5ff;
+      }
+      .data-table tr.group-header td {
+        font-weight: 700;
+        padding: 0.6rem 0.75rem;
+        border-top: 2px solid #3273dc;
+      }
+      .usage-cell {
+        font-weight: 600;
+      }
+      .usage-cell.warn {
+        color: #e03131;
+      }
+      .tag-warn {
+        background: #fff3cd;
+        color: #856404;
+      }
+      .summary-bar {
+        display: flex;
+        gap: 1.5rem;
+        margin-bottom: 1rem;
+      }
+      .summary-card {
+        background: white;
+        border-radius: 8px;
+        padding: 0.75rem 1.25rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        flex: 1;
+      }
+      .summary-card .num {
+        font-size: 1.5rem;
+        font-weight: 700;
+      }
+      .summary-card .lbl {
+        font-size: 0.75rem;
+        color: #888;
+      }
+      .horizontal-scroll {
+        overflow-x: auto;
+        border-radius: 6px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+      }
+      .highlight-col {
+        background: #f8faff;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="mock-label">📸 デザインモック — 案C 一括テーブル</div>
+
+    <div style="max-width: 1200px; margin: 0 auto">
+      <div class="is-flex is-justify-content-space-between is-align-items-center mb-4">
+        <div>
+          <p class="title is-4 mb-1">🏠 物件管理</p>
+          <p class="heading has-text-grey">パルハイツ平田 — 全11部屋の検針データ一覧</p>
+        </div>
+        <div class="field is-grouped">
+          <div class="control">
+            <div class="select is-small">
+              <select>
+                <option>パルハイツ平田 (P000001)</option>
+                <option>パルハイツ平田 (P000002)</option>
+                <option>コーポ吉嶺 (P000007)</option>
+                <option>メゾンソレイユ (P000148)</option>
+              </select>
+            </div>
+          </div>
+          <button class="button is-primary is-small">+ 物件を追加</button>
+        </div>
+      </div>
+
+      <!-- サマリーカード -->
+      <div class="summary-bar">
+        <div class="summary-card">
+          <p class="num has-text-primary">11</p>
+          <p class="lbl">総部屋数</p>
+        </div>
+        <div class="summary-card">
+          <p class="num has-text-success">11</p>
+          <p class="lbl">検針済み</p>
+        </div>
+        <div class="summary-card">
+          <p class="num has-text-grey-light">0</p>
+          <p class="lbl">未検針</p>
+        </div>
+        <div class="summary-card">
+          <p class="num has-text-warning">1</p>
+          <p class="lbl">警告</p>
+        </div>
+        <div class="summary-card">
+          <p class="num has-text-info">100%</p>
+          <p class="lbl">完了率</p>
+        </div>
+      </div>
+
+      <!-- 一括テーブル -->
+      <div class="horizontal-scroll">
+        <table class="data-table table is-fullwidth is-hoverable is-bordered">
+          <thead>
+            <tr>
+              <th rowspan="2">部屋ID</th>
+              <th rowspan="2">部屋名</th>
+              <th rowspan="2">ステータス</th>
+              <th colspan="4" class="has-text-centered">指示数</th>
+              <th colspan="1" class="has-text-centered">使用量</th>
+              <th rowspan="2">標準偏差</th>
+              <th rowspan="2">検針日時</th>
+              <th rowspan="2">操作</th>
+            </tr>
+            <tr>
+              <th class="has-text-centered">今回</th>
+              <th class="has-text-centered">前回</th>
+              <th class="has-text-centered">前々回</th>
+              <th class="has-text-centered">前々々回</th>
+              <th class="has-text-centered">今回</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- 正常ルーム -->
+            <tr>
+              <td>R001</td>
+              <td>101号室</td>
+              <td><span class="tag is-success is-light is-small">✅ 済</span></td>
+              <td class="has-text-right highlight-col">1,234</td>
+              <td class="has-text-right">1,229</td>
+              <td class="has-text-right">1,220</td>
+              <td class="has-text-right">1,215</td>
+              <td class="has-text-right highlight-col usage-cell">5 m³</td>
+              <td class="has-text-right">2.3</td>
+              <td>2026/04/14</td>
+              <td>
+                <button class="button is-small is-light">編集</button>
+                <button class="button is-small is-danger is-light" disabled title="検針実績あり">
+                  削除
+                </button>
+              </td>
+            </tr>
+            <tr>
+              <td>R002</td>
+              <td>102号室</td>
+              <td><span class="tag is-success is-light is-small">✅ 済</span></td>
+              <td class="has-text-right highlight-col">1,567</td>
+              <td class="has-text-right">1,564</td>
+              <td class="has-text-right">1,560</td>
+              <td class="has-text-right">1,555</td>
+              <td class="has-text-right highlight-col usage-cell">3 m³</td>
+              <td class="has-text-right">1.8</td>
+              <td>2026/04/14</td>
+              <td>
+                <button class="button is-small is-light">編集</button>
+                <button class="button is-small is-danger is-light" disabled title="検針実績あり">
+                  削除
+                </button>
+              </td>
+            </tr>
+            <!-- 警告ルーム -->
+            <tr style="background: #fff8f0">
+              <td>R003</td>
+              <td>103号室</td>
+              <td><span class="tag is-warning is-light is-small">⚠️ 警告</span></td>
+              <td class="has-text-right highlight-col">1,258</td>
+              <td class="has-text-right">1,230</td>
+              <td class="has-text-right">1,224</td>
+              <td class="has-text-right">1,220</td>
+              <td class="has-text-right highlight-col usage-cell warn">28 m³ ⚠️</td>
+              <td class="has-text-right">5.2</td>
+              <td>2026/04/14</td>
+              <td>
+                <button class="button is-small is-light">編集</button>
+                <button class="button is-small is-danger is-light" disabled title="検針実績あり">
+                  削除
+                </button>
+              </td>
+            </tr>
+            <tr>
+              <td>R004</td>
+              <td>104号室</td>
+              <td><span class="tag is-success is-light is-small">✅ 済</span></td>
+              <td class="has-text-right highlight-col">890</td>
+              <td class="has-text-right">887</td>
+              <td class="has-text-right">883</td>
+              <td class="has-text-right">880</td>
+              <td class="has-text-right highlight-col usage-cell">3 m³</td>
+              <td class="has-text-right">1.5</td>
+              <td>2026/04/14</td>
+              <td>
+                <button class="button is-small is-light">編集</button>
+                <button class="button is-small is-danger is-light" disabled title="検針実績あり">
+                  削除
+                </button>
+              </td>
+            </tr>
+            <tr>
+              <td>R005</td>
+              <td>105号室</td>
+              <td><span class="tag is-success is-light is-small">✅ 済</span></td>
+              <td class="has-text-right highlight-col">2,345</td>
+              <td class="has-text-right">2,340</td>
+              <td class="has-text-right">2,335</td>
+              <td class="has-text-right">2,330</td>
+              <td class="has-text-right highlight-col usage-cell">5 m³</td>
+              <td class="has-text-right">2.0</td>
+              <td>2026/04/14</td>
+              <td>
+                <button class="button is-small is-light">編集</button>
+                <button class="button is-small is-danger is-light" disabled title="検針実績あり">
+                  削除
+                </button>
+              </td>
+            </tr>
+            <tr>
+              <td>R006</td>
+              <td>201号室</td>
+              <td><span class="tag is-success is-light is-small">✅ 済</span></td>
+              <td class="has-text-right highlight-col">567</td>
+              <td class="has-text-right">565</td>
+              <td class="has-text-right">562</td>
+              <td class="has-text-right">560</td>
+              <td class="has-text-right highlight-col usage-cell">2 m³</td>
+              <td class="has-text-right">1.2</td>
+              <td>2026/04/14</td>
+              <td>
+                <button class="button is-small is-light">編集</button>
+                <button class="button is-small is-danger is-light" disabled title="検針実績あり">
+                  削除
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 未検針物件の例 -->
+      <div style="margin-top: 3rem">
+        <h3 class="title is-5 mb-3">別例: 未検針部屋を含む物件（サンハウス）</h3>
+
+        <div class="summary-bar">
+          <div class="summary-card">
+            <p class="num has-text-primary">25</p>
+            <p class="lbl">総部屋数</p>
+          </div>
+          <div class="summary-card">
+            <p class="num has-text-success">0</p>
+            <p class="lbl">検針済み</p>
+          </div>
+          <div class="summary-card">
+            <p class="num has-text-danger">25</p>
+            <p class="lbl">未検針</p>
+          </div>
+          <div class="summary-card">
+            <p class="num has-text-grey-light">0</p>
+            <p class="lbl">警告</p>
+          </div>
+          <div class="summary-card">
+            <p class="num has-text-grey-light">0%</p>
+            <p class="lbl">完了率</p>
+          </div>
+        </div>
+
+        <div class="horizontal-scroll">
+          <table class="data-table table is-fullwidth is-hoverable is-bordered">
+            <thead>
+              <tr>
+                <th>部屋ID</th>
+                <th>部屋名</th>
+                <th>ステータス</th>
+                <th class="has-text-centered">今回指示数</th>
+                <th class="has-text-centered">前回指示数</th>
+                <th class="has-text-centered">使用量</th>
+                <th>検針日時</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>R001</td>
+                <td>101号室</td>
+                <td><span class="tag is-light is-small">未検針</span></td>
+                <td class="has-text-centered has-text-grey-light">—</td>
+                <td class="has-text-centered has-text-grey-light">—</td>
+                <td class="has-text-centered has-text-grey-light">—</td>
+                <td class="has-text-grey-light">—</td>
+                <td>
+                  <button class="button is-small is-light">編集</button>
+                  <button class="button is-small is-danger is-light">削除</button>
+                </td>
+              </tr>
+              <tr>
+                <td>R002</td>
+                <td>102号室</td>
+                <td><span class="tag is-light is-small">未検針</span></td>
+                <td class="has-text-centered has-text-grey-light">—</td>
+                <td class="has-text-centered has-text-grey-light">—</td>
+                <td class="has-text-centered has-text-grey-light">—</td>
+                <td class="has-text-grey-light">—</td>
+                <td>
+                  <button class="button is-small is-light">編集</button>
+                  <button class="button is-small is-danger is-light">削除</button>
+                </td>
+              </tr>
+              <tr>
+                <td>R003</td>
+                <td>103号室</td>
+                <td><span class="tag is-light is-small">未検針</span></td>
+                <td class="has-text-centered has-text-grey-light">—</td>
+                <td class="has-text-centered has-text-grey-light">—</td>
+                <td class="has-text-centered has-text-grey-light">—</td>
+                <td class="has-text-grey-light">—</td>
+                <td>
+                  <button class="button is-small is-light">編集</button>
+                  <button class="button is-small is-danger is-light">削除</button>
+                </td>
+              </tr>
+              <tr>
+                <td colspan="8" class="has-text-centered has-text-grey is-size-7">
+                  ... 全25部屋（以下省略）
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
