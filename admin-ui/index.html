@@ -292,15 +292,15 @@
       }
       /* ── Inspection Data Display ── */
       .stripe-even {
-        background: rgba(0, 0, 0, 0.03);
+        background: rgba(0, 0, 0, 0.05);
       }
       [data-theme='dark'] .stripe-even {
         background: rgba(255, 255, 255, 0.06);
       }
-      .table tbody tr:nth-child(even) {
-        background: rgba(0, 0, 0, 0.03);
+      .table:not(.inspection-table):not(.bulk-table) tbody tr:nth-child(even) {
+        background: rgba(0, 0, 0, 0.05);
       }
-      [data-theme='dark'] .table tbody tr:nth-child(even) {
+      [data-theme='dark'] .table:not(.inspection-table):not(.bulk-table) tbody tr:nth-child(even) {
         background: rgba(255, 255, 255, 0.06);
       }
       .inspection-table tbody tr:hover,
@@ -579,7 +579,7 @@
       }
       .content-scroll .inspection-table,
       .content-scroll .bulk-table {
-        min-width: 900px;
+        min-width: 1100px;
       }
       [data-theme='dark'] .content-scroll {
         color: #e0e0e0;
@@ -1016,7 +1016,7 @@
                           </div>
 
                           <!-- Expand View -->
-                          <div x-show="viewMode === 'expand'">
+                          <div x-show="viewMode === 'expand'" class="content-scroll">
                             <table
                               class="table is-fullwidth is-hoverable is-bordered inspection-table"
                             >
@@ -1281,7 +1281,7 @@
                                   <tr
                                     x-bind:class="getRoomStatusTag(room) === 'warning' ? 'warn-row' : (idx % 2 === 1 ? 'stripe-even' : '')"
                                   >
-                                    <td x-text="room.roomName"></td>
+                                    <td x-text="room.roomName" style="text-align: center"></td>
                                     <td>
                                       <span
                                         class="tag is-small"

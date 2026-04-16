@@ -27,7 +27,7 @@ document.addEventListener('alpine:init', function () {
 
       viewMode: 'expand',
       sortState: { key: null, dir: null },
-      expandedRooms: {},
+      expandedRooms: [],
       editInspectionForm: {
         roomId: '',
         roomName: '',
@@ -115,7 +115,7 @@ document.addEventListener('alpine:init', function () {
         }
         self.selectedProperty = prop;
         self.selectedPropertyId = propId;
-        self.expandedRooms = {};
+        self.expandedRooms = [];
         self.roomsLoading = true;
         self.error = '';
         self.roomsError = '';
@@ -507,15 +507,16 @@ document.addEventListener('alpine:init', function () {
       },
 
       toggleRoomExpand: function (roomId) {
-        if (this.expandedRooms[roomId]) {
-          this.expandedRooms[roomId] = false;
+        var idx = this.expandedRooms.indexOf(roomId);
+        if (idx >= 0) {
+          this.expandedRooms.splice(idx, 1);
         } else {
-          this.expandedRooms[roomId] = true;
+          this.expandedRooms.push(roomId);
         }
       },
 
       isRoomExpanded: function (roomId) {
-        return this.expandedRooms[roomId] === true;
+        return this.expandedRooms.indexOf(roomId) >= 0;
       },
 
       sortBy: function (key) {
