@@ -585,6 +585,7 @@
       .content-scroll {
         overflow-x: auto;
         border-radius: 6px;
+        max-width: 100%;
       }
       [data-theme='dark'] .content-scroll {
         color: #e0e0e0;
@@ -880,7 +881,11 @@ ${r?'Expression: "'+r+`"
                 </div>
 
                 <!-- Property Management -->
-                <div x-show="activeTab === 'properties'" x-data="propertyManagement">
+                <div
+                  x-show="activeTab === 'properties'"
+                  x-data="propertyManagement"
+                  style="overflow: hidden"
+                >
                   <div class="is-flex is-justify-content-space-between is-align-items-center mb-1">
                     <div>
                       <p class="title is-4 mb-1">🏠 物件管理</p>
