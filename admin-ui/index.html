@@ -497,7 +497,7 @@
         white-space: nowrap;
       }
       .bulk-table td:first-child {
-        text-align: left !important;
+        text-align: center !important;
       }
       .bulk-table .warn-row {
         background: #fff8f0;
@@ -1068,11 +1068,8 @@
                                   <th>操作</th>
                                 </tr>
                               </thead>
-                              <tbody>
-                                <template
-                                  x-for="(room, idx) in getSortedRooms()"
-                                  :key="room.roomId"
-                                >
+                              <template x-for="(room, idx) in getSortedRooms()" :key="room.roomId">
+                                <tbody>
                                   <tr
                                     class="room-row"
                                     x-on:click="toggleRoomExpand(room.roomId)"
@@ -1250,8 +1247,8 @@
                                       </template>
                                     </td>
                                   </tr>
-                                </template>
-                              </tbody>
+                                </tbody>
+                              </template>
                             </table>
                           </div>
 

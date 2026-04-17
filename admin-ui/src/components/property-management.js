@@ -507,11 +507,13 @@ document.addEventListener('alpine:init', function () {
       },
 
       toggleRoomExpand: function (roomId) {
-        var idx = this.expandedRooms.indexOf(roomId);
-        if (idx >= 0) {
-          this.expandedRooms.splice(idx, 1);
+        var expanded = this.expandedRooms;
+        if (expanded.indexOf(roomId) >= 0) {
+          this.expandedRooms = expanded.filter(function (id) {
+            return id !== roomId;
+          });
         } else {
-          this.expandedRooms.push(roomId);
+          this.expandedRooms = expanded.concat([roomId]);
         }
       },
 
