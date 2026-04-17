@@ -586,12 +586,6 @@
         overflow-x: auto;
         border-radius: 6px;
       }
-      .content-scroll .inspection-table {
-        min-width: 1000px;
-      }
-      .content-scroll .bulk-table {
-        min-width: 1100px;
-      }
       [data-theme='dark'] .content-scroll {
         color: #e0e0e0;
       }
@@ -1033,7 +1027,8 @@ ${r?'Expression: "'+r+`"
                           <!-- Expand View -->
                           <div x-show="viewMode === 'expand'" class="content-scroll">
                             <table
-                              class="table is-fullwidth is-hoverable is-bordered inspection-table"
+                              class="table is-hoverable is-bordered inspection-table"
+                              style="width: 100%; min-width: 1000px"
                             >
                               <colgroup>
                                 <col style="width: 40px" />
@@ -1280,7 +1275,10 @@ ${r?'Expression: "'+r+`"
 
                           <!-- Bulk View -->
                           <div x-show="viewMode === 'bulk'" class="content-scroll">
-                            <table class="bulk-table table is-hoverable is-bordered">
+                            <table
+                              class="bulk-table table is-hoverable is-bordered"
+                              style="width: 100%; min-width: 1100px"
+                            >
                               <thead>
                                 <tr>
                                   <th>部屋名</th>
