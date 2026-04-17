@@ -347,12 +347,8 @@ document.addEventListener('alpine:init', function () {
 
       getPropertySubtitle: function () {
         if (this.selectedProperty) {
-          return (
-            this.getPropName(this.selectedProperty) +
-            ' — 全' +
-            this.rooms.length +
-            '部屋の検針データ一覧'
-          );
+          var count = this.getSummaryCards().total;
+          return this.getPropName(this.selectedProperty) + ' — 全' + count + '部屋の検針データ一覧';
         }
         if (this.properties.length > 0) {
           return '物件を選択してください';
@@ -499,7 +495,7 @@ document.addEventListener('alpine:init', function () {
         var inspectable = total - skip;
         var completed = done + warning;
         var rate = inspectable > 0 ? Math.round((completed / inspectable) * 100) : 0;
-        return { total: total, done: done, pending: pending, warning: warning, rate: rate };
+        return { total: inspectable, done: done, pending: pending, warning: warning, rate: rate };
       },
 
       switchView: function (mode) {

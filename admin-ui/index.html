@@ -491,11 +491,16 @@
         background: #422006;
         color: #fde047;
       }
+      .bulk-table {
+        table-layout: fixed;
+      }
       .bulk-table th,
       .bulk-table td {
         text-align: center !important;
         vertical-align: middle;
         white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
       .bulk-table td:first-child {
         text-align: center !important;
@@ -1035,7 +1040,7 @@
                                 <col />
                                 <col />
                                 <col />
-                                <col style="width: 120px" />
+                                <col style="width: 160px" />
                               </colgroup>
                               <thead>
                                 <tr>
