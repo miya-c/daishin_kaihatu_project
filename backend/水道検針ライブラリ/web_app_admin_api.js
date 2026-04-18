@@ -119,6 +119,23 @@ function adminDispatch(action, params) {
         return addRoom(params);
       }
 
+      case 'bulkAddProperties': {
+        if (!params.items || !Array.isArray(params.items)) {
+          return { success: false, error: 'items配列が必要です' };
+        }
+        return bulkAddProperties(params);
+      }
+
+      case 'bulkAddRooms': {
+        if (!params.propertyId) {
+          return { success: false, error: '物件IDは必須です' };
+        }
+        if (!params.items || !Array.isArray(params.items)) {
+          return { success: false, error: 'items配列が必要です' };
+        }
+        return bulkAddRooms(params);
+      }
+
       case 'updateRoom': {
         if (!params.propertyId || !params.roomId || !params.roomName) {
           return { success: false, error: '物件ID・部屋ID・部屋名は必須です' };

@@ -1,0 +1,635 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>一括登録モーダル モック</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.4/css/bulma.min.css" />
+    <style>
+      body {
+        background: #f5f5f5;
+        padding: 2rem;
+      }
+      .mock-section {
+        max-width: 620px;
+        margin: 0 auto 3rem;
+      }
+      .mock-label {
+        font-weight: 700;
+        font-size: 1.2rem;
+        margin-bottom: 1rem;
+        color: #363636;
+      }
+      .modal-sim {
+        position: relative;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+        overflow: hidden;
+      }
+      .preview-list {
+        max-height: 200px;
+        overflow-y: auto;
+        border: 1px solid #dbdbdb;
+        border-radius: 6px;
+        background: #fafafa;
+      }
+      .preview-item {
+        display: flex;
+        align-items: center;
+        padding: 0.4rem 0.75rem;
+        border-bottom: 1px solid #eee;
+        font-size: 0.85rem;
+      }
+      .preview-item:last-child {
+        border-bottom: none;
+      }
+      .preview-num {
+        color: #888;
+        width: 2rem;
+        font-size: 0.75rem;
+        flex-shrink: 0;
+      }
+      .preview-name {
+        flex: 1;
+        font-weight: 500;
+      }
+      .preview-id {
+        color: #7a7a7a;
+        font-size: 0.75rem;
+        flex-shrink: 0;
+        min-width: 5rem;
+        text-align: right;
+      }
+      .preview-header {
+        display: flex;
+        align-items: center;
+        padding: 0.5rem 0.75rem;
+        background: #f5f5f5;
+        border-bottom: 1px solid #dbdbdb;
+        font-size: 0.75rem;
+        color: #666;
+        font-weight: 600;
+      }
+      .count-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: #485fc7;
+        color: white;
+        border-radius: 12px;
+        padding: 0.1rem 0.6rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+      }
+      .error-text {
+        color: #f14668;
+        font-size: 0.8rem;
+      }
+      .format-tabs {
+        display: flex;
+        gap: 0;
+        margin-bottom: 0.5rem;
+      }
+      .format-tab {
+        padding: 0.35rem 0.75rem;
+        font-size: 0.75rem;
+        border: 1px solid #dbdbdb;
+        background: #f5f5f5;
+        color: #666;
+        cursor: pointer;
+      }
+      .format-tab:first-child {
+        border-radius: 6px 0 0 6px;
+      }
+      .format-tab:last-child {
+        border-radius: 0 6px 6px 0;
+      }
+      .format-tab.active {
+        background: #485fc7;
+        color: white;
+        border-color: #485fc7;
+      }
+      .format-hint {
+        font-size: 0.7rem;
+        color: #888;
+        margin-top: 0.25rem;
+        padding-left: 0.25rem;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- ============================================================ -->
+    <!-- パターン1: 一括物件登録（1行1件形式）                           -->
+    <!-- ============================================================ -->
+    <div class="mock-section">
+      <p class="mock-label">📥 一括物件登録 — 1行1件形式</p>
+      <div class="modal-sim">
+        <header class="modal-card-head">
+          <p class="modal-card-title">📥 一括物件登録</p>
+          <button class="delete" aria-label="閉じる"></button>
+        </header>
+        <section class="modal-card-body">
+          <div class="format-tabs">
+            <span class="format-tab active">1行1件</span>
+            <span class="format-tab">CSV</span>
+          </div>
+          <p class="is-size-7 has-text-grey mb-3">
+            1行に1件ずつ物件名を入力してください。物件IDは自動で採番されます。
+          </p>
+
+          <div class="field">
+            <label class="label">物件名一覧</label>
+            <div class="control">
+              <textarea
+                class="textarea"
+                rows="5"
+                placeholder="例:&#10;ABCマンション&#10;XYZハイツ&#10;123住宅"
+              >
+ABCマンション
+XYZハイツ
+123住宅</textarea
+              >
+            </div>
+            <p class="help">入力件数: <span class="count-badge">3</span> 件</p>
+          </div>
+
+          <div class="field">
+            <label class="label is-size-7 has-text-grey">プレビュー</label>
+            <div class="preview-list">
+              <div class="preview-header">
+                <span class="preview-num">#</span>
+                <span class="preview-name">物件名</span>
+                <span class="preview-id">物件ID</span>
+              </div>
+              <div class="preview-item">
+                <span class="preview-num">1</span>
+                <span class="preview-name">ABCマンション</span>
+                <span class="preview-id">P000001</span>
+              </div>
+              <div class="preview-item">
+                <span class="preview-num">2</span>
+                <span class="preview-name">XYZハイツ</span>
+                <span class="preview-id">P000002</span>
+              </div>
+              <div class="preview-item">
+                <span class="preview-num">3</span>
+                <span class="preview-name">123住宅</span>
+                <span class="preview-id">P000003</span>
+              </div>
+            </div>
+          </div>
+        </section>
+        <footer class="modal-card-foot">
+          <button class="button is-primary">3件を登録する</button>
+          <button class="button">キャンセル</button>
+        </footer>
+      </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- パターン2: 一括物件登録（CSV形式）                              -->
+    <!-- ============================================================ -->
+    <div class="mock-section">
+      <p class="mock-label">📥 一括物件登録 — CSV形式</p>
+      <div class="modal-sim">
+        <header class="modal-card-head">
+          <p class="modal-card-title">📥 一括物件登録</p>
+          <button class="delete" aria-label="閉じる"></button>
+        </header>
+        <section class="modal-card-body">
+          <div class="format-tabs">
+            <span class="format-tab">1行1件</span>
+            <span class="format-tab active">CSV</span>
+          </div>
+          <p class="is-size-7 has-text-grey mb-3">
+            CSV形式で入力できます。物件IDを省略すると自動採番されます。
+          </p>
+
+          <div class="field">
+            <label class="label">物件一覧（CSV）</label>
+            <div class="control">
+              <textarea
+                class="textarea"
+                rows="5"
+                placeholder="物件名,物件ID（省略可）&#10;ABCマンション,P000010&#10;XYZハイツ,&#10;123住宅,P000020"
+              >
+ABCマンション,P000010
+XYZハイツ,
+123住宅,P000020</textarea
+              >
+            </div>
+            <p class="format-hint">書式: 物件名,物件ID（物件IDは省略可）</p>
+            <p class="help">入力件数: <span class="count-badge">3</span> 件</p>
+          </div>
+
+          <div class="field">
+            <label class="label is-size-7 has-text-grey">プレビュー</label>
+            <div class="preview-list">
+              <div class="preview-header">
+                <span class="preview-num">#</span>
+                <span class="preview-name">物件名</span>
+                <span class="preview-id">物件ID</span>
+              </div>
+              <div class="preview-item">
+                <span class="preview-num">1</span>
+                <span class="preview-name">ABCマンション</span>
+                <span class="preview-id">P000010</span>
+              </div>
+              <div class="preview-item">
+                <span class="preview-num">2</span>
+                <span class="preview-name">XYZハイツ</span>
+                <span class="preview-id">P000011（自動）</span>
+              </div>
+              <div class="preview-item">
+                <span class="preview-num">3</span>
+                <span class="preview-name">123住宅</span>
+                <span class="preview-id">P000020</span>
+              </div>
+            </div>
+          </div>
+        </section>
+        <footer class="modal-card-foot">
+          <button class="button is-primary">3件を登録する</button>
+          <button class="button">キャンセル</button>
+        </footer>
+      </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- パターン3: 一括物件登録 — 結果表示（全件成功）                   -->
+    <!-- ============================================================ -->
+    <div class="mock-section">
+      <p class="mock-label">📥 一括物件登録 — 結果（全件成功）</p>
+      <div class="modal-sim">
+        <header class="modal-card-head">
+          <p class="modal-card-title">📥 一括物件登録</p>
+          <button class="delete" aria-label="閉じる"></button>
+        </header>
+        <section class="modal-card-body">
+          <div class="notification is-success is-light py-2 px-3 mb-3">
+            <p class="is-size-7"><strong>3件</strong>の物件を登録しました。</p>
+          </div>
+          <div class="preview-list">
+            <div class="preview-header">
+              <span class="preview-num">#</span>
+              <span class="preview-name">物件名</span>
+              <span class="preview-id">結果</span>
+            </div>
+            <div class="preview-item">
+              <span class="preview-num">1</span>
+              <span class="preview-name">ABCマンション</span>
+              <span class="preview-id">✅ P000010</span>
+            </div>
+            <div class="preview-item">
+              <span class="preview-num">2</span>
+              <span class="preview-name">XYZハイツ</span>
+              <span class="preview-id">✅ P000011</span>
+            </div>
+            <div class="preview-item">
+              <span class="preview-num">3</span>
+              <span class="preview-name">123住宅</span>
+              <span class="preview-id">✅ P000020</span>
+            </div>
+          </div>
+        </section>
+        <footer class="modal-card-foot">
+          <button class="button">閉じる</button>
+        </footer>
+      </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- パターン4: 一括物件登録 — エラーあり                            -->
+    <!-- ============================================================ -->
+    <div class="mock-section">
+      <p class="mock-label">📥 一括物件登録 — エラーあり</p>
+      <div class="modal-sim">
+        <header class="modal-card-head">
+          <p class="modal-card-title">📥 一括物件登録</p>
+          <button class="delete" aria-label="閉じる"></button>
+        </header>
+        <section class="modal-card-body">
+          <div class="notification is-warning is-light py-2 px-3 mb-3">
+            <p class="is-size-7"><strong>2件</strong>登録成功 / <strong>1件</strong>失敗</p>
+          </div>
+          <div class="preview-list">
+            <div class="preview-header">
+              <span class="preview-num">#</span>
+              <span class="preview-name">物件名</span>
+              <span class="preview-id">結果</span>
+            </div>
+            <div class="preview-item">
+              <span class="preview-num">1</span>
+              <span class="preview-name">ABCマンション</span>
+              <span class="preview-id">✅ P000010</span>
+            </div>
+            <div class="preview-item">
+              <span class="preview-num">2</span>
+              <span class="preview-name" style="color: #f14668">ABCマンション</span>
+              <span class="preview-id error-text">❌ 重複</span>
+            </div>
+            <div class="preview-item">
+              <span class="preview-num">3</span>
+              <span class="preview-name">XYZハイツ</span>
+              <span class="preview-id">✅ P000011</span>
+            </div>
+          </div>
+        </section>
+        <footer class="modal-card-foot">
+          <button class="button">閉じる</button>
+        </footer>
+      </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- パターン5: 一括部屋登録（1行1件形式）                           -->
+    <!-- ============================================================ -->
+    <div class="mock-section">
+      <p class="mock-label">🏠 一括部屋登録 — 1行1件形式</p>
+      <div class="modal-sim">
+        <header class="modal-card-head">
+          <p class="modal-card-title">🏠 一括部屋登録</p>
+          <button class="delete" aria-label="閉じる"></button>
+        </header>
+        <section class="modal-card-body">
+          <div class="mb-3">
+            <span class="tag is-info is-light">物件: ABCマンション</span>
+          </div>
+          <div class="format-tabs">
+            <span class="format-tab active">1行1件</span>
+            <span class="format-tab">CSV</span>
+          </div>
+          <p class="is-size-7 has-text-grey mb-3">
+            1行に1件ずつ部屋名を入力してください。部屋IDは自動で採番されます。
+          </p>
+
+          <div class="field">
+            <label class="label">部屋名一覧</label>
+            <div class="control">
+              <textarea class="textarea" rows="8" placeholder="例:&#10;101&#10;102&#10;201">
+101
+102
+103
+201
+202
+203
+301
+302</textarea
+              >
+            </div>
+            <p class="help">入力件数: <span class="count-badge">8</span> 件</p>
+          </div>
+
+          <div class="field">
+            <label class="label is-size-7 has-text-grey">プレビュー</label>
+            <div class="preview-list">
+              <div class="preview-header">
+                <span class="preview-num">#</span>
+                <span class="preview-name">部屋名</span>
+                <span class="preview-id">部屋ID</span>
+              </div>
+              <div class="preview-item">
+                <span class="preview-num">1</span><span class="preview-name">101</span
+                ><span class="preview-id">R001</span>
+              </div>
+              <div class="preview-item">
+                <span class="preview-num">2</span><span class="preview-name">102</span
+                ><span class="preview-id">R002</span>
+              </div>
+              <div class="preview-item">
+                <span class="preview-num">3</span><span class="preview-name">103</span
+                ><span class="preview-id">R003</span>
+              </div>
+              <div class="preview-item">
+                <span class="preview-num">4</span><span class="preview-name">201</span
+                ><span class="preview-id">R004</span>
+              </div>
+              <div class="preview-item">
+                <span class="preview-num">5</span><span class="preview-name">202</span
+                ><span class="preview-id">R005</span>
+              </div>
+              <div class="preview-item">
+                <span class="preview-num">6</span><span class="preview-name">203</span
+                ><span class="preview-id">R006</span>
+              </div>
+              <div class="preview-item">
+                <span class="preview-num">7</span><span class="preview-name">301</span
+                ><span class="preview-id">R007</span>
+              </div>
+              <div class="preview-item">
+                <span class="preview-num">8</span><span class="preview-name">302</span
+                ><span class="preview-id">R008</span>
+              </div>
+            </div>
+          </div>
+        </section>
+        <footer class="modal-card-foot">
+          <button class="button is-primary">8件を登録する</button>
+          <button class="button">キャンセル</button>
+        </footer>
+      </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- パターン6: 一括部屋登録（CSV形式）                              -->
+    <!-- ============================================================ -->
+    <div class="mock-section">
+      <p class="mock-label">🏠 一括部屋登録 — CSV形式</p>
+      <div class="modal-sim">
+        <header class="modal-card-head">
+          <p class="modal-card-title">🏠 一括部屋登録</p>
+          <button class="delete" aria-label="閉じる"></button>
+        </header>
+        <section class="modal-card-body">
+          <div class="mb-3">
+            <span class="tag is-info is-light">物件: ABCマンション</span>
+          </div>
+          <div class="format-tabs">
+            <span class="format-tab">1行1件</span>
+            <span class="format-tab active">CSV</span>
+          </div>
+          <p class="is-size-7 has-text-grey mb-3">
+            CSV形式で入力できます。部屋名のみ、または部屋名+部屋IDを指定できます。
+          </p>
+
+          <div class="field">
+            <label class="label">部屋一覧（CSV）</label>
+            <div class="control">
+              <textarea
+                class="textarea"
+                rows="6"
+                placeholder="部屋名,部屋ID（省略可）&#10;101,R100&#10;102,&#10;201"
+              >
+101,R100
+102,
+103,
+201,
+202,R200</textarea
+              >
+            </div>
+            <p class="format-hint">書式: 部屋名,部屋ID（部屋IDは省略可）</p>
+            <p class="help">入力件数: <span class="count-badge">5</span> 件</p>
+          </div>
+
+          <div class="field">
+            <label class="label is-size-7 has-text-grey">プレビュー</label>
+            <div class="preview-list">
+              <div class="preview-header">
+                <span class="preview-num">#</span>
+                <span class="preview-name">部屋名</span>
+                <span class="preview-id">部屋ID</span>
+              </div>
+              <div class="preview-item">
+                <span class="preview-num">1</span><span class="preview-name">101</span
+                ><span class="preview-id">R100</span>
+              </div>
+              <div class="preview-item">
+                <span class="preview-num">2</span><span class="preview-name">102</span
+                ><span class="preview-id">R001（自動）</span>
+              </div>
+              <div class="preview-item">
+                <span class="preview-num">3</span><span class="preview-name">103</span
+                ><span class="preview-id">R002（自動）</span>
+              </div>
+              <div class="preview-item">
+                <span class="preview-num">4</span><span class="preview-name">201</span
+                ><span class="preview-id">R003（自動）</span>
+              </div>
+              <div class="preview-item">
+                <span class="preview-num">5</span><span class="preview-name">202</span
+                ><span class="preview-id">R200</span>
+              </div>
+            </div>
+          </div>
+        </section>
+        <footer class="modal-card-foot">
+          <button class="button is-primary">5件を登録する</button>
+          <button class="button">キャンセル</button>
+        </footer>
+      </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- パターン7: ボタン配置イメージ                                   -->
+    <!-- ============================================================ -->
+    <div class="mock-section">
+      <p class="mock-label">ボタン配置イメージ</p>
+      <div class="box">
+        <div
+          style="
+            background: #00d1b2;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px 6px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+          "
+        >
+          <strong style="color: white">🏠 物件管理</strong>
+          <div>
+            <button class="button is-small is-light">+ 物件を追加</button>
+            <button class="button is-small is-info is-light" style="margin-left: 0.5rem">
+              📥 一括物件登録
+            </button>
+          </div>
+        </div>
+
+        <div style="padding: 1rem; border-bottom: 1px solid #eee">
+          <div class="select is-small">
+            <select>
+              <option>ABCマンション</option>
+              <option>XYZハイツ</option>
+            </select>
+          </div>
+          <span style="color: #888; font-size: 0.8rem; margin-left: 0.5rem"
+            >— 全8部屋の検針データ一覧</span
+          >
+        </div>
+
+        <div
+          style="
+            padding: 1rem;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+          "
+        >
+          <div style="display: flex; gap: 0.75rem">
+            <div
+              style="
+                text-align: center;
+                padding: 0.5rem 1rem;
+                background: #f5f5f5;
+                border-radius: 6px;
+              "
+            >
+              <div style="font-weight: 700; color: #485fc7">8</div>
+              <div style="font-size: 0.7rem; color: #888">総部屋数</div>
+            </div>
+            <div
+              style="
+                text-align: center;
+                padding: 0.5rem 1rem;
+                background: #f5f5f5;
+                border-radius: 6px;
+              "
+            >
+              <div style="font-weight: 700; color: #48c78e">5</div>
+              <div style="font-size: 0.7rem; color: #888">検針済み</div>
+            </div>
+            <div
+              style="
+                text-align: center;
+                padding: 0.5rem 1rem;
+                background: #f5f5f5;
+                border-radius: 6px;
+              "
+            >
+              <div style="font-weight: 700; color: #888">3</div>
+              <div style="font-size: 0.7rem; color: #888">未検針</div>
+            </div>
+            <div
+              style="
+                text-align: center;
+                padding: 0.5rem 1rem;
+                background: #f5f5f5;
+                border-radius: 6px;
+              "
+            >
+              <div style="font-weight: 700; color: #f14668">0</div>
+              <div style="font-size: 0.7rem; color: #888">警告</div>
+            </div>
+            <div
+              style="
+                text-align: center;
+                padding: 0.5rem 1rem;
+                background: #f5f5f5;
+                border-radius: 6px;
+              "
+            >
+              <div style="font-weight: 700; color: #48c78e">63%</div>
+              <div style="font-size: 0.7rem; color: #888">完了率</div>
+            </div>
+          </div>
+          <button class="button is-small is-info is-light">📥 一括部屋登録</button>
+        </div>
+
+        <div style="padding: 0.75rem 1rem">
+          <div class="buttons are-small" style="margin-bottom: 0">
+            <button class="button is-primary is-selected">展開表示</button>
+            <button class="button">一括確認</button>
+          </div>
+        </div>
+
+        <div style="padding: 2rem; text-align: center; color: #bbb; font-size: 0.85rem">
+          （テーブル省略）
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

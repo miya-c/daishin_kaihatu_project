@@ -38,6 +38,16 @@ document.addEventListener('alpine:init', function () {
         hasInspectionData: false,
       },
 
+      bulkPropertyFormat: 'oneline',
+      bulkPropertyText: '',
+      bulkPropertyResults: null,
+      bulkPropertySubmitting: false,
+
+      bulkRoomFormat: 'oneline',
+      bulkRoomText: '',
+      bulkRoomResults: null,
+      bulkRoomSubmitting: false,
+
       init: function () {
         var self = this;
         this._pendingPropertyId = '';
@@ -622,6 +632,180 @@ document.addEventListener('alpine:init', function () {
           .catch(function (err) {
             self.error = '更新に失敗しました: ' + (err.message || err);
           });
+      },
+
+      openBulkAddProperty: function () {
+        this.bulkPropertyFormat = 'oneline';
+        this.bulkPropertyText = '';
+        this.bulkPropertyResults = null;
+        this.bulkPropertySubmitting = false;
+        this.error = '';
+        this.activeModal = 'bulkAddProperty';
+      },
+
+      getBulkPropertyItems: function () {
+        var text = this.bulkPropertyText || '';
+        var format = this.bulkPropertyFormat;
+        var lines = text.split('\n');
+        var items = [];
+        for (var i = 0; i < lines.length; i++) {
+          var line = lines[i].trim();
+          if (!line) continue;
+          if (format === 'csv') {
+            var parts = line.split(',');
+            var name = (parts[0] || '').trim();
+            var id = (parts[1] || '').trim();
+            if (name) items.push({ name: name, id: id });
+          } else {
+            items.push({ name: line, id: '' });
+          }
+        }
+        return items;
+      },
+
+      getBulkPropertyCount: function () {
+        return this.getBulkPropertyItems().length;
+      },
+
+      getBulkPropertyPreview: function () {
+        var items = this.getBulkPropertyItems();
+        if (items.length === 0) return [];
+        var baseId = this.getAutoPropertyId();
+        var baseNum = parseInt(baseId.replace('P', ''), 10);
+        var preview = [];
+        for (var i = 0; i < items.length; i++) {
+          var item = items[i];
+          var estimatedId;
+          if (item.id) {
+            var digits = item.id.replace(/[^0-9]/g, '');
+            if (digits) {
+              estimatedId = 'P' + ('000000' + parseInt(digits, 10)).slice(-6);
+            } else {
+              estimatedId = 'P' + ('000000' + (baseNum + i)).slice(-6);
+            }
+          } else {
+            estimatedId = 'P' + ('000000' + (baseNum + i)).slice(-6);
+          }
+          preview.push({ name: item.name, id: estimatedId, hasManualId: !!item.id });
+        }
+        return preview;
+      },
+
+      submitBulkAddProperty: function () {
+        var self = this;
+        var items = self.getBulkPropertyItems();
+        if (items.length === 0) {
+          self.error = '物件名を入力してください';
+          return;
+        }
+        self.bulkPropertySubmitting = true;
+        self.error = '';
+        callAdminAPI('bulkAddProperties', { items: items })
+          .then(function (result) {
+            if (result && result.success) {
+              self.bulkPropertyResults = result.data;
+              self.bulkPropertySubmitting = false;
+              self.loadProperties();
+            } else {
+              self.error = (result && result.error) || '一括登録に失敗しました';
+              self.bulkPropertySubmitting = false;
+            }
+          })
+          .catch(function (err) {
+            self.error = '一括登録に失敗しました: ' + (err.message || err);
+            self.bulkPropertySubmitting = false;
+          });
+      },
+
+      closeBulkPropertyModal: function () {
+        this.activeModal = '';
+        this.bulkPropertyResults = null;
+        this.bulkPropertyText = '';
+        this.error = '';
+      },
+
+      openBulkAddRoom: function () {
+        if (!this.selectedProperty) return;
+        this.bulkRoomFormat = 'oneline';
+        this.bulkRoomText = '';
+        this.bulkRoomResults = null;
+        this.bulkRoomSubmitting = false;
+        this.error = '';
+        this.activeModal = 'bulkAddRoom';
+      },
+
+      getBulkRoomItems: function () {
+        var text = this.bulkRoomText || '';
+        var lines = text.split('\n');
+        var items = [];
+        for (var i = 0; i < lines.length; i++) {
+          var line = lines[i].trim();
+          if (!line) continue;
+          items.push({ name: line });
+        }
+        return items;
+      },
+
+      getBulkRoomCount: function () {
+        return this.getBulkRoomItems().length;
+      },
+
+      getBulkRoomPreview: function () {
+        var items = this.getBulkRoomItems();
+        if (items.length === 0) return [];
+        var baseNum = 1;
+        for (var r = 0; r < this.rooms.length; r++) {
+          var rid = this.rooms[r].roomId || '';
+          var match = rid.match(/^R(\d{3})$/);
+          if (match) {
+            var num = parseInt(match[1], 10);
+            if (num >= baseNum) baseNum = num + 1;
+          }
+        }
+        var preview = [];
+        for (var i = 0; i < items.length; i++) {
+          preview.push({
+            name: items[i].name,
+            id: 'R' + ('000' + (baseNum + i)).slice(-3),
+          });
+        }
+        return preview;
+      },
+
+      submitBulkAddRoom: function () {
+        var self = this;
+        var items = self.getBulkRoomItems();
+        if (items.length === 0) {
+          self.error = '部屋名を入力してください';
+          return;
+        }
+        self.bulkRoomSubmitting = true;
+        self.error = '';
+        callAdminAPI('bulkAddRooms', {
+          propertyId: self.getPropId(self.selectedProperty),
+          items: items,
+        })
+          .then(function (result) {
+            if (result && result.success) {
+              self.bulkRoomResults = result.data;
+              self.bulkRoomSubmitting = false;
+              self.selectProperty(self.selectedProperty);
+            } else {
+              self.error = (result && result.error) || '一括登録に失敗しました';
+              self.bulkRoomSubmitting = false;
+            }
+          })
+          .catch(function (err) {
+            self.error = '一括登録に失敗しました: ' + (err.message || err);
+            self.bulkRoomSubmitting = false;
+          });
+      },
+
+      closeBulkRoomModal: function () {
+        this.activeModal = '';
+        this.bulkRoomResults = null;
+        this.bulkRoomText = '';
+        this.error = '';
       },
     };
   });

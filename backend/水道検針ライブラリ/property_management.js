@@ -156,6 +156,260 @@ function addProperty(params) {
 }
 
 /**
+ * Bulk add properties to 物件マスタ
+ * @param {Object} params - { items: [{ name: string, id?: string }] }
+ * @returns {Object} { success, data: { results, succeededCount, failedCount } }
+ */
+function bulkAddProperties(params) {
+  return withScriptLock(function () {
+    try {
+      if (!params.items || !Array.isArray(params.items) || params.items.length === 0) {
+        return { success: false, error: '登録データが空です' };
+      }
+      if (params.items.length > 100) {
+        return { success: false, error: '一括登録は100件までです' };
+      }
+
+      var ss = SpreadsheetApp.getActiveSpreadsheet();
+      var sheet = ss.getSheetByName(CONFIG.SHEET_NAMES.PROPERTY_MASTER);
+      if (!sheet) {
+        return { success: false, error: '物件マスタシートが見つかりません' };
+      }
+
+      var existingData = sheet.getDataRange().getValues();
+      var existingIds = {};
+      var existingNames = {};
+      var maxNum = 0;
+      for (var i = 1; i < existingData.length; i++) {
+        var eid = String(existingData[i][0]).trim();
+        var ename = String(existingData[i][1]).trim();
+        existingIds[eid] = true;
+        existingNames[ename] = true;
+        var match = eid.match(/^P(\d{6})$/);
+        if (match) {
+          var num = parseInt(match[1], 10);
+          if (num > maxNum) maxNum = num;
+        }
+      }
+
+      var results = [];
+      var succeededCount = 0;
+      var failedCount = 0;
+      var batchNames = {};
+
+      for (var j = 0; j < params.items.length; j++) {
+        var item = params.items[j];
+        var propertyName = String(item.name || '').trim();
+
+        if (!propertyName) {
+          results.push({ name: '', id: '', success: false, error: '物件名が空です' });
+          failedCount++;
+          continue;
+        }
+
+        if (batchNames[propertyName]) {
+          results.push({ name: propertyName, id: '', success: false, error: 'バッチ内重複' });
+          failedCount++;
+          continue;
+        }
+
+        if (
+          propertyName.startsWith('=') ||
+          propertyName.startsWith('+') ||
+          propertyName.startsWith('-') ||
+          propertyName.startsWith('@')
+        ) {
+          propertyName = "'" + propertyName;
+        }
+
+        var propertyId;
+        if (item.id && String(item.id).trim()) {
+          try {
+            var normalized = normalizePropertyId(item.id);
+            if (normalized !== null) {
+              propertyId = normalized;
+            } else {
+              propertyId = 'P' + ('000000' + ++maxNum).slice(-6);
+            }
+          } catch (e) {
+            results.push({ name: propertyName, id: '', success: false, error: e.message });
+            failedCount++;
+            continue;
+          }
+        } else {
+          propertyId = 'P' + ('000000' + ++maxNum).slice(-6);
+        }
+
+        if (existingIds[propertyId]) {
+          results.push({ name: propertyName, id: propertyId, success: false, error: '物件ID重複' });
+          failedCount++;
+          continue;
+        }
+        if (existingNames[propertyName]) {
+          results.push({ name: propertyName, id: '', success: false, error: '物件名重複' });
+          failedCount++;
+          continue;
+        }
+
+        sheet.appendRow([propertyId, propertyName, '']);
+        existingIds[propertyId] = true;
+        existingNames[propertyName] = true;
+        batchNames[propertyName] = true;
+
+        results.push({ name: propertyName, id: propertyId, success: true });
+        succeededCount++;
+      }
+
+      return {
+        success: true,
+        data: { results: results, succeededCount: succeededCount, failedCount: failedCount },
+      };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  }, 60000);
+}
+
+/**
+ * Bulk add rooms to 部屋マスタ and diff-insert into inspection_data
+ * @param {Object} params - { propertyId: string, items: [{ name: string }] }
+ * @returns {Object} { success, data: { results, succeededCount, failedCount } }
+ */
+function bulkAddRooms(params) {
+  return withScriptLock(function () {
+    try {
+      if (!params.propertyId) {
+        return { success: false, error: '物件IDは必須です' };
+      }
+      if (!params.items || !Array.isArray(params.items) || params.items.length === 0) {
+        return { success: false, error: '登録データが空です' };
+      }
+      if (params.items.length > 200) {
+        return { success: false, error: '一括登録は200件までです' };
+      }
+
+      var propertyId = String(params.propertyId).trim();
+      var ss = SpreadsheetApp.getActiveSpreadsheet();
+
+      var propSheet = ss.getSheetByName(CONFIG.SHEET_NAMES.PROPERTY_MASTER);
+      if (!propSheet) {
+        return { success: false, error: '物件マスタシートが見つかりません' };
+      }
+      var propData = propSheet.getDataRange().getValues();
+      var propertyName = '';
+      var propertyFound = false;
+      for (var p = 1; p < propData.length; p++) {
+        if (String(propData[p][0]).trim() === propertyId) {
+          propertyName = String(propData[p][1]).trim();
+          propertyFound = true;
+          break;
+        }
+      }
+      if (!propertyFound) {
+        return { success: false, error: '物件ID「' + propertyId + '」が見つかりません' };
+      }
+
+      var roomSheet = ss.getSheetByName(CONFIG.SHEET_NAMES.ROOM_MASTER);
+      if (!roomSheet) {
+        return { success: false, error: '部屋マスタシートが見つかりません' };
+      }
+      var roomData = roomSheet.getDataRange().getValues();
+      var existingRoomIds = {};
+      var existingRoomNames = {};
+      var maxRoomNum = 0;
+      for (var r = 1; r < roomData.length; r++) {
+        if (String(roomData[r][0]).trim() === propertyId) {
+          var rid = String(roomData[r][1]).trim();
+          var rname = String(roomData[r][2]).trim();
+          existingRoomIds[rid] = true;
+          existingRoomNames[rname] = true;
+          var rmatch = rid.match(/^R(\d{3})$/);
+          if (rmatch) {
+            var rnum = parseInt(rmatch[1], 10);
+            if (rnum > maxRoomNum) maxRoomNum = rnum;
+          }
+        }
+      }
+
+      var inspectionSheet = ss.getSheetByName(CONFIG.SHEET_NAMES.INSPECTION_DATA);
+      var inspHeaders = null;
+      if (inspectionSheet && inspectionSheet.getLastRow() >= 1) {
+        inspHeaders = inspectionSheet
+          .getRange(1, 1, 1, inspectionSheet.getLastColumn())
+          .getValues()[0];
+      }
+
+      var results = [];
+      var succeededCount = 0;
+      var failedCount = 0;
+      var batchNames = {};
+
+      for (var j = 0; j < params.items.length; j++) {
+        var item = params.items[j];
+        var roomName = String(item.name || '').trim();
+
+        if (!roomName) {
+          results.push({ name: '', id: '', success: false, error: '部屋名が空です' });
+          failedCount++;
+          continue;
+        }
+        if (batchNames[roomName]) {
+          results.push({ name: roomName, id: '', success: false, error: 'バッチ内重複' });
+          failedCount++;
+          continue;
+        }
+
+        if (
+          roomName.startsWith('=') ||
+          roomName.startsWith('+') ||
+          roomName.startsWith('-') ||
+          roomName.startsWith('@')
+        ) {
+          roomName = "'" + roomName;
+        }
+
+        var roomId = 'R' + ('000' + ++maxRoomNum).slice(-3);
+
+        if (existingRoomNames[roomName]) {
+          results.push({ name: roomName, id: roomId, success: false, error: '部屋名重複' });
+          failedCount++;
+          continue;
+        }
+
+        roomSheet.appendRow([propertyId, roomId, roomName]);
+
+        if (inspHeaders) {
+          var newRow = new Array(inspHeaders.length).fill('');
+          var propIdCol = inspHeaders.indexOf('物件ID');
+          var propNameCol = inspHeaders.indexOf('物件名');
+          var roomIdCol = inspHeaders.indexOf('部屋ID');
+          var roomNameCol = inspHeaders.indexOf('部屋名');
+          if (propIdCol !== -1) newRow[propIdCol] = propertyId;
+          if (propNameCol !== -1) newRow[propNameCol] = propertyName;
+          if (roomIdCol !== -1) newRow[roomIdCol] = roomId;
+          if (roomNameCol !== -1) newRow[roomNameCol] = roomName;
+          inspectionSheet.appendRow(newRow);
+        }
+
+        existingRoomIds[roomId] = true;
+        existingRoomNames[roomName] = true;
+        batchNames[roomName] = true;
+
+        results.push({ name: roomName, id: roomId, success: true });
+        succeededCount++;
+      }
+
+      return {
+        success: true,
+        data: { results: results, succeededCount: succeededCount, failedCount: failedCount },
+      };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  }, 60000);
+}
+
+/**
  * Add a new room to 部屋マスタ and diff-insert into inspection_data
  * @param {Object} params - { propertyId: string, roomName: string, roomId?: string }
  * @returns {Object} { success, data?: { propertyId, roomId, roomName }, error?: string }
