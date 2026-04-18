@@ -775,22 +775,13 @@
         background: rgba(18, 18, 18, 0.85);
       }
       @media print {
-        .sidebar { display: none !important; }
-        .admin-header { display: none !important; }
-        [x-data="adminApp"] > .columns { display: block !important; }
-        [x-data="adminApp"] > .columns > .column { display: none !important; }
-        [x-data="adminApp"] > .columns > .column:last-child { display: block !important; }
-        [x-show="activeTab === 'dashboard'"],
-        [x-show="activeTab === 'monthly'"],
-        [x-show="activeTab === 'setup'"],
-        [x-show="activeTab === 'maintenance'"] { display: none !important; }
-        [x-data="propertyManagement"] > * { display: none !important; }
-        [x-data="propertyManagement"] > .annual-report-container { display: block !important; }
-        .annual-report-container * { display: revert !important; }
-        .annual-report-container .no-print { display: none !important; }
-        .print-header { display: block !important; }
+        body > * { display: none !important; }
+        .print-root { display: block !important; }
+        .print-root .no-print { display: none !important; }
+        .print-root .print-header { display: block !important; }
         @page { size: landscape; margin: 10mm; }
       }
+      .print-root { display: none; }
       .print-header { display: none; }
     </style>
 

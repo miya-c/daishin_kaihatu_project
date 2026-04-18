@@ -963,7 +963,14 @@ document.addEventListener('alpine:init', function () {
       },
 
       printAnnualReport: function () {
+        var container = document.querySelector('.annual-report-container');
+        if (!container) return;
+        var printRoot = document.createElement('div');
+        printRoot.className = 'print-root';
+        printRoot.innerHTML = container.innerHTML;
+        document.body.appendChild(printRoot);
         window.print();
+        document.body.removeChild(printRoot);
       },
 
       setAnnualReportYear: function (e) {
