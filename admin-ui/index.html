@@ -1615,8 +1615,8 @@
                                             <template x-for="room in (annualReport.rooms || [])" :key="room.roomId">
                                               <tr>
                                                 <td x-text="room.roomName" style="font-weight: 500"></td>
-                                                <td x-text="getStatusLabel(room.currentStatus || 'normal')" style="font-size: 0.7rem"></td>
-                                                <template x-for="month in (room.months || [])" :key="month.month">
+                                                <td x-text="getStatusLabel(room.roomStatus || 'normal')" style="font-size: 0.7rem"></td>
+                                                <template x-for="month in (room.monthlyData || [])" :key="month.month">
                                                   <td x-bind:style="getCellStyle(month)" style="font-size: 0.75rem">
                                                     <template x-if="month.reading !== null && month.reading !== undefined">
                                                       <span>
