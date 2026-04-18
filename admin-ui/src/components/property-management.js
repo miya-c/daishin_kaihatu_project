@@ -924,6 +924,11 @@ document.addEventListener('alpine:init', function () {
       setAnnualReportYear: function (e) {
         this.annualReportYear = Number(e.target.value);
       },
+
+      switchToAnnualReport: function () {
+        this.viewMode = 'annual';
+        this.loadAnnualReport();
+      },
     };
   });
 });
