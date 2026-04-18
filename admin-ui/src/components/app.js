@@ -91,6 +91,13 @@ document.addEventListener('alpine:init', function () {
         this.sidebarOpen = false;
       },
 
+      switchToProperties: function (propId) {
+        Alpine.store('app').setActiveTab('properties');
+        var hash = '#properties/' + (propId || '');
+        history.pushState(null, '', hash);
+        this.sidebarOpen = false;
+      },
+
       isActive: function (tabId) {
         return Alpine.store('app').activeTab === tabId;
       },

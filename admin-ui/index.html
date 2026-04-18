@@ -997,7 +997,7 @@
                               <td>
                                 <button
                                   class="button is-small is-info"
-                                  x-on:click="$store.app.setActiveTab('properties'); history.pushState(null, '', '#properties/' + (prop.propertyId || prop.id || ''))"
+                                  x-on:click="switchToProperties(prop.propertyId || prop.id || '')"
                                 >
                                   管理
                                 </button>
@@ -2373,7 +2373,7 @@
                         <div x-show="hasCheckIssues()" class="mt-3">
                           <button
                             class="button is-small is-info"
-                            x-on:click="$store.app.setActiveTab('maintenance'); history.pushState(null, '', '#maintenance')"
+                            x-on:click="switchTab('maintenance')"
                           >
                             データ管理タブを開く
                           </button>
@@ -2404,7 +2404,7 @@
                         <button class="button is-light" x-on:click="reset()">戻る</button>
                         <button
                           class="button is-info"
-                          x-on:click="$store.app.setActiveTab('dashboard'); history.pushState(null, '', '#dashboard')"
+                          x-on:click="switchTab('dashboard')"
                         >
                           ダッシュボードを確認
                         </button>
@@ -2430,7 +2430,7 @@
                       <button class="button is-light" x-on:click="reset()">戻る</button>
                       <button
                         class="button is-info"
-                        x-on:click="$store.app.setActiveTab('dashboard'); history.pushState(null, '', '#dashboard')"
+                        x-on:click="switchTab('dashboard')"
                       >
                         ダッシュボードを確認
                       </button>
@@ -2544,7 +2544,7 @@
                       <p class="subtitle is-6">すべてのステップが正常に完了しました。</p>
                       <button
                         class="button is-primary"
-                        x-on:click="$store.app.setActiveTab('dashboard'); history.pushState(null, '', '#dashboard')"
+                        x-on:click="switchTab('dashboard')"
                       >
                         ダッシュボードに移動
                       </button>
