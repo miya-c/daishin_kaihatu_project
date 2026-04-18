@@ -170,6 +170,9 @@ document.addEventListener('alpine:init', function () {
             self.roomsLoading = false;
           });
         self.annualReport = null;
+        if (self.viewMode === 'annual') {
+          self.loadAnnualReport();
+        }
       },
 
       getAutoPropertyId: function () {
