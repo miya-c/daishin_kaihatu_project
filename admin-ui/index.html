@@ -744,6 +744,12 @@
         border-radius: 2px;
         display: inline-block;
       }
+      /* Annual report cell value colors */
+      .val-normal { color: #1a6db5; font-weight: 500; }
+      .val-abnormal { color: #e74c3c; font-weight: 700; }
+      .val-zero { color: #555; }
+      .cell-zero { background: #f5f5f5; }
+
       .loading-overlay {
         position: relative;
         min-height: 200px;
@@ -772,8 +778,10 @@
         .sidebar, .tab-content > :not(.annual-report-container) { display: none !important; }
         .annual-report-container { display: block !important; }
         .no-print { display: none !important; }
+        .print-header { display: block !important; }
         @page { size: landscape; margin: 10mm; }
       }
+      .print-header { display: none; }
     </style>
 
     <!-- Mock system (dev only — stripped by Vite plugin in production build) -->
@@ -1567,10 +1575,10 @@
                                         x-on:change="setAnnualReportYear($event)"
                                       >
                                         <template x-for="y in annualAvailableYears" :key="y">
-                                          <option :value="y" x-text="y + '年度（4月〜3月）'"></option>
+                                          <option :value="y" x-text="y + '年'"></option>
                                         </template>
                                         <template x-if="annualAvailableYears.length === 0">
-                                          <option :value="annualReportYear" x-text="annualReportYear + '年度（4月〜3月）'"></option>
+                                          <option :value="annualReportYear" x-text="annualReportYear + '年'"></option>
                                         </template>
                                       </select>
                                     </div>
@@ -1593,11 +1601,32 @@
                                 <div x-show="!annualReportLoading">
                                   <template x-if="annualReport">
                                     <div>
+                                      <!-- Print-only header -->
+                                      <div class="print-header" style="text-align: center; margin-bottom: 1rem">
+                                        <h2 style="font-size: 1.1rem; margin: 0">
+                                          <span x-text="getPropName(selectedProperty)"></span> — <span x-text="annualReportYear"></span>年 年間検針レポート
+                                        </h2>
+                                        <p style="font-size: 0.7rem; color: #888; margin: 0.25rem 0 0">
+                                          出力日: <span x-text="getPrintDate()"></span>
+                                        </p>
+                                      </div>
+
+                                      <!-- Summary chips -->
+                                      <div class="no-print" style="display: flex; gap: 0.75rem; margin-bottom: 1rem; flex-wrap: wrap">
+                                        <div style="padding: 0.35rem 0.75rem; border-radius: 6px; font-size: 0.75rem; background: var(--bulma-scheme-main-ter); border: 1px solid var(--bulma-border)">
+                                          対象: <strong x-text="getPropName(selectedProperty)"></strong>
+                                        </div>
+                                        <div style="padding: 0.35rem 0.75rem; border-radius: 6px; font-size: 0.75rem; background: var(--bulma-scheme-main-ter); border: 1px solid var(--bulma-border)">
+                                          総部屋数: <strong x-text="annualReport ? annualReport.rooms.length : 0"></strong>
+                                        </div>
+                                      </div>
+
                                       <div class="legend no-print" style="margin-bottom: 0.75rem">
+                                        <div class="legend-item"><span class="legend-dot" style="background: #1a6db5"></span> 正常</div>
+                                        <div class="legend-item"><span class="legend-dot" style="background: #e74c3c"></span> 異常（要確認）</div>
+                                        <div class="legend-item"><span class="legend-dot" style="background: #f5f5f5; border: 1px solid #bbb"></span> 0㎥（不在疑い）</div>
                                         <div class="legend-item"><span class="legend-dot" style="background: #e3f2e8; border: 1px solid #a8d5b8"></span> オーナー使用中</div>
-                                        <div class="legend-item"><span class="legend-dot" style="background: #fef9e7; border: 1px solid #e6d68a"></span> 固定料金</div>
                                         <div class="legend-item"><span class="legend-dot" style="background: repeating-linear-gradient(45deg, #f5f5f5, #f5f5f5 3px, #eee 3px, #eee 6px); border: 1px solid #ddd"></span> 検針不要</div>
-                                        <div class="legend-item"><span class="legend-dot" style="background: #f5f5f5; border: 1px solid #bbb"></span> 空室（未使用）</div>
                                         <div class="legend-item"><span class="legend-dot" style="background: #fff; border: 1px solid #ccc"></span> 未検針</div>
                                       </div>
 
@@ -1605,7 +1634,6 @@
                                         <table class="annual-table">
                                           <colgroup>
                                             <col style="width: 3.5rem" />
-                                            <col style="width: 7rem" />
                                             <col style="width: 5.5rem" />
                                             <col style="width: 5.5rem" />
                                             <col style="width: 5.5rem" />
@@ -1621,8 +1649,10 @@
                                           </colgroup>
                                           <thead>
                                             <tr>
-                                              <th>部屋名</th>
-                                              <th>ステータス</th>
+                                              <th>部屋</th>
+                                              <th>1月</th>
+                                              <th>2月</th>
+                                              <th>3月</th>
                                               <th>4月</th>
                                               <th>5月</th>
                                               <th>6月</th>
@@ -1632,25 +1662,24 @@
                                               <th>10月</th>
                                               <th>11月</th>
                                               <th>12月</th>
-                                              <th>1月</th>
-                                              <th>2月</th>
-                                              <th>3月</th>
                                             </tr>
                                           </thead>
                                           <tbody>
                                             <template x-for="room in (annualReport.rooms || [])" :key="room.roomId">
                                               <tr>
-                                                <td x-text="room.roomName" style="font-weight: 500"></td>
-                                                <td x-text="getStatusLabel(room.roomStatus || 'normal')" style="font-size: 0.7rem"></td>
+                                                <td x-text="room.roomName" class="room-col" style="font-weight: 500"></td>
                                                 <template x-for="month in (room.monthlyData || [])" :key="month.month">
-                                                  <td x-bind:style="getCellStyle(month)" style="font-size: 0.75rem">
-                                                    <template x-if="month.reading !== null && month.reading !== undefined">
+                                                  <td x-bind:style="getCellStyle(month)" x-bind:class="getCellClass(month)" style="font-size: 0.75rem">
+                                                    <template x-if="month.roomStatus === 'skip'">
+                                                      <span style="color: #bbb; font-style: italic; font-size: 0.75rem">不要</span>
+                                                    </template>
+                                                    <template x-if="month.roomStatus !== 'skip' && month.reading !== null && month.reading !== undefined">
                                                       <span>
                                                         <span style="display: block; color: #666; font-size: 0.7rem" x-text="month.reading"></span>
-                                                        <span style="font-weight: 600" x-text="(month.usage !== null && month.usage !== undefined) ? month.usage + '㎥' : ''"></span>
+                                                        <span x-bind:class="getUsageClass(month)" x-text="(month.usage !== null && month.usage !== undefined) ? month.usage + '㎥' : ''"></span>
                                                       </span>
                                                     </template>
-                                                    <template x-if="month.reading === null || month.reading === undefined">
+                                                    <template x-if="month.roomStatus !== 'skip' && (month.reading === null || month.reading === undefined)">
                                                       <span style="color: #ccc">—</span>
                                                     </template>
                                                   </td>
@@ -1665,7 +1694,7 @@
                                   <template x-if="!annualReport">
                                     <div class="has-text-centered py-6">
                                       <p class="has-text-grey-light is-size-4 mb-2">📭</p>
-                                      <p class="has-text-grey" x-text="annualReportYear + '年度のアーカイブデータが見つかりません。'"></p>
+                                      <p class="has-text-grey" x-text="annualReportYear + '年のアーカイブデータが見つかりません。'"></p>
                                       <p class="is-size-7 has-text-grey-light mt-1">
                                         月次処理を実行すると、自動的に年間レポートに集計されます。
                                       </p>
@@ -1758,7 +1787,7 @@
                         </div>
                       </section>
                       <footer class="modal-card-foot">
-                        <button class="button is-primary" x-on:click="submitAddProperty()">
+                        <button class="button is-primary" x-bind:class="{ 'is-loading': submitting }" x-bind:disabled="submitting" x-on:click="submitAddProperty()">
                           登録する
                         </button>
                         <button class="button" x-on:click="closeModal()">キャンセル</button>
@@ -1809,7 +1838,7 @@
                         </div>
                       </section>
                       <footer class="modal-card-foot">
-                        <button class="button is-primary" x-on:click="submitAddRoom()">
+                        <button class="button is-primary" x-bind:class="{ 'is-loading': submitting }" x-bind:disabled="submitting" x-on:click="submitAddRoom()">
                           登録する
                         </button>
                         <button class="button" x-on:click="closeModal()">キャンセル</button>
@@ -1859,7 +1888,7 @@
                         </div>
                       </section>
                       <footer class="modal-card-foot">
-                        <button class="button is-primary" x-on:click="submitEditRoom()">
+                        <button class="button is-primary" x-bind:class="{ 'is-loading': submitting }" x-bind:disabled="submitting" x-on:click="submitEditRoom()">
                           変更する
                         </button>
                         <button class="button" x-on:click="closeModal()">キャンセル</button>
@@ -1922,7 +1951,7 @@
                         </template>
                       </section>
                       <footer class="modal-card-foot">
-                        <button class="button is-danger" x-on:click="executeDelete()">
+                        <button class="button is-danger" x-bind:class="{ 'is-loading': submitting }" x-bind:disabled="submitting" x-on:click="executeDelete()">
                           削除する
                         </button>
                         <button class="button" x-on:click="closeModal()">キャンセル</button>
@@ -2311,7 +2340,7 @@
                         </template>
                       </section>
                       <footer class="modal-card-foot">
-                        <button class="button is-primary" x-on:click="submitInspectionEdit()">
+                        <button class="button is-primary" x-bind:class="{ 'is-loading': submitting }" x-bind:disabled="submitting" x-on:click="submitInspectionEdit()">
                           保存する
                         </button>
                         <button class="button" x-on:click="closeModal()">キャンセル</button>

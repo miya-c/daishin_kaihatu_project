@@ -4642,9 +4642,7 @@ function getAvailableYears() {
     var match = name.match(/^検針データ_(\d{4})年(\d{2})月$/);
     if (match) {
       var dataYear = parseInt(match[1]);
-      var dataMonth = parseInt(match[2]);
-      var fiscalYear = dataMonth <= 3 ? dataYear - 1 : dataYear;
-      yearMap[fiscalYear] = true;
+      yearMap[dataYear] = true;
     }
   }
   var years = Object.keys(yearMap)
@@ -4708,10 +4706,8 @@ function getAnnualReport(params) {
   }
 
   var months = [];
-  for (var m = 4; m <= 15; m++) {
-    var calMonth = m <= 12 ? m : m - 12;
-    var calYear = m <= 12 ? year : year + 1;
-    months.push({ year: calYear, month: calMonth, label: calMonth + '月' });
+  for (var m = 1; m <= 12; m++) {
+    months.push({ year: year, month: m, label: m + '月' });
   }
 
   var roomMap = {};

@@ -25,6 +25,7 @@ document.addEventListener('alpine:init', function () {
       editRoomForm: { roomId: '', name: '' },
       deleteTarget: null,
 
+      submitting: false,
       viewMode: 'expand',
       sortState: { key: null, dir: null },
       expandedRooms: [],
@@ -249,6 +250,8 @@ document.addEventListener('alpine:init', function () {
           self.error = '物件名を入力してください';
           return;
         }
+        self.submitting = true;
+        self.error = '';
         var params = { propertyName: name };
         if (self.addPropertyForm.idMode === 'manual' && self.addPropertyForm.manualId) {
           var digits = self.addPropertyForm.manualId.replace(/\D/g, '');
@@ -268,6 +271,9 @@ document.addEventListener('alpine:init', function () {
           })
           .catch(function (err) {
             self.error = '物件の追加に失敗しました: ' + (err.message || err);
+          })
+          .finally(function () {
+            self.submitting = false;
           });
       },
 
@@ -279,6 +285,8 @@ document.addEventListener('alpine:init', function () {
           return;
         }
         if (!self.selectedProperty) return;
+        self.submitting = true;
+        self.error = '';
         callAdminAPI('addRoom', {
           propertyId: self.selectedProperty.propertyId || self.selectedProperty['物件ID'],
           roomName: name,
@@ -296,6 +304,9 @@ document.addEventListener('alpine:init', function () {
           })
           .catch(function (err) {
             self.error = '部屋の追加に失敗しました: ' + (err.message || err);
+          })
+          .finally(function () {
+            self.submitting = false;
           });
       },
 
@@ -306,6 +317,8 @@ document.addEventListener('alpine:init', function () {
           self.error = '部屋名を入力してください';
           return;
         }
+        self.submitting = true;
+        self.error = '';
         callAdminAPI('updateRoom', {
           propertyId: self.selectedProperty.propertyId || self.selectedProperty['物件ID'],
           roomId: self.editRoomForm.roomId,
@@ -324,6 +337,9 @@ document.addEventListener('alpine:init', function () {
           })
           .catch(function (err) {
             self.error = '部屋の変更に失敗しました: ' + (err.message || err);
+          })
+          .finally(function () {
+            self.submitting = false;
           });
       },
 
@@ -341,6 +357,8 @@ document.addEventListener('alpine:init', function () {
           apiParams.force = true;
         }
 
+        self.submitting = true;
+        self.error = '';
         callAdminAPI(apiAction, apiParams)
           .then(function (result) {
             if (result && result.success) {
@@ -365,6 +383,9 @@ document.addEventListener('alpine:init', function () {
           })
           .catch(function (err) {
             self.error = '削除に失敗しました: ' + (err.message || err);
+          })
+          .finally(function () {
+            self.submitting = false;
           });
       },
 
@@ -672,6 +693,8 @@ document.addEventListener('alpine:init', function () {
           self.error = '部屋名を入力してください';
           return;
         }
+        self.submitting = true;
+        self.error = '';
         var params = {
           propertyId: self.getPropId(self.selectedProperty),
           roomId: form.roomId,
@@ -697,6 +720,9 @@ document.addEventListener('alpine:init', function () {
           })
           .catch(function (err) {
             self.error = '更新に失敗しました: ' + (err.message || err);
+          })
+          .finally(function () {
+            self.submitting = false;
           });
       },
 
@@ -918,6 +944,22 @@ document.addEventListener('alpine:init', function () {
         if (status === 'vacant' && !monthData.usage && monthData.usage !== 0)
           return 'background-color: #f5f5f5;';
         return '';
+      },
+
+      getCellClass: function (month) {
+        if (month.usage === 0) return 'cell-zero';
+        return '';
+      },
+
+      getUsageClass: function (month) {
+        if (month.warningFlag === '要確認') return 'val-abnormal';
+        if (month.usage === 0) return 'val-zero';
+        return 'val-normal';
+      },
+
+      getPrintDate: function () {
+        var d = new Date();
+        return d.getFullYear() + '/' + (d.getMonth() + 1) + '/' + d.getDate();
       },
 
       printAnnualReport: function () {
