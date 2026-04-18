@@ -93,6 +93,8 @@ export interface Room {
   readingDateFormatted: string;
   /** When `true` the room is marked as not requiring inspection. */
   isNotNeeded: boolean;
+  roomStatus: string;
+  roomNotes: string;
   /** Alias for completion status used in some API responses. */
   isCompleted: boolean;
   /** Alternative room ID field used by some endpoints. */

@@ -705,6 +705,51 @@
       [data-theme='dark'] .modal-card-body .notification strong {
         color: #1a1a1a;
       }
+      .annual-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.8rem;
+        table-layout: fixed;
+      }
+      .annual-table th,
+      .annual-table td {
+        border: 1px solid var(--bulma-border);
+        padding: 0.35rem 0.4rem;
+        text-align: center;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .annual-table thead th {
+        background: var(--bulma-scheme-main-ter);
+        font-weight: 600;
+        position: sticky;
+        top: 0;
+        z-index: 1;
+      }
+      .annual-report-container .legend {
+        display: flex;
+        gap: 1rem;
+        font-size: 0.75rem;
+        color: var(--bulma-text-weak);
+      }
+      .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+      }
+      .legend-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 2px;
+        display: inline-block;
+      }
+      @media print {
+        .sidebar, .tab-content > :not(.annual-report-container) { display: none !important; }
+        .annual-report-container { display: block !important; }
+        .no-print { display: none !important; }
+        @page { size: landscape; margin: 10mm; }
+      }
     </style>
 
     <!-- Mock system (dev only — stripped by Vite plugin in production build) -->
@@ -1124,6 +1169,13 @@
                             >
                               📊 一括確認
                             </button>
+                            <button
+                              class="toggle-btn"
+                              x-bind:class="{ 'active': viewMode === 'annual' }"
+                              x-on:click="viewMode = 'annual'; loadAnnualReport()"
+                            >
+                              📅 年間レポート
+                            </button>
                           </div>
 
                           <!-- Expand View -->
@@ -1468,6 +1520,135 @@
                               </tbody>
                             </table>
                           </div>
+
+                          <!-- Annual Report View -->
+                          <div x-show="viewMode === 'annual'" class="annual-report-container">
+                            <template x-if="!selectedProperty">
+                              <div class="has-text-centered py-6">
+                                <p class="has-text-grey-light is-size-4 mb-2">📊</p>
+                                <p class="has-text-grey">物件を選択すると、年間レポートが表示されます。</p>
+                                <p class="is-size-7 has-text-grey-light mt-1">
+                                  上部の物件セレクトボックスから物件を選択してください。
+                                </p>
+                              </div>
+                            </template>
+                            <template x-if="selectedProperty">
+                              <div>
+                                <div class="is-flex is-align-items-center is-justify-content-space-between mb-3 no-print">
+                                  <div class="is-flex is-align-items-center" style="gap: 0.5rem">
+                                    <label class="label is-small mb-0">年度:</label>
+                                    <div class="select is-small">
+                                      <select
+                                        x-bind:value="annualReportYear"
+                                        x-on:change="annualReportYear = parseInt($event.target.value)"
+                                      >
+                                        <template x-for="y in annualAvailableYears" :key="y">
+                                          <option :value="y" x-text="y + '年度（4月〜3月）'"></option>
+                                        </template>
+                                        <template x-if="annualAvailableYears.length === 0">
+                                          <option :value="annualReportYear" x-text="annualReportYear + '年度（4月〜3月）'"></option>
+                                        </template>
+                                      </select>
+                                    </div>
+                                    <button class="button is-small is-light" x-on:click="loadAnnualReport()">
+                                      🔄
+                                    </button>
+                                  </div>
+                                  <button class="button is-small is-info is-light" x-on:click="printAnnualReport()">
+                                    🖨️ 印刷
+                                  </button>
+                                </div>
+
+                                <div x-show="annualReportLoading" class="has-text-centered py-5">
+                                  <button class="button is-loading is-static"></button>
+                                  <p class="mt-2 has-text-grey-light is-size-7">読み込み中...</p>
+                                </div>
+
+                                <div x-show="!annualReportLoading">
+                                  <template x-if="annualReport">
+                                    <div>
+                                      <div class="legend no-print" style="margin-bottom: 0.75rem">
+                                        <div class="legend-item"><span class="legend-dot" style="background: #e3f2e8; border: 1px solid #a8d5b8"></span> オーナー使用中</div>
+                                        <div class="legend-item"><span class="legend-dot" style="background: #fef9e7; border: 1px solid #e6d68a"></span> 固定料金</div>
+                                        <div class="legend-item"><span class="legend-dot" style="background: repeating-linear-gradient(45deg, #f5f5f5, #f5f5f5 3px, #eee 3px, #eee 6px); border: 1px solid #ddd"></span> 検針不要</div>
+                                        <div class="legend-item"><span class="legend-dot" style="background: #f5f5f5; border: 1px solid #bbb"></span> 空室（未使用）</div>
+                                        <div class="legend-item"><span class="legend-dot" style="background: #fff; border: 1px solid #ccc"></span> 未検針</div>
+                                      </div>
+
+                                      <div class="content-scroll">
+                                        <table class="annual-table">
+                                          <colgroup>
+                                            <col style="width: 3.5rem" />
+                                            <col style="width: 7rem" />
+                                            <col style="width: 5.5rem" />
+                                            <col style="width: 5.5rem" />
+                                            <col style="width: 5.5rem" />
+                                            <col style="width: 5.5rem" />
+                                            <col style="width: 5.5rem" />
+                                            <col style="width: 5.5rem" />
+                                            <col style="width: 5.5rem" />
+                                            <col style="width: 5.5rem" />
+                                            <col style="width: 5.5rem" />
+                                            <col style="width: 5.5rem" />
+                                            <col style="width: 5.5rem" />
+                                            <col style="width: 5.5rem" />
+                                          </colgroup>
+                                          <thead>
+                                            <tr>
+                                              <th>部屋名</th>
+                                              <th>ステータス</th>
+                                              <th>4月</th>
+                                              <th>5月</th>
+                                              <th>6月</th>
+                                              <th>7月</th>
+                                              <th>8月</th>
+                                              <th>9月</th>
+                                              <th>10月</th>
+                                              <th>11月</th>
+                                              <th>12月</th>
+                                              <th>1月</th>
+                                              <th>2月</th>
+                                              <th>3月</th>
+                                            </tr>
+                                          </thead>
+                                          <tbody>
+                                            <template x-for="room in (annualReport.rooms || [])" :key="room.roomId">
+                                              <tr>
+                                                <td x-text="room.roomName" style="font-weight: 500"></td>
+                                                <td x-text="getStatusLabel(room.currentStatus || 'normal')" style="font-size: 0.7rem"></td>
+                                                <template x-for="month in (room.months || [])" :key="month.month">
+                                                  <td x-bind:style="getCellStyle(month)" style="font-size: 0.75rem">
+                                                    <template x-if="month.reading !== null && month.reading !== undefined">
+                                                      <span>
+                                                        <span style="display: block; color: #666; font-size: 0.7rem" x-text="month.reading"></span>
+                                                        <span style="font-weight: 600" x-text="(month.usage !== null && month.usage !== undefined) ? month.usage + '㎥' : ''"></span>
+                                                      </span>
+                                                    </template>
+                                                    <template x-if="month.reading === null || month.reading === undefined">
+                                                      <span style="color: #ccc">—</span>
+                                                    </template>
+                                                  </td>
+                                                </template>
+                                              </tr>
+                                            </template>
+                                          </tbody>
+                                        </table>
+                                      </div>
+                                    </div>
+                                  </template>
+                                  <template x-if="!annualReport">
+                                    <div class="has-text-centered py-6">
+                                      <p class="has-text-grey-light is-size-4 mb-2">📭</p>
+                                      <p class="has-text-grey" x-text="annualReportYear + '年度のアーカイブデータが見つかりません。'"></p>
+                                      <p class="is-size-7 has-text-grey-light mt-1">
+                                        月次処理を実行すると、自動的に年間レポートに集計されます。
+                                      </p>
+                                    </div>
+                                  </template>
+                                </div>
+                              </div>
+                            </template>
+                          </div>
                         </div>
                       </div>
                     </template>
@@ -1507,7 +1688,8 @@
                                 type="radio"
                                 name="propIdMode"
                                 value="auto"
-                                x-model="addPropertyForm.idMode"
+                                x-bind:checked="addPropertyForm.idMode === 'auto'"
+                                x-on:change="setFormProp('addPropertyForm', 'idMode', 'auto')"
                               />
                               自動採番
                             </label>
@@ -1516,7 +1698,8 @@
                                 type="radio"
                                 name="propIdMode"
                                 value="manual"
-                                x-model="addPropertyForm.idMode"
+                                x-bind:checked="addPropertyForm.idMode === 'manual'"
+                                x-on:change="setFormProp('addPropertyForm', 'idMode', 'manual')"
                               />
                               手動入力
                             </label>
@@ -1530,7 +1713,7 @@
                               x-bind:placeholder="addPropertyForm.idMode === 'auto' ? getAutoPropertyId() : '数字を入力（例: 5 → P000005）'"
                               inputmode="numeric"
                               x-on:input="onManualIdInput($event)"
-                              x-model="addPropertyForm.manualId"
+                              x-bind:value="addPropertyForm.manualId"
                             />
                           </div>
                           <p class="help" x-text="getDisplayPropertyId()"></p>
@@ -1541,7 +1724,8 @@
                             <input
                               class="input"
                               placeholder="物件名を入力"
-                              x-model="addPropertyForm.name"
+                              x-bind:value="addPropertyForm.name"
+                              x-on:input="setFormProp('addPropertyForm', 'name', $event.target.value)"
                               x-on:keydown.enter="submitAddProperty()"
                             />
                           </div>
@@ -1591,7 +1775,8 @@
                             <input
                               class="input"
                               placeholder="部屋名を入力（例: 101号室）"
-                              x-model="addRoomForm.name"
+                              x-bind:value="addRoomForm.name"
+                              x-on:input="setFormProp('addRoomForm', 'name', $event.target.value)"
                               x-on:keydown.enter="submitAddRoom()"
                             />
                           </div>
@@ -1640,7 +1825,8 @@
                           <div class="control">
                             <input
                               class="input"
-                              x-model="editRoomForm.name"
+                              x-bind:value="editRoomForm.name"
+                              x-on:input="setFormProp('editRoomForm', 'name', $event.target.value)"
                               x-on:keydown.enter="submitEditRoom()"
                             />
                           </div>
@@ -2018,18 +2204,44 @@
                           <div class="control">
                             <input
                               class="input"
-                              x-model="editInspectionForm.roomName"
+                              x-bind:value="editInspectionForm.roomName"
+                              x-on:input="setFormProp('editInspectionForm', 'roomName', $event.target.value)"
                               x-on:keydown.enter="submitInspectionEdit()"
                             />
                           </div>
                         </div>
                         <div class="field mb-3">
-                          <div class="edit-toggle">
-                            <label class="switch">
-                              <input type="checkbox" x-model="editInspectionForm.inspectionSkip" />
-                              <span class="slider"></span>
-                            </label>
-                            <span class="is-size-7">検針不要</span>
+                          <label class="label is-small">部屋ステータス</label>
+                          <div class="control">
+                            <div class="select is-fullwidth">
+                              <select
+                                x-bind:value="editInspectionForm.roomStatus"
+                                x-on:change="setFormProp('editInspectionForm', 'roomStatus', $event.target.value)"
+                              >
+                                <option value="normal">🏠 通常入居中</option>
+                                <option value="vacant">📭 空室</option>
+                                <option value="owner">🔑 オーナー使用中</option>
+                                <option value="fixed">💰 固定料金</option>
+                                <option value="skip">🚫 検針不要</option>
+                              </select>
+                            </div>
+                          </div>
+                          <p class="help is-size-7" x-text="getStatusDescription(editInspectionForm.roomStatus)"></p>
+                          <div class="mt-2 is-size-7 has-text-grey" x-show="editInspectionForm.roomStatus !== 'normal' && editInspectionForm.roomStatus !== 'vacant'">
+                            <span x-show="editInspectionForm.roomStatus === 'skip'">→ 検針不要: ON</span>
+                            <span x-show="editInspectionForm.roomStatus === 'owner' || editInspectionForm.roomStatus === 'fixed'">→ 請求不要: ON</span>
+                          </div>
+                        </div>
+                        <div class="field mb-3">
+                          <label class="label is-small">備考</label>
+                          <div class="control">
+                            <input
+                              class="input"
+                              type="text"
+                              x-bind:value="editInspectionForm.roomNotes"
+                              x-on:input="setFormProp('editInspectionForm', 'roomNotes', $event.target.value)"
+                              placeholder="自由入力"
+                            />
                           </div>
                         </div>
 
@@ -2047,7 +2259,8 @@
                                   type="number"
                                   inputmode="numeric"
                                   step="1"
-                                  x-model="editInspectionForm.currentReading"
+                                  x-bind:value="editInspectionForm.currentReading"
+                                  x-on:input="setFormProp('editInspectionForm', 'currentReading', $event.target.value)"
                                 />
                               </div>
                               <p class="help is-size-7">整数のみ入力可能</p>
@@ -2060,21 +2273,13 @@
                                   type="number"
                                   inputmode="numeric"
                                   step="1"
-                                  x-model="editInspectionForm.previousReading"
+                                  x-bind:value="editInspectionForm.previousReading"
+                                  x-on:input="setFormProp('editInspectionForm', 'previousReading', $event.target.value)"
                                 />
                               </div>
                               <p class="help is-size-7">
                                 新規入居等でゼロリセットが必要な場合に変更
                               </p>
-                            </div>
-                            <div class="field mb-3">
-                              <div class="edit-toggle">
-                                <label class="switch">
-                                  <input type="checkbox" x-model="editInspectionForm.billingSkip" />
-                                  <span class="slider"></span>
-                                </label>
-                                <span class="is-size-7">請求不要</span>
-                              </div>
                             </div>
                           </div>
                         </template>
@@ -2097,6 +2302,30 @@
                       <p class="mb-4">
                         先月までの検針データを保存し、今月分の新しいデータを準備します。実行前に確認を行ってください。
                       </p>
+                      <div class="field mb-4">
+                        <label class="label is-small">保存対象月</label>
+                        <div class="field has-addons">
+                          <div class="control">
+                            <div class="select">
+                              <select x-bind:value="monthlyTargetYear" x-on:change="monthlyTargetYear = parseInt($event.target.value)">
+                                <template x-for="y in [2024, 2025, 2026, 2027, 2028]" :key="y">
+                                  <option :value="y" x-text="y + '年'"></option>
+                                </template>
+                              </select>
+                            </div>
+                          </div>
+                          <div class="control">
+                            <div class="select">
+                              <select x-bind:value="monthlyTargetMonth" x-on:change="monthlyTargetMonth = $event.target.value">
+                                <template x-for="m in ['01','02','03','04','05','06','07','08','09','10','11','12']" :key="m">
+                                  <option :value="m" x-text="parseInt(m) + '月'"></option>
+                                </template>
+                              </select>
+                            </div>
+                          </div>
+                        </div>
+                        <p class="help is-size-7">保存する年月を選択してください。未選択時は現在の年月が使用されます。</p>
+                      </div>
                       <button class="button is-primary" x-on:click="runPreCheck()">
                         実行前に確認する
                       </button>
@@ -2112,7 +2341,7 @@
                       <div x-show="confirmExecute" class="notification is-warning is-light mb-3">
                         <p class="mb-2"><strong>⚠️ 確認</strong></p>
                         <p class="mb-2">
-                          月次処理を実行すると、検針データの値がシフトされ、現在の検針値がクリアされます。この操作は取り消せません。
+                          <span x-text="monthlyTargetYear + '年' + parseInt(monthlyTargetMonth) + '月分'"></span>として月次処理を実行します。検針データの値がシフトされ、現在の検針値がクリアされます。この操作は取り消せません。
                         </p>
                         <div class="buttons">
                           <button class="button is-danger" x-on:click="runExecute()">

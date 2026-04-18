@@ -414,14 +414,20 @@ function createInitialInspectionData(ss = null) {
 
     // 部屋マスタからデータを取得してinspection_dataに追加（3列のみ取得）
     const roomData = roomMasterSheet
-      .getRange(2, 1, roomMasterSheet.getLastRow() - 1, 3)
+      .getRange(2, 1, roomMasterSheet.getLastRow() - 1, roomMasterSheet.getLastColumn())
       .getValues();
+    const rmHeaders = roomMasterSheet
+      .getRange(1, 1, 1, roomMasterSheet.getLastColumn())
+      .getValues()[0];
+    var rmStatusIdx = rmHeaders.indexOf('部屋ステータス');
     const newRows = [];
 
     roomData.forEach((row, index) => {
       const propertyId = String(row[0]).trim();
       const roomId = String(row[1]).trim();
       const roomName = String(row[2]).trim();
+      var roomStatus =
+        rmStatusIdx >= 0 && row[rmStatusIdx] ? String(row[rmStatusIdx]).trim() : 'normal';
 
       if (propertyId && roomId) {
         const propertyName = propertyMap[propertyId] || '';
@@ -441,21 +447,27 @@ function createInitialInspectionData(ss = null) {
           roomName, // 部屋名
           '', // 検針日時
           '', // 警告フラグ
-          stdDevFormula, // 標準偏差値（STDEV.S関数、整数）
-          usageFormula, // 今回使用量（計算式）
+          stdDevFormula, // 標準偏差値
+          usageFormula, // 今回使用量
           '', // 今回の指示数
           '', // 前回指示数
           '', // 前々回指示数
           '', // 前々々回指示数
           '', // 検針不要
           '', // 請求不要
+          roomStatus, // 部屋ステータス
         ]);
       }
     });
 
     if (newRows.length > 0) {
       const nextRow = inspectionDataSheet.getLastRow() + 1;
-      const targetRange = inspectionDataSheet.getRange(nextRow, 1, newRows.length, 15);
+      const targetRange = inspectionDataSheet.getRange(
+        nextRow,
+        1,
+        newRows.length,
+        newRows[0].length
+      );
 
       // データを設定
       targetRange.setValues(newRows);
@@ -586,7 +598,7 @@ function createInitialInspectionData(ss = null) {
  * @param {Spreadsheet} ss - 対象スプレッドシート
  * @returns {Object} 処理結果
  */
-function processInspectionDataMonthlyImpl(ss = null) {
+function processInspectionDataMonthlyImpl(ss, params) {
   if (!ss) {
     ss = SpreadsheetApp.getActiveSpreadsheet();
   }
@@ -625,14 +637,18 @@ function processInspectionDataMonthlyImpl(ss = null) {
   }
 
   try {
-    const currentDate = new Date();
-    const currentYear = currentDate.getFullYear();
-    const currentMonth = String(currentDate.getMonth() + 1).padStart(2, '0');
-    const newSheetName = `検針データ_${currentYear}年${currentMonth}月`;
+    var targetYear = params && params.targetYear;
+    var targetMonth = params && params.targetMonth;
+    if (!targetYear || !targetMonth) {
+      var fallback = new Date();
+      targetYear = fallback.getFullYear();
+      targetMonth = String(fallback.getMonth() + 1).padStart(2, '0');
+    }
+    var newSheetName = '検針データ_' + targetYear + '年' + targetMonth + '月';
 
     // 📝 処理開始ログ
     MonthlyProcessLogger.addLog('INFO', '月次処理を開始しました', {
-      targetMonth: `${currentYear}年${currentMonth}月`,
+      targetMonth: targetYear + '年' + targetMonth + '月',
       archiveSheetName: newSheetName,
     });
 
@@ -884,6 +900,7 @@ function processInspectionDataMonthlyImpl(ss = null) {
       '前々々回指示数',
       '検針不要',
       '請求不要',
+      '部屋ステータス',
     ];
     const columnIndicesToCopy = columnsToCopy.map((header) => sourceHeaders.indexOf(header));
 
@@ -1246,16 +1263,21 @@ function processInspectionDataMonthlyImpl(ss = null) {
  * @param {Object} preCheckResult - 事前チェック結果
  * @returns {Object} 詳細情報オブジェクト
  */
-function generateProcessDetailedInfo(ss, preCheckResult) {
+function generateProcessDetailedInfo(ss, preCheckResult, params) {
   try {
-    const currentDate = new Date();
-    const currentYear = currentDate.getFullYear();
-    const currentMonth = String(currentDate.getMonth() + 1).padStart(2, '0');
+    var targetYear = params && params.targetYear;
+    var targetMonth = params && params.targetMonth;
+    if (!targetYear || !targetMonth) {
+      var fallback = new Date();
+      targetYear = fallback.getFullYear();
+      targetMonth = String(fallback.getMonth() + 1).padStart(2, '0');
+    }
+    var currentDate = new Date();
 
     const detailedInfo = {
       processDate: currentDate.toISOString(),
-      targetMonth: `${currentYear}年${currentMonth}月`,
-      archiveSheetName: `検針データ_${currentYear}年${currentMonth}月`,
+      targetMonth: targetYear + '年' + targetMonth + '月',
+      archiveSheetName: '検針データ_' + targetYear + '年' + targetMonth + '月',
       dataInfo: preCheckResult.detailedInfo || {},
       riskAssessment: calculateProcessRisk(preCheckResult),
       impactAnalysis: analyzeProcessImpact(ss),
@@ -4607,4 +4629,181 @@ class MonthlyProcessOperationGuide {
     this.displayMessage('月次処理チェックリスト', message);
     return { success: true, action: 'checklist_shown' };
   }
+}
+
+function getAvailableYears() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  if (!ss) return { success: false, error: 'スプレッドシートが見つかりません' };
+
+  var sheets = ss.getSheets();
+  var yearMap = {};
+  for (var i = 0; i < sheets.length; i++) {
+    var name = sheets[i].getName();
+    var match = name.match(/^検針データ_(\d{4})年(\d{2})月$/);
+    if (match) {
+      var dataYear = parseInt(match[1]);
+      var dataMonth = parseInt(match[2]);
+      var fiscalYear = dataMonth <= 3 ? dataYear - 1 : dataYear;
+      yearMap[fiscalYear] = true;
+    }
+  }
+  var years = Object.keys(yearMap)
+    .map(Number)
+    .sort(function (a, b) {
+      return b - a;
+    });
+  return { success: true, years: years };
+}
+
+function getAnnualReport(params) {
+  var propertyId = params.propertyId;
+  var year = parseInt(params.year);
+  if (!propertyId) return { success: false, error: '物件IDが必要です' };
+  if (!year || isNaN(year)) return { success: false, error: '年度が必要です' };
+
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  if (!ss) return { success: false, error: 'スプレッドシートが見つかりません' };
+
+  var propertySheet = ss.getSheetByName('物件マスタ');
+  var propertyName = '';
+  if (propertySheet) {
+    var propHeaders = propertySheet.getRange(1, 1, 1, propertySheet.getLastColumn()).getValues()[0];
+    var propIdIdx = propHeaders.indexOf('物件ID');
+    var propNameIdx = propHeaders.indexOf('物件名');
+    var propData = propertySheet.getDataRange().getValues();
+    for (var p = 1; p < propData.length; p++) {
+      if (String(propData[p][propIdIdx]).trim() === propertyId) {
+        propertyName = propNameIdx >= 0 ? String(propData[p][propNameIdx]).trim() : propertyId;
+        break;
+      }
+    }
+  }
+
+  var roomMasterSheet = ss.getSheetByName('部屋マスタ');
+  var currentStatusMap = {};
+  if (roomMasterSheet) {
+    var rmHeaders = roomMasterSheet
+      .getRange(1, 1, 1, roomMasterSheet.getLastColumn())
+      .getValues()[0];
+    var rmStatusIdx = rmHeaders.indexOf('部屋ステータス');
+    var rmPropIdIdx = rmHeaders.indexOf('物件ID');
+    var rmRoomIdIdx = rmHeaders.indexOf('部屋ID');
+    var rmRoomNameIdx = rmHeaders.indexOf('部屋名');
+    var rmNotesIdx = rmHeaders.indexOf('備考');
+    var rmData = roomMasterSheet.getDataRange().getValues();
+    for (var r = 1; r < rmData.length; r++) {
+      if (String(rmData[r][rmPropIdIdx]).trim() === propertyId) {
+        var rKey = String(rmData[r][rmRoomIdIdx]).trim();
+        currentStatusMap[rKey] = {
+          roomName: rmRoomNameIdx >= 0 ? String(rmData[r][rmRoomNameIdx]).trim() : rKey,
+          status:
+            rmStatusIdx >= 0 && rmData[r][rmStatusIdx]
+              ? String(rmData[r][rmStatusIdx]).trim()
+              : 'normal',
+          notes:
+            rmNotesIdx >= 0 && rmData[r][rmNotesIdx] ? String(rmData[r][rmNotesIdx]).trim() : '',
+        };
+      }
+    }
+  }
+
+  var months = [];
+  for (var m = 4; m <= 15; m++) {
+    var calMonth = m <= 12 ? m : m - 12;
+    var calYear = m <= 12 ? year : year + 1;
+    months.push({ year: calYear, month: calMonth, label: calMonth + '月' });
+  }
+
+  var roomMap = {};
+  for (var mi = 0; mi < months.length; mi++) {
+    var sheetName =
+      '検針データ_' + months[mi].year + '年' + String(months[mi].month).padStart(2, '0') + '月';
+    var archiveSheet = ss.getSheetByName(sheetName);
+    if (!archiveSheet) continue;
+
+    var archHeaders = archiveSheet.getRange(1, 1, 1, archiveSheet.getLastColumn()).getValues()[0];
+    var archPropIdIdx = archHeaders.indexOf('物件ID');
+    var archRoomIdIdx = archHeaders.indexOf('部屋ID');
+    var archReadingIdx = archHeaders.indexOf('今回の指示数');
+    var archUsageIdx = archHeaders.indexOf('今回使用量');
+    var archWarningIdx = archHeaders.indexOf('警告フラグ');
+    var archStatusIdx = archHeaders.indexOf('部屋ステータス');
+    var archData = archiveSheet.getDataRange().getValues();
+
+    for (var ai = 1; ai < archData.length; ai++) {
+      if (String(archData[ai][archPropIdIdx]).trim() !== propertyId) continue;
+      var aRoomId = String(archData[ai][archRoomIdIdx]).trim();
+      if (!roomMap[aRoomId]) {
+        roomMap[aRoomId] = {
+          roomId: aRoomId,
+          roomName: currentStatusMap[aRoomId] ? currentStatusMap[aRoomId].roomName : aRoomId,
+          roomStatus: currentStatusMap[aRoomId] ? currentStatusMap[aRoomId].status : 'normal',
+          roomNotes: currentStatusMap[aRoomId] ? currentStatusMap[aRoomId].notes : '',
+          monthlyData: {},
+        };
+      }
+      var archStatus =
+        archStatusIdx >= 0 && archData[ai][archStatusIdx]
+          ? String(archData[ai][archStatusIdx]).trim()
+          : '';
+      var monthData = {
+        month: months[mi].month,
+        reading:
+          archReadingIdx >= 0 && archData[ai][archReadingIdx] !== ''
+            ? _safeInt(archData[ai][archReadingIdx])
+            : null,
+        usage:
+          archUsageIdx >= 0 && archData[ai][archUsageIdx] !== ''
+            ? _safeInt(archData[ai][archUsageIdx])
+            : null,
+        warningFlag: archWarningIdx >= 0 ? String(archData[ai][archWarningIdx] || '').trim() : '',
+        roomStatus:
+          archStatus || (currentStatusMap[aRoomId] ? currentStatusMap[aRoomId].status : 'normal'),
+      };
+      roomMap[aRoomId].monthlyData[months[mi].month] = monthData;
+    }
+  }
+
+  var rooms = [];
+  var roomIds = Object.keys(roomMap);
+  for (var ri = 0; ri < roomIds.length; ri++) {
+    var room = roomMap[roomIds[ri]];
+    var monthlyArray = [];
+    for (var mj = 0; mj < months.length; mj++) {
+      monthlyArray.push(
+        room.monthlyData[months[mj].month] || {
+          month: months[mj].month,
+          reading: null,
+          usage: null,
+          warningFlag: '',
+          roomStatus: room.roomStatus,
+        }
+      );
+    }
+    rooms.push({
+      roomId: room.roomId,
+      roomName: room.roomName,
+      roomStatus: room.roomStatus,
+      roomNotes: room.roomNotes,
+      monthlyData: monthlyArray,
+    });
+  }
+
+  return {
+    success: true,
+    data: {
+      propertyName: propertyName,
+      year: year,
+      months: months.map(function (m) {
+        return { month: m.month, label: m.label };
+      }),
+      rooms: rooms,
+    },
+  };
+}
+
+function _safeInt(val) {
+  if (val === '' || val === null || val === undefined) return null;
+  var num = parseInt(val, 10);
+  return isNaN(num) ? null : num;
 }

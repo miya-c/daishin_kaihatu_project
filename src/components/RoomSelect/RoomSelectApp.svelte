@@ -8,6 +8,34 @@
 
   import type { Room, ApiResponse } from '../../types';
 
+  function getRoomStatusInfo(room: { roomStatus?: string; isNotNeeded?: boolean }): {
+    icon: string;
+    color: string;
+    text: string;
+    cssClass: string;
+  } {
+    const status = room.roomStatus || (room.isNotNeeded ? 'skip' : 'normal');
+    const configs: Record<string, { icon: string; color: string; text: string; cssClass: string }> =
+      {
+        normal: { icon: 'circle', color: '#4caf50', text: '', cssClass: '' },
+        vacant: { icon: 'vacation', color: '#ff9800', text: '空室', cssClass: 'status-vacant' },
+        owner: { icon: 'key', color: '#2196f3', text: 'オーナー', cssClass: 'status-owner' },
+        fixed: {
+          icon: 'attach_money',
+          color: '#9c27b0',
+          text: '固定料金',
+          cssClass: 'status-fixed',
+        },
+        skip: { icon: 'block', color: '#9e9e9e', text: '検針不要', cssClass: 'status-skip' },
+      };
+    return configs[status] ?? configs.normal ?? configs['normal']!;
+  }
+
+  function shouldSkipRoom(room: { roomStatus?: string; isNotNeeded?: boolean }): boolean {
+    if (room.roomStatus !== undefined) return room.roomStatus === 'skip';
+    return room.isNotNeeded === true;
+  }
+
   let rooms: Room[] = $state([]);
   let propertyName: string = $state(
     localStorage.getItem('last_property_name') || '物件名読み込み中...'
@@ -149,7 +177,7 @@
   }
 
   function handleRoomClick(room: Room): void {
-    if (room.isNotNeeded === true) {
+    if (shouldSkipRoom(room)) {
       displayToast('この部屋は検針不要に設定されています。');
       return;
     }
@@ -217,7 +245,7 @@
       const roomId = String(room.id || room.roomId || '');
       if (
         roomId &&
-        room.isNotNeeded !== true &&
+        !shouldSkipRoom(room) &&
         !(room.readingStatus === 'completed' || room.isCompleted)
       ) {
         displayToast('未検針の部屋があります。すべての検針を完了してください。');
@@ -363,11 +391,11 @@
         </div>
       </section>
 
-      {#if rooms.filter((r) => r.isNotNeeded !== true).length > 0}
+      {#if rooms.filter((r) => !shouldSkipRoom(r)).length > 0}
         {@const completed = rooms.filter(
-          (r) => (r.readingStatus === 'completed' || r.isCompleted) && r.isNotNeeded !== true
+          (r) => (r.readingStatus === 'completed' || r.isCompleted) && !shouldSkipRoom(r)
         ).length}
-        {@const total = rooms.filter((r) => r.isNotNeeded !== true).length}
+        {@const total = rooms.filter((r) => !shouldSkipRoom(r)).length}
         {@const pct = Math.round((completed / total) * 100)}
         {@const barColor = pct === 100 ? '#2e7d32' : pct >= 50 ? '#e67700' : '#c92a2a'}
         <div style="padding: 12px 16px; margin: 0 0 8px;">
@@ -396,7 +424,7 @@
       >
         {#if rooms.length > 0}
           {@const allDone = rooms.every(
-            (r) => r.readingStatus === 'completed' || r.isCompleted || r.isNotNeeded === true
+            (r) => r.readingStatus === 'completed' || r.isCompleted || shouldSkipRoom(r)
           )}
           <button
             onclick={handleCompleteInspection}
@@ -433,18 +461,11 @@
           <div class="no-rooms-message">部屋データがありません</div>
         {:else}
           {#each sortedRooms as room, index (room.id || index)}
-            {@const isSkipInspection = room.isNotNeeded === true}
+            {@const statusInfo = getRoomStatusInfo(room)}
+            {@const isSkipInspection = statusInfo.cssClass === 'status-skip'}
             {@const isCompleted = room.readingStatus === 'completed' || room.isCompleted}
-            {@const statusIcon = isSkipInspection
-              ? 'block'
-              : isCompleted
-                ? 'check_circle'
-                : 'warning'}
-            {@const statusColor = isSkipInspection
-              ? '#9e9e9e'
-              : isCompleted
-                ? '#2e7d32'
-                : '#ed6c02'}
+            {@const statusIcon = statusInfo.icon}
+            {@const statusColor = statusInfo.color}
             {@const readingsText = isSkipInspection
               ? ''
               : isCompleted
@@ -460,16 +481,13 @@
                     return '';
                   })()
                 : ''}
-            {@const statusText = isSkipInspection
-              ? '検針不要'
-              : isCompleted
-                ? '検針済み'
-                : '未検針'}
-            {@const cardClasses = isSkipInspection
-              ? 'MuiCard-root MuiPaper-root MuiPaper-elevation1 MuiCardActionArea-root room-card status-skip'
-              : isCompleted
-                ? 'MuiCard-root MuiPaper-root MuiPaper-elevation1 MuiCardActionArea-root room-card status-completed'
-                : 'MuiCard-root MuiPaper-root MuiPaper-elevation1 MuiCardActionArea-root room-card status-pending'}
+            {@const statusText = statusInfo.text}
+            {@const cardClasses = [
+              'MuiCard-root MuiPaper-root MuiPaper-elevation1 MuiCardActionArea-root room-card',
+              isSkipInspection ? 'status-skip' : statusInfo.cssClass,
+            ]
+              .filter(Boolean)
+              .join(' ')}
             <button
               type="button"
               class={cardClasses}

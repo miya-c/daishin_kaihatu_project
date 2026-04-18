@@ -118,7 +118,7 @@ describe('createRoomNavigation', () => {
         if (key === 'selectedRooms') {
           return JSON.stringify([
             { id: 'room1' },
-            { id: 'room2', isNotNeeded: true },
+            { id: 'room2', isNotNeeded: true, roomStatus: 'skip' },
             { id: 'room3' },
           ]);
         }

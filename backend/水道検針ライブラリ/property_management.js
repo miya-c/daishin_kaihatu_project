@@ -466,7 +466,13 @@ function addRoom(params) {
       if (!roomSheet) {
         return { success: false, error: '部屋マスタシートが見つかりません' };
       }
-      roomSheet.appendRow([propertyId, roomId, roomName]);
+      roomSheet.appendRow([
+        propertyId,
+        roomId,
+        roomName,
+        params.roomStatus || '',
+        params.roomNotes || '',
+      ]);
 
       // Diff-insert into inspection_data
       var inspectionSheet = ss.getSheetByName(CONFIG.SHEET_NAMES.INSPECTION_DATA);
@@ -475,18 +481,25 @@ function addRoom(params) {
           .getRange(1, 1, 1, inspectionSheet.getLastColumn())
           .getValues()[0];
 
-        // Build new row matching inspection_data columns
-        // Expected columns: 物件ID, 物件名, 部屋ID, 部屋名, (検針日時以降は空)
         var newRow = new Array(headers.length).fill('');
         var propIdCol = headers.indexOf('物件ID');
         var propNameCol = headers.indexOf('物件名');
         var roomIdCol = headers.indexOf('部屋ID');
         var roomNameCol = headers.indexOf('部屋名');
+        var inspSkipCol = headers.indexOf('検針不要');
+        var billSkipCol = headers.indexOf('請求不要');
+        var roomStatusCol = headers.indexOf('部屋ステータス');
 
         if (propIdCol !== -1) newRow[propIdCol] = propertyId;
         if (propNameCol !== -1) newRow[propNameCol] = propertyName;
         if (roomIdCol !== -1) newRow[roomIdCol] = roomId;
         if (roomNameCol !== -1) newRow[roomNameCol] = roomName;
+
+        var status = params.roomStatus || 'normal';
+        var flags = deriveFlagsFromStatus(status);
+        if (inspSkipCol !== -1) newRow[inspSkipCol] = flags.inspectionSkip;
+        if (billSkipCol !== -1) newRow[billSkipCol] = flags.billingSkip;
+        if (roomStatusCol !== -1) newRow[roomStatusCol] = status;
 
         inspectionSheet.appendRow(newRow);
       }
@@ -795,10 +808,14 @@ function getRoomsForManagement(propertyId) {
     var rooms = [];
     for (var i = 1; i < roomData.length; i++) {
       if (String(roomData[i][0]).trim() === propertyId) {
+        var rawStatus = roomData[i].length > 3 ? String(roomData[i][3]).trim() : '';
+        var rawNotes = roomData[i].length > 4 ? String(roomData[i][4]).trim() : '';
         rooms.push({
           propertyId: propertyId,
           roomId: String(roomData[i][1]).trim(),
           roomName: String(roomData[i][2]).trim(),
+          roomStatus: rawStatus || '',
+          roomNotes: rawNotes || '',
           hasInspectionResult: false,
           readingDate: '',
           warningFlag: '',
@@ -864,6 +881,13 @@ function getRoomsForManagement(propertyId) {
                 rooms[k].inspectionSkip = inspSkipCol !== -1 ? _isTruthy(row[inspSkipCol]) : false;
                 rooms[k].billingSkip =
                   inspBillingCol !== -1 ? _isBillingSkip(row[inspBillingCol]) : false;
+
+                if (!rooms[k].roomStatus || rooms[k].roomStatus === '') {
+                  rooms[k].roomStatus = _inferStatusFromFlags(
+                    rooms[k].inspectionSkip,
+                    rooms[k].billingSkip
+                  );
+                }
                 break;
               }
             }
@@ -918,6 +942,25 @@ function _isBillingSkip(val) {
   return val === '\u25CF' || val === 'true' || val === '1' || val === true;
 }
 
+function deriveFlagsFromStatus(status) {
+  switch (status) {
+    case 'skip':
+      return { inspectionSkip: 'true', billingSkip: '' };
+    case 'owner':
+      return { inspectionSkip: '', billingSkip: '\u25CF' };
+    case 'fixed':
+      return { inspectionSkip: '', billingSkip: '\u25CF' };
+    default:
+      return { inspectionSkip: '', billingSkip: '' };
+  }
+}
+
+function _inferStatusFromFlags(inspectionSkip, billingSkip) {
+  if (inspectionSkip) return 'skip';
+  if (billingSkip) return 'owner';
+  return 'normal';
+}
+
 /**
  * Update room master name + inspection data (current/prev readings, skip flags)
  * @param {Object} params - { propertyId, roomId, roomName, currentReading, previousReading, inspectionSkip, billingSkip }
@@ -954,6 +997,31 @@ function updateInspectionData(params) {
               String(roomData[i][1]).trim() === roomId
             ) {
               roomSheet.getRange(i + 1, 3).setValue(roomName);
+              if (params.roomStatus !== undefined) {
+                roomSheet.getRange(i + 1, 4).setValue(String(params.roomStatus));
+              }
+              if (params.roomNotes !== undefined) {
+                roomSheet.getRange(i + 1, 5).setValue(String(params.roomNotes));
+              }
+              break;
+            }
+          }
+        }
+      } else if (params.roomStatus !== undefined || params.roomNotes !== undefined) {
+        var roomSheet2 = ss.getSheetByName(CONFIG.SHEET_NAMES.ROOM_MASTER);
+        if (roomSheet2) {
+          var roomData2 = roomSheet2.getDataRange().getValues();
+          for (var i2 = 1; i2 < roomData2.length; i2++) {
+            if (
+              String(roomData2[i2][0]).trim() === propertyId &&
+              String(roomData2[i2][1]).trim() === roomId
+            ) {
+              if (params.roomStatus !== undefined) {
+                roomSheet2.getRange(i2 + 1, 4).setValue(String(params.roomStatus));
+              }
+              if (params.roomNotes !== undefined) {
+                roomSheet2.getRange(i2 + 1, 5).setValue(String(params.roomNotes));
+              }
               break;
             }
           }
@@ -1009,14 +1077,28 @@ function updateInspectionData(params) {
             }
           }
           if (inspSkipCol !== -1) {
-            var skipVal =
-              params.inspectionSkip === true || params.inspectionSkip === 'true' ? 'true' : '';
+            var skipVal;
+            if (params.roomStatus) {
+              skipVal = deriveFlagsFromStatus(params.roomStatus).inspectionSkip;
+            } else {
+              skipVal =
+                params.inspectionSkip === true || params.inspectionSkip === 'true' ? 'true' : '';
+            }
             inspSheet.getRange(j + 1, inspSkipCol + 1).setValue(skipVal);
           }
           if (inspBillingCol !== -1) {
-            var billVal =
-              params.billingSkip === true || params.billingSkip === 'true' ? '\u25CF' : '';
+            var billVal;
+            if (params.roomStatus) {
+              billVal = deriveFlagsFromStatus(params.roomStatus).billingSkip;
+            } else {
+              billVal =
+                params.billingSkip === true || params.billingSkip === 'true' ? '\u25CF' : '';
+            }
             inspSheet.getRange(j + 1, inspBillingCol + 1).setValue(billVal);
+          }
+          var inspRoomStatusCol = inspHeaders.indexOf('部屋ステータス');
+          if (inspRoomStatusCol !== -1 && params.roomStatus) {
+            inspSheet.getRange(j + 1, inspRoomStatusCol + 1).setValue(String(params.roomStatus));
           }
           rowUpdated = true;
           break;

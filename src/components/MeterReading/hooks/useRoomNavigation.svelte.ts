@@ -21,6 +21,7 @@ interface CreateRoomNavigationParams {
 
 interface NavigationRoom {
   id: string;
+  roomStatus?: string;
   isNotNeeded?: boolean;
   [key: string]: unknown;
 }
@@ -36,6 +37,13 @@ interface PendingNavigation {
   targetRoomId: string;
   direction: string;
   collectReadingsFn: (() => Record<string, unknown>[]) | undefined;
+}
+
+function isSkipRoom(room: NavigationRoom): boolean {
+  if (room.roomStatus !== undefined) {
+    return room.roomStatus === 'skip';
+  }
+  return room.isNotNeeded === true;
 }
 
 export const createRoomNavigation = (options: CreateRoomNavigationParams) => {
@@ -61,7 +69,7 @@ export const createRoomNavigation = (options: CreateRoomNavigationParams) => {
       let previousRoom: NavigationRoom | null = null;
       for (let i = currentIndex - 1; i >= 0; i--) {
         const room = roomsArray[i];
-        if (room && room.isNotNeeded !== true) {
+        if (room && !isSkipRoom(room)) {
           previousRoom = room;
           break;
         }
@@ -71,7 +79,7 @@ export const createRoomNavigation = (options: CreateRoomNavigationParams) => {
       let nextRoom: NavigationRoom | null = null;
       for (let i = currentIndex + 1; i < roomsArray.length; i++) {
         const room = roomsArray[i];
-        if (room && room.isNotNeeded !== true) {
+        if (room && !isSkipRoom(room)) {
           nextRoom = room;
           break;
         }

@@ -278,7 +278,30 @@ function _applyInspectionStatus(ss, propertyId, rooms) {
   }
 
   try {
-    // ヘッダーベース列アクセス: 全データを読み込み、headers.indexOf()で列を特定
+    var roomMasterSheet = ss.getSheetByName(CONFIG.SHEET_NAMES.ROOM_MASTER);
+    var statusMap = {};
+    if (roomMasterSheet) {
+      var rmHeaders = roomMasterSheet
+        .getRange(1, 1, 1, roomMasterSheet.getLastColumn())
+        .getValues()[0];
+      var statusColIdx = rmHeaders.indexOf('部屋ステータス');
+      var notesColIdx = rmHeaders.indexOf('備考');
+      var rmData = roomMasterSheet.getDataRange().getValues();
+      for (var ri = 1; ri < rmData.length; ri++) {
+        var rmKey = String(rmData[ri][0]).trim() + '_' + String(rmData[ri][1]).trim();
+        statusMap[rmKey] = {
+          status:
+            statusColIdx >= 0 && rmData[ri][statusColIdx]
+              ? String(rmData[ri][statusColIdx]).trim()
+              : 'normal',
+          notes:
+            notesColIdx >= 0 && rmData[ri][notesColIdx]
+              ? String(rmData[ri][notesColIdx]).trim()
+              : '',
+        };
+      }
+    }
+
     var lastRow = inspectionSheet.getLastRow();
     if (lastRow <= 1) return;
 
@@ -309,7 +332,6 @@ function _applyInspectionStatus(ss, propertyId, rooms) {
       if (String(row[inspPropertyIdIndex]).trim() === String(propertyId).trim()) {
         const roomIdRaw = String(row[inspRoomIdIndex]).trim();
 
-        // 部屋ID正規化（R000001 → R001等）
         let roomId = roomIdRaw;
         if (roomIdRaw.startsWith('R') && roomIdRaw.length > 4) {
           const numPart = roomIdRaw.substring(1);
@@ -317,7 +339,6 @@ function _applyInspectionStatus(ss, propertyId, rooms) {
           roomId = 'R' + normalizedNum;
         }
 
-        // 検針完了データ確認
         if (
           row[inspValueIndex] !== null &&
           row[inspValueIndex] !== undefined &&
@@ -350,7 +371,6 @@ function _applyInspectionStatus(ss, propertyId, rooms) {
           });
         }
 
-        // 検針不要フラグ確認
         if (inspNotNeededIndex !== -1) {
           const notNeededValue = row[inspNotNeededIndex];
           if (notNeededValue !== null && notNeededValue !== undefined) {
@@ -371,7 +391,6 @@ function _applyInspectionStatus(ss, propertyId, rooms) {
       }
     });
 
-    // 部屋データに検針状況を反映
     rooms.forEach((room) => {
       if (readingMap.has(room.id)) {
         const readingData = readingMap.get(room.id);
@@ -389,6 +408,17 @@ function _applyInspectionStatus(ss, propertyId, rooms) {
         }
       } else {
         room.isNotNeeded = false;
+      }
+
+      var statusKey = String(propertyId).trim() + '_' + String(room.id).trim();
+      var statusInfo = statusMap[statusKey];
+      room.roomStatus = statusInfo ? statusInfo.status : 'normal';
+      room.roomNotes = statusInfo ? statusInfo.notes : '';
+      if (room.roomStatus === 'skip') {
+        room.isNotNeeded = true;
+        if (room.readingStatus !== 'completed') {
+          room.readingStatus = 'not-needed';
+        }
       }
     });
   } catch (inspectionError) {

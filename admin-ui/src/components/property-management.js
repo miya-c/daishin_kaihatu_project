@@ -33,8 +33,8 @@ document.addEventListener('alpine:init', function () {
         roomName: '',
         currentReading: '',
         previousReading: '',
-        inspectionSkip: false,
-        billingSkip: false,
+        roomStatus: 'normal',
+        roomNotes: '',
         hasInspectionData: false,
       },
 
@@ -48,10 +48,16 @@ document.addEventListener('alpine:init', function () {
       bulkRoomResults: null,
       bulkRoomSubmitting: false,
 
+      annualReport: null,
+      annualReportYear: new Date().getFullYear(),
+      annualReportLoading: false,
+      annualAvailableYears: [],
+
       init: function () {
         var self = this;
         this._pendingPropertyId = '';
         this.loadProperties();
+        this.loadAvailableYears();
         this.$watch('$store.app.activeTab', function (v) {
           if (v === 'properties') {
             self.loadProperties();
@@ -114,6 +120,23 @@ document.addEventListener('alpine:init', function () {
           });
       },
 
+      reloadRooms: function () {
+        var self = this;
+        var propId = self.getPropId(self.selectedProperty);
+        if (!propId) return;
+        self.roomsLoading = true;
+        callAdminAPI('getRoomsForManagement', { propertyId: propId })
+          .then(function (result) {
+            if (result && result.success) {
+              self.rooms = result.data || [];
+            }
+          })
+          .catch(function () {})
+          .finally(function () {
+            self.roomsLoading = false;
+          });
+      },
+
       selectProperty: function (prop) {
         var self = this;
         var propId = self.getPropId(prop);
@@ -146,6 +169,7 @@ document.addEventListener('alpine:init', function () {
           .finally(function () {
             self.roomsLoading = false;
           });
+        self.annualReport = null;
       },
 
       getAutoPropertyId: function () {
@@ -259,7 +283,7 @@ document.addEventListener('alpine:init', function () {
           .then(function (result) {
             if (result && result.success) {
               self.closeModal();
-              self.selectProperty(self.selectedProperty);
+              self.reloadRooms();
               if (window.Alpine && Alpine.store('toast')) {
                 Alpine.store('toast').success('部屋「' + name + '」を追加しました');
               }
@@ -287,7 +311,7 @@ document.addEventListener('alpine:init', function () {
           .then(function (result) {
             if (result && result.success) {
               self.closeModal();
-              self.selectProperty(self.selectedProperty);
+              self.reloadRooms();
               if (window.Alpine && Alpine.store('toast')) {
                 Alpine.store('toast').success('部屋名を変更しました');
               }
@@ -324,7 +348,7 @@ document.addEventListener('alpine:init', function () {
                 self.rooms = [];
                 self.loadProperties();
               } else {
-                self.selectProperty(self.selectedProperty);
+                self.reloadRooms();
               }
               if (window.Alpine && Alpine.store('toast')) {
                 Alpine.store('toast').success('削除しました');
@@ -586,17 +610,56 @@ document.addEventListener('alpine:init', function () {
       },
 
       openInspectionEdit: function (room) {
+        var status = room.roomStatus || '';
+        if (!status) {
+          if (room.inspectionSkip) status = 'skip';
+          else if (room.billingSkip) status = 'owner';
+          else status = 'normal';
+        }
         this.editInspectionForm = {
           roomId: room.roomId || '',
           roomName: room.roomName || '',
           currentReading: room.currentReading !== '' ? room.currentReading : '',
           previousReading: room.previousReading !== '' ? room.previousReading : '',
-          inspectionSkip: room.inspectionSkip || false,
-          billingSkip: room.billingSkip || false,
+          roomStatus: status,
+          roomNotes: room.roomNotes || '',
           hasInspectionData: room.hasInspectionResult || false,
         };
         this.error = '';
         this.activeModal = 'editInspection';
+      },
+
+      getStatusLabel: function (status) {
+        var labels = {
+          normal: '🏠 通常入居中',
+          vacant: '📭 空室',
+          owner: '🔑 オーナー使用中',
+          fixed: '💰 固定料金',
+          skip: '🚫 検針不要',
+        };
+        return labels[status] || labels.normal;
+      },
+
+      getStatusDescription: function (status) {
+        var descs = {
+          normal: '通常どおり検針・請求を行います',
+          vacant: '検針対象です（空室でも水が使われる場合があります）',
+          owner: '検針対象ですが、請求はスキップされます',
+          fixed: '検針対象ですが、請求はスキップされます（固定料金契約）',
+          skip: '検針・請求ともにスキップされます',
+        };
+        return descs[status] || descs.normal;
+      },
+
+      getDerivedFlags: function (status) {
+        if (status === 'skip') return { inspectionSkip: true, billingSkip: false };
+        if (status === 'owner' || status === 'fixed')
+          return { inspectionSkip: false, billingSkip: true };
+        return { inspectionSkip: false, billingSkip: false };
+      },
+
+      setFormProp: function (formKey, prop, value) {
+        this[formKey][prop] = value;
       },
 
       submitInspectionEdit: function () {
@@ -610,8 +673,8 @@ document.addEventListener('alpine:init', function () {
           propertyId: self.getPropId(self.selectedProperty),
           roomId: form.roomId,
           roomName: form.roomName.trim(),
-          inspectionSkip: form.inspectionSkip,
-          billingSkip: form.billingSkip,
+          roomStatus: form.roomStatus,
+          roomNotes: form.roomNotes,
         };
         if (form.hasInspectionData) {
           params.currentReading = form.currentReading;
@@ -621,7 +684,7 @@ document.addEventListener('alpine:init', function () {
           .then(function (result) {
             if (result && result.success) {
               self.closeModal();
-              self.selectProperty(self.selectedProperty);
+              self.reloadRooms();
               if (window.Alpine && Alpine.store('toast')) {
                 Alpine.store('toast').success('更新しました');
               }
@@ -789,7 +852,7 @@ document.addEventListener('alpine:init', function () {
             if (result && result.success) {
               self.bulkRoomResults = result.data;
               self.bulkRoomSubmitting = false;
-              self.selectProperty(self.selectedProperty);
+              self.reloadRooms();
             } else {
               self.error = (result && result.error) || '一括登録に失敗しました';
               self.bulkRoomSubmitting = false;
@@ -806,6 +869,56 @@ document.addEventListener('alpine:init', function () {
         this.bulkRoomResults = null;
         this.bulkRoomText = '';
         this.error = '';
+      },
+
+      loadAnnualReport: function () {
+        var self = this;
+        if (!self.selectedProperty) return;
+        self.annualReportLoading = true;
+        self.annualReport = null;
+        callAdminAPI('getAnnualReport', {
+          propertyId: self.getPropId(self.selectedProperty),
+          year: self.annualReportYear,
+        })
+          .then(function (result) {
+            if (result && result.success) {
+              self.annualReport = result.data;
+            } else {
+              self.error = (result && result.error) || '年間レポートの取得に失敗しました';
+            }
+            self.annualReportLoading = false;
+          })
+          .catch(function (err) {
+            self.error = err.message || '年間レポートでエラーが発生しました';
+            self.annualReportLoading = false;
+          });
+      },
+
+      loadAvailableYears: function () {
+        var self = this;
+        callAdminAPI('getAvailableYears')
+          .then(function (result) {
+            if (result && result.success && result.years && result.years.length > 0) {
+              self.annualAvailableYears = result.years;
+              self.annualReportYear = result.years[0];
+            }
+          })
+          .catch(function () {});
+      },
+
+      getCellStyle: function (monthData) {
+        var status = monthData.roomStatus || 'normal';
+        if (status === 'skip')
+          return 'background: repeating-linear-gradient(45deg, #f5f5f5, #f5f5f5 10px, #e0e0e0 10px, #e0e0e0 20px);';
+        if (status === 'owner') return 'background-color: #e3f2e8;';
+        if (status === 'fixed') return 'background-color: #fef9e7;';
+        if (status === 'vacant' && !monthData.usage && monthData.usage !== 0)
+          return 'background-color: #f5f5f5;';
+        return '';
+      },
+
+      printAnnualReport: function () {
+        window.print();
       },
     };
   });

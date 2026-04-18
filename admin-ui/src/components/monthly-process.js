@@ -9,6 +9,8 @@ document.addEventListener('alpine:init', function () {
       executeResult: null,
       error: '',
       confirmReset: false,
+      monthlyTargetYear: new Date().getFullYear(),
+      monthlyTargetMonth: String(new Date().getMonth() + 1).padStart(2, '0'),
 
       runPreCheck: function () {
         var self = this;
@@ -40,10 +42,11 @@ document.addEventListener('alpine:init', function () {
         }
         self.step = 'executing';
         self.error = '';
-        // reset the temporary confirmation flag on actual execution
-        // (will be reset again below if needed)
 
-        callAdminAPI('executeMonthlyProcess')
+        callAdminAPI('executeMonthlyProcess', {
+          targetYear: self.monthlyTargetYear,
+          targetMonth: self.monthlyTargetMonth,
+        })
           .then(function (result) {
             if (result && result.success) {
               self.executeResult = result.data;

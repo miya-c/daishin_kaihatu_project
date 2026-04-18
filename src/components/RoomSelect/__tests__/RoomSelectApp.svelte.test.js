@@ -152,7 +152,7 @@ describe('RoomSelectApp', () => {
         rooms: [
           { id: 'r1', name: '101号室', readingStatus: 'pending' },
           { id: 'r2', name: '102号室', readingStatus: 'completed', isCompleted: true },
-          { id: 'r3', name: '103号室', isNotNeeded: true },
+          { id: 'r3', name: '103号室', isNotNeeded: true, roomStatus: 'skip' },
         ],
         propertyName: 'テスト物件',
       },

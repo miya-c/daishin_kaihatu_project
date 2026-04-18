@@ -27,6 +27,8 @@ const CONFIG = {
     PROPERTY_ID: 1, // 物件ID
     ROOM_ID: 2, // 部屋ID
     ROOM_NAME: 3, // 部屋名
+    STATUS: 4, // 部屋ステータス (normal/vacant/owner/fixed/skip)
+    NOTES: 5, // 備考
   },
 
   // ※ 参照用定義 - 実際の列アクセスは headers.indexOf() を使用してください
@@ -48,6 +50,7 @@ const CONFIG = {
     THREE_TIMES_PREVIOUS_READING: 13, // 前々々回指示数
     INSPECTION_SKIP: 14, // 検針不要
     BILLING_SKIP: 15, // 請求不要
+    ROOM_STATUS: 16, // 部屋ステータス
   },
 
   // データ処理設定

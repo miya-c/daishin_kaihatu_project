@@ -39,7 +39,7 @@ function adminDispatch(action, params) {
       }
 
       case 'executeMonthlyProcess': {
-        const execResult = processInspectionDataMonthlyImpl();
+        const execResult = processInspectionDataMonthlyImpl(null, params);
         return { success: execResult.success, data: execResult };
       }
 
@@ -168,7 +168,31 @@ function adminDispatch(action, params) {
         if (!params.propertyId || !params.roomId) {
           return { success: false, error: '物件ID・部屋IDが必要です', code: 'MISSING_PARAM' };
         }
+        if (params.roomStatus) {
+          var validStatuses = ['normal', 'vacant', 'owner', 'fixed', 'skip'];
+          if (validStatuses.indexOf(params.roomStatus) === -1) {
+            return {
+              success: false,
+              error: '無効な部屋ステータス: ' + params.roomStatus,
+              code: 'INVALID_PARAM',
+            };
+          }
+        }
         return updateInspectionData(params);
+      }
+
+      case 'getAvailableYears': {
+        return getAvailableYears();
+      }
+
+      case 'getAnnualReport': {
+        if (!params.propertyId) {
+          return { success: false, error: '物件IDが必要です', code: 'MISSING_PARAM' };
+        }
+        if (!params.year) {
+          return { success: false, error: '年度が必要です', code: 'MISSING_PARAM' };
+        }
+        return getAnnualReport(params);
       }
 
       default:

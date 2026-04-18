@@ -1,0 +1,1801 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>年間レポート モック</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.4/css/bulma.min.css" />
+    <style>
+      body {
+        background: #f5f5f5;
+        padding: 2rem;
+      }
+      .mock-section {
+        max-width: 1100px;
+        margin: 0 auto 3rem;
+      }
+      .mock-label {
+        font-weight: 700;
+        font-size: 1.2rem;
+        margin-bottom: 1rem;
+        color: #363636;
+      }
+      .mock-note {
+        font-size: 0.8rem;
+        color: #888;
+        margin-bottom: 1rem;
+        padding: 0.5rem;
+        background: #fffbf0;
+        border-left: 3px solid #ffdd57;
+      }
+      .panel-sim {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+      }
+
+      /* View toggle */
+      .view-toggle {
+        display: flex;
+        gap: 0;
+        margin-bottom: 1rem;
+      }
+      .toggle-btn {
+        padding: 0.4rem 1rem;
+        font-size: 0.8rem;
+        border: 1px solid #dbdbdb;
+        background: white;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+      .toggle-btn:first-child {
+        border-radius: 6px 0 0 6px;
+      }
+      .toggle-btn:last-child {
+        border-radius: 0 6px 6px 0;
+      }
+      .toggle-btn.active {
+        background: #3273dc;
+        color: white;
+        border-color: #3273dc;
+      }
+
+      /* Annual report table */
+      .annual-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.8rem;
+        table-layout: fixed;
+      }
+      .annual-table th,
+      .annual-table td {
+        border: 1px solid #dbdbdb;
+        padding: 0.35rem 0.4rem;
+        text-align: center;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .annual-table thead th {
+        background: #f5f5f5;
+        font-weight: 600;
+        position: sticky;
+        top: 0;
+        z-index: 1;
+      }
+      .annual-table .room-col {
+        width: 3.5rem;
+        text-align: left;
+        font-weight: 500;
+      }
+      .annual-table .month-col {
+        width: 5.5rem;
+      }
+      .annual-table tbody tr:nth-child(even) {
+        background: white;
+      }
+      .annual-table tbody tr:hover {
+        background: white;
+      }
+
+      /* Color coding */
+      .val-normal {
+        color: #1a6db5;
+        font-weight: 500;
+      }
+      .val-abnormal {
+        color: #e74c3c;
+        font-weight: 700;
+      }
+      .val-zero {
+        color: #555;
+      }
+      .val-empty {
+        color: #ccc;
+      }
+
+      /* Cell background states */
+      .cell-zero {
+        background: #f5f5f5;
+      }
+      .cell-owner {
+        background: #e3f2e8;
+      }
+      .cell-fixed {
+        background: #fef9e7;
+      }
+      .cell-skip {
+        background: repeating-linear-gradient(-45deg, #f5f5f5, #f5f5f5 4px, #eee 4px, #eee 8px);
+        color: #bbb;
+        font-style: italic;
+        font-size: 0.75rem;
+      }
+
+      /* Reading / Usage split */
+      .cell-reading {
+        font-size: 0.75rem;
+        display: block;
+        color: #666;
+      }
+      .cell-usage {
+        font-weight: 600;
+      }
+
+      /* Legend */
+      .legend {
+        display: flex;
+        gap: 1.5rem;
+        margin: 0.75rem 0;
+        font-size: 0.75rem;
+        color: #666;
+      }
+      .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+      }
+      .legend-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 2px;
+        display: inline-block;
+      }
+      .legend-dot.normal {
+        background: #1a6db5;
+      }
+      .legend-dot.abnormal {
+        background: #e74c3c;
+      }
+      .legend-dot.zero {
+        background: #f5f5f5;
+        border: 1px solid #bbb;
+      }
+      .legend-dot.owner {
+        background: #e3f2e8;
+        border: 1px solid #a8d5b8;
+      }
+      .legend-dot.fixed {
+        background: #fef9e7;
+        border: 1px solid #e6d68a;
+      }
+      .legend-dot.skip {
+        background: repeating-linear-gradient(-45deg, #f5f5f5, #f5f5f5 3px, #eee 3px, #eee 6px);
+        border: 1px solid #ddd;
+      }
+      .legend-dot.empty {
+        background: #fff;
+        border: 1px solid #ccc;
+      }
+
+      /* Year selector */
+      .year-selector {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 0.75rem;
+      }
+
+      /* Summary cards */
+      .summary-row {
+        display: flex;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+      }
+      .summary-chip {
+        padding: 0.35rem 0.75rem;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        background: #f5f5f5;
+        border: 1px solid #e0e0e0;
+      }
+      .summary-chip strong {
+        font-size: 1rem;
+      }
+
+      /* Print styles */
+      @media print {
+        body {
+          background: white;
+          padding: 0;
+        }
+        .mock-label,
+        .mock-note,
+        .view-toggle,
+        .year-selector,
+        .no-print {
+          display: none !important;
+        }
+        .panel-sim {
+          box-shadow: none;
+        }
+        .annual-table {
+          font-size: 0.65rem;
+        }
+        .annual-table .month-col {
+          width: auto;
+        }
+        .print-header {
+          display: block !important;
+        }
+      }
+      .print-header {
+        display: none;
+      }
+
+      /* Monthly process month selector */
+      .month-select-sim {
+        display: flex;
+        gap: 0;
+        margin-bottom: 1rem;
+      }
+      .month-btn {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.8rem;
+        border: 1px solid #dbdbdb;
+        background: white;
+        cursor: pointer;
+        transition: all 0.15s;
+        text-align: center;
+        min-width: 4rem;
+      }
+      .month-btn:hover {
+        background: #eef3fc;
+      }
+      .month-btn.active {
+        background: #3273dc;
+        color: white;
+        border-color: #3273dc;
+      }
+      .month-btn.disabled {
+        background: #f5f5f5;
+        color: #bbb;
+        cursor: not-allowed;
+      }
+
+      /* Divider */
+      .section-divider {
+        border: 0;
+        border-top: 2px solid #ddd;
+        margin: 3rem 0;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- ============================================================ -->
+    <!-- パターン1: 月次処理 — 月選択UI -->
+    <!-- ============================================================ -->
+    <div class="mock-section">
+      <div class="mock-label">パターン1: 月次処理 — 保存月の選択</div>
+      <div class="mock-note">
+        現在: new Date() で実行日から自動判定 → 3月データを4月に処理すると「4月」になる<br />
+        修正: 実行時にユーザーが「何月分として保存するか」を選択
+      </div>
+
+      <div class="panel-sim">
+        <div class="panel-heading" style="font-size: 0.9rem">📅 月次処理 — 保存先の月を選択</div>
+        <div style="padding: 1.25rem">
+          <p class="is-size-7 has-text-grey mb-3">
+            検針データを保存する月を選択してください。データ内の検針日時ではなく、請求・管理上の月を選んでください。
+          </p>
+
+          <label class="label is-small">保存先の月</label>
+          <div class="month-select-sim">
+            <button class="month-btn disabled">2025年</button>
+            <button class="month-btn active">4月</button>
+            <button class="month-btn">5月</button>
+            <button class="month-btn">6月</button>
+            <button class="month-btn">7月</button>
+            <button class="month-btn">8月</button>
+            <button class="month-btn">9月</button>
+            <button class="month-btn">10月</button>
+            <button class="month-btn">11月</button>
+            <button class="month-btn">12月</button>
+            <button class="month-btn">1月</button>
+            <button class="month-btn">2月</button>
+            <button class="month-btn">3月</button>
+          </div>
+
+          <p class="help">アーカイブ名: <strong>検針データ_2026年04月</strong></p>
+
+          <div class="field mt-4" style="display: flex; gap: 0.5rem; justify-content: flex-end">
+            <button class="button is-light">キャンセル</button>
+            <button class="button is-primary">月次処理を実行</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- パターン2: 年間レポート — 月次検針物件（表形式） -->
+    <!-- ============================================================ -->
+    <div class="mock-section">
+      <div class="mock-label">パターン2: 年間レポート — 月次検針物件</div>
+      <div class="mock-note">
+        ABCマンション（毎月検針）の12ヶ月分。<br />
+        各セル: 指示数 / 使用量（㎥）。色は使用量で判定。印刷対応。
+      </div>
+
+      <!-- View toggle simulation -->
+      <div class="no-print">
+        <div class="view-toggle">
+          <button class="toggle-btn">展開表示</button>
+          <button class="toggle-btn">一括確認</button>
+          <button class="toggle-btn active">年間レポート</button>
+        </div>
+      </div>
+
+      <div class="panel-sim">
+        <div style="padding: 1rem">
+          <!-- Print-only header -->
+          <div class="print-header" style="text-align: center; margin-bottom: 1rem">
+            <h2 style="font-size: 1.1rem; margin: 0">ABCマンション — 2026年度 年間検針レポート</h2>
+            <p style="font-size: 0.7rem; color: #888; margin: 0.25rem 0 0">出力日: 2026年4月18日</p>
+          </div>
+
+          <!-- Year selector -->
+          <div class="year-selector no-print">
+            <label class="label is-small mb-0" style="margin: 0">年度:</label>
+            <div class="select is-small">
+              <select>
+                <option>2026年度（4月〜3月）</option>
+                <option>2025年度（4月〜3月）</option>
+              </select>
+            </div>
+            <button class="button is-small is-light no-print" onclick="window.print()">
+              🖨️ 印刷
+            </button>
+          </div>
+
+          <!-- Summary -->
+          <div class="summary-row">
+            <div class="summary-chip">対象: <strong>ABCマンション</strong></div>
+            <div class="summary-chip">検針サイクル: <strong>毎月</strong></div>
+            <div class="summary-chip">総部屋数: <strong>6</strong></div>
+          </div>
+
+          <div class="legend">
+            <div class="legend-item"><span class="legend-dot normal"></span> 正常</div>
+            <div class="legend-item"><span class="legend-dot abnormal"></span> 異常（要確認）</div>
+            <div class="legend-item"><span class="legend-dot zero"></span> 0㎥（不在疑い）</div>
+            <div class="legend-item">
+              <span class="legend-dot owner"></span> 請求不要（オーナー使用中）
+            </div>
+            <div class="legend-item"><span class="legend-dot skip"></span> 検針不要</div>
+            <div class="legend-item"><span class="legend-dot empty"></span> 未検針</div>
+          </div>
+
+          <!-- Table -->
+          <div style="overflow-x: auto">
+            <table class="annual-table">
+              <thead>
+                <tr>
+                  <th class="room-col">部屋</th>
+                  <th class="month-col">4月</th>
+                  <th class="month-col">5月</th>
+                  <th class="month-col">6月</th>
+                  <th class="month-col">7月</th>
+                  <th class="month-col">8月</th>
+                  <th class="month-col">9月</th>
+                  <th class="month-col">10月</th>
+                  <th class="month-col">11月</th>
+                  <th class="month-col">12月</th>
+                  <th class="month-col">1月</th>
+                  <th class="month-col">2月</th>
+                  <th class="month-col">3月</th>
+                </tr>
+              </thead>
+              <tbody>
+                <!-- 101: normal pattern -->
+                <tr>
+                  <td class="room-col">101</td>
+                  <td>
+                    <span class="cell-reading">120</span>
+                    <span class="cell-usage val-normal">5㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">125</span>
+                    <span class="cell-usage val-normal">5㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">130</span>
+                    <span class="cell-usage val-normal">5㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">135</span>
+                    <span class="cell-usage val-normal">5㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">145</span>
+                    <span class="cell-usage val-normal">10㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">150</span>
+                    <span class="cell-usage val-normal">5㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">155</span>
+                    <span class="cell-usage val-normal">5㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">160</span>
+                    <span class="cell-usage val-normal">5㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">170</span>
+                    <span class="cell-usage val-normal">10㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">175</span>
+                    <span class="cell-usage val-normal">5㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">180</span>
+                    <span class="cell-usage val-normal">5㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">185</span>
+                    <span class="cell-usage val-normal">5㎥</span>
+                  </td>
+                </tr>
+
+                <!-- 102: abnormal in July -->
+                <tr>
+                  <td class="room-col">102</td>
+                  <td>
+                    <span class="cell-reading">80</span>
+                    <span class="cell-usage val-normal">3㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">83</span>
+                    <span class="cell-usage val-normal">3㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">86</span>
+                    <span class="cell-usage val-normal">3㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">105</span>
+                    <span class="cell-usage val-abnormal">19㎚</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">108</span>
+                    <span class="cell-usage val-normal">3㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">111</span>
+                    <span class="cell-usage val-normal">3㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">114</span>
+                    <span class="cell-usage val-normal">3㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">117</span>
+                    <span class="cell-usage val-normal">3㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">120</span>
+                    <span class="cell-usage val-normal">3㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">123</span>
+                    <span class="cell-usage val-normal">3㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">126</span>
+                    <span class="cell-usage val-normal">3㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">129</span>
+                    <span class="cell-usage val-normal">3㎥</span>
+                  </td>
+                </tr>
+
+                <!-- 103: zero usage in August (vacant?) -->
+                <tr>
+                  <td class="room-col">103</td>
+                  <td>
+                    <span class="cell-reading">200</span>
+                    <span class="cell-usage val-normal">15㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">215</span>
+                    <span class="cell-usage val-normal">15㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">230</span>
+                    <span class="cell-usage val-normal">15㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">245</span>
+                    <span class="cell-usage val-normal">15㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">245</span>
+                    <span class="cell-usage val-zero">0㎥</span>
+                  </td>
+                  <td class="cell-zero">
+                    <span class="cell-reading">245</span>
+                    <span class="cell-usage val-zero">0㎥</span>
+                  </td>
+                  <td class="cell-zero">
+                    <span class="cell-reading">245</span>
+                    <span class="cell-usage val-zero">0㎥</span>
+                  </td>
+                  <td class="cell-zero">
+                    <span class="cell-reading">245</span>
+                    <span class="cell-usage val-zero">0㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">250</span>
+                    <span class="cell-usage val-normal">5㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">265</span>
+                    <span class="cell-usage val-normal">15㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">280</span>
+                    <span class="cell-usage val-normal">15㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">295</span>
+                    <span class="cell-usage val-normal">15㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">310</span>
+                    <span class="cell-usage val-normal">15㎥</span>
+                  </td>
+                </tr>
+
+                <!-- 104: no data for future months -->
+                <tr>
+                  <td class="room-col">104</td>
+                  <td>
+                    <span class="cell-reading">50</span>
+                    <span class="cell-usage val-normal">2㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">52</span>
+                    <span class="cell-usage val-normal">2㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">54</span>
+                    <span class="cell-usage val-normal">2㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">56</span>
+                    <span class="cell-usage val-normal">2㎥</span>
+                  </td>
+                  <td class="val-empty">—</td>
+                  <td class="val-empty">—</td>
+                  <td class="val-empty">—</td>
+                  <td class="val-empty">—</td>
+                  <td class="val-empty">—</td>
+                  <td class="val-empty">—</td>
+                  <td class="val-empty">—</td>
+                  <td class="val-empty">—</td>
+                </tr>
+
+                <!-- 105: inspection skip -->
+                <tr>
+                  <td class="room-col">105</td>
+                  <td class="cell-skip">不要</td>
+                  <td class="cell-skip">不要</td>
+                  <td class="cell-skip">不要</td>
+                  <td class="cell-skip">不要</td>
+                  <td class="cell-skip">不要</td>
+                  <td class="cell-skip">不要</td>
+                  <td class="cell-skip">不要</td>
+                  <td class="cell-skip">不要</td>
+                  <td class="cell-skip">不要</td>
+                  <td class="cell-skip">不要</td>
+                  <td class="cell-skip">不要</td>
+                  <td class="cell-skip">不要</td>
+                </tr>
+
+                <tr>
+                  <td class="room-col">106</td>
+                  <td class="cell-owner">
+                    <span class="cell-reading">400</span>
+                    <span class="cell-usage val-normal">8㎥</span>
+                  </td>
+                  <td class="cell-owner">
+                    <span class="cell-reading">408</span>
+                    <span class="cell-usage val-normal">8㎥</span>
+                  </td>
+                  <td class="cell-owner">
+                    <span class="cell-reading">416</span>
+                    <span class="cell-usage val-normal">8㎥</span>
+                  </td>
+                  <td class="cell-owner">
+                    <span class="cell-reading">424</span>
+                    <span class="cell-usage val-normal">8㎥</span>
+                  </td>
+                  <td class="cell-owner">
+                    <span class="cell-reading">435</span>
+                    <span class="cell-usage val-normal">11㎥</span>
+                  </td>
+                  <td class="cell-owner">
+                    <span class="cell-reading">443</span>
+                    <span class="cell-usage val-normal">8㎥</span>
+                  </td>
+                  <td class="cell-owner">
+                    <span class="cell-reading">451</span>
+                    <span class="cell-usage val-normal">8㎥</span>
+                  </td>
+                  <td class="cell-owner">
+                    <span class="cell-reading">459</span>
+                    <span class="cell-usage val-normal">8㎥</span>
+                  </td>
+                  <td class="cell-owner">
+                    <span class="cell-reading">470</span>
+                    <span class="cell-usage val-normal">11㎥</span>
+                  </td>
+                  <td class="cell-owner">
+                    <span class="cell-reading">478</span>
+                    <span class="cell-usage val-normal">8㎥</span>
+                  </td>
+                  <td class="cell-owner">
+                    <span class="cell-reading">486</span>
+                    <span class="cell-usage val-normal">8㎥</span>
+                  </td>
+                  <td class="cell-owner">
+                    <span class="cell-reading">494</span>
+                    <span class="cell-usage val-normal">8㎥</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- パターン3: 年間レポート — 隔月検針物件 -->
+    <!-- ============================================================ -->
+    <div class="mock-section">
+      <div class="mock-label">パターン3: 年間レポート — 隔月（2ヶ月毎）検針物件</div>
+      <div class="mock-note">XYZハイツ（2ヶ月毎検針）。偶数月のみデータあり、奇数月は空白。</div>
+
+      <div class="panel-sim">
+        <div style="padding: 1rem">
+          <div class="summary-row">
+            <div class="summary-chip">対象: <strong>XYZハイツ</strong></div>
+            <div class="summary-chip">検針サイクル: <strong>隔月（偶数月）</strong></div>
+            <div class="summary-chip">総部屋数: <strong>3</strong></div>
+          </div>
+
+          <div class="legend">
+            <div class="legend-item"><span class="legend-dot normal"></span> 正常</div>
+            <div class="legend-item"><span class="legend-dot abnormal"></span> 異常（要確認）</div>
+            <div class="legend-item"><span class="legend-dot zero"></span> 0㎥（不在疑い）</div>
+            <div class="legend-item"><span class="legend-dot empty"></span> 未検針</div>
+          </div>
+
+          <div style="overflow-x: auto">
+            <table class="annual-table">
+              <thead>
+                <tr>
+                  <th class="room-col">部屋</th>
+                  <th class="month-col">4月</th>
+                  <th class="month-col">5月</th>
+                  <th class="month-col">6月</th>
+                  <th class="month-col">7月</th>
+                  <th class="month-col">8月</th>
+                  <th class="month-col">9月</th>
+                  <th class="month-col">10月</th>
+                  <th class="month-col">11月</th>
+                  <th class="month-col">12月</th>
+                  <th class="month-col">1月</th>
+                  <th class="month-col">2月</th>
+                  <th class="month-col">3月</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="room-col">101</td>
+                  <td>
+                    <span class="cell-reading">120</span>
+                    <span class="cell-usage val-normal">5㎥</span>
+                  </td>
+                  <td class="val-empty"></td>
+                  <td>
+                    <span class="cell-reading">130</span>
+                    <span class="cell-usage val-normal">10㎥</span>
+                  </td>
+                  <td class="val-empty"></td>
+                  <td>
+                    <span class="cell-reading">140</span>
+                    <span class="cell-usage val-normal">10㎥</span>
+                  </td>
+                  <td class="val-empty"></td>
+                  <td>
+                    <span class="cell-reading">150</span>
+                    <span class="cell-usage val-normal">10㎥</span>
+                  </td>
+                  <td class="val-empty"></td>
+                  <td>
+                    <span class="cell-reading">160</span>
+                    <span class="cell-usage val-normal">10㎥</span>
+                  </td>
+                  <td class="val-empty"></td>
+                  <td>
+                    <span class="cell-reading">170</span>
+                    <span class="cell-usage val-normal">10㎥</span>
+                  </td>
+                  <td class="val-empty"></td>
+                </tr>
+                <tr>
+                  <td class="room-col">102</td>
+                  <td>
+                    <span class="cell-reading">80</span>
+                    <span class="cell-usage val-normal">3㎥</span>
+                  </td>
+                  <td class="val-empty"></td>
+                  <td>
+                    <span class="cell-reading">83</span>
+                    <span class="cell-usage val-normal">3㎥</span>
+                  </td>
+                  <td class="val-empty"></td>
+                  <td>
+                    <span class="cell-reading">100</span>
+                    <span class="cell-usage val-abnormal">17㎚</span>
+                  </td>
+                  <td class="val-empty"></td>
+                  <td>
+                    <span class="cell-reading">103</span>
+                    <span class="cell-usage val-normal">3㎥</span>
+                  </td>
+                  <td class="val-empty"></td>
+                  <td>
+                    <span class="cell-reading">106</span>
+                    <span class="cell-usage val-normal">3㎥</span>
+                  </td>
+                  <td class="val-empty"></td>
+                  <td>
+                    <span class="cell-reading">109</span>
+                    <span class="cell-usage val-normal">3㎥</span>
+                  </td>
+                  <td class="val-empty"></td>
+                </tr>
+                <tr>
+                  <td class="room-col">201</td>
+                  <td>
+                    <span class="cell-reading">300</span>
+                    <span class="cell-usage val-normal">8㎥</span>
+                  </td>
+                  <td class="val-empty"></td>
+                  <td>
+                    <span class="cell-reading">308</span>
+                    <span class="cell-usage val-normal">8㎥</span>
+                  </td>
+                  <td class="val-empty"></td>
+                  <td>
+                    <span class="cell-reading">316</span>
+                    <span class="cell-usage val-normal">8㎥</span>
+                  </td>
+                  <td class="val-empty"></td>
+                  <td class="cell-zero">
+                    <span class="cell-reading">316</span>
+                    <span class="cell-usage val-zero">0㎥</span>
+                  </td>
+                  <td class="val-empty"></td>
+                  <td>
+                    <span class="cell-reading">325</span>
+                    <span class="cell-usage val-normal">9㎥</span>
+                  </td>
+                  <td class="val-empty"></td>
+                  <td>
+                    <span class="cell-reading">333</span>
+                    <span class="cell-usage val-normal">8㎥</span>
+                  </td>
+                  <td class="val-empty"></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- パターン4: 年間レポート — データなし -->
+    <!-- ============================================================ -->
+    <div class="mock-section">
+      <div class="mock-label">パターン4: 年間レポート — アーカイブなし</div>
+      <div class="mock-note">
+        月次処理が一度も実行されていない場合、または指定年度のアーカイブが存在しない場合。
+      </div>
+
+      <div class="panel-sim">
+        <div style="padding: 3rem 1rem; text-align: center">
+          <p class="has-text-grey-light is-size-5 mb-2">📭</p>
+          <p class="has-text-grey">2025年度のアーカイブデータが見つかりません。</p>
+          <p class="is-size-7 has-text-grey-light mt-1">
+            月次処理を実行すると、自動的に年間レポートに集計されます。
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- パターン5: 年間レポート — 印刷プレビュー -->
+    <!-- ============================================================ -->
+    <div class="mock-section">
+      <div class="mock-label">パターン5: 印刷プレビュー（横向き推奨）</div>
+      <div class="mock-note">
+        Ctrl+P で印刷プレビューを確認できます。横向き（ランドスケープ）推奨。<br />
+        ※このパターンは実際に印刷プレビューで確認してください。
+      </div>
+
+      <div class="panel-sim">
+        <div style="padding: 1rem">
+          <div style="text-align: center; margin-bottom: 0.75rem">
+            <h2 style="font-size: 1rem; margin: 0">ABCマンション — 2026年度 年間検針レポート</h2>
+            <p style="font-size: 0.65rem; color: #888; margin: 0.15rem 0 0">
+              出力日: 2026年4月18日
+            </p>
+          </div>
+
+          <div style="overflow-x: auto">
+            <table class="annual-table">
+              <thead>
+                <tr>
+                  <th class="room-col">部屋</th>
+                  <th class="month-col">4月</th>
+                  <th class="month-col">5月</th>
+                  <th class="month-col">6月</th>
+                  <th class="month-col">7月</th>
+                  <th class="month-col">8月</th>
+                  <th class="month-col">9月</th>
+                  <th class="month-col">10月</th>
+                  <th class="month-col">11月</th>
+                  <th class="month-col">12月</th>
+                  <th class="month-col">1月</th>
+                  <th class="month-col">2月</th>
+                  <th class="month-col">3月</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="room-col">101</td>
+                  <td>
+                    <span class="cell-reading">120</span
+                    ><span class="cell-usage val-normal">5㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">125</span
+                    ><span class="cell-usage val-normal">5㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">130</span
+                    ><span class="cell-usage val-normal">5㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">135</span
+                    ><span class="cell-usage val-normal">5㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">145</span
+                    ><span class="cell-usage val-normal">10㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">150</span
+                    ><span class="cell-usage val-normal">5㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">155</span
+                    ><span class="cell-usage val-normal">5㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">160</span
+                    ><span class="cell-usage val-normal">5㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">170</span
+                    ><span class="cell-usage val-normal">10㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">175</span
+                    ><span class="cell-usage val-normal">5㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">180</span
+                    ><span class="cell-usage val-normal">5㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">185</span
+                    ><span class="cell-usage val-normal">5㎥</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="room-col">102</td>
+                  <td>
+                    <span class="cell-reading">80</span
+                    ><span class="cell-usage val-normal">3㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">83</span
+                    ><span class="cell-usage val-normal">3㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">86</span
+                    ><span class="cell-usage val-normal">3㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">105</span
+                    ><span class="cell-usage val-abnormal">19㎚</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">108</span
+                    ><span class="cell-usage val-normal">3㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">111</span
+                    ><span class="cell-usage val-normal">3㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">114</span
+                    ><span class="cell-usage val-normal">3㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">117</span
+                    ><span class="cell-usage val-normal">3㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">120</span
+                    ><span class="cell-usage val-normal">3㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">123</span
+                    ><span class="cell-usage val-normal">3㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">126</span
+                    ><span class="cell-usage val-normal">3㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">129</span
+                    ><span class="cell-usage val-normal">3㎥</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="legend" style="margin-top: 0.5rem">
+            <div class="legend-item"><span class="legend-dot normal"></span> 正常</div>
+            <div class="legend-item"><span class="legend-dot abnormal"></span> 異常（要確認）</div>
+            <div class="legend-item"><span class="legend-dot zero"></span> 0㎥（不在疑い）</div>
+            <div class="legend-item"><span class="legend-dot owner"></span> 請求不要</div>
+            <div class="legend-item"><span class="legend-dot skip"></span> 検針不要</div>
+            <div class="legend-item">各セル: 指示数 / 使用量（㎥）</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- パターン6: 年間レポート — 物件未選択 -->
+    <!-- ============================================================ -->
+    <div class="mock-section">
+      <div class="mock-label">パターン6: 年間レポート — 物件未選択</div>
+      <div class="mock-note">
+        ビューを「年間レポート」に切り替えても、物件が選択されていない場合。
+      </div>
+
+      <div class="panel-sim">
+        <div style="padding: 3rem 1rem; text-align: center">
+          <p class="has-text-grey-light is-size-5 mb-2">📊</p>
+          <p class="has-text-grey">物件を選択すると、年間レポートが表示されます。</p>
+          <p class="is-size-7 has-text-grey-light mt-1">
+            左の物件一覧から物件をクリックしてください。
+          </p>
+        </div>
+      </div>
+    </div>
+    <!-- ============================================================ -->
+    <!-- パターン7: 部屋ステータス管理 — 編集モーダル（Before → After） -->
+    <!-- ============================================================ -->
+    <div class="mock-section">
+      <div class="mock-label">パターン7: 部屋ステータス管理 — 現在のモーダル</div>
+      <div class="mock-note">
+        現在: 「検針不要」と「請求不要」の2つのトグルが独立して存在。ステータスの概念なし。
+      </div>
+
+      <div class="panel-sim" style="max-width: 480px">
+        <div
+          class="modal-card-head"
+          style="
+            background: #f5f5f5;
+            padding: 0.75rem 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+          "
+        >
+          <p style="font-weight: 600; margin: 0">103号室 の編集</p>
+          <button
+            style="
+              background: none;
+              border: none;
+              font-size: 1.5rem;
+              cursor: pointer;
+              color: #666;
+              padding: 0;
+              line-height: 1;
+            "
+          >
+            ×
+          </button>
+        </div>
+        <div style="padding: 1.25rem">
+          <div
+            class="edit-section-title"
+            style="
+              font-size: 0.75rem;
+              font-weight: 600;
+              color: #888;
+              border-bottom: 1px solid #eee;
+              padding-bottom: 0.25rem;
+              margin-bottom: 0.75rem;
+            "
+          >
+            部屋マスタ
+          </div>
+
+          <div class="field mb-3">
+            <label class="label is-small" style="font-size: 0.75rem"
+              >部屋名 <span style="color: red">*</span></label
+            >
+            <input class="input is-small" value="103号室" />
+          </div>
+          <div class="field mb-3">
+            <div style="display: flex; align-items: center; gap: 0.5rem">
+              <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer">
+                <input type="checkbox" />
+                <span
+                  style="
+                    width: 32px;
+                    height: 16px;
+                    background: #ccc;
+                    border-radius: 8px;
+                    display: inline-block;
+                    position: relative;
+                  "
+                ></span>
+              </label>
+              <span style="font-size: 0.75rem">検針不要</span>
+            </div>
+          </div>
+          <div class="field mb-3">
+            <div style="display: flex; align-items: center; gap: 0.5rem">
+              <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer">
+                <input type="checkbox" />
+                <span
+                  style="
+                    width: 32px;
+                    height: 16px;
+                    background: #ccc;
+                    border-radius: 8px;
+                    display: inline-block;
+                    position: relative;
+                  "
+                ></span>
+              </label>
+              <span style="font-size: 0.75rem">請求不要</span>
+            </div>
+          </div>
+
+          <div
+            class="edit-section-title"
+            style="
+              font-size: 0.75rem;
+              font-weight: 600;
+              color: #888;
+              border-bottom: 1px solid #eee;
+              padding-bottom: 0.25rem;
+              margin: 1rem 0 0.75rem;
+            "
+          >
+            検針データ
+          </div>
+
+          <div class="field mb-3">
+            <label class="label is-small" style="font-size: 0.75rem">今回指示数</label>
+            <input class="input is-small" type="number" value="245" />
+          </div>
+          <div class="field mb-3">
+            <label class="label is-small" style="font-size: 0.75rem">前回指示数</label>
+            <input class="input is-small" type="number" value="245" />
+          </div>
+
+          <div style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1.25rem">
+            <button class="button is-light is-small">キャンセル</button>
+            <button class="button is-primary is-small">保存する</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mock-section">
+      <div class="mock-label">パターン8: 部屋ステータス管理 — 改修後のモーダル</div>
+      <div class="mock-note">
+        改修:
+        2つのトグルを「部屋ステータス」ドロップダウンに統合。ステータスに応じて検針不要/請求不要フラグを自動設定。
+      </div>
+
+      <div class="panel-sim" style="max-width: 480px">
+        <div
+          class="modal-card-head"
+          style="
+            background: #f5f5f5;
+            padding: 0.75rem 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+          "
+        >
+          <p style="font-weight: 600; margin: 0">103号室 の編集</p>
+          <button
+            style="
+              background: none;
+              border: none;
+              font-size: 1.5rem;
+              cursor: pointer;
+              color: #666;
+              padding: 0;
+              line-height: 1;
+            "
+          >
+            ×
+          </button>
+        </div>
+        <div style="padding: 1.25rem">
+          <div
+            class="edit-section-title"
+            style="
+              font-size: 0.75rem;
+              font-weight: 600;
+              color: #888;
+              border-bottom: 1px solid #eee;
+              padding-bottom: 0.25rem;
+              margin-bottom: 0.75rem;
+            "
+          >
+            部屋マスタ
+          </div>
+
+          <div class="field mb-3">
+            <label class="label is-small" style="font-size: 0.75rem"
+              >部屋名 <span style="color: red">*</span></label
+            >
+            <input class="input is-small" value="103号室" />
+          </div>
+
+          <div class="field mb-3">
+            <label class="label is-small" style="font-size: 0.75rem">部屋ステータス</label>
+            <div class="select is-small is-fullwidth">
+              <select>
+                <option selected>🏠 通常入居中</option>
+                <option>📭 空室（契約者不在）</option>
+                <option>🔑 オーナー使用中（請求不要）</option>
+                <option>💰 固定料金（検針のみ・請求不要）</option>
+                <option>🚫 検針不要</option>
+              </select>
+            </div>
+            <p class="help" style="font-size: 0.65rem; color: #888; margin-top: 0.25rem">
+              通常入居中: 検針・請求ともに対象　｜　空室: 検針対象・請求対象<br />
+              オーナー使用中: 検針対象・請求不要　｜　固定料金:
+              検針対象・請求不要（個別発行なし）<br />
+              検針不要: 検針・請求ともに不要
+            </p>
+          </div>
+
+          <div
+            style="
+              background: #f8f9fa;
+              border-radius: 6px;
+              padding: 0.5rem 0.75rem;
+              margin-bottom: 0.75rem;
+            "
+          >
+            <p style="font-size: 0.65rem; color: #888; margin: 0">
+              自動設定: <span style="color: #48c774">検針 = 対象</span> /
+              <span style="color: #48c774">請求 = 対象</span>
+            </p>
+          </div>
+
+          <div
+            class="edit-section-title"
+            style="
+              font-size: 0.75rem;
+              font-weight: 600;
+              color: #888;
+              border-bottom: 1px solid #eee;
+              padding-bottom: 0.25rem;
+              margin: 1rem 0 0.75rem;
+            "
+          >
+            検針データ
+          </div>
+
+          <div class="field mb-3">
+            <label class="label is-small" style="font-size: 0.75rem">今回指示数</label>
+            <input class="input is-small" type="number" value="245" />
+          </div>
+          <div class="field mb-3">
+            <label class="label is-small" style="font-size: 0.75rem">前回指示数</label>
+            <input class="input is-small" type="number" value="245" />
+          </div>
+
+          <div style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1.25rem">
+            <button class="button is-light is-small">キャンセル</button>
+            <button class="button is-primary is-small">保存する</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- パターン9: ステータス別の自動設定 表示 -->
+    <!-- ============================================================ -->
+    <div class="mock-section">
+      <div class="mock-label">パターン9: 5ステータスとフラグの対応表</div>
+      <div class="mock-note">
+        ステータス選択に応じて、検針不要/請求不要フラグを自動設定。年間レポートの背景色もこのステータスで決定。
+      </div>
+
+      <div class="panel-sim">
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.8rem">
+          <thead>
+            <tr style="background: #f5f5f5">
+              <th style="padding: 0.5rem; border: 1px solid #dbdbdb; text-align: left">
+                ステータス
+              </th>
+              <th style="padding: 0.5rem; border: 1px solid #dbdbdb; text-align: center">
+                検針不要
+              </th>
+              <th style="padding: 0.5rem; border: 1px solid #dbdbdb; text-align: center">
+                請求不要
+              </th>
+              <th style="padding: 0.5rem; border: 1px solid #dbdbdb; text-align: center">
+                年間レポート背景色
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="padding: 0.5rem; border: 1px solid #dbdbdb">🏠 通常入居中</td>
+              <td
+                style="
+                  padding: 0.5rem;
+                  border: 1px solid #dbdbdb;
+                  text-align: center;
+                  color: #48c774;
+                "
+              >
+                ✗ (対象)
+              </td>
+              <td
+                style="
+                  padding: 0.5rem;
+                  border: 1px solid #dbdbdb;
+                  text-align: center;
+                  color: #48c774;
+                "
+              >
+                ✗ (対象)
+              </td>
+              <td style="padding: 0.5rem; border: 1px solid #dbdbdb; text-align: center">
+                白（文字色のみ判定）
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 0.5rem; border: 1px solid #dbdbdb">📭 空室（契約者不在）</td>
+              <td
+                style="
+                  padding: 0.5rem;
+                  border: 1px solid #dbdbdb;
+                  text-align: center;
+                  color: #48c774;
+                "
+              >
+                ✗ (対象)
+              </td>
+              <td
+                style="
+                  padding: 0.5rem;
+                  border: 1px solid #dbdbdb;
+                  text-align: center;
+                  color: #48c774;
+                "
+              >
+                ✗ (対象)
+              </td>
+              <td
+                style="
+                  padding: 0.5rem;
+                  border: 1px solid #dbdbdb;
+                  text-align: center;
+                  background: #f5f5f5;
+                "
+              >
+                薄灰（使用量0㎥で自動判定）
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 0.5rem; border: 1px solid #dbdbdb">🔑 オーナー使用中</td>
+              <td
+                style="
+                  padding: 0.5rem;
+                  border: 1px solid #dbdbdb;
+                  text-align: center;
+                  color: #48c774;
+                "
+              >
+                ✗ (対象)
+              </td>
+              <td
+                style="
+                  padding: 0.5rem;
+                  border: 1px solid #dbdbdb;
+                  text-align: center;
+                  color: #e74c3c;
+                "
+              >
+                ● (不要)
+              </td>
+              <td
+                style="
+                  padding: 0.5rem;
+                  border: 1px solid #dbdbdb;
+                  text-align: center;
+                  background: #e3f2e8;
+                "
+              >
+                薄緑
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 0.5rem; border: 1px solid #dbdbdb">💰 固定料金（請求不要）</td>
+              <td
+                style="
+                  padding: 0.5rem;
+                  border: 1px solid #dbdbdb;
+                  text-align: center;
+                  color: #48c774;
+                "
+              >
+                ✗ (対象)
+              </td>
+              <td
+                style="
+                  padding: 0.5rem;
+                  border: 1px solid #dbdbdb;
+                  text-align: center;
+                  color: #e74c3c;
+                "
+              >
+                ● (不要)
+              </td>
+              <td
+                style="
+                  padding: 0.5rem;
+                  border: 1px solid #dbdbdb;
+                  text-align: center;
+                  background: #fef9e7;
+                "
+              >
+                薄黄
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 0.5rem; border: 1px solid #dbdbdb">🚫 検針不要</td>
+              <td
+                style="
+                  padding: 0.5rem;
+                  border: 1px solid #dbdbdb;
+                  text-align: center;
+                  color: #e74c3c;
+                "
+              >
+                true (不要)
+              </td>
+              <td
+                style="padding: 0.5rem; border: 1px solid #dbdbdb; text-align: center; color: #888"
+              >
+                — (N/A)
+              </td>
+              <td
+                style="
+                  padding: 0.5rem;
+                  border: 1px solid #dbdbdb;
+                  text-align: center;
+                  background: repeating-linear-gradient(
+                    -45deg,
+                    #f5f5f5,
+                    #f5f5f5 4px,
+                    #eee 4px,
+                    #eee 8px
+                  );
+                "
+              >
+                斜線
+              </td>
+            </tr>
+            <tr>
+              <td class="room-col">107</td>
+              <td style="font-size: 0.6rem; color: #b8860b; font-weight: 600">固定</td>
+              <td class="cell-fixed">
+                <span class="cell-reading">500</span><span class="cell-usage val-normal">6㎥</span>
+              </td>
+              <td class="cell-fixed">
+                <span class="cell-reading">506</span><span class="cell-usage val-normal">6㎥</span>
+              </td>
+              <td class="cell-fixed">
+                <span class="cell-reading">512</span><span class="cell-usage val-normal">6㎥</span>
+              </td>
+              <td class="cell-fixed">
+                <span class="cell-reading">518</span><span class="cell-usage val-normal">6㎥</span>
+              </td>
+              <td class="cell-fixed">
+                <span class="cell-reading">530</span><span class="cell-usage val-normal">12㎥</span>
+              </td>
+              <td class="cell-fixed">
+                <span class="cell-reading">536</span><span class="cell-usage val-normal">6㎥</span>
+              </td>
+              <td class="cell-fixed">
+                <span class="cell-reading">542</span><span class="cell-usage val-normal">6㎥</span>
+              </td>
+              <td class="cell-fixed">
+                <span class="cell-reading">548</span><span class="cell-usage val-normal">6㎥</span>
+              </td>
+              <td class="cell-fixed">
+                <span class="cell-reading">560</span><span class="cell-usage val-normal">12㎥</span>
+              </td>
+              <td class="cell-fixed">
+                <span class="cell-reading">566</span><span class="cell-usage val-normal">6㎥</span>
+              </td>
+              <td class="cell-fixed">
+                <span class="cell-reading">572</span><span class="cell-usage val-normal">6㎥</span>
+              </td>
+              <td class="cell-fixed">
+                <span class="cell-reading">578</span><span class="cell-usage val-normal">6㎥</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- パターン10: ステータス適用後の年間レポート -->
+    <!-- ============================================================ -->
+    <div class="mock-section">
+      <div class="mock-label">パターン10: 5ステータス適用後の年間レポート</div>
+      <div class="mock-note">
+        各部屋に5ステータスが設定された状態の年間レポート。オーナー使用中（薄緑）と固定料金（薄黄）が明確に区別可能。
+      </div>
+
+      <div class="panel-sim">
+        <div style="padding: 1rem">
+          <div style="text-align: center; margin-bottom: 0.75rem">
+            <h2 style="font-size: 1rem; margin: 0">ABCマンション — 2026年度 年間検針レポート</h2>
+          </div>
+
+          <div class="summary-row">
+            <div class="summary-chip">対象: <strong>ABCマンション</strong></div>
+            <div class="summary-chip">検針サイクル: <strong>毎月</strong></div>
+            <div class="summary-chip">総部屋数: <strong>7</strong></div>
+          </div>
+
+          <div class="legend">
+            <div class="legend-item"><span class="legend-dot normal"></span> 正常</div>
+            <div class="legend-item"><span class="legend-dot abnormal"></span> 異常</div>
+            <div class="legend-item"><span class="legend-dot zero"></span> 0㎥（空室）</div>
+            <div class="legend-item"><span class="legend-dot owner"></span> オーナー使用中</div>
+            <div class="legend-item"><span class="legend-dot fixed"></span> 固定料金</div>
+            <div class="legend-item"><span class="legend-dot skip"></span> 検針不要</div>
+          </div>
+
+          <div style="overflow-x: auto">
+            <table class="annual-table">
+              <thead>
+                <tr>
+                  <th class="room-col">部屋</th>
+                  <th style="width: 4rem; font-size: 0.65rem">ステータス</th>
+                  <th class="month-col">4月</th>
+                  <th class="month-col">5月</th>
+                  <th class="month-col">6月</th>
+                  <th class="month-col">7月</th>
+                  <th class="month-col">8月</th>
+                  <th class="month-col">9月</th>
+                  <th class="month-col">10月</th>
+                  <th class="month-col">11月</th>
+                  <th class="month-col">12月</th>
+                  <th class="month-col">1月</th>
+                  <th class="month-col">2月</th>
+                  <th class="month-col">3月</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="room-col">101</td>
+                  <td style="font-size: 0.6rem; color: #888">通常</td>
+                  <td>
+                    <span class="cell-reading">120</span
+                    ><span class="cell-usage val-normal">5㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">125</span
+                    ><span class="cell-usage val-normal">5㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">130</span
+                    ><span class="cell-usage val-normal">5㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">135</span
+                    ><span class="cell-usage val-normal">5㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">145</span
+                    ><span class="cell-usage val-normal">10㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">150</span
+                    ><span class="cell-usage val-normal">5㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">155</span
+                    ><span class="cell-usage val-normal">5㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">160</span
+                    ><span class="cell-usage val-normal">5㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">170</span
+                    ><span class="cell-usage val-normal">10㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">175</span
+                    ><span class="cell-usage val-normal">5㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">180</span
+                    ><span class="cell-usage val-normal">5㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">185</span
+                    ><span class="cell-usage val-normal">5㎥</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="room-col">102</td>
+                  <td style="font-size: 0.6rem; color: #888">通常</td>
+                  <td>
+                    <span class="cell-reading">80</span
+                    ><span class="cell-usage val-normal">3㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">83</span
+                    ><span class="cell-usage val-normal">3㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">86</span
+                    ><span class="cell-usage val-normal">3㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">105</span
+                    ><span class="cell-usage val-abnormal">19㎚</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">108</span
+                    ><span class="cell-usage val-normal">3㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">111</span
+                    ><span class="cell-usage val-normal">3㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">114</span
+                    ><span class="cell-usage val-normal">3㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">117</span
+                    ><span class="cell-usage val-normal">3㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">120</span
+                    ><span class="cell-usage val-normal">3㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">123</span
+                    ><span class="cell-usage val-normal">3㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">126</span
+                    ><span class="cell-usage val-normal">3㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">129</span
+                    ><span class="cell-usage val-normal">3㎥</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="room-col">103</td>
+                  <td style="font-size: 0.6rem; color: #e74c3c; font-weight: 600">空室</td>
+                  <td>
+                    <span class="cell-reading">200</span
+                    ><span class="cell-usage val-normal">15㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">215</span
+                    ><span class="cell-usage val-normal">15㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">230</span
+                    ><span class="cell-usage val-normal">15㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">245</span
+                    ><span class="cell-usage val-normal">15㎥</span>
+                  </td>
+                  <td class="cell-zero">
+                    <span class="cell-reading">245</span
+                    ><span class="cell-usage val-zero">0㎥</span>
+                  </td>
+                  <td class="cell-zero">
+                    <span class="cell-reading">245</span
+                    ><span class="cell-usage val-zero">0㎥</span>
+                  </td>
+                  <td class="cell-zero">
+                    <span class="cell-reading">245</span
+                    ><span class="cell-usage val-zero">0㎥</span>
+                  </td>
+                  <td class="cell-zero">
+                    <span class="cell-reading">245</span
+                    ><span class="cell-usage val-zero">0㎥</span>
+                  </td>
+                  <td class="cell-zero">
+                    <span class="cell-reading">245</span
+                    ><span class="cell-usage val-zero">0㎥</span>
+                  </td>
+                  <td class="cell-zero">
+                    <span class="cell-reading">245</span
+                    ><span class="cell-usage val-zero">0㎥</span>
+                  </td>
+                  <td class="cell-zero">
+                    <span class="cell-reading">245</span
+                    ><span class="cell-usage val-zero">0㎥</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="room-col">104</td>
+                  <td style="font-size: 0.6rem; color: #888">通常</td>
+                  <td>
+                    <span class="cell-reading">50</span
+                    ><span class="cell-usage val-normal">2㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">52</span
+                    ><span class="cell-usage val-normal">2㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">54</span
+                    ><span class="cell-usage val-normal">2㎥</span>
+                  </td>
+                  <td>
+                    <span class="cell-reading">56</span
+                    ><span class="cell-usage val-normal">2㎥</span>
+                  </td>
+                  <td class="val-empty">—</td>
+                  <td class="val-empty">—</td>
+                  <td class="val-empty">—</td>
+                  <td class="val-empty">—</td>
+                  <td class="val-empty">—</td>
+                  <td class="val-empty">—</td>
+                  <td class="val-empty">—</td>
+                  <td class="val-empty">—</td>
+                </tr>
+                <tr>
+                  <td class="room-col">105</td>
+                  <td style="font-size: 0.6rem; color: #888">不要</td>
+                  <td class="cell-skip">不要</td>
+                  <td class="cell-skip">不要</td>
+                  <td class="cell-skip">不要</td>
+                  <td class="cell-skip">不要</td>
+                  <td class="cell-skip">不要</td>
+                  <td class="cell-skip">不要</td>
+                  <td class="cell-skip">不要</td>
+                  <td class="cell-skip">不要</td>
+                  <td class="cell-skip">不要</td>
+                  <td class="cell-skip">不要</td>
+                  <td class="cell-skip">不要</td>
+                  <td class="cell-skip">不要</td>
+                </tr>
+                <tr>
+                  <td class="room-col">106</td>
+                  <td style="font-size: 0.6rem; color: #1a8a5e; font-weight: 600">OP</td>
+                  <td class="cell-owner">
+                    <span class="cell-reading">400</span
+                    ><span class="cell-usage val-normal">8㎥</span>
+                  </td>
+                  <td class="cell-owner">
+                    <span class="cell-reading">408</span
+                    ><span class="cell-usage val-normal">8㎥</span>
+                  </td>
+                  <td class="cell-owner">
+                    <span class="cell-reading">416</span
+                    ><span class="cell-usage val-normal">8㎥</span>
+                  </td>
+                  <td class="cell-owner">
+                    <span class="cell-reading">424</span
+                    ><span class="cell-usage val-normal">8㎥</span>
+                  </td>
+                  <td class="cell-owner">
+                    <span class="cell-reading">435</span
+                    ><span class="cell-usage val-normal">11㎥</span>
+                  </td>
+                  <td class="cell-owner">
+                    <span class="cell-reading">443</span
+                    ><span class="cell-usage val-normal">8㎥</span>
+                  </td>
+                  <td class="cell-owner">
+                    <span class="cell-reading">451</span
+                    ><span class="cell-usage val-normal">8㎥</span>
+                  </td>
+                  <td class="cell-owner">
+                    <span class="cell-reading">459</span
+                    ><span class="cell-usage val-normal">8㎥</span>
+                  </td>
+                  <td class="cell-owner">
+                    <span class="cell-reading">470</span
+                    ><span class="cell-usage val-normal">11㎥</span>
+                  </td>
+                  <td class="cell-owner">
+                    <span class="cell-reading">478</span
+                    ><span class="cell-usage val-normal">8㎥</span>
+                  </td>
+                  <td class="cell-owner">
+                    <span class="cell-reading">486</span
+                    ><span class="cell-usage val-normal">8㎥</span>
+                  </td>
+                  <td class="cell-owner">
+                    <span class="cell-reading">494</span
+                    ><span class="cell-usage val-normal">8㎥</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

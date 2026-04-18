@@ -209,7 +209,7 @@ function validateSheetStructure(ss, options) {
 function validateSheetHeaders(sheetName, headers) {
   const expectedHeaders = {
     物件マスタ: ['物件ID', '物件名', '住所', '検針完了日'],
-    部屋マスタ: ['物件ID', '物件名', '部屋ID', '部屋名', '検針不要'],
+    部屋マスタ: ['物件ID', '部屋ID', '部屋名', '部屋ステータス', '備考'],
     inspection_data: [
       '記録ID',
       '物件名',

@@ -251,6 +251,8 @@ function createRoomMasterTemplate(ss, options = {}) {
       '物件ID', // A列: 物件マスタと連携
       '部屋ID', // B列: R001形式
       '部屋名', // C列: 部屋番号など
+      '部屋ステータス', // D列: normal/vacant/owner/fixed/skip
+      '備考', // E列: 自由入力
     ];
 
     // ヘッダーを設定
@@ -278,11 +280,11 @@ function createRoomMasterTemplate(ss, options = {}) {
     // サンプル行を追加（オプション）
     if (options.includeSample) {
       const sampleData = [
-        ['P000001', 'R001', '101号室'],
-        ['P000001', 'R002', '102号室'],
-        ['P000001', 'R003', '201号室'],
-        ['P000002', 'R001', 'A棟101'],
-        ['P000002', 'R002', 'A棟102'],
+        ['P000001', 'R001', '101号室', 'normal', ''],
+        ['P000001', 'R002', '102号室', 'normal', ''],
+        ['P000001', 'R003', '201号室', 'vacant', '退居済み'],
+        ['P000002', 'R001', 'A棟101', 'normal', ''],
+        ['P000002', 'R002', 'A棟102', 'owner', 'オーナー居住'],
       ];
 
       const sampleRange = sheet.getRange(2, 1, sampleData.length, headers.length);
