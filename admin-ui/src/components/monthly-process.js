@@ -97,6 +97,23 @@ document.addEventListener('alpine:init', function () {
         return map[category] || 'is-info';
       },
 
+      setMonthlyTargetYear: function (e) {
+        this.monthlyTargetYear = Number(e.target.value);
+      },
+
+      setMonthlyTargetMonth: function (e) {
+        this.monthlyTargetMonth = e.target.value;
+      },
+
+      getMonthlyTargetLabel: function () {
+        var m = Number(this.monthlyTargetMonth);
+        return this.monthlyTargetYear + '年' + m + '月分';
+      },
+
+      getMonthLabel: function (m) {
+        return Number(m) + '月';
+      },
+
       getCategoryIcon: function (category) {
         var map = {
           error: '❌',

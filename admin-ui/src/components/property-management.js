@@ -920,6 +920,10 @@ document.addEventListener('alpine:init', function () {
       printAnnualReport: function () {
         window.print();
       },
+
+      setAnnualReportYear: function (e) {
+        this.annualReportYear = Number(e.target.value);
+      },
     };
   });
 });

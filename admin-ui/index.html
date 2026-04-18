@@ -1540,7 +1540,7 @@
                                     <div class="select is-small">
                                       <select
                                         x-bind:value="annualReportYear"
-                                        x-on:change="annualReportYear = parseInt($event.target.value)"
+                                        x-on:change="setAnnualReportYear($event)"
                                       >
                                         <template x-for="y in annualAvailableYears" :key="y">
                                           <option :value="y" x-text="y + '年度（4月〜3月）'"></option>
@@ -2307,7 +2307,7 @@
                         <div class="field has-addons">
                           <div class="control">
                             <div class="select">
-                              <select x-bind:value="monthlyTargetYear" x-on:change="monthlyTargetYear = parseInt($event.target.value)">
+                              <select x-bind:value="monthlyTargetYear" x-on:change="setMonthlyTargetYear($event)">
                                 <template x-for="y in [2024, 2025, 2026, 2027, 2028]" :key="y">
                                   <option :value="y" x-text="y + '年'"></option>
                                 </template>
@@ -2318,7 +2318,7 @@
                             <div class="select">
                               <select x-bind:value="monthlyTargetMonth" x-on:change="monthlyTargetMonth = $event.target.value">
                                 <template x-for="m in ['01','02','03','04','05','06','07','08','09','10','11','12']" :key="m">
-                                  <option :value="m" x-text="parseInt(m) + '月'"></option>
+                                  <option :value="m" x-text="getMonthLabel(m)"></option>
                                 </template>
                               </select>
                             </div>
@@ -2341,7 +2341,7 @@
                       <div x-show="confirmExecute" class="notification is-warning is-light mb-3">
                         <p class="mb-2"><strong>⚠️ 確認</strong></p>
                         <p class="mb-2">
-                          <span x-text="monthlyTargetYear + '年' + parseInt(monthlyTargetMonth) + '月分'"></span>として月次処理を実行します。検針データの値がシフトされ、現在の検針値がクリアされます。この操作は取り消せません。
+                          <span x-text="getMonthlyTargetLabel()"></span>として月次処理を実行します。検針データの値がシフトされ、現在の検針値がクリアされます。この操作は取り消せません。
                         </p>
                         <div class="buttons">
                           <button class="button is-danger" x-on:click="runExecute()">
