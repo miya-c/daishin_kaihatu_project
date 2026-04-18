@@ -27,28 +27,6 @@ document.addEventListener('alpine:init', function () {
           confirmPending: false,
         },
         {
-          id: 'generateRoomIds',
-          label: '部屋番号の設定',
-          description: '🔢 部屋ごとの管理番号を自動で割り当てます',
-          icon: '🔢',
-          destructive: true,
-          loading: false,
-          result: null,
-          error: '',
-          confirmPending: false,
-        },
-        {
-          id: 'formatAllPropertyIds',
-          label: '物件番号の修正',
-          description: '📝 物件番号を統一書式に整えます',
-          icon: '📝',
-          destructive: true,
-          loading: false,
-          result: null,
-          error: '',
-          confirmPending: false,
-        },
-        {
           id: 'cleanUpOrphanedRooms',
           label: '不要データの削除',
           description: '🧹 どの物件にも属していない不要な部屋データを削除します',
@@ -65,9 +43,6 @@ document.addEventListener('alpine:init', function () {
         validateInspectionDataIntegrity:
           '全シートの検針データの整合性を検証します。問題があればレポートします。',
         cleanupDuplicateData: '検針データの重複データを削除します。最初の1件のみ残ります。',
-        generateRoomIds: '全部屋のIDを再採番します。既存の部屋IDが変更されます。',
-        formatAllPropertyIds:
-          '全シートの物件IDをP000001形式にフォーマットします。既にフォーマット済みのIDは変更されません。',
         cleanUpOrphanedRooms: '物件マスタに存在しない部屋データを削除します。',
       },
 
