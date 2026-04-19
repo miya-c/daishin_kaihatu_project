@@ -487,28 +487,17 @@
                 : isCompleted
                   ? '#2e7d32'
                   : '#1976d2'}
-            {@const readingsText = isSkipInspection
-              ? ''
-              : isCompleted
-                ? (() => {
-                    const prev = parseFloat(String(room.previousReading));
-                    const curr = parseFloat(String(room.currentReading));
-                    if (!isNaN(curr) && !isNaN(prev) && prev > 0) {
-                      return `前回 ${prev}  今回 ${curr}  ${curr - prev}`;
-                    }
-                    if (!isNaN(curr)) {
-                      return `今回 ${curr}`;
-                    }
-                    return '';
-                  })()
-                : ''}
+            {@const prevVal = parseFloat(String(room.previousReading))}
+            {@const currVal = parseFloat(String(room.currentReading))}
+            {@const usageVal =
+              !isNaN(currVal) && !isNaN(prevVal) && prevVal > 0 ? currVal - prevVal : null}
             {@const statusText = isSkipInspection
               ? '検針不要'
               : isWarning
                 ? '⚠ 要確認'
                 : isCompleted
                   ? '済'
-                  : '未'}
+                  : '未検針'}
             {@const cardClasses = [
               'MuiCard-root MuiPaper-root MuiPaper-elevation1 MuiCardActionArea-root room-card',
               isSkipInspection
@@ -542,10 +531,18 @@
                 <span class="MuiTypography-root MuiTypography-h6 room-name">
                   {String(room.name || room['部屋名'] || room.id || '不明')}
                 </span>
-                {#if readingsText}
-                  <span class="MuiTypography-root MuiTypography-body2 room-readings">
-                    {readingsText}
-                  </span>
+                {#if isCompleted && !isSkipInspection}
+                  <div class="room-readings-group">
+                    {#if !isNaN(prevVal) && prevVal > 0}
+                      <span class="room-reading-segment">前回 {prevVal}</span>
+                    {/if}
+                    {#if !isNaN(currVal)}
+                      <span class="room-reading-segment">今回 {currVal}</span>
+                    {/if}
+                    {#if usageVal !== null}
+                      <span class="room-reading-segment room-usage">{usageVal}</span>
+                    {/if}
+                  </div>
                 {/if}
                 <span class="MuiTypography-root MuiTypography-body2 room-status">
                   {statusText}

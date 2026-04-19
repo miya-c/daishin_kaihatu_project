@@ -534,7 +534,7 @@ body.loading {
 
 .room-card.status-pending {
   border-left: 4px solid #1976d2;
-  background: #e3f2fd;
+  background: #fff;
 }
 
 .room-info-row {
@@ -581,6 +581,25 @@ body.loading {
   color: var(--mui-palette-grey-800, #424242);
   white-space: nowrap;
   flex-shrink: 0;
+}
+
+.room-readings-group {
+  display: flex;
+  flex-shrink: 0;
+  margin-right: 8px;
+}
+
+.room-reading-segment {
+  font-size: 0.85rem;
+  color: var(--mui-palette-grey-700);
+  white-space: nowrap;
+  text-align: right;
+  width: 5.5em;
+}
+
+.room-reading-segment.room-usage {
+  color: #1565c0;
+  font-weight: 600;
 }
 
 /* Ripple Effect (Material UI風) */
