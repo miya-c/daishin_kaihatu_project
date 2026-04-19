@@ -4935,13 +4935,27 @@ function migrateMonthlyToYearlySheets() {
         var entry = monthlyEntries[mi];
         var mSheet = entry.sheet;
         var mData = mSheet.getDataRange().getValues();
+        var mHeaders = mData[0];
         expectedTotalRows += mData.length - 1;
 
         for (var ri = 1; ri < mData.length; ri++) {
-          allRows.push([entry.month].concat(mData[ri]));
+          var mappedRow = [];
+          for (var ci = 0; ci < yearHeaders.length; ci++) {
+            if (yearHeaders[ci] === '月') {
+              mappedRow.push(entry.month);
+            } else {
+              var srcIdx = mHeaders.indexOf(yearHeaders[ci]);
+              mappedRow.push(srcIdx >= 0 ? mData[ri][srcIdx] : '');
+            }
+          }
+          allRows.push(mappedRow);
         }
       }
 
+      var existingYearSheet = ss.getSheetByName(yearSheetName);
+      if (existingYearSheet) {
+        ss.deleteSheet(existingYearSheet);
+      }
       yearSheet = ss.insertSheet(yearSheetName);
 
       if (allRows.length > 0) {
