@@ -16,6 +16,17 @@ document.addEventListener('alpine:init', function () {
           confirmPending: false,
         },
         {
+          id: 'migrateMonthlyToYearly',
+          label: '月次→年アーカイブ移行',
+          description: '📦 月次アーカイブ(1月=1シート)を年アーカイブ(1年=1シート)に統合します',
+          icon: '📦',
+          destructive: true,
+          loading: false,
+          result: null,
+          error: '',
+          confirmPending: false,
+        },
+        {
           id: 'cleanupDuplicateData',
           label: '重複データの削除',
           description: '🗑️ 重複して登録された検針データを削除します',
@@ -44,6 +55,8 @@ document.addEventListener('alpine:init', function () {
           '全シートの検針データの整合性を検証します。問題があればレポートします。',
         cleanupDuplicateData: '検針データの重複データを削除します。最初の1件のみ残ります。',
         cleanUpOrphanedRooms: '物件マスタに存在しない部屋データを削除します。',
+        migrateMonthlyToYearly:
+          '全ての月次アーカイブシート（検針データ_YYYY年MM月）を年次アーカイブシート（検針データ_YYYY年）に統合します。移行後、元の月次シートは削除されます。この操作は取り消せません。',
       },
 
       findTool: function (toolId) {

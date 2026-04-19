@@ -171,9 +171,6 @@ document.addEventListener('alpine:init', function () {
             self.roomsLoading = false;
           });
         self.annualReport = null;
-        if (self.viewMode === 'annual') {
-          self.loadAnnualReport();
-        }
       },
 
       getAutoPropertyId: function () {
@@ -965,21 +962,50 @@ document.addEventListener('alpine:init', function () {
       printAnnualReport: function () {
         var container = document.querySelector('.annual-report-container');
         if (!container) return;
-        var printRoot = document.createElement('div');
-        printRoot.className = 'print-root';
-        printRoot.innerHTML = container.innerHTML;
-        document.body.appendChild(printRoot);
-        window.print();
-        document.body.removeChild(printRoot);
+        var propName = this.getPropName(this.selectedProperty) || '';
+        var title = propName + '_' + this.annualReportYear + '年_検針レポート';
+        var styles = document.querySelectorAll('style');
+        var cssText = '';
+        for (var i = 0; i < styles.length; i++) {
+          cssText += styles[i].outerHTML;
+        }
+        var printWindow = window.open('', '_blank');
+        if (!printWindow) {
+          alert('ポップアップがブロックされています。印刷用ウィンドウを許可してください。');
+          return;
+        }
+        printWindow.document.open();
+        printWindow.document.write(
+          '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>' + title + '</title>'
+        );
+        printWindow.document.write(
+          '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.4/css/bulma.min.css">'
+        );
+        printWindow.document.write(cssText);
+        printWindow.document.write(
+          '<style>.no-print{display:none!important}.print-header{display:block!important}@page{size:landscape;margin:10mm}</style>'
+        );
+        printWindow.document.write('</head><body>');
+        printWindow.document.write(container.innerHTML);
+        printWindow.document.write('</body></html>');
+        printWindow.document.close();
+        printWindow.onload = function () {
+          setTimeout(function () {
+            printWindow.addEventListener('afterprint', function () {
+              printWindow.close();
+            });
+            printWindow.print();
+          }, 600);
+        };
       },
 
       setAnnualReportYear: function (e) {
         this.annualReportYear = Number(e.target.value);
+        this.loadAnnualReport();
       },
 
       switchToAnnualReport: function () {
         this.viewMode = 'annual';
-        this.loadAnnualReport();
       },
     };
   });

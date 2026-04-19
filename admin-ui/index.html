@@ -775,13 +775,13 @@
         background: rgba(18, 18, 18, 0.85);
       }
       @media print {
-        body > * { display: none !important; }
-        .print-root { display: block !important; }
-        .print-root .no-print { display: none !important; }
-        .print-root .print-header { display: block !important; }
+        .no-print { display: none !important; }
+        .print-header { display: block !important; }
+        .content-scroll { overflow: visible; max-width: none; }
+        .annual-table { font-size: 0.65rem; table-layout: auto; }
+        .annual-table colgroup { display: none; }
         @page { size: landscape; margin: 10mm; }
       }
-      .print-root { display: none; }
       .print-header { display: none; }
     </style>
 
@@ -1569,7 +1569,7 @@
                               <div>
                                 <div class="is-flex is-align-items-center is-justify-content-space-between mb-3 no-print">
                                   <div class="is-flex is-align-items-center" style="gap: 0.5rem">
-                                    <label class="label is-small mb-0">年度:</label>
+                                    <label class="label is-small mb-0">年:</label>
                                     <div class="select is-small">
                                       <select
                                         x-bind:value="annualReportYear"

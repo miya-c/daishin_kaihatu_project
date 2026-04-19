@@ -644,7 +644,7 @@ function processInspectionDataMonthlyImpl(ss, params) {
       targetYear = fallback.getFullYear();
       targetMonth = String(fallback.getMonth() + 1).padStart(2, '0');
     }
-    var newSheetName = '検針データ_' + targetYear + '年' + targetMonth + '月';
+    var newSheetName = '検針データ_' + targetYear + '年';
 
     // 📝 処理開始ログ
     MonthlyProcessLogger.addLog('INFO', '月次処理を開始しました', {
@@ -652,13 +652,25 @@ function processInspectionDataMonthlyImpl(ss, params) {
       archiveSheetName: newSheetName,
     });
 
-    // 既存の月次シートがあるかチェック
-    if (ss.getSheetByName(newSheetName)) {
-      const info = `${newSheetName} は既に存在します。`;
-      if (typeof safeAlert === 'function') {
-        safeAlert('情報', info);
+    // 既存の年次シートがあるかチェックし、月の重複を確認
+    var existingYearSheet = ss.getSheetByName(newSheetName);
+    var isNewSheet = !existingYearSheet;
+    if (existingYearSheet) {
+      var yearSheetData = existingYearSheet.getDataRange().getValues();
+      var yearSheetHeaders = yearSheetData[0];
+      var monthColIdx = yearSheetHeaders.indexOf('月');
+      if (monthColIdx !== -1) {
+        for (var di = 1; di < yearSheetData.length; di++) {
+          if (parseInt(yearSheetData[di][monthColIdx]) === parseInt(targetMonth)) {
+            var dupInfo =
+              newSheetName + ' に' + parseInt(targetMonth) + '月のデータが既に存在します。';
+            if (typeof safeAlert === 'function') {
+              safeAlert('情報', dupInfo);
+            }
+            return { success: false, error: dupInfo };
+          }
+        }
       }
-      return { success: false, error: info };
     }
 
     // 🔒 重複実行防止チェック
@@ -825,12 +837,16 @@ function processInspectionDataMonthlyImpl(ss, params) {
     // 📝 ユーザー確認完了ログ
     MonthlyProcessLogger.addLog('INFO', 'ユーザー確認が完了し、月次処理を開始します');
 
-    // 新しいシートを作成
+    // 新しいシートを作成（または既存シートを取得）
     let newSheet;
     try {
-      newSheet = ss.insertSheet(newSheetName);
+      if (isNewSheet) {
+        newSheet = ss.insertSheet(newSheetName);
+      } else {
+        newSheet = existingYearSheet;
+      }
     } catch (sheetError) {
-      const error = `新しいシート「${newSheetName}」の作成に失敗しました: ${sheetError.message}`;
+      const error = `シート「${newSheetName}」の取得/作成に失敗しました: ${sheetError.message}`;
       if (typeof safeAlert === 'function') {
         safeAlert('エラー', error);
       }
@@ -847,8 +863,8 @@ function processInspectionDataMonthlyImpl(ss, params) {
         if (typeof safeAlert === 'function') {
           safeAlert('エラー', error);
         }
-        // 作成したシートを削除
-        ss.deleteSheet(newSheet);
+        // 作成したシートを削除（新規作成時のみ）
+        if (isNewSheet) ss.deleteSheet(newSheet);
         releaseLockIfHeld();
         return { success: false, error: error };
       }
@@ -861,8 +877,8 @@ function processInspectionDataMonthlyImpl(ss, params) {
         if (typeof safeAlert === 'function') {
           safeAlert('エラー', error);
         }
-        // 作成したシートを削除
-        ss.deleteSheet(newSheet);
+        // 作成したシートを削除（新規作成時のみ）
+        if (isNewSheet) ss.deleteSheet(newSheet);
         releaseLockIfHeld();
         return { success: false, error: error };
       }
@@ -871,8 +887,8 @@ function processInspectionDataMonthlyImpl(ss, params) {
       if (typeof safeAlert === 'function') {
         safeAlert('エラー', error);
       }
-      // 作成したシートを削除
-      if (newSheet) {
+      // 作成したシートを削除（新規作成時のみ）
+      if (newSheet && isNewSheet) {
         try {
           ss.deleteSheet(newSheet);
         } catch (deleteError) {
@@ -885,6 +901,7 @@ function processInspectionDataMonthlyImpl(ss, params) {
 
     // 必要な列のインデックスを取得
     const columnsToCopy = [
+      '月',
       '記録ID',
       '物件名',
       '物件ID',
@@ -902,20 +919,26 @@ function processInspectionDataMonthlyImpl(ss, params) {
       '請求不要',
       '部屋ステータス',
     ];
-    const columnIndicesToCopy = columnsToCopy.map((header) => sourceHeaders.indexOf(header));
+    const columnIndicesToCopy = columnsToCopy.map((header) =>
+      header === '月' ? -2 : sourceHeaders.indexOf(header)
+    );
 
-    // 必要な列が見つからない場合はエラー
-    if (columnIndicesToCopy.some((index) => index === -1)) {
-      const missingColumns = columnsToCopy.filter((_, i) => columnIndicesToCopy[i] === -1);
+    // 必要な列が見つからない場合はエラー（'月'はソースに存在しないため除外）
+    if (columnIndicesToCopy.some((index, i) => index === -1 && columnsToCopy[i] !== '月')) {
+      const missingColumns = columnsToCopy.filter(
+        (_, i) => columnIndicesToCopy[i] === -1 && columnsToCopy[i] !== '月'
+      );
       const error = `必要な列が見つかりません: ${missingColumns.join(', ')}`;
       if (typeof safeAlert === 'function') {
         safeAlert('エラー', error);
       }
-      // 作成したシートを削除
-      try {
-        ss.deleteSheet(newSheet);
-      } catch (deleteError) {
-        Logger.log(`シート削除エラー: ${deleteError.message}`);
+      // 作成したシートを削除（新規作成時のみ）
+      if (isNewSheet) {
+        try {
+          ss.deleteSheet(newSheet);
+        } catch (deleteError) {
+          Logger.log(`シート削除エラー: ${deleteError.message}`);
+        }
       }
       releaseLockIfHeld();
       return { success: false, error: error };
@@ -923,21 +946,43 @@ function processInspectionDataMonthlyImpl(ss, params) {
 
     // 新しいシートにデータをコピー
     try {
-      const dataToCopyToNewSheet = sourceValues.map((row) => {
-        return columnIndicesToCopy.map((index) => row[index]);
+      var dataToCopyToNewSheet = sourceValues.map(function (row, rowIndex) {
+        var mappedRow = columnIndicesToCopy.map(function (index, colIdx) {
+          if (columnsToCopy[colIdx] === '月') {
+            return rowIndex === 0 ? '月' : parseInt(targetMonth);
+          }
+          return row[index];
+        });
+        return mappedRow;
       });
 
       if (dataToCopyToNewSheet.length > 0) {
-        const targetRange = newSheet.getRange(
-          1,
-          1,
-          dataToCopyToNewSheet.length,
-          columnsToCopy.length
-        );
-        targetRange.setValues(dataToCopyToNewSheet);
+        if (isNewSheet) {
+          // 新規シート: ヘッダー+データを先頭から書き込み
+          var targetRange = newSheet.getRange(
+            1,
+            1,
+            dataToCopyToNewSheet.length,
+            columnsToCopy.length
+          );
+          targetRange.setValues(dataToCopyToNewSheet);
+        } else {
+          // 既存シート: データ行のみ（ヘッダー除く）を末尾に追記
+          var dataRowsOnly = dataToCopyToNewSheet.slice(1);
+          if (dataRowsOnly.length > 0) {
+            var lastRow = newSheet.getLastRow();
+            var appendRange = newSheet.getRange(
+              lastRow + 1,
+              1,
+              dataRowsOnly.length,
+              columnsToCopy.length
+            );
+            appendRange.setValues(dataRowsOnly);
+          }
+        }
 
         // ヘッダー行の書式設定
-        const headerRange = newSheet.getRange(1, 1, 1, columnsToCopy.length);
+        var headerRange = newSheet.getRange(1, 1, 1, columnsToCopy.length);
         headerRange.setFontWeight('bold').setBackground('#f0f0f0').setHorizontalAlignment('center');
 
         // 📝 アーカイブ作成完了ログ
@@ -952,11 +997,13 @@ function processInspectionDataMonthlyImpl(ss, params) {
       if (typeof safeAlert === 'function') {
         safeAlert('エラー', error);
       }
-      // 作成したシートを削除
-      try {
-        ss.deleteSheet(newSheet);
-      } catch (deleteError) {
-        Logger.log(`シート削除エラー: ${deleteError.message}`);
+      // 作成したシートを削除（新規作成時のみ）
+      if (isNewSheet) {
+        try {
+          ss.deleteSheet(newSheet);
+        } catch (deleteError) {
+          Logger.log(`シート削除エラー: ${deleteError.message}`);
+        }
       }
       releaseLockIfHeld();
       return { success: false, error: error };
@@ -1277,7 +1324,7 @@ function generateProcessDetailedInfo(ss, preCheckResult, params) {
     const detailedInfo = {
       processDate: currentDate.toISOString(),
       targetMonth: targetYear + '年' + targetMonth + '月',
-      archiveSheetName: '検針データ_' + targetYear + '年' + targetMonth + '月',
+      archiveSheetName: '検針データ_' + targetYear + '年 の ' + targetMonth + '月分',
       dataInfo: preCheckResult.detailedInfo || {},
       riskAssessment: calculateProcessRisk(preCheckResult),
       impactAnalysis: analyzeProcessImpact(ss),
@@ -1842,17 +1889,33 @@ function preCheckMonthlyProcess(ss = null) {
       }
     }
 
-    // 月次アーカイブシート重複チェック
+    // 月次アーカイブシート重複チェック（年次シートの月列で判定）
     const currentDate = new Date();
     const currentYear = currentDate.getFullYear();
-    const currentMonth = String(currentDate.getMonth() + 1).padStart(2, '0');
-    const potentialSheetName = `検針データ_${currentYear}年${currentMonth}月`;
+    const currentMonth = currentDate.getMonth() + 1;
+    const yearSheetName = '検針データ_' + currentYear + '年';
+    const yearSheet = ss.getSheetByName(yearSheetName);
 
-    if (ss.getSheetByName(potentialSheetName)) {
+    let monthAlreadyExists = false;
+    if (yearSheet) {
+      const yearSheetData = yearSheet.getDataRange().getValues();
+      const yearHeaders = yearSheetData[0];
+      const monthColIdx = yearHeaders.indexOf('月');
+      if (monthColIdx !== -1) {
+        for (let ri = 1; ri < yearSheetData.length; ri++) {
+          if (parseInt(yearSheetData[ri][monthColIdx]) === currentMonth) {
+            monthAlreadyExists = true;
+            break;
+          }
+        }
+      }
+    }
+
+    if (monthAlreadyExists) {
       checks.push({
         type: 'warning',
         category: 'アーカイブ重複',
-        message: `当月のアーカイブシート「${potentialSheetName}」が既に存在します。`,
+        message: `当月のアーカイブデータが「${yearSheetName}」に既に存在します。`,
         recommendation:
           '重複実行の可能性があります。本当に月次処理を実行する必要があるか確認してください。',
       });
@@ -1861,7 +1924,7 @@ function preCheckMonthlyProcess(ss = null) {
       checks.push({
         type: 'success',
         category: 'アーカイブ重複',
-        message: '当月のアーカイブシートは存在しません。',
+        message: '当月のアーカイブデータは存在しません。',
         recommendation: null,
       });
     }
@@ -4639,7 +4702,7 @@ function getAvailableYears() {
   var yearMap = {};
   for (var i = 0; i < sheets.length; i++) {
     var name = sheets[i].getName();
-    var match = name.match(/^検針データ_(\d{4})年(\d{2})月$/);
+    var match = name.match(/^検針データ_(\d{4})年$/);
     if (match) {
       var dataYear = parseInt(match[1]);
       yearMap[dataYear] = true;
@@ -4710,54 +4773,65 @@ function getAnnualReport(params) {
     months.push({ year: year, month: m, label: m + '月' });
   }
 
+  var yearSheetName = '検針データ_' + year + '年';
+  var yearSheet = ss.getSheetByName(yearSheetName);
+  if (!yearSheet) {
+    return {
+      success: true,
+      data: {
+        propertyName: propertyName,
+        year: year,
+        months: months.map(function (mo) {
+          return { month: mo.month, label: mo.label };
+        }),
+        rooms: [],
+      },
+    };
+  }
+
+  var yearHeaders = yearSheet.getRange(1, 1, 1, yearSheet.getLastColumn()).getValues()[0];
+  var monthColIdx = yearHeaders.indexOf('月');
+  var archPropIdIdx = yearHeaders.indexOf('物件ID');
+  var archRoomIdIdx = yearHeaders.indexOf('部屋ID');
+  var archReadingIdx = yearHeaders.indexOf('今回の指示数');
+  var archUsageIdx = yearHeaders.indexOf('今回使用量');
+  var archWarningIdx = yearHeaders.indexOf('警告フラグ');
+  var archStatusIdx = yearHeaders.indexOf('部屋ステータス');
+  var yearData = yearSheet.getDataRange().getValues();
+
   var roomMap = {};
-  for (var mi = 0; mi < months.length; mi++) {
-    var sheetName =
-      '検針データ_' + months[mi].year + '年' + String(months[mi].month).padStart(2, '0') + '月';
-    var archiveSheet = ss.getSheetByName(sheetName);
-    if (!archiveSheet) continue;
-
-    var archHeaders = archiveSheet.getRange(1, 1, 1, archiveSheet.getLastColumn()).getValues()[0];
-    var archPropIdIdx = archHeaders.indexOf('物件ID');
-    var archRoomIdIdx = archHeaders.indexOf('部屋ID');
-    var archReadingIdx = archHeaders.indexOf('今回の指示数');
-    var archUsageIdx = archHeaders.indexOf('今回使用量');
-    var archWarningIdx = archHeaders.indexOf('警告フラグ');
-    var archStatusIdx = archHeaders.indexOf('部屋ステータス');
-    var archData = archiveSheet.getDataRange().getValues();
-
-    for (var ai = 1; ai < archData.length; ai++) {
-      if (String(archData[ai][archPropIdIdx]).trim() !== propertyId) continue;
-      var aRoomId = String(archData[ai][archRoomIdIdx]).trim();
-      if (!roomMap[aRoomId]) {
-        roomMap[aRoomId] = {
-          roomId: aRoomId,
-          roomName: currentStatusMap[aRoomId] ? currentStatusMap[aRoomId].roomName : aRoomId,
-          roomStatus: currentStatusMap[aRoomId] ? currentStatusMap[aRoomId].status : 'normal',
-          roomNotes: currentStatusMap[aRoomId] ? currentStatusMap[aRoomId].notes : '',
-          monthlyData: {},
-        };
-      }
-      var archStatus =
-        archStatusIdx >= 0 && archData[ai][archStatusIdx]
-          ? String(archData[ai][archStatusIdx]).trim()
-          : '';
-      var monthData = {
-        month: months[mi].month,
-        reading:
-          archReadingIdx >= 0 && archData[ai][archReadingIdx] !== ''
-            ? _safeInt(archData[ai][archReadingIdx])
-            : null,
-        usage:
-          archUsageIdx >= 0 && archData[ai][archUsageIdx] !== ''
-            ? _safeInt(archData[ai][archUsageIdx])
-            : null,
-        warningFlag: archWarningIdx >= 0 ? String(archData[ai][archWarningIdx] || '').trim() : '',
-        roomStatus:
-          archStatus || (currentStatusMap[aRoomId] ? currentStatusMap[aRoomId].status : 'normal'),
+  for (var yi = 1; yi < yearData.length; yi++) {
+    var rowMonth = monthColIdx >= 0 ? parseInt(yearData[yi][monthColIdx]) : 0;
+    if (String(yearData[yi][archPropIdIdx]).trim() !== propertyId) continue;
+    var yRoomId = String(yearData[yi][archRoomIdIdx]).trim();
+    if (!roomMap[yRoomId]) {
+      roomMap[yRoomId] = {
+        roomId: yRoomId,
+        roomName: currentStatusMap[yRoomId] ? currentStatusMap[yRoomId].roomName : yRoomId,
+        roomStatus: currentStatusMap[yRoomId] ? currentStatusMap[yRoomId].status : 'normal',
+        roomNotes: currentStatusMap[yRoomId] ? currentStatusMap[yRoomId].notes : '',
+        monthlyData: {},
       };
-      roomMap[aRoomId].monthlyData[months[mi].month] = monthData;
     }
+    var yStatus =
+      archStatusIdx >= 0 && yearData[yi][archStatusIdx]
+        ? String(yearData[yi][archStatusIdx]).trim()
+        : '';
+    var monthEntry = {
+      month: rowMonth,
+      reading:
+        archReadingIdx >= 0 && yearData[yi][archReadingIdx] !== ''
+          ? _safeInt(yearData[yi][archReadingIdx])
+          : null,
+      usage:
+        archUsageIdx >= 0 && yearData[yi][archUsageIdx] !== ''
+          ? _safeInt(yearData[yi][archUsageIdx])
+          : null,
+      warningFlag: archWarningIdx >= 0 ? String(yearData[yi][archWarningIdx] || '').trim() : '',
+      roomStatus:
+        yStatus || (currentStatusMap[yRoomId] ? currentStatusMap[yRoomId].status : 'normal'),
+    };
+    roomMap[yRoomId].monthlyData[rowMonth] = monthEntry;
   }
 
   var rooms = [];
@@ -4796,6 +4870,112 @@ function getAnnualReport(params) {
       rooms: rooms,
     },
   };
+}
+
+function migrateMonthlyToYearlySheets() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  if (!ss) return { success: false, error: 'スプレッドシートが見つかりません' };
+
+  try {
+    var sheets = ss.getSheets();
+    var monthlyPattern = /^検針データ_(\d{4})年(\d{2})月$/;
+    var grouped = {};
+
+    for (var i = 0; i < sheets.length; i++) {
+      var name = sheets[i].getName();
+      var match = name.match(monthlyPattern);
+      if (match) {
+        var yr = parseInt(match[1]);
+        var mo = parseInt(match[2]);
+        if (!grouped[yr]) grouped[yr] = [];
+        grouped[yr].push({ month: mo, sheetName: name, sheet: sheets[i] });
+      }
+    }
+
+    var yearKeys = Object.keys(grouped)
+      .map(Number)
+      .sort(function (a, b) {
+        return a - b;
+      });
+    var migrated = {};
+    var errors = [];
+
+    for (var yi = 0; yi < yearKeys.length; yi++) {
+      var year = yearKeys[yi];
+      var monthlyEntries = grouped[year].sort(function (a, b) {
+        return a.month - b.month;
+      });
+      var yearSheetName = '検針データ_' + year + '年';
+
+      var yearHeaders = [
+        '月',
+        '記録ID',
+        '物件名',
+        '物件ID',
+        '部屋ID',
+        '部屋名',
+        '検針日時',
+        '警告フラグ',
+        '標準偏差値',
+        '今回使用量',
+        '今回の指示数',
+        '前回指示数',
+        '前々回指示数',
+        '前々々回指示数',
+        '検針不要',
+        '請求不要',
+        '部屋ステータス',
+      ];
+
+      var yearSheet = null;
+      var allRows = [];
+      var expectedTotalRows = 0;
+
+      for (var mi = 0; mi < monthlyEntries.length; mi++) {
+        var entry = monthlyEntries[mi];
+        var mSheet = entry.sheet;
+        var mData = mSheet.getDataRange().getValues();
+        expectedTotalRows += mData.length - 1;
+
+        for (var ri = 1; ri < mData.length; ri++) {
+          allRows.push([entry.month].concat(mData[ri]));
+        }
+      }
+
+      yearSheet = ss.insertSheet(yearSheetName);
+
+      if (allRows.length > 0) {
+        var writeData = [yearHeaders].concat(allRows);
+        yearSheet.getRange(1, 1, writeData.length, yearHeaders.length).setValues(writeData);
+      } else {
+        yearSheet.getRange(1, 1, 1, yearHeaders.length).setValues([yearHeaders]);
+      }
+
+      var verifyData = yearSheet.getDataRange().getValues();
+      var actualDataRows = verifyData.length - 1;
+
+      if (actualDataRows !== expectedTotalRows) {
+        ss.deleteSheet(yearSheet);
+        errors.push(
+          year + '年: 行数不一致 (期待=' + expectedTotalRows + ', 実際=' + actualDataRows + ')'
+        );
+        continue;
+      }
+
+      for (var di = 0; di < monthlyEntries.length; di++) {
+        ss.deleteSheet(monthlyEntries[di].sheet);
+      }
+
+      migrated[year] = { sheets: monthlyEntries.length, rows: actualDataRows };
+    }
+
+    if (errors.length > 0) {
+      return { success: false, migrated: migrated, errors: errors };
+    }
+    return { success: true, migrated: migrated };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
 }
 
 function _safeInt(val) {

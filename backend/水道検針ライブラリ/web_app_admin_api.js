@@ -195,6 +195,10 @@ function adminDispatch(action, params) {
         return getAnnualReport(params);
       }
 
+      case 'migrateMonthlyToYearly': {
+        return migrateMonthlyToYearlySheets();
+      }
+
       default:
         return { success: false, error: '不明なアクション: ' + action, code: 'UNKNOWN_ACTION' };
     }
@@ -209,15 +213,16 @@ function getAdminMonthlyProcessStatus() {
     if (!ss) {
       return { success: false, error: 'スプレッドシートが見つかりません' };
     }
-    const archiveSheets = ss.getSheets().filter(function (s) {
-      return s.getName().indexOf('inspection_data_') === 0;
+    var archiveSheets = ss.getSheets().filter(function (s) {
+      return /^検針データ_\d{4}年$/.test(s.getName());
     });
+    var lastSheet =
+      archiveSheets.length > 0 ? archiveSheets[archiveSheets.length - 1].getName() : null;
     return {
       success: true,
       data: {
         isRunning: false,
-        lastRun:
-          archiveSheets.length > 0 ? archiveSheets[archiveSheets.length - 1].getName() : null,
+        lastRun: lastSheet,
         archiveCount: archiveSheets.length,
       },
     };
