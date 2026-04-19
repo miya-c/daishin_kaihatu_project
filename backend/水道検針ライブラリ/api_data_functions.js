@@ -712,7 +712,9 @@ function updateMeterReadings(propertyId, roomId, readings, options = {}) {
       const currentValue = parseInt(rawReading, 10) || 0;
 
       // 警告フラグを確実に受信
-      const receivedWarningFlag = reading.warningFlag || '正常';
+      var VALID_WARNING_FLAGS = ['正常', '要確認', '警告あり', '入力待ち', '判定不可'];
+      var receivedWarningFlag =
+        VALID_WARNING_FLAGS.indexOf(reading.warningFlag) !== -1 ? reading.warningFlag : '正常';
 
       // JST日付を正規化
       const normalizedDate = reading.date ? normalizeToJSTDate(reading.date) : getCurrentJSTDate();

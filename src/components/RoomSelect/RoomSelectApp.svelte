@@ -71,7 +71,15 @@
       }
     }
 
-    if (!gasWebAppUrl || !gasWebAppUrl.includes('script.google.com')) {
+    var urlValid = false;
+    if (gasWebAppUrl) {
+      try {
+        urlValid = new URL(gasWebAppUrl).hostname === 'script.google.com';
+      } catch {
+        urlValid = false;
+      }
+    }
+    if (!urlValid) {
       error = 'GAS Web App URLが設定されていません。';
       loading = false;
       return;

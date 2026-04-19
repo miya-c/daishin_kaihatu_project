@@ -104,7 +104,14 @@
   });
 
   const handleUrlSubmit = () => {
-    if (urlInput && urlInput.includes('script.google.com')) {
+    if (urlInput) {
+      try {
+        if (new URL(urlInput).hostname !== 'script.google.com') throw new Error();
+      } catch {
+        error = '正しいGAS Web App URLを設定してください。';
+        showUrlModal = false;
+        return;
+      }
       localStorage.setItem('gasWebAppUrl', urlInput);
       sessionStorage.setItem('gasWebAppUrl', urlInput);
       window.location.reload();

@@ -964,31 +964,32 @@ document.addEventListener('alpine:init', function () {
         if (!container) return;
         var propName = this.getPropName(this.selectedProperty) || '';
         var title = propName + '_' + this.annualReportYear + '年_検針レポート';
-        var styles = document.querySelectorAll('style');
-        var cssText = '';
-        for (var i = 0; i < styles.length; i++) {
-          cssText += styles[i].outerHTML;
-        }
         var printWindow = window.open('', '_blank');
         if (!printWindow) {
           alert('ポップアップがブロックされています。印刷用ウィンドウを許可してください。');
           return;
         }
         printWindow.document.open();
-        printWindow.document.write(
-          '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>' + title + '</title>'
-        );
+        printWindow.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8">');
+        printWindow.document.write('<title></title>');
         printWindow.document.write(
           '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.4/css/bulma.min.css">'
         );
-        printWindow.document.write(cssText);
+        var styles = document.querySelectorAll('style');
+        for (var i = 0; i < styles.length; i++) {
+          var styleEl = printWindow.document.createElement('style');
+          styleEl.textContent = styles[i].textContent;
+          printWindow.document.head.appendChild(styleEl);
+        }
         printWindow.document.write(
           '<style>.no-print{display:none!important}.print-header{display:block!important}@page{size:landscape;margin:10mm}</style>'
         );
         printWindow.document.write('</head><body>');
-        printWindow.document.write(container.innerHTML);
         printWindow.document.write('</body></html>');
         printWindow.document.close();
+        var cloned = container.cloneNode(true);
+        printWindow.document.body.appendChild(cloned);
+        printWindow.document.title = title;
         printWindow.onload = function () {
           setTimeout(function () {
             printWindow.addEventListener('afterprint', function () {

@@ -27,6 +27,9 @@ document.addEventListener('alpine:init', function () {
     SESSION_TIMEOUT_MS: 8 * 60 * 60 * 1000,
 
     isSessionExpired: function () {
+      if (!this.authenticated) {
+        return false;
+      }
       var lastActivity = sessionStorage.getItem('ADMIN_LAST_ACTIVITY');
       if (!lastActivity) {
         return true;

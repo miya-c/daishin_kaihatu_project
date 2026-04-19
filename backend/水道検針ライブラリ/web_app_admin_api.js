@@ -203,7 +203,7 @@ function adminDispatch(action, params) {
         return { success: false, error: '不明なアクション: ' + action, code: 'UNKNOWN_ACTION' };
     }
   } catch (error) {
-    return { success: false, error: error.message, code: 'SERVER_ERROR' };
+    return { success: false, error: sanitizeErrorMessage(error), code: 'SERVER_ERROR' };
   }
 }
 
@@ -227,7 +227,7 @@ function getAdminMonthlyProcessStatus() {
       },
     };
   } catch (error) {
-    return { success: false, error: error.message };
+    return { success: false, error: sanitizeErrorMessage(error) };
   }
 }
 
@@ -251,9 +251,7 @@ function buildAdminDashboardData() {
           completedRooms: 0,
           pendingRooms: 0,
           completionRate: 0,
-          spreadsheetInfo: ssInfo.success
-            ? { id: ssInfo.spreadsheetId, name: ssInfo.name, url: ssInfo.url }
-            : null,
+          spreadsheetInfo: ssInfo.success ? { name: ssInfo.name } : null,
         },
       };
     }
@@ -305,14 +303,12 @@ function buildAdminDashboardData() {
         completedRooms: totalCompleted,
         pendingRooms: totalRooms - totalCompleted,
         completionRate: totalRooms > 0 ? Math.round((totalCompleted / totalRooms) * 100) : 0,
-        spreadsheetInfo: ssInfo2.success
-          ? { id: ssInfo2.spreadsheetId, name: ssInfo2.name, url: ssInfo2.url }
-          : null,
+        spreadsheetInfo: ssInfo2.success ? { name: ssInfo2.name } : null,
       },
       properties: properties,
     };
   } catch (error) {
-    return { success: false, error: error.message };
+    return { success: false, error: sanitizeErrorMessage(error) };
   }
 }
 
