@@ -527,9 +527,14 @@ body.loading {
   background: #f1f8e9;
 }
 
-.room-card.status-pending {
-  border-left: 6px solid var(--mui-palette-warning-main);
+.room-card.status-warning {
+  border-left: 6px solid #e65100;
   background: #fff8e1;
+}
+
+.room-card.status-pending {
+  border-left: 4px solid #1976d2;
+  background: #e3f2fd;
 }
 
 .room-info-row {
@@ -546,11 +551,15 @@ body.loading {
 }
 
 .room-card.status-completed .status-icon {
-  color: var(--mui-palette-success-main);
+  color: #2e7d32;
+}
+
+.room-card.status-warning .status-icon {
+  color: #e65100;
 }
 
 .room-card.status-pending .status-icon {
-  color: var(--mui-palette-warning-main);
+  color: #1976d2;
 }
 
 .room-name {

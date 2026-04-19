@@ -472,8 +472,21 @@
             {@const statusInfo = getRoomStatusInfo(room)}
             {@const isSkipInspection = statusInfo.cssClass === 'status-skip'}
             {@const isCompleted = room.readingStatus === 'completed' || room.isCompleted}
-            {@const statusIcon = statusInfo.icon}
-            {@const statusColor = statusInfo.color}
+            {@const isWarning = isCompleted && String(room.warningFlag || '') === '要確認'}
+            {@const statusIcon = isSkipInspection
+              ? 'block'
+              : isWarning
+                ? 'warning'
+                : isCompleted
+                  ? 'check_circle'
+                  : 'trip_origin'}
+            {@const statusColor = isSkipInspection
+              ? '#9e9e9e'
+              : isWarning
+                ? '#e65100'
+                : isCompleted
+                  ? '#2e7d32'
+                  : '#1976d2'}
             {@const readingsText = isSkipInspection
               ? ''
               : isCompleted
@@ -489,10 +502,22 @@
                     return '';
                   })()
                 : ''}
-            {@const statusText = statusInfo.text}
+            {@const statusText = isSkipInspection
+              ? '検針不要'
+              : isWarning
+                ? '⚠ 要確認'
+                : isCompleted
+                  ? '済'
+                  : '未'}
             {@const cardClasses = [
               'MuiCard-root MuiPaper-root MuiPaper-elevation1 MuiCardActionArea-root room-card',
-              isSkipInspection ? 'status-skip' : statusInfo.cssClass,
+              isSkipInspection
+                ? 'status-skip'
+                : isWarning
+                  ? 'status-warning'
+                  : isCompleted
+                    ? 'status-completed'
+                    : 'status-pending',
             ]
               .filter(Boolean)
               .join(' ')}
