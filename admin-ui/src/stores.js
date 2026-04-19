@@ -24,8 +24,23 @@ document.addEventListener('alpine:init', function () {
     authenticated: false,
     token: null,
 
+    SESSION_TIMEOUT_MS: 8 * 60 * 60 * 1000,
+
+    isSessionExpired: function () {
+      var lastActivity = sessionStorage.getItem('ADMIN_LAST_ACTIVITY');
+      if (!lastActivity) {
+        return true;
+      }
+      return Date.now() - parseInt(lastActivity, 10) > this.SESSION_TIMEOUT_MS;
+    },
+
+    touchActivity: function () {
+      sessionStorage.setItem('ADMIN_LAST_ACTIVITY', Date.now().toString());
+    },
+
     logout: function () {
       sessionStorage.removeItem('ADMIN_TOKEN');
+      sessionStorage.removeItem('ADMIN_LAST_ACTIVITY');
       this.authenticated = false;
       this.token = null;
     },

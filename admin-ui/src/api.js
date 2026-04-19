@@ -1,6 +1,14 @@
 export function callAdminAPI(action, params) {
   params = params || {};
 
+  if (Alpine.store('auth').isSessionExpired()) {
+    Alpine.store('auth').logout();
+    Alpine.store('toast').warning('ログインの有効期限が切れました');
+    return Promise.resolve({ success: false, code: 'SESSION_EXPIRED' });
+  }
+
+  Alpine.store('auth').touchActivity();
+
   return new Promise(function (resolve, reject) {
     var token = sessionStorage.getItem('ADMIN_TOKEN');
     if (token) {

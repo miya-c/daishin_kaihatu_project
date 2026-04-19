@@ -33,6 +33,7 @@ document.addEventListener('alpine:init', function () {
             if (result && result.success) {
               Alpine.store('auth').authenticated = true;
               Alpine.store('auth').token = self.token;
+              Alpine.store('auth').touchActivity();
               Alpine.store('toast').success('ログインしました');
             } else {
               self.error =

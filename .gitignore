@@ -1,6 +1,7 @@
-node_modules/
-dist/
-.DS_Store
 *.local
-.vite/
+.DS_Store
+.clasp.json
 .env
+.vite/
+dist/
+node_modules/

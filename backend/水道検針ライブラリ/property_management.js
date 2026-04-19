@@ -84,6 +84,21 @@ function getNextRoomId(propertyId) {
   return 'R' + ('000' + (maxNum + 1)).slice(-3);
 }
 
+/**
+ * Sanitize a value to prevent spreadsheet formula injection.
+ * Prepends a single quote if the trimmed value starts with a dangerous character.
+ * @param {*} value - Value to sanitize
+ * @returns {string} Sanitized string safe for spreadsheet cells
+ */
+function sanitizeSpreadsheetInput(value) {
+  if (typeof value !== 'string') value = String(value || '');
+  var trimmed = value.trim();
+  if (/^[=+\-@\t\r]/.test(trimmed)) {
+    return "'" + value;
+  }
+  return value;
+}
+
 // ═══════════════════════════════════════════
 // API Functions
 // ═══════════════════════════════════════════
@@ -101,15 +116,7 @@ function addProperty(params) {
       }
       var propertyName = String(params.propertyName).trim();
 
-      // Prevent spreadsheet formula injection
-      if (
-        propertyName.startsWith('=') ||
-        propertyName.startsWith('+') ||
-        propertyName.startsWith('-') ||
-        propertyName.startsWith('@')
-      ) {
-        propertyName = "'" + propertyName;
-      }
+      propertyName = sanitizeSpreadsheetInput(propertyName);
 
       // Normalize or auto-assign property ID
       var propertyId;
@@ -213,14 +220,7 @@ function bulkAddProperties(params) {
           continue;
         }
 
-        if (
-          propertyName.startsWith('=') ||
-          propertyName.startsWith('+') ||
-          propertyName.startsWith('-') ||
-          propertyName.startsWith('@')
-        ) {
-          propertyName = "'" + propertyName;
-        }
+        propertyName = sanitizeSpreadsheetInput(propertyName);
 
         var propertyId;
         if (item.id && String(item.id).trim()) {
@@ -359,14 +359,7 @@ function bulkAddRooms(params) {
           continue;
         }
 
-        if (
-          roomName.startsWith('=') ||
-          roomName.startsWith('+') ||
-          roomName.startsWith('-') ||
-          roomName.startsWith('@')
-        ) {
-          roomName = "'" + roomName;
-        }
+        roomName = sanitizeSpreadsheetInput(roomName);
 
         var roomId = 'R' + ('000' + ++maxRoomNum).slice(-3);
 
@@ -427,15 +420,7 @@ function addRoom(params) {
       var propertyId = String(params.propertyId).trim();
       var roomName = String(params.roomName).trim();
 
-      // Prevent spreadsheet formula injection
-      if (
-        roomName.startsWith('=') ||
-        roomName.startsWith('+') ||
-        roomName.startsWith('-') ||
-        roomName.startsWith('@')
-      ) {
-        roomName = "'" + roomName;
-      }
+      roomName = sanitizeSpreadsheetInput(roomName);
 
       var ss = SpreadsheetApp.getActiveSpreadsheet();
 
@@ -470,8 +455,8 @@ function addRoom(params) {
         propertyId,
         roomId,
         roomName,
-        params.roomStatus || '',
-        params.roomNotes || '',
+        sanitizeSpreadsheetInput(params.roomStatus || ''),
+        sanitizeSpreadsheetInput(params.roomNotes || ''),
       ]);
 
       // Diff-insert into inspection_data
@@ -529,16 +514,7 @@ function updateRoom(params) {
       var propertyId = String(params.propertyId).trim();
       var roomId = String(params.roomId).trim();
       var roomName = String(params.roomName).trim();
-
-      // Prevent spreadsheet formula injection
-      if (
-        roomName.startsWith('=') ||
-        roomName.startsWith('+') ||
-        roomName.startsWith('-') ||
-        roomName.startsWith('@')
-      ) {
-        roomName = "'" + roomName;
-      }
+      roomName = sanitizeSpreadsheetInput(roomName);
 
       var ss = SpreadsheetApp.getActiveSpreadsheet();
 
@@ -974,16 +950,9 @@ function updateInspectionData(params) {
       }
       var propertyId = String(params.propertyId).trim();
       var roomId = String(params.roomId).trim();
-      var roomName = params.roomName ? String(params.roomName).trim() : '';
-
-      if (
-        roomName.startsWith('=') ||
-        roomName.startsWith('+') ||
-        roomName.startsWith('-') ||
-        roomName.startsWith('@')
-      ) {
-        roomName = "'" + roomName;
-      }
+      var roomName = params.roomName
+        ? sanitizeSpreadsheetInput(String(params.roomName).trim())
+        : '';
 
       var ss = SpreadsheetApp.getActiveSpreadsheet();
 
@@ -998,10 +967,14 @@ function updateInspectionData(params) {
             ) {
               roomSheet.getRange(i + 1, 3).setValue(roomName);
               if (params.roomStatus !== undefined) {
-                roomSheet.getRange(i + 1, 4).setValue(String(params.roomStatus));
+                roomSheet
+                  .getRange(i + 1, 4)
+                  .setValue(sanitizeSpreadsheetInput(String(params.roomStatus)));
               }
               if (params.roomNotes !== undefined) {
-                roomSheet.getRange(i + 1, 5).setValue(String(params.roomNotes));
+                roomSheet
+                  .getRange(i + 1, 5)
+                  .setValue(sanitizeSpreadsheetInput(String(params.roomNotes)));
               }
               break;
             }
@@ -1017,10 +990,14 @@ function updateInspectionData(params) {
               String(roomData2[i2][1]).trim() === roomId
             ) {
               if (params.roomStatus !== undefined) {
-                roomSheet2.getRange(i2 + 1, 4).setValue(String(params.roomStatus));
+                roomSheet2
+                  .getRange(i2 + 1, 4)
+                  .setValue(sanitizeSpreadsheetInput(String(params.roomStatus)));
               }
               if (params.roomNotes !== undefined) {
-                roomSheet2.getRange(i2 + 1, 5).setValue(String(params.roomNotes));
+                roomSheet2
+                  .getRange(i2 + 1, 5)
+                  .setValue(sanitizeSpreadsheetInput(String(params.roomNotes)));
               }
               break;
             }
@@ -1098,7 +1075,9 @@ function updateInspectionData(params) {
           }
           var inspRoomStatusCol = inspHeaders.indexOf('部屋ステータス');
           if (inspRoomStatusCol !== -1 && params.roomStatus) {
-            inspSheet.getRange(j + 1, inspRoomStatusCol + 1).setValue(String(params.roomStatus));
+            inspSheet
+              .getRange(j + 1, inspRoomStatusCol + 1)
+              .setValue(sanitizeSpreadsheetInput(String(params.roomStatus)));
           }
           rowUpdated = true;
           break;

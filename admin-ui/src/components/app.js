@@ -24,19 +24,23 @@ document.addEventListener('alpine:init', function () {
         var self = this;
         var savedToken = sessionStorage.getItem('ADMIN_TOKEN');
         if (savedToken) {
-          callAdminAPI('verifyToken', {})
-            .then(function (result) {
-              if (result && result.success) {
-                Alpine.store('auth').authenticated = true;
-                Alpine.store('auth').token = savedToken;
-              } else {
-                Alpine.store('toast').warning('ログインの有効期限が切れました');
+          if (Alpine.store('auth').isSessionExpired()) {
+            Alpine.store('toast').warning('ログインの有効期限が切れました');
+            Alpine.store('auth').logout();
+          } else {
+            callAdminAPI('verifyToken', {})
+              .then(function (result) {
+                if (result && result.success) {
+                  Alpine.store('auth').authenticated = true;
+                  Alpine.store('auth').token = savedToken;
+                } else {
+                  Alpine.store('auth').logout();
+                }
+              })
+              .catch(function () {
                 Alpine.store('auth').logout();
-              }
-            })
-            .catch(function () {
-              Alpine.store('auth').logout();
-            });
+              });
+          }
         }
 
         // Restore tab from URL hash

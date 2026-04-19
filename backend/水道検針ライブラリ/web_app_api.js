@@ -13,6 +13,16 @@ let _cachedApiKey = null;
 let _apiKeyFetched = false;
 let _cachedFeatureFlags = null;
 
+function constantTimeCompare(a, b) {
+  if (typeof a !== 'string' || typeof b !== 'string') return false;
+  if (a.length !== b.length) return false;
+  var result = 0;
+  for (var i = 0; i < a.length; i++) {
+    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return result === 0;
+}
+
 function validateApiKey(params, requireAuth) {
   const apiKey = params.apiKey || params.api_key;
   if (!_apiKeyFetched) {
@@ -37,7 +47,7 @@ function validateApiKey(params, requireAuth) {
     return { authorized: true };
   }
 
-  if (apiKey && apiKey !== storedKey) {
+  if (apiKey && !constantTimeCompare(apiKey, storedKey)) {
     return { authorized: false, error: 'API keyが無効です' };
   }
 
@@ -82,7 +92,31 @@ function sanitizeApiParams(params) {
       return { valid: false, error: 'readingsのJSON解析に失敗しました' };
     }
   }
+  if (params.completionDate) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(params.completionDate))) {
+      return { valid: false, error: 'completionDateの形式が不正です（YYYY-MM-DD）' };
+    }
+    var d = new Date(params.completionDate);
+    if (isNaN(d.getTime())) {
+      return { valid: false, error: 'completionDateが無効な日付です' };
+    }
+  }
   return { valid: true };
+}
+
+function sanitizeErrorMessage(error, action) {
+  Logger.log('[' + action + '] エラー: ' + error.message);
+  var msg = error.message || '';
+  if (/パラメータ|形式が不正|無効です|必須です|見つかりません/.test(msg)) {
+    return msg;
+  }
+  if (/lock|タイムアウト|他の処理/.test(msg)) {
+    return '他の処理が実行中です。しばらくお待ちください。';
+  }
+  if (/重複|already exists|duplicate/.test(msg)) {
+    return 'データが重複しています。';
+  }
+  return 'システムエラーが発生しました。しばらく経ってからお試しください。';
 }
 
 function createCorsJsonResponse(data) {
@@ -99,7 +133,6 @@ function doGet(e) {
     if (!action) {
       return HtmlService.createHtmlOutputFromFile('admin')
         .setTitle('水道検針 管理画面')
-        .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
         .addMetaTag('viewport', 'width=device-width, initial-scale=1');
     }
 
@@ -151,10 +184,9 @@ function doGet(e) {
             message: `${roomsResult.data.rooms ? roomsResult.data.rooms.length : 0}件の部屋データを取得しました`,
           });
         } catch (error) {
-          Logger.log(`getRooms API エラー: ${error.message}`);
           return createCorsJsonResponse({
             success: false,
-            error: `部屋データの取得に失敗しました: ${error.message}`,
+            error: sanitizeErrorMessage(error, 'getRooms'),
           });
         }
 
@@ -164,6 +196,12 @@ function doGet(e) {
             success: false,
             error: 'propertyIdとroomIdが必要です',
           });
+        }
+        {
+          const meterSanitize = sanitizeApiParams(e.parameter);
+          if (!meterSanitize.valid) {
+            return createCorsJsonResponse({ success: false, error: meterSanitize.error });
+          }
         }
         {
           const meterAuth = validateApiKey(e.parameter, false);
@@ -188,10 +226,9 @@ function doGet(e) {
             },
           });
         } catch (error) {
-          Logger.log(`[web_app_api] getMeterReadingsエラー: ${error.message}`);
           return createCorsJsonResponse({
             success: false,
-            error: `検針データ取得に失敗しました: ${error.message}`,
+            error: sanitizeErrorMessage(error, 'getMeterReadings'),
           });
         }
 
@@ -217,7 +254,7 @@ function doGet(e) {
         } catch (error) {
           return createCorsJsonResponse({
             success: false,
-            error: `検針データ更新エラー: ${error.message}`,
+            error: sanitizeErrorMessage(error, 'updateMeterReadings'),
           });
         }
       }
@@ -226,6 +263,10 @@ function doGet(e) {
         const saveNavAuth = validateApiKey(e.parameter, true);
         if (!saveNavAuth.authorized) {
           return createCorsJsonResponse({ success: false, error: saveNavAuth.error });
+        }
+        const saveNavSanitize = sanitizeApiParams(e.parameter);
+        if (!saveNavSanitize.valid) {
+          return createCorsJsonResponse({ success: false, error: saveNavSanitize.error });
         }
         const featureFlags = {
           integratedApiEnabled: getFeatureFlag('INTEGRATED_API_ENABLED', true),
@@ -245,7 +286,7 @@ function doGet(e) {
           }
           return createCorsJsonResponse({
             success: false,
-            error: `統合APIエラー: ${error.message}`,
+            error: sanitizeErrorMessage(error, 'saveAndNavigate'),
           });
         }
       }
@@ -296,6 +337,19 @@ function doGet(e) {
                   failCount++;
                   continue;
                 }
+                const entrySanitize = sanitizeApiParams({
+                  propertyId: entry.propertyId,
+                  roomId: entry.roomId,
+                });
+                if (!entrySanitize.valid) {
+                  results.push({
+                    action: entry.action,
+                    success: false,
+                    error: entrySanitize.error,
+                  });
+                  failCount++;
+                  continue;
+                }
                 const r = updateMeterReadings(entry.propertyId, entry.roomId, readings);
                 results.push({
                   action: entry.action,
@@ -308,6 +362,19 @@ function doGet(e) {
               } else if (entry.action === 'completeInspection') {
                 if (!entry.propertyId || !entry.completionDate) {
                   results.push({ action: entry.action, success: false, error: 'パラメータ不足' });
+                  failCount++;
+                  continue;
+                }
+                var completeEntrySanitize = sanitizeApiParams({
+                  propertyId: entry.propertyId,
+                  completionDate: entry.completionDate,
+                });
+                if (!completeEntrySanitize.valid) {
+                  results.push({
+                    action: entry.action,
+                    success: false,
+                    error: completeEntrySanitize.error,
+                  });
                   failCount++;
                   continue;
                 }
@@ -324,7 +391,11 @@ function doGet(e) {
                 failCount++;
               }
             } catch (entryError) {
-              results.push({ action: entry.action, success: false, error: entryError.message });
+              results.push({
+                action: entry.action,
+                success: false,
+                error: sanitizeErrorMessage(entryError, 'batchUpdateReadings_entry'),
+              });
               failCount++;
             }
           }
@@ -338,7 +409,7 @@ function doGet(e) {
         } catch (batchError) {
           return createCorsJsonResponse({
             success: false,
-            error: `バッチ処理エラー: ${batchError.message}`,
+            error: sanitizeErrorMessage(batchError, 'batchUpdateReadings'),
           });
         }
       }
@@ -365,7 +436,7 @@ function doGet(e) {
         } catch (error) {
           return createCorsJsonResponse({
             success: false,
-            error: `検針完了処理に失敗しました: ${error.message}`,
+            error: sanitizeErrorMessage(error, 'completeInspection'),
           });
         }
       }
@@ -377,6 +448,10 @@ function doGet(e) {
               success: false,
               error: 'propertyIdが必要です',
             });
+          }
+          const roomsLightSanitize = sanitizeApiParams(e.parameter);
+          if (!roomsLightSanitize.valid) {
+            return createCorsJsonResponse({ success: false, error: roomsLightSanitize.error });
           }
           const roomsLightAuth = validateApiKey(e.parameter, false);
           if (!roomsLightAuth.authorized) {
@@ -394,17 +469,17 @@ function doGet(e) {
             _meta: { dataVersion: new Date().toISOString() },
           });
         } catch (error) {
-          Logger.log(`getRoomsLight API エラー: ${error.message}`);
           return createCorsJsonResponse({
             success: false,
-            error: `軽量部屋データの取得に失敗しました: ${error.message}`,
+            error: sanitizeErrorMessage(error, 'getRoomsLight'),
           });
         }
 
       default:
+        Logger.log('[doGet] Unknown action: ' + action);
         return createCorsJsonResponse({
           success: false,
-          error: `未知のアクション: ${action}`,
+          error: '無効なリクエストです',
         });
     }
   } catch (error) {
@@ -444,6 +519,10 @@ function doPost(e) {
       if (!saveNavAuth.authorized) {
         return createCorsJsonResponse({ success: false, error: saveNavAuth.error });
       }
+      const doPostSaveNavSanitize = sanitizeApiParams(params);
+      if (!doPostSaveNavSanitize.valid) {
+        return createCorsJsonResponse({ success: false, error: doPostSaveNavSanitize.error });
+      }
       // Phase 2.3: フィーチャーフラグ対応
       const featureFlags = {
         integratedApiEnabled: getFeatureFlag('INTEGRATED_API_ENABLED', true),
@@ -482,7 +561,7 @@ function doPost(e) {
           success: false,
           error: {
             code: 'SYSTEM_ERROR',
-            message: `統合API処理中にエラーが発生しました: ${error.message}`,
+            message: sanitizeErrorMessage(error, 'saveAndNavigate'),
             details: {
               phase: 'system',
               timestamp: new Date().toISOString(),
@@ -511,7 +590,10 @@ function doPost(e) {
         });
       }
       if (propertyId) {
-        const completeSanitize = sanitizeApiParams({ propertyId });
+        const completeSanitize = sanitizeApiParams({
+          propertyId: propertyId,
+          completionDate: completionDate,
+        });
         if (!completeSanitize.valid) {
           return createCorsJsonResponse({ success: false, error: completeSanitize.error });
         }
@@ -521,10 +603,9 @@ function doPost(e) {
         const result = completePropertyInspectionSimple(propertyId, completionDate);
         return createCorsJsonResponse(result);
       } catch (error) {
-        console.error(`[doPost] 検針完了エラー: ${error.message}`);
         return createCorsJsonResponse({
           success: false,
-          error: `検針完了処理に失敗しました: ${error.message}`,
+          error: sanitizeErrorMessage(error, 'completeInspection'),
           timestamp: new Date().toISOString(),
           method: 'POST',
         });
@@ -559,10 +640,9 @@ function doPost(e) {
         const result = updateMeterReadings(propertyId, roomId, readings);
         return createCorsJsonResponse(result);
       } catch (error) {
-        Logger.log(`[doPost] updateMeterReadingsエラー: ${error.message}`);
         return createCorsJsonResponse({
           success: false,
-          error: `検針データ更新エラー: ${error.message}`,
+          error: sanitizeErrorMessage(error, 'updateMeterReadings'),
           method: 'POST',
         });
       }
@@ -620,6 +700,19 @@ function doPost(e) {
                 failCount++;
                 continue;
               }
+              var doPostEntrySanitize = sanitizeApiParams({
+                propertyId: entry.propertyId,
+                roomId: entry.roomId,
+              });
+              if (!doPostEntrySanitize.valid) {
+                results.push({
+                  action: entry.action,
+                  success: false,
+                  error: doPostEntrySanitize.error,
+                });
+                failCount++;
+                continue;
+              }
               const r = updateMeterReadings(entry.propertyId, entry.roomId, readings);
               results.push({
                 action: entry.action,
@@ -632,6 +725,19 @@ function doPost(e) {
             } else if (entry.action === 'completeInspection') {
               if (!entry.propertyId || !entry.completionDate) {
                 results.push({ action: entry.action, success: false, error: 'パラメータ不足' });
+                failCount++;
+                continue;
+              }
+              var doPostCompleteSanitize = sanitizeApiParams({
+                propertyId: entry.propertyId,
+                completionDate: entry.completionDate,
+              });
+              if (!doPostCompleteSanitize.valid) {
+                results.push({
+                  action: entry.action,
+                  success: false,
+                  error: doPostCompleteSanitize.error,
+                });
                 failCount++;
                 continue;
               }
@@ -648,7 +754,11 @@ function doPost(e) {
               failCount++;
             }
           } catch (entryError) {
-            results.push({ action: entry.action, success: false, error: entryError.message });
+            results.push({
+              action: entry.action,
+              success: false,
+              error: sanitizeErrorMessage(entryError, 'batchUpdateReadings_entry'),
+            });
             failCount++;
           }
         }
@@ -663,16 +773,16 @@ function doPost(e) {
       } catch (batchError) {
         return createCorsJsonResponse({
           success: false,
-          error: `バッチ処理エラー: ${batchError.message}`,
+          error: sanitizeErrorMessage(batchError, 'batchUpdateReadings'),
         });
       }
     }
 
     // 不明なPOSTアクション
+    Logger.log('[doPost] Unknown action: ' + (action || 'none'));
     return createCorsJsonResponse({
       success: false,
-      error: `Unknown action: ${action || 'none'}`,
-      receivedAction: action || 'none',
+      error: '無効なリクエストです',
     });
   } catch (error) {
     console.error('[doPost] 予期しないエラー:', error);
@@ -775,7 +885,7 @@ function executeLegacyFallback(params, skipSave) {
     Logger.log(`[executeLegacyFallback] 失敗: ${error.message}`);
     return createCorsJsonResponse({
       success: false,
-      error: `レガシーフォールバック失敗: ${error.message}`,
+      error: sanitizeErrorMessage(error, 'executeLegacyFallback'),
       fallbackMode: true,
     });
   }

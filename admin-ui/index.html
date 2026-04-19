@@ -10,12 +10,26 @@
       if (window.trustedTypes && window.trustedTypes.createPolicy) {
         window.trustedTypes.createPolicy('default', {
           createHTML: function (string) {
+            if (/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi.test(string)) {
+              console.error('[TrustedTypes] Blocked script injection in HTML');
+              return '';
+            }
             return string;
           },
           createScriptURL: function (string) {
-            return string;
+            var allowed = [
+              'https://cdn.jsdelivr.net/npm/alpinejs',
+              'https://cdn.jsdelivr.net/npm/bulma',
+              'https://cdn.jsdelivr.net/npm/@alpinejs',
+            ];
+            for (var i = 0; i < allowed.length; i++) {
+              if (string.indexOf(allowed[i]) === 0) return string;
+            }
+            console.error('[TrustedTypes] Blocked disallowed script URL: ' + string);
+            return '';
           },
           createScript: function (string) {
+            // Alpine.js CSP constraint: inline event handlers require passthrough
             return string;
           },
         });

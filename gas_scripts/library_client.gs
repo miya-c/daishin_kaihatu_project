@@ -416,10 +416,26 @@ function doGet(e) {
 // 管理画面API機能
 // =====================================================
 
+/**
+ * 一定時間文字列比較（タイミング攻撃対策）
+ * @param {string} a - 比較文字列1
+ * @param {string} b - 比較文字列2
+ * @returns {boolean} 一致する場合true
+ */
+function constantTimeCompare(a, b) {
+  if (typeof a !== 'string' || typeof b !== 'string') return false;
+  if (a.length !== b.length) return false;
+  var result = 0;
+  for (var i = 0; i < a.length; i++) {
+    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return result === 0;
+}
+
 function adminAction(action, params) {
   params = params || {};
   var storedToken = PropertiesService.getScriptProperties().getProperty('ADMIN_TOKEN');
-  if (!params.adminToken || !storedToken || params.adminToken !== storedToken) {
+  if (!params.adminToken || !storedToken || !constantTimeCompare(params.adminToken, storedToken)) {
     return { success: false, error: '管理者トークンが無効です', code: 'INVALID_TOKEN' };
   }
 

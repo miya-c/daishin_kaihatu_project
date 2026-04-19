@@ -79,7 +79,7 @@ function getProperties() {
 
     return { success: true, data: properties };
   } catch (error) {
-    return { success: false, error: error.message };
+    return { success: false, error: sanitizeErrorMessage(error, 'getProperties') };
   }
 }
 
@@ -134,7 +134,8 @@ function _getRoomsImpl(propertyId, options = {}) {
       .find((row) => String(row[propertyIdIndex]).trim() === String(propertyId).trim());
 
     if (!propertyRow) {
-      return { success: false, error: `物件ID「${propertyId}」が物件マスタに見つかりません` };
+      Logger.log('[_getRoomsImpl] 物件ID「' + propertyId + '」が物件マスタに見つかりません');
+      return { success: false, error: '指定された物件が見つかりません' };
     }
 
     const propertyInfo = {
@@ -259,7 +260,7 @@ function _getRoomsImpl(propertyId, options = {}) {
     return { success: true, data: result };
   } catch (error) {
     Logger.log(`[getRooms] エラー: ${error.message}`);
-    return { success: false, error: error.message };
+    return { success: false, error: sanitizeErrorMessage(error, '_getRoomsImpl') };
   }
 }
 
@@ -554,7 +555,7 @@ function getMeterReadings(propertyId, roomId) {
     };
   } catch (error) {
     Logger.log('[getMeterReadings] エラー: ' + error.message);
-    return { success: false, error: error.message };
+    return { success: false, error: sanitizeErrorMessage(error, 'getMeterReadings') };
   }
 }
 
@@ -690,9 +691,12 @@ function updateMeterReadings(propertyId, roomId, readings, options = {}) {
       colIndexes.date === -1 ||
       colIndexes.currentReading === -1
     ) {
+      Logger.log(
+        '[updateMeterReadings] 必要な列が見つかりません。利用可能な列: ' + headers.join(', ')
+      );
       return {
         success: false,
-        error: `必要な列が見つかりません。利用可能な列: ${headers.join(', ')}`,
+        error: 'データシートの形式が不正です',
       };
     }
 
@@ -795,6 +799,15 @@ function updateMeterReadings(propertyId, roomId, readings, options = {}) {
       invalidateFastCache('mr_idx_' + propertyId);
     }
 
+    Logger.log(
+      '[updateMeterReadings] Debug: warningFlagCol=' +
+        colIndexes.warningFlag +
+        ', stdDevCol=' +
+        colIndexes.standardDeviation +
+        ', totalCols=' +
+        headers.length
+    );
+
     return {
       success: true,
       message: `${updatedRowCount}件の検針データを正常に更新しました`,
@@ -805,26 +818,13 @@ function updateMeterReadings(propertyId, roomId, readings, options = {}) {
         currentReading: r.currentReading,
         warningFlag: r.warningFlag || '正常',
       })),
-      debugInfo: {
-        warningFlagColumnExists: colIndexes.warningFlag >= 0,
-        warningFlagColumnIndex: colIndexes.warningFlag,
-        standardDeviationColumnExists: colIndexes.standardDeviation >= 0,
-        standardDeviationColumnIndex: colIndexes.standardDeviation,
-        totalColumns: headers.length,
-        headers: headers,
-        processedData: readings.map((r, i) => ({
-          index: i,
-          receivedWarningFlag: r.warningFlag || '正常',
-          processedSuccessfully: true,
-        })),
-      },
     };
   } catch (error) {
     Logger.log(`[updateMeterReadings] ❌ エラー: ${error.message}`);
     Logger.log(`[updateMeterReadings] ❌ エラースタック:`, error.stack);
     return {
       success: false,
-      error: error.message,
+      error: sanitizeErrorMessage(error, 'updateMeterReadings'),
       timestamp: Utilities.formatDate(new Date(), 'JST', 'yyyy-MM-dd HH:mm:ss'),
     };
   } finally {
@@ -843,87 +843,98 @@ function updateMeterReadings(propertyId, roomId, readings, options = {}) {
  * @returns {Object} 更新結果
  */
 function completePropertyInspectionSimple(propertyId, completionDate) {
+  var lock = LockService.getScriptLock();
   try {
-    if (!propertyId) {
-      throw new Error('物件IDが指定されていません');
-    }
-
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const sheet = ss.getSheetByName(CONFIG.SHEET_NAMES.PROPERTY_MASTER);
-
-    if (!sheet) {
-      throw new Error('物件マスタシートが見つかりません');
-    }
-
-    const data = sheet.getDataRange().getValues();
-    if (data.length <= 1) {
-      throw new Error('物件マスタにデータがありません');
-    }
-
-    const headers = data[0];
-    const propertyIdCol = headers.indexOf('物件ID');
-    const completionDateCol = headers.indexOf('検針完了日');
-
-    if (propertyIdCol === -1) {
-      throw new Error('物件IDカラムが見つかりません');
-    }
-    if (completionDateCol === -1) {
-      throw new Error('検針完了日カラムが見つかりません');
-    }
-
-    // 対象物件の行を検索
-    let targetRow = -1;
-    for (let i = 1; i < data.length; i++) {
-      if (String(data[i][propertyIdCol]).trim() === String(propertyId).trim()) {
-        targetRow = i;
-        break;
+    lock.waitLock(30000);
+    try {
+      if (!propertyId) {
+        throw new Error('物件IDが指定されていません');
       }
-    }
 
-    if (targetRow === -1) {
-      throw new Error(`物件ID「${propertyId}」が見つかりません`);
-    }
+      const ss = SpreadsheetApp.getActiveSpreadsheet();
+      const sheet = ss.getSheetByName(CONFIG.SHEET_NAMES.PROPERTY_MASTER);
 
-    // 完了日の準備（YYYY-MM-DD形式）
-    let saveDate = '';
-    if (completionDate) {
-      // 形式チェック
-      if (/^\d{4}-\d{2}-\d{2}$/.test(completionDate)) {
-        saveDate = completionDate;
-      } else {
-        // 変換を試行
-        const d = new Date(completionDate);
-        if (!isNaN(d.getTime())) {
-          saveDate = Utilities.formatDate(d, 'JST', 'yyyy-MM-dd');
-        } else {
-          throw new Error('completionDateの形式が不正です');
+      if (!sheet) {
+        throw new Error('物件マスタシートが見つかりません');
+      }
+
+      const data = sheet.getDataRange().getValues();
+      if (data.length <= 1) {
+        throw new Error('物件マスタにデータがありません');
+      }
+
+      const headers = data[0];
+      const propertyIdCol = headers.indexOf('物件ID');
+      const completionDateCol = headers.indexOf('検針完了日');
+
+      if (propertyIdCol === -1) {
+        throw new Error('物件IDカラムが見つかりません');
+      }
+      if (completionDateCol === -1) {
+        throw new Error('検針完了日カラムが見つかりません');
+      }
+
+      // 対象物件の行を検索
+      let targetRow = -1;
+      for (let i = 1; i < data.length; i++) {
+        if (String(data[i][propertyIdCol]).trim() === String(propertyId).trim()) {
+          targetRow = i;
+          break;
         }
       }
-    } else {
-      // 指定がなければ現在日付
-      const now = new Date();
-      saveDate = Utilities.formatDate(now, 'JST', 'yyyy-MM-dd');
+
+      if (targetRow === -1) {
+        Logger.log(
+          '[completePropertyInspectionSimple] 物件ID「' + propertyId + '」が見つかりません'
+        );
+        throw new Error('指定された物件が見つかりません');
+      }
+
+      // 完了日の準備（YYYY-MM-DD形式）
+      let saveDate = '';
+      if (completionDate) {
+        // 形式チェック
+        if (/^\d{4}-\d{2}-\d{2}$/.test(completionDate)) {
+          saveDate = completionDate;
+        } else {
+          // 変換を試行
+          const d = new Date(completionDate);
+          if (!isNaN(d.getTime())) {
+            saveDate = Utilities.formatDate(d, 'JST', 'yyyy-MM-dd');
+          } else {
+            throw new Error('completionDateの形式が不正です');
+          }
+        }
+      } else {
+        // 指定がなければ現在日付
+        const now = new Date();
+        saveDate = Utilities.formatDate(now, 'JST', 'yyyy-MM-dd');
+      }
+
+      // スプレッドシートに書き込み
+      const targetCell = sheet.getRange(targetRow + 1, completionDateCol + 1);
+      targetCell.setValue(saveDate);
+      SpreadsheetApp.flush();
+
+      return {
+        success: true,
+        message: `物件 ${propertyId} の検針完了日を ${saveDate} で保存しました`,
+        propertyId: propertyId,
+        completionDate: saveDate,
+        apiVersion: 'v2.9.0-simple-completion',
+      };
+    } catch (error) {
+      Logger.log(`[検針完了] エラー: ${error.message}`);
+      return {
+        success: false,
+        error: sanitizeErrorMessage(error, 'completePropertyInspectionSimple'),
+        propertyId: propertyId,
+      };
     }
-
-    // スプレッドシートに書き込み
-    const targetCell = sheet.getRange(targetRow + 1, completionDateCol + 1);
-    targetCell.setValue(saveDate);
-    SpreadsheetApp.flush();
-
-    return {
-      success: true,
-      message: `物件 ${propertyId} の検針完了日を ${saveDate} で保存しました`,
-      propertyId: propertyId,
-      completionDate: saveDate,
-      apiVersion: 'v2.9.0-simple-completion',
-    };
-  } catch (error) {
-    Logger.log(`[検針完了] エラー: ${error.message}`);
-    return {
-      success: false,
-      error: error.message,
-      propertyId: propertyId,
-    };
+  } finally {
+    try {
+      lock.releaseLock();
+    } catch (e) {}
   }
 }
 
@@ -976,17 +987,19 @@ function getSpreadsheetInfo() {
       cols: sheet.getLastColumn(),
     }));
 
+    // Log internal fields for developer visibility (not exposed in response)
+    Logger.log('[getSpreadsheetInfo] spreadsheetId: ' + ss.getId());
+    Logger.log('[getSpreadsheetInfo] url: ' + ss.getUrl());
+
     return {
       success: true,
-      spreadsheetId: ss.getId(),
       name: ss.getName(),
       sheets: sheets,
-      url: ss.getUrl(),
     };
   } catch (error) {
     return {
       success: false,
-      error: error.message,
+      error: sanitizeErrorMessage(error, 'getSpreadsheetInfo'),
     };
   }
 }
@@ -1329,7 +1342,7 @@ function saveAndNavigate(params) {
       error._saveCompleted = true;
     }
 
-    return createErrorResponse('SYSTEM_ERROR', error.message, {
+    return createErrorResponse('SYSTEM_ERROR', sanitizeErrorMessage(error, 'saveAndNavigate'), {
       processingTime: totalProcessingTime,
       apiVersion: 'v1.0.0-integrated',
       errorDetails: {
@@ -1506,7 +1519,7 @@ function validateSaveAndNavigateParams(params) {
     Logger.log(`[validateSaveAndNavigateParams] 予期しないエラー: ${error.message}`);
     return {
       success: false,
-      error: `パラメータ検証エラー: ${error.message}`,
+      error: sanitizeErrorMessage(error, 'validateSaveAndNavigateParams'),
     };
   }
 }
@@ -1529,7 +1542,7 @@ function performSaveOperation(params, saveOptions = {}) {
       Logger.log(`[performSaveOperation] JSON解析失敗: ${parseError.message}`);
       return {
         success: false,
-        error: `検針データの解析に失敗しました: ${parseError.message}`,
+        error: sanitizeErrorMessage(parseError, 'performSaveOperation_parse'),
         errorType: 'PARSE_ERROR',
         details: {
           originalData: meterReadingsData?.substring(0, 200) + '...',
@@ -1622,7 +1635,7 @@ function performSaveOperation(params, saveOptions = {}) {
 
     return {
       success: false,
-      error: `保存処理中に予期しないエラーが発生しました: ${error.message}`,
+      error: sanitizeErrorMessage(error, 'performSaveOperation'),
       errorType: 'UNEXPECTED_ERROR',
       details: {
         operationTime: operationDuration,
@@ -1650,9 +1663,10 @@ function performNavigationOperation(
   try {
     // 移動先部屋の存在確認（Phase 2.2: 事前チェック）
     if (!targetRoomId || !/^R\d{3}$/.test(targetRoomId)) {
+      Logger.log('[performNavigationOperation] 移動先部屋IDが無効です: ' + targetRoomId);
       return {
         success: false,
-        error: `移動先部屋IDが無効です: ${targetRoomId}`,
+        error: '移動先部屋IDが無効です',
         errorType: 'INVALID_TARGET_ROOM',
         details: {
           targetRoomId: targetRoomId,
@@ -1699,9 +1713,16 @@ function performNavigationOperation(
       !result.roomName &&
       (!result.readings || result.readings.length === 0)
     ) {
+      Logger.log(
+        '[performNavigationOperation] 指定された部屋が見つかりません（物件: ' +
+          propertyId +
+          ', 部屋: ' +
+          targetRoomId +
+          '）'
+      );
       return {
         success: false,
-        error: `指定された部屋が見つかりません（物件: ${propertyId}, 部屋: ${targetRoomId}）`,
+        error: '指定された部屋が見つかりません',
         errorType: 'ROOM_NOT_FOUND_ERROR',
         details: {
           operationTime: operationDuration,
@@ -1738,7 +1759,7 @@ function performNavigationOperation(
 
     return {
       success: false,
-      error: `ナビゲーション処理中に予期しないエラーが発生しました: ${error.message}`,
+      error: sanitizeErrorMessage(error, 'performNavigationOperation'),
       errorType: 'UNEXPECTED_ERROR',
       details: {
         operationTime: operationDuration,
