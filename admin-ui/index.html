@@ -2407,7 +2407,7 @@
                         <div class="field has-addons">
                           <div class="control">
                             <div class="select">
-                              <select x-bind:value="monthlyTargetYear" x-on:change="setMonthlyTargetYear($event)">
+                              <select x-model="monthlyTargetYear">
                                 <template x-for="y in [2024, 2025, 2026, 2027, 2028]" :key="y">
                                   <option :value="y" x-text="y + '年'"></option>
                                 </template>
@@ -2416,7 +2416,7 @@
                           </div>
                           <div class="control">
                             <div class="select">
-                              <select x-bind:value="monthlyTargetMonth" x-on:change="monthlyTargetMonth = $event.target.value">
+                              <select x-model="monthlyTargetMonth">
                                 <template x-for="m in ['01','02','03','04','05','06','07','08','09','10','11','12']" :key="m">
                                   <option :value="m" x-text="getMonthLabel(m)"></option>
                                 </template>
