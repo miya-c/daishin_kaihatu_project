@@ -2626,10 +2626,10 @@
                       <div class="notification is-success is-light mb-3">
                         <p>「<span x-text="getUndoTargetLabel()"></span>」の月次処理を取り消しました。データは月次処理前の状態に復元されています。</p>
                       </div>
-                      <div x-show="undoResult" class="content is-size-7 mb-3">
-                        <p x-show="undoResult.restoredInspectionRows" x-text="'検針データ復元: ' + undoResult.restoredInspectionRows + '件'"></p>
-                        <p x-show="undoResult.restoredPropertyCount" x-text="'物件マスタ復元: ' + undoResult.restoredPropertyCount + '件'"></p>
-                        <p x-show="undoResult.deletedArchiveRows" x-text="'アーカイブ削除: ' + undoResult.deletedArchiveRows + '件'"></p>
+                      <div x-show="hasUndoResultDetails" class="content is-size-7 mb-3">
+                        <p x-show="getUndoRestoredInspection()" x-text="getUndoRestoredInspection()"></p>
+                        <p x-show="getUndoRestoredProperty()" x-text="getUndoRestoredProperty()"></p>
+                        <p x-show="getUndoDeletedArchive()" x-text="getUndoDeletedArchive()"></p>
                       </div>
                       <div class="notification is-info is-light mb-3">
                         <p class="is-size-7">必要に応じて、正しい年月で月次処理を再実行してください。</p>

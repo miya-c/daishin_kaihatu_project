@@ -248,6 +248,31 @@ document.addEventListener('alpine:init', function () {
         var parts = this.undoBackupInfo.executedYearMonth.split('-');
         return parts[0] + '年' + parseInt(parts[1], 10) + '月分';
       },
+
+      getUndoRestoredInspection: function () {
+        if (!this.undoResult) return '';
+        return this.undoResult.restoredInspectionRows
+          ? '検針データ復元: ' + this.undoResult.restoredInspectionRows + '件'
+          : '';
+      },
+
+      getUndoRestoredProperty: function () {
+        if (!this.undoResult) return '';
+        return this.undoResult.restoredPropertyCount
+          ? '物件マスタ復元: ' + this.undoResult.restoredPropertyCount + '件'
+          : '';
+      },
+
+      getUndoDeletedArchive: function () {
+        if (!this.undoResult) return '';
+        return this.undoResult.deletedArchiveRows
+          ? 'アーカイブ削除: ' + this.undoResult.deletedArchiveRows + '件'
+          : '';
+      },
+
+      get hasUndoResultDetails() {
+        return this.undoResult && (this.undoResult.restoredInspectionRows || this.undoResult.restoredPropertyCount || this.undoResult.deletedArchiveRows);
+      },
     };
   });
 });
