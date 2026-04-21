@@ -199,6 +199,12 @@ function adminDispatch(action, params) {
         return migrateMonthlyToYearlySheets();
       }
 
+      case 'getMonthlyBackupInfo':
+        return getMonthlyBackupInfo();
+
+      case 'undoMonthlyProcess':
+        return undoMonthlyProcess();
+
       default:
         return { success: false, error: '不明なアクション: ' + action, code: 'UNKNOWN_ACTION' };
     }

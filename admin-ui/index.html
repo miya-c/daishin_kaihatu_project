@@ -2395,12 +2395,12 @@
                 </div>
 
                 <!-- Monthly Process -->
-                <div x-show="activeTab === 'monthly'" x-data="monthlyProcess">
+                    <div x-show="activeTab === 'monthly'" x-data="monthlyProcess">
                   <div class="box">
                     <div x-show="step === 'idle'">
                       <p class="title is-4">📅 月次処理</p>
                       <p class="mb-4">
-                        先月までの検針データを保存し、今月分の新しいデータを準備します。実行前に確認を行ってください。
+                        指定した月分の検針データを保存し、次月分の新しいデータを準備します。実行前に確認を行ってください。
                       </p>
                       <div class="field mb-4">
                         <label class="label is-small">保存対象月</label>
@@ -2424,11 +2424,29 @@
                             </div>
                           </div>
                         </div>
-                        <p class="help is-size-7">保存する年月を選択してください。未選択時は現在の年月が使用されます。</p>
+                        <div class="notification is-info is-light py-2 px-3 mt-2">
+                          <p class="has-text-weight-bold is-size-5 has-text-centered">
+                            「<span x-text="getMonthlyTargetLabel()"></span>」分として保存します
+                          </p>
+                        </div>
                       </div>
                       <button class="button is-primary" x-on:click="runPreCheck()">
                         実行前に確認する
                       </button>
+
+                      <div x-show="undoStep === 'idle'" class="mt-5 pt-4" style="border-top: 1px solid #dbdbdb" x-init="checkUndoAvailability()">
+                        <template x-if="undoBackupInfo">
+                          <div class="notification is-warning is-light">
+                            <p class="mb-2"><strong>↩️ 月次処理の取り消しが可能です</strong></p>
+                            <p class="is-size-7 mb-2">
+                              「<span x-text="getUndoTargetLabel()"></span>」の月次処理を取り消すことができます（直近1回分のみ）。
+                            </p>
+                            <button class="button is-small is-danger" x-on:click="showUndoConfirm()">
+                              取り消しを実行する
+                            </button>
+                          </div>
+                        </template>
+                      </div>
                     </div>
 
                     <div x-show="step === 'checking'" class="has-text-centered py-5">
@@ -2439,9 +2457,14 @@
                     <div x-show="step === 'confirm'">
                       <!-- Confirmation panel for executing monthly process (Fix 4-1) -->
                       <div x-show="confirmExecute" class="notification is-warning is-light mb-3">
-                        <p class="mb-2"><strong>⚠️ 確認</strong></p>
+                        <p class="mb-2"><strong>⚠️ 最終確認</strong></p>
+                        <div class="notification is-danger is-light py-2 px-3 mb-3">
+                          <p class="has-text-weight-bold is-size-5 has-text-centered">
+                            「<span x-text="getMonthlyTargetLabel()"></span>」分として実行します
+                          </p>
+                        </div>
                         <p class="mb-2">
-                          <span x-text="getMonthlyTargetLabel()"></span>として月次処理を実行します。検針データの値がシフトされ、現在の検針値がクリアされます。この操作は取り消せません。
+                          検針データの値がシフトされ、現在の検針値がクリアされます。
                         </p>
                         <div class="buttons">
                           <button class="button is-danger" x-on:click="runExecute()">
@@ -2551,6 +2574,72 @@
                     <div x-show="step === 'error'" class="notification is-danger" role="alert">
                       <p x-text="error"></p>
                       <button class="button is-small is-light mt-2" x-on:click="reset()">
+                        再試行
+                      </button>
+                    </div>
+
+                    <div x-show="undoStep === 'confirm'">
+                      <div class="notification is-danger is-light mb-3">
+                        <p class="mb-2"><strong>⚠️ 月次処理の取り消し</strong></p>
+                        <div class="notification is-danger py-2 px-3 mb-3">
+                          <p class="has-text-weight-bold is-size-5 has-text-centered">
+                            「<span x-text="getUndoTargetLabel()"></span>」の月次処理を取り消します
+                          </p>
+                        </div>
+                        <p class="mb-2">以下の操作が行われます：</p>
+                        <ul class="is-size-7 mb-3">
+                          <li>・アーカイブシートから該当月のデータを削除</li>
+                          <li>・inspection_data を月次処理前の状態に復元</li>
+                          <li>・物件マスタの検針完了日を復元</li>
+                        </ul>
+                        <div x-show="!undoConfirm" class="buttons">
+                          <button class="button is-danger" x-on:click="confirmUndoExecute()">
+                            取り消しを実行する
+                          </button>
+                          <button class="button is-light" x-on:click="cancelUndo()">
+                            キャンセル
+                          </button>
+                        </div>
+                        <div x-show="undoConfirm" class="notification is-warning is-light">
+                          <p class="mb-2"><strong>最終確認：本当に取り消しますか？</strong></p>
+                          <div class="buttons">
+                            <button class="button is-danger" x-on:click="confirmUndoExecute()">
+                              はい、取り消す
+                            </button>
+                            <button class="button is-light" x-on:click="cancelUndo()">
+                              やめる
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div x-show="undoStep === 'executing'" class="has-text-centered py-5">
+                      <button class="button is-loading is-large is-static"></button>
+                      <p class="mt-3 has-text-grey-light">
+                        取り消し実行中...（30-60秒かかる場合があります）
+                      </p>
+                    </div>
+
+                    <div x-show="undoStep === 'done'">
+                      <p class="title is-4">✅ 月次処理の取り消しが完了しました</p>
+                      <div class="notification is-success is-light mb-3">
+                        <p>「<span x-text="getUndoTargetLabel()"></span>」の月次処理を取り消しました。データは月次処理前の状態に復元されています。</p>
+                      </div>
+                      <div x-show="undoResult" class="content is-size-7 mb-3">
+                        <p x-show="undoResult.restoredInspectionRows" x-text="'検針データ復元: ' + undoResult.restoredInspectionRows + '件'"></p>
+                        <p x-show="undoResult.restoredPropertyCount" x-text="'物件マスタ復元: ' + undoResult.restoredPropertyCount + '件'"></p>
+                        <p x-show="undoResult.deletedArchiveRows" x-text="'アーカイブ削除: ' + undoResult.deletedArchiveRows + '件'"></p>
+                      </div>
+                      <div class="notification is-info is-light mb-3">
+                        <p class="is-size-7">必要に応じて、正しい年月で月次処理を再実行してください。</p>
+                      </div>
+                      <button class="button is-light" x-on:click="resetUndo()">戻る</button>
+                    </div>
+
+                    <div x-show="undoStep === 'error'" class="notification is-danger">
+                      <p x-text="undoError"></p>
+                      <button class="button is-small is-light mt-2" x-on:click="resetUndo()">
                         再試行
                       </button>
                     </div>

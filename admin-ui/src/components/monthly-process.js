@@ -167,6 +167,87 @@ document.addEventListener('alpine:init', function () {
       hasCheckIssues: function () {
         return this.checkResults && this.checkResults.issues && this.checkResults.issues.length > 0;
       },
+
+      undoStep: 'idle',
+      undoBackupInfo: null,
+      undoConfirm: false,
+      undoResult: null,
+      undoError: '',
+
+      checkUndoAvailability: function () {
+        var self = this;
+        callAdminAPI('getMonthlyBackupInfo')
+          .then(function (result) {
+            if (result && result.success && result.exists) {
+              self.undoBackupInfo = result.metadata;
+            } else {
+              self.undoBackupInfo = null;
+            }
+          })
+          .catch(function () {
+            self.undoBackupInfo = null;
+          });
+      },
+
+      showUndoConfirm: function () {
+        if (!this.undoBackupInfo) return;
+        this.undoStep = 'confirm';
+        this.undoConfirm = false;
+        this.undoError = '';
+      },
+
+      cancelUndo: function () {
+        this.undoStep = 'idle';
+        this.undoConfirm = false;
+      },
+
+      confirmUndoExecute: function () {
+        if (!this.undoConfirm) {
+          this.undoConfirm = true;
+          return;
+        }
+        this.runUndo();
+      },
+
+      runUndo: function () {
+        var self = this;
+        self.undoStep = 'executing';
+        self.undoError = '';
+
+        callAdminAPI('undoMonthlyProcess')
+          .then(function (result) {
+            if (result && result.success) {
+              self.undoResult = result.data;
+              self.undoBackupInfo = null;
+              self.undoStep = 'done';
+              self.undoConfirm = false;
+            } else {
+              self.undoError = (result && result.error) || '取り消しに失敗しました';
+              self.undoStep = 'error';
+              self.undoConfirm = false;
+            }
+          })
+          .catch(function (err) {
+            self.undoError = err.message || '取り消しでエラーが発生しました';
+            self.undoStep = 'error';
+            self.undoConfirm = false;
+          });
+      },
+
+      resetUndo: function () {
+        this.undoStep = 'idle';
+        this.undoBackupInfo = null;
+        this.undoResult = null;
+        this.undoError = '';
+        this.undoConfirm = false;
+        this.checkUndoAvailability();
+      },
+
+      getUndoTargetLabel: function () {
+        if (!this.undoBackupInfo || !this.undoBackupInfo.executedYearMonth) return '';
+        var parts = this.undoBackupInfo.executedYearMonth.split('-');
+        return parts[0] + '年' + parseInt(parts[1], 10) + '月分';
+      },
     };
   });
 });

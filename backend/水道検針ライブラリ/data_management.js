@@ -1013,39 +1013,92 @@ function processInspectionDataMonthlyImpl(ss, params) {
     // 🔄 リセット処理を実行
     // ========================================
 
-    // リセット前にバックアップシートを作成
-    let preResetBackupSheetName = null;
+    // リセット前にバックアップシートを作成（固定シート _monthly_backup）
     try {
-      const timestamp = Utilities.formatDate(new Date(), 'JST', 'yyyyMMdd_HHmmss');
-      preResetBackupSheetName = `inspection_data_pre_reset_${timestamp}`;
-      const backupSheet = ss.insertSheet(preResetBackupSheetName);
-      const sourceDataForBackup = sourceSheet.getDataRange().getValues();
-      if (sourceDataForBackup.length > 0) {
-        backupSheet
-          .getRange(1, 1, sourceDataForBackup.length, sourceDataForBackup[0].length)
-          .setValues(sourceDataForBackup);
+      var backupSheetName = '_monthly_backup';
+      var backupSheet = ss.getSheetByName(backupSheetName);
+      if (backupSheet) {
+        backupSheet.clear();
+      } else {
+        backupSheet = ss.insertSheet(backupSheetName);
       }
+
+      var backupRows = [];
+
+      // メタデータ行
+      var metaRow = [
+        '[META]',
+        '実行年月=' + targetYear + '-' + targetMonth,
+        '実行日時=' + new Date().toISOString(),
+      ];
+      backupRows.push(metaRow);
+
+      // 空行
+      backupRows.push([]);
+
+      // inspection_data の全データ（ヘッダー付き）
+      var sourceDataForBackup = sourceSheet.getDataRange().getValues();
+      for (var bdi = 0; bdi < sourceDataForBackup.length; bdi++) {
+        backupRows.push(sourceDataForBackup[bdi].slice());
+      }
+
+      // 空行
+      backupRows.push([]);
+
+      // 物件マスタセクション
+      backupRows.push(['[PROPERTY_MASTER]']);
+
+      var propertyMasterSheetForBackup = ss.getSheetByName(CONFIG.SHEET_NAMES.PROPERTY_MASTER);
+      if (propertyMasterSheetForBackup) {
+        var pmData = propertyMasterSheetForBackup.getDataRange().getValues();
+        if (pmData.length > 0) {
+          var pmHeaders = pmData[0];
+          var pmPropIdIdx = pmHeaders.indexOf('物件ID');
+          var pmCompDateIdx = pmHeaders.indexOf('検針完了日');
+          if (pmPropIdIdx !== -1 && pmCompDateIdx !== -1) {
+            backupRows.push(['物件ID', '検針完了日']);
+            for (var pmri = 1; pmri < pmData.length; pmri++) {
+              backupRows.push([pmData[pmri][pmPropIdIdx], pmData[pmri][pmCompDateIdx]]);
+            }
+          }
+        }
+      }
+
+      // バックアップシートに書き込み（全行の列数を合わせる）
+      var maxCols = 1;
+      for (var bri = 0; bri < backupRows.length; bri++) {
+        if (backupRows[bri].length > maxCols) {
+          maxCols = backupRows[bri].length;
+        }
+      }
+      for (var pri = 0; pri < backupRows.length; pri++) {
+        while (backupRows[pri].length < maxCols) {
+          backupRows[pri].push('');
+        }
+      }
+      backupSheet.getRange(1, 1, backupRows.length, maxCols).setValues(backupRows);
+
       // バックアップ成功確認
-      const verifyData = backupSheet.getDataRange().getValues();
-      if (verifyData.length !== sourceDataForBackup.length) {
+      var verifyData = backupSheet.getDataRange().getValues();
+      if (verifyData.length !== backupRows.length) {
         throw new Error(
-          `バックアップ検証失敗: 期待行数=${sourceDataForBackup.length}, 実際=${verifyData.length}`
+          'バックアップ検証失敗: 期待行数=' +
+            backupRows.length +
+            ', 実際=' +
+            verifyData.length
         );
       }
-      Logger.log(
-        `リセット前バックアップ作成完了: ${preResetBackupSheetName} (${verifyData.length}行)`
-      );
+      Logger.log('リセット前バックアップ作成完了: ' + backupSheetName + ' (' + verifyData.length + '行)');
     } catch (backupError) {
-      Logger.log(`⚠️ リセット前バックアップ作成エラー: ${backupError.message}`);
-      // バックアップ失敗時は処理を中止して安全側に倒す
+      Logger.log('⚠️ リセット前バックアップ作成エラー: ' + backupError.message);
       if (typeof safeAlert === 'function') {
         safeAlert(
           'エラー',
-          `バックアップ作成に失敗したためリセットを中止します: ${backupError.message}`
+          'バックアップ作成に失敗したためリセットを中止します: ' + backupError.message
         );
       }
       releaseLockIfHeld();
-      return { success: false, error: `バックアップ作成失敗: ${backupError.message}` };
+      return { success: false, error: 'バックアップ作成失敗: ' + backupError.message };
     }
 
     // 各列のインデックスを取得
@@ -1131,25 +1184,46 @@ function processInspectionDataMonthlyImpl(ss, params) {
       const error = `リセット処理中にエラーが発生しました: ${resetError.message}`;
       Logger.log(error);
 
-      // ロールバック: バックアップからデータを復元
-      if (preResetBackupSheetName) {
-        try {
-          Logger.log(`リセット前バックアップからロールバックを試行: ${preResetBackupSheetName}`);
-          const backupSheet = ss.getSheetByName(preResetBackupSheetName);
-          if (backupSheet) {
-            const backupData = backupSheet.getDataRange().getValues();
-            if (backupData.length > 0) {
+      // ロールバック: _monthly_backup からデータを復元
+      try {
+        Logger.log('リセット前バックアップからロールバックを試行: _monthly_backup');
+        var rollbackBackupSheet = ss.getSheetByName('_monthly_backup');
+        if (rollbackBackupSheet) {
+          var rollbackAllData = rollbackBackupSheet.getDataRange().getValues();
+          // [META]行 + 空行の後に inspection_data セクションが始まる
+          var inspStartIdx = -1;
+          var inspEndIdx = -1;
+          for (var rli = 0; rli < rollbackAllData.length; rli++) {
+            var rlCell = String(rollbackAllData[rli][0] || '');
+            if (rlCell === '[META]' && inspStartIdx === -1) {
+              inspStartIdx = rli + 2;
+            }
+            if (inspStartIdx !== -1 && inspEndIdx === -1 && rli > inspStartIdx) {
+              var isBlankRow = rollbackAllData[rli].every(function (v) {
+                return !v || String(v).trim() === '';
+              });
+              if (isBlankRow || rlCell === '[PROPERTY_MASTER]') {
+                inspEndIdx = rli;
+              }
+            }
+          }
+          if (inspEndIdx === -1) inspEndIdx = rollbackAllData.length;
+          if (inspStartIdx !== -1 && inspEndIdx > inspStartIdx) {
+            var inspRestoreData = rollbackAllData.slice(inspStartIdx, inspEndIdx);
+            if (inspRestoreData.length > 0) {
               sourceSheet
-                .getRange(1, 1, backupData.length, backupData[0].length)
-                .setValues(backupData);
+                .getRange(1, 1, inspRestoreData.length, inspRestoreData[0].length)
+                .setValues(inspRestoreData);
               Logger.log('✅ ロールバック成功: inspection_dataを復元しました');
             }
           }
-        } catch (rollbackError) {
-          Logger.log(
-            `❌ ロールバック失敗: ${rollbackError.message} — バックアップシート ${preResetBackupSheetName} を手動で確認してください`
-          );
         }
+      } catch (rollbackError) {
+        Logger.log(
+          '❌ ロールバック失敗: ' +
+            rollbackError.message +
+            ' — バックアップシート _monthly_backup を手動で確認してください'
+        );
       }
 
       // リセット処理でエラーが発生してもアーカイブは成功しているので部分的成功として扱う
@@ -1271,6 +1345,20 @@ function processInspectionDataMonthlyImpl(ss, params) {
     }
     if (typeof safeAlert === 'function') {
       safeAlert('完了', message);
+    }
+
+    // 古い inspection_data_pre_reset_* シートを削除
+    try {
+      var allSheets = ss.getSheets();
+      for (var osi = 0; osi < allSheets.length; osi++) {
+        var sheetName = allSheets[osi].getName();
+        if (sheetName.indexOf('inspection_data_pre_reset_') === 0) {
+          Logger.log('古いバックアップシートを削除: ' + sheetName);
+          ss.deleteSheet(allSheets[osi]);
+        }
+      }
+    } catch (cleanupError) {
+      Logger.log('古いバックアップシート削除エラー: ' + cleanupError.message);
     }
 
     // 🔓 ロック解除（成功時）
@@ -4996,4 +5084,220 @@ function _safeInt(val) {
   if (val === '' || val === null || val === undefined) return null;
   var num = parseInt(val, 10);
   return isNaN(num) ? null : num;
+}
+
+function getMonthlyBackupInfo() {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var backupSheet = ss.getSheetByName('_monthly_backup');
+    if (!backupSheet) {
+      return { success: true, exists: false };
+    }
+    var data = backupSheet.getDataRange().getValues();
+    if (data.length === 0) {
+      return { success: true, exists: false };
+    }
+    var metaRow = data[0];
+    var meta = {};
+    for (var i = 0; i < metaRow.length; i++) {
+      var cell = String(metaRow[i] || '');
+      if (cell.indexOf('実行年月=') !== -1) meta.executedYearMonth = cell.split('=')[1];
+      if (cell.indexOf('実行日時=') !== -1) meta.executedAt = cell.split('=')[1];
+    }
+    return { success: true, exists: true, metadata: meta };
+  } catch (error) {
+    return { success: false, error: sanitizeErrorMessage(error) };
+  }
+}
+
+function undoMonthlyProcess() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  if (!ss) {
+    return { success: false, error: 'スプレッドシートが見つかりません' };
+  }
+
+  var lockAcquired = false;
+  function releaseLockIfHeld() {
+    if (!lockAcquired) return;
+    try {
+      MonthlyProcessLock.releaseLock();
+    } catch (lockError) {
+      Logger.log('ロック解除エラー: ' + lockError.message);
+    } finally {
+      lockAcquired = false;
+    }
+  }
+
+  try {
+    var backupSheet = ss.getSheetByName('_monthly_backup');
+    if (!backupSheet) {
+      return { success: false, error: 'バックアップシート(_monthly_backup)が見つかりません。取り消し対象がありません。' };
+    }
+
+    var allBackupData = backupSheet.getDataRange().getValues();
+    if (allBackupData.length === 0) {
+      return { success: false, error: 'バックアップシートが空です。' };
+    }
+
+    var metaRow = allBackupData[0];
+    var executedYearMonth = '';
+    for (var mi = 0; mi < metaRow.length; mi++) {
+      var metaCell = String(metaRow[mi] || '');
+      if (metaCell.indexOf('実行年月=') !== -1) {
+        executedYearMonth = metaCell.split('=')[1];
+      }
+    }
+    if (!executedYearMonth) {
+      return { success: false, error: 'バックアップのメタデータに実行年月が見つかりません。' };
+    }
+
+    var yearMonthParts = executedYearMonth.split('-');
+    var targetYear = yearMonthParts[0];
+    var targetMonth = yearMonthParts[1];
+
+    if (!MonthlyProcessLock.acquireLock()) {
+      return { success: false, error: 'システムロックの取得に失敗しました。しばらく待ってから再実行してください。' };
+    }
+    lockAcquired = true;
+
+    var inspDataStart = -1;
+    var inspDataEnd = -1;
+    var propMasterStart = -1;
+
+    for (var bi = 0; bi < allBackupData.length; bi++) {
+      var cellVal = String(allBackupData[bi][0] || '');
+      if (cellVal === '[META]' && inspDataStart === -1) {
+        inspDataStart = bi + 2;
+      }
+      if (inspDataStart !== -1 && inspDataEnd === -1 && bi > inspDataStart) {
+        var isBlankRow = allBackupData[bi].every(function (v) {
+          return !v || String(v).trim() === '';
+        });
+        if (isBlankRow || cellVal === '[PROPERTY_MASTER]') {
+          inspDataEnd = bi;
+        }
+      }
+      if (cellVal === '[PROPERTY_MASTER]') {
+        propMasterStart = bi + 1;
+      }
+    }
+    if (inspDataEnd === -1) inspDataEnd = allBackupData.length;
+
+    // Delete month rows from archive sheet
+    var archiveSheetName = '検針データ_' + targetYear + '年';
+    var archiveSheet = ss.getSheetByName(archiveSheetName);
+    var deletedArchiveRows = 0;
+
+    if (archiveSheet) {
+      var archiveData = archiveSheet.getDataRange().getValues();
+      var archiveHeaders = archiveData[0];
+      var monthColIdx = archiveHeaders.indexOf('月');
+
+      if (monthColIdx !== -1) {
+        var rowsToKeep = [archiveHeaders];
+        for (var ai = 1; ai < archiveData.length; ai++) {
+          if (parseInt(archiveData[ai][monthColIdx]) !== parseInt(targetMonth)) {
+            rowsToKeep.push(archiveData[ai]);
+          } else {
+            deletedArchiveRows++;
+          }
+        }
+
+        if (rowsToKeep.length <= 1) {
+          ss.deleteSheet(archiveSheet);
+          Logger.log('アーカイブシート削除: ' + archiveSheetName + ' (データなし)');
+        } else {
+          archiveSheet.clear();
+          var archiveMaxCols = archiveHeaders.length;
+          for (var ari = 0; ari < rowsToKeep.length; ari++) {
+            while (rowsToKeep[ari].length < archiveMaxCols) {
+              rowsToKeep[ari].push('');
+            }
+          }
+          archiveSheet.getRange(1, 1, rowsToKeep.length, archiveMaxCols).setValues(rowsToKeep);
+          var archiveHeaderRange = archiveSheet.getRange(1, 1, 1, archiveMaxCols);
+          archiveHeaderRange.setFontWeight('bold').setBackground('#f0f0f0').setHorizontalAlignment('center');
+          Logger.log('アーカイブシート更新: ' + archiveSheetName + ' (' + deletedArchiveRows + '行削除)');
+        }
+      }
+    }
+
+    // Restore inspection_data
+    var inspectionSheet = ss.getSheetByName('inspection_data');
+    var restoredInspectionRows = 0;
+
+    if (inspectionSheet && inspDataStart !== -1 && inspDataEnd > inspDataStart) {
+      var inspRestoreData = allBackupData.slice(inspDataStart, inspDataEnd);
+      if (inspRestoreData.length > 0) {
+        var inspMaxCols = inspRestoreData[0].length;
+        for (var iri = 0; iri < inspRestoreData.length; iri++) {
+          while (inspRestoreData[iri].length < inspMaxCols) {
+            inspRestoreData[iri].push('');
+          }
+        }
+        inspectionSheet.clear();
+        inspectionSheet.getRange(1, 1, inspRestoreData.length, inspMaxCols).setValues(inspRestoreData);
+        restoredInspectionRows = inspRestoreData.length - 1;
+        Logger.log('inspection_data復元完了: ' + restoredInspectionRows + '行');
+      }
+    }
+
+    // Restore property master completion dates
+    var restoredPropertyCount = 0;
+
+    if (propMasterStart !== -1) {
+      var propMasterSheet = ss.getSheetByName(CONFIG.SHEET_NAMES.PROPERTY_MASTER);
+      if (propMasterSheet) {
+        var pmBackupHeaders = allBackupData[propMasterStart];
+        var pmBackupDataStart = propMasterStart + 1;
+        var pmBackupPropIdIdx = 0;
+        var pmBackupCompDateIdx = 1;
+
+        var pmCurrentData = propMasterSheet.getDataRange().getValues();
+        var pmCurrentHeaders = pmCurrentData[0];
+        var pmCurrentPropIdIdx = pmCurrentHeaders.indexOf('物件ID');
+        var pmCurrentCompDateIdx = pmCurrentHeaders.indexOf('検針完了日');
+
+        if (pmCurrentPropIdIdx !== -1 && pmCurrentCompDateIdx !== -1) {
+          var pmLookup = {};
+          for (var pmi = pmBackupDataStart; pmi < allBackupData.length; pmi++) {
+            var pmId = String(allBackupData[pmi][pmBackupPropIdIdx] || '').trim();
+            var pmDate = allBackupData[pmi][pmBackupCompDateIdx];
+            if (pmId) {
+              pmLookup[pmId] = pmDate;
+            }
+          }
+
+          for (var pmci = 1; pmci < pmCurrentData.length; pmci++) {
+            var currentId = String(pmCurrentData[pmci][pmCurrentPropIdIdx]).trim();
+            if (pmLookup.hasOwnProperty(currentId)) {
+              propMasterSheet.getRange(pmci + 1, pmCurrentCompDateIdx + 1).setValue(pmLookup[currentId]);
+              restoredPropertyCount++;
+            }
+          }
+          Logger.log('物件マスタ検針完了日復元完了: ' + restoredPropertyCount + '件');
+        }
+      }
+    }
+
+    // Delete backup sheet
+    ss.deleteSheet(backupSheet);
+    Logger.log('_monthly_backup シート削除完了');
+
+    releaseLockIfHeld();
+
+    return {
+      success: true,
+      data: {
+        executedYearMonth: executedYearMonth,
+        archiveSheetName: archiveSheetName,
+        deletedArchiveRows: deletedArchiveRows,
+        restoredInspectionRows: restoredInspectionRows,
+        restoredPropertyCount: restoredPropertyCount,
+      },
+    };
+  } catch (error) {
+    releaseLockIfHeld();
+    return { success: false, error: sanitizeErrorMessage(error) };
+  }
 }
