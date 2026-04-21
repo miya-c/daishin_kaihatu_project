@@ -48,6 +48,8 @@
   let showToast: boolean = $state(false);
   let toastTimerRef: ReturnType<typeof setTimeout> | null = null;
   let showExitModal: boolean = $state(false);
+  let exitStarted: boolean = $state(false);
+  let exitCountdown: number = $state(5);
   let sortAsc: boolean = $state(true);
 
   let sortedRooms = $derived(sortAsc ? rooms : [...rooms].reverse());
@@ -203,9 +205,17 @@
   }
 
   function handleExitYes(): void {
-    window.close();
-    document.body.innerHTML =
-      '<div style="display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;color:#333;font-size:1.125rem;">検針が完了しました。このタブを閉じてください。</div>';
+    exitStarted = true;
+    exitCountdown = 5;
+    const tick = () => {
+      exitCountdown--;
+      if (exitCountdown <= 0) {
+        window.location.href = '/property/';
+        return;
+      }
+      setTimeout(tick, 1000);
+    };
+    setTimeout(tick, 1000);
   }
 
   function handleExitNo(): void {
@@ -579,27 +589,35 @@
           <p
             style="margin: 0 0 20px 0; font-size: 1rem; color: rgba(255,255,255,0.85); white-space: nowrap;"
           >
-            アプリを終了しますか？
+            {exitStarted ? '検針が完了しました' : 'アプリを終了しますか？'}
           </p>
-          <p
-            style="margin: 0 0 20px 0; font-size: 0.875rem; color: rgba(255,255,255,0.55); white-space: nowrap;"
-          >
-            「いいえ」で物件選択画面へ戻ります
-          </p>
-          <div style="display: flex; gap: 12px; justify-content: center;">
-            <button
-              onclick={handleExitYes}
-              style="flex: 1; padding: 10px 16px; border-radius: 8px; border: 2px solid #fff; background-color: #fff; color: var(--mui-palette-primary-main, #1976d2); cursor: pointer; font-weight: 600; font-size: 1.125rem;"
+          {#if !exitStarted}
+            <p
+              style="margin: 0 0 20px 0; font-size: 0.875rem; color: rgba(255,255,255,0.55); white-space: nowrap;"
             >
-              はい
-            </button>
-            <button
-              onclick={handleExitNo}
-              style="flex: 1; padding: 10px 16px; border-radius: 8px; border: 2px solid rgba(255,255,255,0.5); background-color: transparent; color: #fff; cursor: pointer; font-size: 1.125rem;"
+              「いいえ」で物件選択画面へ戻ります
+            </p>
+            <div style="display: flex; gap: 12px; justify-content: center;">
+              <button
+                onclick={handleExitYes}
+                style="flex: 1; padding: 10px 16px; border-radius: 8px; border: 2px solid #fff; background-color: #fff; color: var(--mui-palette-primary-main, #1976d2); cursor: pointer; font-weight: 600; font-size: 1.125rem;"
+              >
+                はい
+              </button>
+              <button
+                onclick={handleExitNo}
+                style="flex: 1; padding: 10px 16px; border-radius: 8px; border: 2px solid rgba(255,255,255,0.5); background-color: transparent; color: #fff; cursor: pointer; font-size: 1.125rem;"
+              >
+                いいえ
+              </button>
+            </div>
+          {:else}
+            <p
+              style="margin: 0 0 20px 0; font-size: 0.875rem; color: rgba(255,255,255,0.55); white-space: nowrap;"
             >
-              いいえ
-            </button>
-          </div>
+              {exitCountdown}秒後にトップページへ戻ります
+            </p>
+          {/if}
         </div>
       </div>
     {/if}
