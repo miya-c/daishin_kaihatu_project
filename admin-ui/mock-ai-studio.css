@@ -1,0 +1,746 @@
+<style>
+  /* ── Design System: Bulma lightness variables & Custom Properties ── */
+
+  /* ── Light Mode ── */
+  :root,
+  [data-theme='light'] {
+    --bulma-scheme-h: 220;
+    --bulma-scheme-s: 14%;
+    --bulma-scheme-main-l: 97%;
+    --bulma-scheme-main-bis-l: 98%;
+    --bulma-scheme-main-ter-l: 96%;
+    --bulma-scheme-invert-l: 8%;
+    --bulma-scheme-invert-bis-l: 12%;
+    --bulma-scheme-invert-ter-l: 20%;
+    --bulma-background-l: 96%;
+    --bulma-border-l: 90%;
+    --bulma-border-weak-l: 93%;
+    --bulma-text-l: 12%;
+    --bulma-text-weak-l: 42%;
+    --bulma-text-strong-l: 12%;
+    --bulma-text-title-l: 12%;
+    --bulma-soft-l: 90%;
+    --bulma-bold-l: 20%;
+    --bulma-soft-invert-l: 20%;
+    --bulma-bold-invert-l: 90%;
+    --bulma-primary-h: 217;
+    --bulma-primary-s: 91%;
+    --bulma-primary-l: 60%;
+    --bulma-primary-invert-l: 100%;
+    --bulma-link-h: 217;
+    --bulma-link-s: 91%;
+    --bulma-link-l: 60%;
+    --bulma-link-invert-l: 100%;
+    
+    /* 共通UI・カスタムカラー定義 */
+    --bulma-box-background-color: #ffffff;
+    --bulma-box-radius: 8px; /* 角丸を8pxで完全統一 */
+    --val-normal-color: #1a6db5;
+    --val-abnormal-color: #e74c3c;
+  }
+
+  /* ── Dark Mode ── */
+  [data-theme='dark'] {
+    --bulma-scheme-main-l: 2%;
+    --bulma-scheme-main-bis-l: 7%;
+    --bulma-scheme-main-ter-l: 8%;
+    --bulma-scheme-invert-l: 98%;
+    --bulma-scheme-invert-bis-l: 94%;
+    --bulma-scheme-invert-ter-l: 88%;
+    --bulma-background-l: 5%;
+    --bulma-border-l: 15%;
+    --bulma-border-weak-l: 15%;
+    --bulma-text-l: 98%;
+    --bulma-text-weak-l: 64%;
+    --bulma-text-strong-l: 98%;
+    --bulma-text-title-l: 98%;
+    --bulma-soft-l: 12%;
+    --bulma-bold-l: 90%;
+    --bulma-soft-invert-l: 90%;
+    --bulma-bold-invert-l: 12%;
+    --bulma-primary-invert-l: 100%;
+    --bulma-link-invert-l: 100%;
+
+    /* Color component overrides */
+    --bulma-light-l: 15%;
+    --bulma-light-invert-l: 100%;
+    --bulma-success-l: 30%;
+    --bulma-success-invert-l: 100%;
+    --bulma-danger-l: 35%;
+    --bulma-danger-invert-l: 100%;
+    --bulma-warning-l: 35%;
+    --bulma-warning-invert-l: 100%;
+    --bulma-info-l: 35%;
+    --bulma-info-invert-l: 100%;
+    --bulma-primary-l: 35%;
+    --bulma-link-l: 35%;
+    
+    /* 共通UI・カスタムカラー定義 (ダークモード調整済) */
+    --bulma-box-background-color: #141414;
+    --val-normal-color: #4da3ff; /* コントラスト比改善 */
+    --val-abnormal-color: #ff6b6b;
+  }
+
+  /* OS設定連動 (必要な場合のみ有効化) */
+  @media (prefers-color-scheme: dark) {
+    /* JSでのトグル機能を優先するため、今回は data-theme 属性による制御を基本とします */
+  }
+
+  /* ── Dark Mode: Force button/tag text to white ── */
+  /* Bulma v1 computes button text as hsl(color-h, color-s, invert-l).
+     With colored hue+sat, invert-l:100% still produces a tint, not white.
+     Override --bulma-button-color-l / --bulma-tag-color-l directly. */
+  [data-theme='dark'] .button.is-success,
+  [data-theme='dark'] .button.is-warning,
+  [data-theme='dark'] .button.is-danger,
+  [data-theme='dark'] .button.is-info,
+  [data-theme='dark'] .button.is-primary { --bulma-button-color-l: 100%; }
+
+  [data-theme='dark'] .tag.is-success,
+  [data-theme='dark'] .tag.is-warning,
+  [data-theme='dark'] .tag.is-danger,
+  [data-theme='dark'] .tag.is-info,
+  [data-theme='dark'] .tag.is-primary { --bulma-tag-color-l: 100%; }
+
+  /* ── Layout ── */
+  body {
+    background-color: var(--bulma-scheme-main);
+    color: var(--bulma-text);
+  }
+  .sidebar {
+    min-height: 100vh;
+    background: var(--bulma-box-background-color);
+    padding: 1rem;
+    border-right: 1px solid var(--bulma-border);
+  }
+  .sidebar-menu {
+    padding-top: 1rem;
+  }
+  .sidebar-menu .menu-label {
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+  }
+  .sidebar-menu .menu-list a {
+    padding: 0.5em 0.75em;
+    border-radius: var(--bulma-box-radius);
+    transition: background 0.2s, color 0.2s;
+  }
+  .sidebar-menu .menu-list a.is-active {
+    background: var(--bulma-primary);
+    color: var(--bulma-primary-invert);
+  }
+  .sidebar-menu .menu-list a:hover:not(.is-active) {
+    background: var(--bulma-scheme-main-ter);
+  }
+  .main-content {
+    padding: 2rem;
+  }
+  .admin-header {
+    background: var(--bulma-primary);
+    color: var(--bulma-primary-invert);
+    padding: 0.75rem 1.5rem;
+  }
+  .admin-header .navbar-item {
+    color: var(--bulma-primary-invert);
+  }
+  
+  /* ── Common Components ── */
+  .box {
+    border: 1px solid var(--bulma-border-weak);
+    border-radius: var(--bulma-box-radius);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); /* モダンなソフトシャドウ */
+  }
+  [data-theme='dark'] .box {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+  }
+  .input {
+    border-color: var(--bulma-border);
+    border-radius: var(--bulma-box-radius);
+  }
+  .input:focus {
+    border-color: var(--bulma-primary);
+    box-shadow: 0 0 0 0.125em rgba(var(--bulma-primary-h), var(--bulma-primary-s), var(--bulma-primary-l), 0.25);
+  }
+
+  /* ── Theme Toggle ── */
+  .theme-toggle-btn {
+    background: transparent;
+    border: 1px solid var(--bulma-border);
+    border-radius: var(--bulma-box-radius);
+    padding: 0.3rem 0.6rem;
+    cursor: pointer;
+    font-size: 1.1rem;
+    line-height: 1;
+    color: var(--bulma-text);
+    transition: background 0.2s, border-color 0.2s;
+  }
+  .theme-toggle-btn:hover {
+    background: var(--bulma-scheme-main-bis);
+  }
+
+  /* ── Toast Notifications (Modern Flat Design) ── */
+  .toast-container {
+    position: fixed;
+    top: 1.5rem;
+    right: 1.5rem;
+    z-index: 9999;
+    max-width: 400px;
+  }
+  .toast-item {
+    padding: 1rem 1.25rem;
+    margin-bottom: 0.75rem;
+    border-radius: var(--bulma-box-radius);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    background-color: var(--bulma-box-background-color);
+    color: var(--bulma-text-strong);
+    border: none;
+    border-left: 4px solid transparent;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    animation: toast-in 0.3s ease-out;
+  }
+  [data-theme='dark'] .toast-item {
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+  }
+  /* Bulmaセマンティックカラーの継承 */
+  .toast-item.is-success { border-left-color: var(--bulma-success); }
+  .toast-item.is-warning { border-left-color: var(--bulma-warning); }
+  .toast-item.is-error   { border-left-color: var(--bulma-danger);  }
+  .toast-item.is-info    { border-left-color: var(--bulma-info);    }
+
+  .toast-dismiss {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.25rem;
+    margin-left: 1rem;
+    color: inherit;
+    opacity: 0.5;
+    padding: 0;
+    line-height: 1;
+    transition: opacity 0.2s;
+  }
+  .toast-dismiss:hover {
+    opacity: 1;
+  }
+  @keyframes toast-in {
+    from { opacity: 0; transform: translateX(100%); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  /* ── Inspection Data Display / Summary ── */
+  .summary-bar {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap; /* 溢れ防止 */
+  }
+  .summary-card {
+    background: var(--bulma-box-background-color);
+    border-radius: var(--bulma-box-radius);
+    padding: 1rem 1.5rem;
+    border: 1px solid var(--bulma-border-weak);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    flex: 1;
+    min-width: 200px; /* wrap時に潰れないよう設定 */
+    display: flex;
+    flex-direction: column; /* 視覚的階層の強化 */
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+  [data-theme='dark'] .summary-card {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+  }
+  .summary-card .lbl {
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--bulma-text-weak);
+  }
+  .summary-card .num {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--bulma-text-strong);
+  }
+
+  /* ── View Toggle / Tabs ── */
+  .view-toggle {
+    display: flex;
+    gap: 0;
+    margin-bottom: 1rem;
+  }
+  .view-toggle .toggle-btn {
+    background: var(--bulma-box-background-color);
+    border: 1px solid var(--bulma-border);
+    padding: 0.5rem 1.25rem;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: var(--bulma-text-weak);
+  }
+  .view-toggle .toggle-btn:first-child {
+    border-radius: var(--bulma-box-radius) 0 0 var(--bulma-box-radius);
+  }
+  .view-toggle .toggle-btn:last-child {
+    border-radius: 0 var(--bulma-box-radius) var(--bulma-box-radius) 0;
+    border-left: none;
+  }
+  .view-toggle .toggle-btn.active {
+    background: var(--bulma-primary);
+    color: var(--bulma-primary-invert);
+    border-color: var(--bulma-primary);
+    font-weight: 600;
+  }
+  .view-toggle .toggle-btn:hover:not(.active) {
+    background: var(--bulma-scheme-main-ter);
+  }
+
+  /* ── Tables ── */
+  .stripe-even {
+    background: var(--bulma-scheme-main-bis);
+  }
+  .table:not(.inspection-table):not(.bulk-table) tbody tr:nth-child(even) {
+    background: var(--bulma-scheme-main-bis);
+  }
+  
+  /* !important排除とホバー洗練 */
+  .table.inspection-table tbody tr.room-row:hover,
+  .table.bulk-table tbody tr:hover {
+    background-color: var(--bulma-scheme-main-ter);
+  }
+  
+  .sort-th {
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+    padding-right: 1.5rem;
+    transition: color 0.2s;
+  }
+  .sort-th:hover {
+    color: var(--bulma-primary);
+  }
+  .sort-icon {
+    position: absolute;
+    right: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.65rem;
+    color: var(--bulma-text-weak);
+    line-height: 1;
+  }
+  .sort-icon.asc::after { content: '▲'; color: var(--bulma-primary); }
+  .sort-icon.desc::after { content: '▼'; color: var(--bulma-primary); }
+  .sort-icon.neutral::after { content: '▲'; }
+
+  .room-row {
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+  }
+  .inspection-expand {
+    background: var(--bulma-scheme-main-bis);
+    border-left: 3px solid var(--bulma-border);
+  }
+  .inspection-expand.warn-border {
+    border-left-color: var(--bulma-danger);
+  }
+  .inspection-expand td {
+    padding: 0.75rem 1rem;
+  }
+
+  /* Data Table Detail */
+  .detail-table {
+    font-size: 0.85rem;
+    margin-bottom: 0.5rem;
+    width: 100%;
+    table-layout: fixed;
+  }
+  .detail-table th,
+  .detail-table td {
+    white-space: nowrap;
+  }
+  .detail-table th {
+    font-size: 0.75rem;
+    color: var(--bulma-text-weak);
+    padding: 0.4rem 0.75rem;
+    border-bottom: 1px solid var(--bulma-border);
+  }
+  .detail-table td {
+    padding: 0.4rem 0.75rem;
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+
+  .highlight-col {
+    background: var(--bulma-scheme-main-bis);
+  }
+  .chevron {
+    display: inline-block;
+    transition: transform 0.2s ease;
+    font-size: 0.85rem;
+    color: var(--bulma-text-weak);
+  }
+  .chevron.open {
+    transform: rotate(90deg);
+  }
+
+  /* Usage Bar */
+  .usage-section {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--bulma-border);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  .usage-label {
+    font-size: 0.75rem;
+    color: var(--bulma-text-weak);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .usage-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    white-space: nowrap;
+  }
+  .usage-bar-fixed {
+    display: inline-block;
+    height: 8px;
+    border-radius: 4px;
+    background: var(--bulma-primary);
+    width: 36px;
+    flex-shrink: 0;
+  }
+  .usage-bar-fixed.prev {
+    background: var(--bulma-border);
+  }
+  .usage-bar-fixed.warn {
+    background: var(--bulma-danger);
+  }
+
+  /* Tags */
+  .tag-skip {
+    background-color: var(--bulma-warning-light);
+    color: var(--bulma-warning-dark);
+    border-radius: var(--bulma-box-radius);
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+  }
+  [data-theme='dark'] .tag-skip {
+    background-color: rgba(255, 224, 71, 0.15);
+    color: #fde047;
+  }
+
+  /* Bulk Table */
+  .table.bulk-table th,
+  .table.bulk-table td {
+    text-align: center;
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+  .table.bulk-table td:first-child {
+    text-align: center;
+  }
+  .table.bulk-table td.usage-trend {
+    text-align: left;
+  }
+  .table.bulk-table .warn-row {
+    background: var(--bulma-danger-light);
+  }
+  [data-theme='dark'] .table.bulk-table .warn-row {
+    background: rgba(255, 107, 107, 0.1);
+    border-left: 3px solid var(--bulma-danger);
+  }
+
+  /* Inspection Table */
+  .table.inspection-table th,
+  .table.inspection-table td {
+    text-align: center;
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+
+  /* ── Modals & Preview ── */
+  .format-tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 0.75rem;
+  }
+  .format-tab {
+    padding: 0.4rem 1rem;
+    font-size: 0.8rem;
+    border: 1px solid var(--bulma-border);
+    background: var(--bulma-scheme-main-bis);
+    color: var(--bulma-text-weak);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .format-tab:first-child {
+    border-radius: var(--bulma-box-radius) 0 0 var(--bulma-box-radius);
+  }
+  .format-tab:last-child {
+    border-radius: 0 var(--bulma-box-radius) var(--bulma-box-radius) 0;
+  }
+  .format-tab.active {
+    background: var(--bulma-primary);
+    color: var(--bulma-primary-invert);
+    border-color: var(--bulma-primary);
+    font-weight: 600;
+  }
+  .preview-list {
+    max-height: 250px;
+    overflow-y: auto;
+    border: 1px solid var(--bulma-border);
+    border-radius: var(--bulma-box-radius);
+    background: var(--bulma-box-background-color);
+  }
+  .preview-header {
+    display: flex;
+    align-items: center;
+    padding: 0.6rem 1rem;
+    background: var(--bulma-scheme-main-ter);
+    border-bottom: 1px solid var(--bulma-border);
+    font-size: 0.8rem;
+    color: var(--bulma-text-weak);
+    font-weight: 600;
+  }
+  .preview-item {
+    display: flex;
+    align-items: center;
+    padding: 0.6rem 1rem;
+    border-bottom: 1px solid var(--bulma-border);
+    font-size: 0.9rem;
+  }
+  .preview-item:last-child {
+    border-bottom: none;
+  }
+  .preview-num {
+    color: var(--bulma-text-weak);
+    width: 2.5rem;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+  }
+  .preview-name {
+    flex: 1;
+    font-weight: 500;
+  }
+  .preview-id {
+    color: var(--bulma-text-weak);
+    font-size: 0.8rem;
+    flex-shrink: 0;
+    min-width: 5rem;
+    text-align: right;
+  }
+  .count-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bulma-primary);
+    color: var(--bulma-primary-invert);
+    border-radius: 12px;
+    padding: 0.15rem 0.6rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+  .preview-error {
+    color: var(--bulma-danger);
+    font-size: 0.85rem;
+  }
+  .format-hint {
+    font-size: 0.75rem;
+    color: var(--bulma-text-weak);
+    margin-top: 0.5rem;
+    padding-left: 0.25rem;
+  }
+
+  /* ── Toggles / Switches ── */
+  .edit-section-title {
+    font-size: 0.75rem;
+    color: var(--bulma-text-weak);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--bulma-border);
+  }
+  .edit-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .edit-toggle label {
+    margin-bottom: 0;
+    cursor: pointer;
+  }
+  .switch {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+  }
+  .switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+  .switch .slider {
+    position: absolute;
+    inset: 0;
+    background: var(--bulma-border);
+    border-radius: 24px;
+    cursor: pointer;
+    transition: 0.3s;
+  }
+  .switch .slider::before {
+    content: '';
+    position: absolute;
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background: white;
+    border-radius: 50%;
+    transition: 0.3s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+  .switch input:checked + .slider {
+    background: var(--bulma-primary);
+  }
+  .switch input:checked + .slider::before {
+    transform: translateX(20px);
+  }
+
+  /* ── Overlays & Scrolls ── */
+  .content-scroll {
+    overflow-x: auto;
+    border-radius: var(--bulma-box-radius);
+    max-width: 100%;
+    border: 1px solid var(--bulma-border);
+  }
+  .loading-overlay {
+    position: relative;
+    min-height: 200px;
+  }
+  .loading-overlay::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.75);
+    z-index: 10;
+    backdrop-filter: blur(2px);
+    border-radius: var(--bulma-box-radius);
+  }
+  .loading-overlay-content {
+    position: absolute;
+    inset: 0;
+    z-index: 11;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }[data-theme='dark'] .loading-overlay::before {
+    background: rgba(20, 20, 20, 0.75);
+  }
+
+  /* ── Annual Report Table ── */
+  /* テキストの切り捨て(ellipsis)を廃止し、横スクロールを優先 */
+  .table.annual-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+  }
+  .table.annual-table th,
+  .table.annual-table td {
+    border: 1px solid var(--bulma-border);
+    padding: 0.5rem 0.75rem;
+    text-align: center;
+    white-space: nowrap;
+  }
+  .table.annual-table thead th {
+    background: var(--bulma-scheme-main-ter);
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    border-bottom: 2px solid var(--bulma-border);
+  }
+  .annual-report-container .legend {
+    display: flex;
+    gap: 1.5rem;
+    font-size: 0.8rem;
+    color: var(--bulma-text-weak);
+    margin-bottom: 1rem;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .legend-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    display: inline-block;
+  }
+  /* Report cell colors (Variable driven) */
+  .val-normal { color: var(--val-normal-color); font-weight: 500; }
+  .val-abnormal { color: var(--val-abnormal-color); font-weight: 700; }
+  .val-zero { color: var(--bulma-text-weak); }
+  .cell-zero { background: var(--bulma-scheme-main-bis); }
+
+  /* ── Accessibility ── */
+  a:focus-visible,
+  button:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible,
+  .theme-toggle-btn:focus-visible,
+  .toggle-btn:focus-visible,
+  .sort-th:focus-visible,
+  .format-tab:focus-visible {
+    outline: 2px solid var(--bulma-primary);
+    outline-offset: 2px;
+  }
+
+  /* ── Print Styles ── */
+  .print-header { display: none; }
+  @media print {
+    :root {
+      /* 印刷時はダークモード設定を強制的にライトモード相当にリセット */
+      --bulma-scheme-main-l: 100% !important;
+      --bulma-box-background-color: #ffffff !important;
+      --bulma-text-l: 12% !important;
+      --bulma-text-weak-l: 42% !important;
+      --bulma-border: #dbdbdb !important;
+    }
+    body { background-color: #fff !important; color: #000 !important; }
+    * { color: #000 !important; text-shadow: none !important; box-shadow: none !important; }
+    .no-print { display: none !important; }
+    .print-header { display: block !important; margin-bottom: 1.5rem; }
+    
+    .content-scroll { 
+      overflow: visible !important; 
+      max-width: none !important; 
+      border: none !important; 
+    }
+    .table.annual-table { 
+      font-size: 0.7rem; 
+      table-layout: auto; 
+      width: 100%; 
+    }
+    .table.annual-table colgroup { display: none; }
+    
+    /* 改ページ制御 */
+    .table.annual-table tr, 
+    .summary-card { 
+      page-break-inside: avoid; 
+      break-inside: avoid; 
+    }
+    
+    @page { size: landscape; margin: 15mm; }
+  }
+</style>

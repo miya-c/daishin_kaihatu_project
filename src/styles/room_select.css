@@ -600,6 +600,8 @@ body.loading {
 .room-reading-segment.room-usage {
   color: #1565c0;
   font-weight: 600;
+  width: auto;
+  min-width: 2em;
 }
 
 /* Ripple Effect (Material UI風) */

@@ -1,0 +1,2112 @@
+<!doctype html>
+<html lang="ja" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AI Studio CSS — Visual Design Test</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1/css/bulma.min.css" />
+    <style>
+      /* ── Design System: Bulma lightness variables & Custom Properties ── */
+
+      /* ── Light Mode ── */
+      :root,
+      [data-theme='light'] {
+        --bulma-scheme-h: 220;
+        --bulma-scheme-s: 14%;
+        --bulma-scheme-main-l: 97%;
+        --bulma-scheme-main-bis-l: 98%;
+        --bulma-scheme-main-ter-l: 96%;
+        --bulma-scheme-invert-l: 8%;
+        --bulma-scheme-invert-bis-l: 12%;
+        --bulma-scheme-invert-ter-l: 20%;
+        --bulma-background-l: 96%;
+        --bulma-border-l: 90%;
+        --bulma-border-weak-l: 93%;
+        --bulma-text-l: 12%;
+        --bulma-text-weak-l: 42%;
+        --bulma-text-strong-l: 12%;
+        --bulma-text-title-l: 12%;
+        --bulma-soft-l: 90%;
+        --bulma-bold-l: 20%;
+        --bulma-soft-invert-l: 20%;
+        --bulma-bold-invert-l: 90%;
+        --bulma-primary-h: 217;
+        --bulma-primary-s: 91%;
+        --bulma-primary-l: 60%;
+        --bulma-primary-invert-l: 100%;
+        --bulma-link-h: 217;
+        --bulma-link-s: 91%;
+        --bulma-link-l: 60%;
+        --bulma-link-invert-l: 100%;
+
+        /* 共通UI・カスタムカラー定義 */
+        --bulma-box-background-color: #ffffff;
+        --bulma-box-radius: 8px; /* 角丸を8pxで完全統一 */
+        --val-normal-color: #1a6db5;
+        --val-abnormal-color: #e74c3c;
+      }
+
+      /* ── Dark Mode ── */
+      [data-theme='dark'] {
+        --bulma-scheme-main-l: 2%;
+        --bulma-scheme-main-bis-l: 7%;
+        --bulma-scheme-main-ter-l: 8%;
+        --bulma-scheme-invert-l: 98%;
+        --bulma-scheme-invert-bis-l: 94%;
+        --bulma-scheme-invert-ter-l: 88%;
+        --bulma-background-l: 5%;
+        --bulma-border-l: 15%;
+        --bulma-border-weak-l: 15%;
+        --bulma-text-l: 98%;
+        --bulma-text-weak-l: 64%;
+        --bulma-text-strong-l: 98%;
+        --bulma-text-title-l: 98%;
+        --bulma-soft-l: 12%;
+        --bulma-bold-l: 90%;
+        --bulma-soft-invert-l: 90%;
+        --bulma-bold-invert-l: 12%;
+        --bulma-primary-invert-l: 100%;
+        --bulma-link-invert-l: 100%;
+
+        /* Color component overrides */
+        --bulma-light-l: 15%;
+        --bulma-light-invert-l: 100%;
+        --bulma-success-l: 30%;
+        --bulma-success-invert-l: 100%;
+        --bulma-danger-l: 35%;
+        --bulma-danger-invert-l: 100%;
+        --bulma-warning-l: 35%;
+        --bulma-warning-invert-l: 100%;
+        --bulma-info-l: 35%;
+        --bulma-info-invert-l: 100%;
+        --bulma-primary-l: 35%;
+        --bulma-link-l: 35%;
+
+        /* 共通UI・カスタムカラー定義 (ダークモード調整済) */
+        --bulma-box-background-color: #141414;
+        --val-normal-color: #4da3ff; /* コントラスト比改善 */
+        --val-abnormal-color: #ff6b6b;
+      }
+
+      /* OS設定連動 (必要な場合のみ有効化) */
+      @media (prefers-color-scheme: dark) {
+        /* JSでのトグル機能を優先するため、今回は data-theme 属性による制御を基本とします */
+      }
+
+      [data-theme='dark'] .button.is-success,
+      [data-theme='dark'] .button.is-warning,
+      [data-theme='dark'] .button.is-danger,
+      [data-theme='dark'] .button.is-info,
+      [data-theme='dark'] .button.is-primary {
+        --bulma-button-color-l: 100%;
+      }
+
+      [data-theme='dark'] .tag.is-success,
+      [data-theme='dark'] .tag.is-warning,
+      [data-theme='dark'] .tag.is-danger,
+      [data-theme='dark'] .tag.is-info,
+      [data-theme='dark'] .tag.is-primary {
+        --bulma-tag-color-l: 100%;
+      }
+
+      /* ── Layout ── */
+      body {
+        background-color: var(--bulma-scheme-main);
+        color: var(--bulma-text);
+      }
+      .sidebar {
+        min-height: 100vh;
+        background: var(--bulma-box-background-color);
+        padding: 1rem;
+        border-right: 1px solid var(--bulma-border);
+      }
+      .sidebar-menu {
+        padding-top: 1rem;
+      }
+      .sidebar-menu .menu-label {
+        font-size: 0.75rem;
+        letter-spacing: 0.05em;
+      }
+      .sidebar-menu .menu-list a {
+        padding: 0.5em 0.75em;
+        border-radius: var(--bulma-box-radius);
+        transition:
+          background 0.2s,
+          color 0.2s;
+      }
+      .sidebar-menu .menu-list a.is-active {
+        background: var(--bulma-primary);
+        color: var(--bulma-primary-invert);
+      }
+      .sidebar-menu .menu-list a:hover:not(.is-active) {
+        background: var(--bulma-scheme-main-ter);
+      }
+      .main-content {
+        padding: 2rem;
+      }
+      .admin-header {
+        background: var(--bulma-primary);
+        color: var(--bulma-primary-invert);
+        padding: 0.75rem 1.5rem;
+      }
+      .admin-header .navbar-item {
+        color: var(--bulma-primary-invert);
+      }
+
+      /* ── Common Components ── */
+      .box {
+        border: 1px solid var(--bulma-border-weak);
+        border-radius: var(--bulma-box-radius);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); /* モダンなソフトシャドウ */
+      }
+      [data-theme='dark'] .box {
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+      }
+      .input {
+        border-color: var(--bulma-border);
+        border-radius: var(--bulma-box-radius);
+      }
+      .input:focus {
+        border-color: var(--bulma-primary);
+        box-shadow: 0 0 0 0.125em
+          rgba(var(--bulma-primary-h), var(--bulma-primary-s), var(--bulma-primary-l), 0.25);
+      }
+
+      /* ── Theme Toggle ── */
+      .theme-toggle-btn {
+        background: transparent;
+        border: 1px solid var(--bulma-border);
+        border-radius: var(--bulma-box-radius);
+        padding: 0.3rem 0.6rem;
+        cursor: pointer;
+        font-size: 1.1rem;
+        line-height: 1;
+        color: var(--bulma-text);
+        transition:
+          background 0.2s,
+          border-color 0.2s;
+      }
+      .theme-toggle-btn:hover {
+        background: var(--bulma-scheme-main-bis);
+      }
+
+      /* ── Toast Notifications (Modern Flat Design) ── */
+      .toast-container {
+        position: fixed;
+        top: 1.5rem;
+        right: 1.5rem;
+        z-index: 9999;
+        max-width: 400px;
+      }
+      .toast-item {
+        padding: 1rem 1.25rem;
+        margin-bottom: 0.75rem;
+        border-radius: var(--bulma-box-radius);
+        box-shadow:
+          0 10px 25px -5px rgba(0, 0, 0, 0.1),
+          0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        background-color: var(--bulma-box-background-color);
+        color: var(--bulma-text-strong);
+        border: none;
+        border-left: 4px solid transparent;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        animation: toast-in 0.3s ease-out;
+      }
+      [data-theme='dark'] .toast-item {
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+      }
+      /* Bulmaセマンティックカラーの継承 */
+      .toast-item.is-success {
+        border-left-color: var(--bulma-success);
+      }
+      .toast-item.is-warning {
+        border-left-color: var(--bulma-warning);
+      }
+      .toast-item.is-error {
+        border-left-color: var(--bulma-danger);
+      }
+      .toast-item.is-info {
+        border-left-color: var(--bulma-info);
+      }
+
+      .toast-dismiss {
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: 1.25rem;
+        margin-left: 1rem;
+        color: inherit;
+        opacity: 0.5;
+        padding: 0;
+        line-height: 1;
+        transition: opacity 0.2s;
+      }
+      .toast-dismiss:hover {
+        opacity: 1;
+      }
+      @keyframes toast-in {
+        from {
+          opacity: 0;
+          transform: translateX(100%);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
+
+      /* ── Inspection Data Display / Summary ── */
+      .summary-bar {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap; /* 溢れ防止 */
+      }
+      .summary-card {
+        background: var(--bulma-box-background-color);
+        border-radius: var(--bulma-box-radius);
+        padding: 1rem 1.5rem;
+        border: 1px solid var(--bulma-border-weak);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        flex: 1;
+        min-width: 200px; /* wrap時に潰れないよう設定 */
+        display: flex;
+        flex-direction: column; /* 視覚的階層の強化 */
+        align-items: flex-start;
+        gap: 0.25rem;
+      }
+      [data-theme='dark'] .summary-card {
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+      }
+      .summary-card .lbl {
+        font-size: 0.85rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--bulma-text-weak);
+      }
+      .summary-card .num {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: var(--bulma-text-strong);
+      }
+
+      /* ── View Toggle / Tabs ── */
+      .view-toggle {
+        display: flex;
+        gap: 0;
+        margin-bottom: 1rem;
+      }
+      .view-toggle .toggle-btn {
+        background: var(--bulma-box-background-color);
+        border: 1px solid var(--bulma-border);
+        padding: 0.5rem 1.25rem;
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        color: var(--bulma-text-weak);
+      }
+      .view-toggle .toggle-btn:first-child {
+        border-radius: var(--bulma-box-radius) 0 0 var(--bulma-box-radius);
+      }
+      .view-toggle .toggle-btn:last-child {
+        border-radius: 0 var(--bulma-box-radius) var(--bulma-box-radius) 0;
+        border-left: none;
+      }
+      .view-toggle .toggle-btn.active {
+        background: var(--bulma-primary);
+        color: var(--bulma-primary-invert);
+        border-color: var(--bulma-primary);
+        font-weight: 600;
+      }
+      .view-toggle .toggle-btn:hover:not(.active) {
+        background: var(--bulma-scheme-main-ter);
+      }
+
+      /* ── Tables ── */
+      .stripe-even {
+        background: var(--bulma-scheme-main-bis);
+      }
+      .table:not(.inspection-table):not(.bulk-table) tbody tr:nth-child(even) {
+        background: var(--bulma-scheme-main-bis);
+      }
+
+      /* !important排除とホバー洗練 */
+      .table.inspection-table tbody tr.room-row:hover,
+      .table.bulk-table tbody tr:hover {
+        background-color: var(--bulma-scheme-main-ter);
+      }
+
+      .sort-th {
+        cursor: pointer;
+        user-select: none;
+        position: relative;
+        padding-right: 1.5rem;
+        transition: color 0.2s;
+      }
+      .sort-th:hover {
+        color: var(--bulma-primary);
+      }
+      .sort-icon {
+        position: absolute;
+        right: 4px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 0.65rem;
+        color: var(--bulma-text-weak);
+        line-height: 1;
+      }
+      .sort-icon.asc::after {
+        content: '▲';
+        color: var(--bulma-primary);
+      }
+      .sort-icon.desc::after {
+        content: '▼';
+        color: var(--bulma-primary);
+      }
+      .sort-icon.neutral::after {
+        content: '▲';
+      }
+
+      .room-row {
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+      }
+      .inspection-expand {
+        background: var(--bulma-scheme-main-bis);
+        border-left: 3px solid var(--bulma-border);
+      }
+      .inspection-expand.warn-border {
+        border-left-color: var(--bulma-danger);
+      }
+      .inspection-expand td {
+        padding: 0.75rem 1rem;
+      }
+
+      /* Data Table Detail */
+      .detail-table {
+        font-size: 0.85rem;
+        margin-bottom: 0.5rem;
+        width: 100%;
+        table-layout: fixed;
+      }
+      .detail-table th,
+      .detail-table td {
+        white-space: nowrap;
+      }
+      .detail-table th {
+        font-size: 0.75rem;
+        color: var(--bulma-text-weak);
+        padding: 0.4rem 0.75rem;
+        border-bottom: 1px solid var(--bulma-border);
+      }
+      .detail-table td {
+        padding: 0.4rem 0.75rem;
+        font-weight: 600;
+        font-size: 0.9rem;
+      }
+
+      .highlight-col {
+        background: var(--bulma-scheme-main-bis);
+      }
+      .chevron {
+        display: inline-block;
+        transition: transform 0.2s ease;
+        font-size: 0.85rem;
+        color: var(--bulma-text-weak);
+      }
+      .chevron.open {
+        transform: rotate(90deg);
+      }
+
+      /* Usage Bar */
+      .usage-section {
+        margin-top: 0.75rem;
+        padding-top: 0.75rem;
+        border-top: 1px solid var(--bulma-border);
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+      }
+      .usage-label {
+        font-size: 0.75rem;
+        color: var(--bulma-text-weak);
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+      .usage-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.85rem;
+        white-space: nowrap;
+      }
+      .usage-bar-fixed {
+        display: inline-block;
+        height: 8px;
+        border-radius: 4px;
+        background: var(--bulma-primary);
+        width: 36px;
+        flex-shrink: 0;
+      }
+      .usage-bar-fixed.prev {
+        background: var(--bulma-border);
+      }
+      .usage-bar-fixed.warn {
+        background: var(--bulma-danger);
+      }
+
+      /* Tags */
+      .tag-skip {
+        background-color: var(--bulma-warning-light);
+        color: var(--bulma-warning-dark);
+        border-radius: var(--bulma-box-radius);
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+      }
+      [data-theme='dark'] .tag-skip {
+        background-color: rgba(255, 224, 71, 0.15);
+        color: #fde047;
+      }
+
+      /* Bulk Table */
+      .table.bulk-table th,
+      .table.bulk-table td {
+        text-align: center;
+        vertical-align: middle;
+        white-space: nowrap;
+      }
+      .table.bulk-table td:first-child {
+        text-align: center;
+      }
+      .table.bulk-table td.usage-trend {
+        text-align: left;
+      }
+      .table.bulk-table .warn-row {
+        background: var(--bulma-danger-light);
+      }
+      [data-theme='dark'] .table.bulk-table .warn-row {
+        background: rgba(255, 107, 107, 0.1);
+        border-left: 3px solid var(--bulma-danger);
+      }
+
+      /* Inspection Table */
+      .table.inspection-table th,
+      .table.inspection-table td {
+        text-align: center;
+        vertical-align: middle;
+        white-space: nowrap;
+      }
+
+      /* ── Modals & Preview ── */
+      .format-tabs {
+        display: flex;
+        gap: 0;
+        margin-bottom: 0.75rem;
+      }
+      .format-tab {
+        padding: 0.4rem 1rem;
+        font-size: 0.8rem;
+        border: 1px solid var(--bulma-border);
+        background: var(--bulma-scheme-main-bis);
+        color: var(--bulma-text-weak);
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .format-tab:first-child {
+        border-radius: var(--bulma-box-radius) 0 0 var(--bulma-box-radius);
+      }
+      .format-tab:last-child {
+        border-radius: 0 var(--bulma-box-radius) var(--bulma-box-radius) 0;
+      }
+      .format-tab.active {
+        background: var(--bulma-primary);
+        color: var(--bulma-primary-invert);
+        border-color: var(--bulma-primary);
+        font-weight: 600;
+      }
+      .preview-list {
+        max-height: 250px;
+        overflow-y: auto;
+        border: 1px solid var(--bulma-border);
+        border-radius: var(--bulma-box-radius);
+        background: var(--bulma-box-background-color);
+      }
+      .preview-header {
+        display: flex;
+        align-items: center;
+        padding: 0.6rem 1rem;
+        background: var(--bulma-scheme-main-ter);
+        border-bottom: 1px solid var(--bulma-border);
+        font-size: 0.8rem;
+        color: var(--bulma-text-weak);
+        font-weight: 600;
+      }
+      .preview-item {
+        display: flex;
+        align-items: center;
+        padding: 0.6rem 1rem;
+        border-bottom: 1px solid var(--bulma-border);
+        font-size: 0.9rem;
+      }
+      .preview-item:last-child {
+        border-bottom: none;
+      }
+      .preview-num {
+        color: var(--bulma-text-weak);
+        width: 2.5rem;
+        font-size: 0.8rem;
+        flex-shrink: 0;
+      }
+      .preview-name {
+        flex: 1;
+        font-weight: 500;
+      }
+      .preview-id {
+        color: var(--bulma-text-weak);
+        font-size: 0.8rem;
+        flex-shrink: 0;
+        min-width: 5rem;
+        text-align: right;
+      }
+      .count-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--bulma-primary);
+        color: var(--bulma-primary-invert);
+        border-radius: 12px;
+        padding: 0.15rem 0.6rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+      }
+      .preview-error {
+        color: var(--bulma-danger);
+        font-size: 0.85rem;
+      }
+      .format-hint {
+        font-size: 0.75rem;
+        color: var(--bulma-text-weak);
+        margin-top: 0.5rem;
+        padding-left: 0.25rem;
+      }
+
+      /* ── Toggles / Switches ── */
+      .edit-section-title {
+        font-size: 0.75rem;
+        color: var(--bulma-text-weak);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid var(--bulma-border);
+      }
+      .edit-toggle {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+      }
+      .edit-toggle label {
+        margin-bottom: 0;
+        cursor: pointer;
+      }
+      .switch {
+        position: relative;
+        display: inline-block;
+        width: 44px;
+        height: 24px;
+      }
+      .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+      .switch .slider {
+        position: absolute;
+        inset: 0;
+        background: var(--bulma-border);
+        border-radius: 24px;
+        cursor: pointer;
+        transition: 0.3s;
+      }
+      .switch .slider::before {
+        content: '';
+        position: absolute;
+        height: 18px;
+        width: 18px;
+        left: 3px;
+        bottom: 3px;
+        background: white;
+        border-radius: 50%;
+        transition: 0.3s;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+      }
+      .switch input:checked + .slider {
+        background: var(--bulma-primary);
+      }
+      .switch input:checked + .slider::before {
+        transform: translateX(20px);
+      }
+
+      /* ── Overlays & Scrolls ── */
+      .content-scroll {
+        overflow-x: auto;
+        border-radius: var(--bulma-box-radius);
+        max-width: 100%;
+        border: 1px solid var(--bulma-border);
+      }
+      .loading-overlay {
+        position: relative;
+        min-height: 200px;
+      }
+      .loading-overlay::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: rgba(255, 255, 255, 0.75);
+        z-index: 10;
+        backdrop-filter: blur(2px);
+        border-radius: var(--bulma-box-radius);
+      }
+      .loading-overlay-content {
+        position: absolute;
+        inset: 0;
+        z-index: 11;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+      [data-theme='dark'] .loading-overlay::before {
+        background: rgba(20, 20, 20, 0.75);
+      }
+
+      /* ── Annual Report Table ── */
+      /* テキストの切り捨て(ellipsis)を廃止し、横スクロールを優先 */
+      .table.annual-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.85rem;
+      }
+      .table.annual-table th,
+      .table.annual-table td {
+        border: 1px solid var(--bulma-border);
+        padding: 0.5rem 0.75rem;
+        text-align: center;
+        white-space: nowrap;
+      }
+      .table.annual-table thead th {
+        background: var(--bulma-scheme-main-ter);
+        font-weight: 600;
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        border-bottom: 2px solid var(--bulma-border);
+      }
+      .annual-report-container .legend {
+        display: flex;
+        gap: 1.5rem;
+        font-size: 0.8rem;
+        color: var(--bulma-text-weak);
+        margin-bottom: 1rem;
+      }
+      .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .legend-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 3px;
+        display: inline-block;
+      }
+      /* Report cell colors (Variable driven) */
+      .val-normal {
+        color: var(--val-normal-color);
+        font-weight: 500;
+      }
+      .val-abnormal {
+        color: var(--val-abnormal-color);
+        font-weight: 700;
+      }
+      .val-zero {
+        color: var(--bulma-text-weak);
+      }
+      .cell-zero {
+        background: var(--bulma-scheme-main-bis);
+      }
+
+      /* ── Accessibility ── */
+      a:focus-visible,
+      button:focus-visible,
+      input:focus-visible,
+      select:focus-visible,
+      textarea:focus-visible,
+      .theme-toggle-btn:focus-visible,
+      .toggle-btn:focus-visible,
+      .sort-th:focus-visible,
+      .format-tab:focus-visible {
+        outline: 2px solid var(--bulma-primary);
+        outline-offset: 2px;
+      }
+
+      /* ── Print Styles ── */
+      .print-header {
+        display: none;
+      }
+      @media print {
+        :root {
+          --bulma-scheme-main-l: 100% !important;
+          --bulma-box-background-color: #ffffff !important;
+          --bulma-text-l: 12% !important;
+          --bulma-text-weak-l: 42% !important;
+          --bulma-border: #dbdbdb !important;
+        }
+        body {
+          background-color: #fff !important;
+          color: #000 !important;
+        }
+        * {
+          color: #000 !important;
+          text-shadow: none !important;
+          box-shadow: none !important;
+        }
+        .no-print {
+          display: none !important;
+        }
+        .print-header {
+          display: block !important;
+          margin-bottom: 1.5rem;
+        }
+
+        .content-scroll {
+          overflow: visible !important;
+          max-width: none !important;
+          border: none !important;
+        }
+        .table.annual-table {
+          font-size: 0.7rem;
+          table-layout: auto;
+          width: 100%;
+        }
+        .table.annual-table colgroup {
+          display: none;
+        }
+
+        .table.annual-table tr,
+        .summary-card {
+          page-break-inside: avoid;
+          break-inside: avoid;
+        }
+
+        @page {
+          size: landscape;
+          margin: 15mm;
+        }
+      }
+
+      /* ── Mock-specific: navigation tab bar ── */
+      .mock-nav {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        background: var(--bulma-scheme-main-ter);
+        border-bottom: 2px solid var(--bulma-border);
+        padding: 0.5rem 1rem;
+        display: flex;
+        gap: 0.25rem;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+      .mock-nav .mock-tab {
+        padding: 0.4rem 0.9rem;
+        font-size: 0.8rem;
+        border: 1px solid var(--bulma-border);
+        border-radius: var(--bulma-box-radius);
+        background: var(--bulma-box-background-color);
+        color: var(--bulma-text-weak);
+        cursor: pointer;
+        transition: all 0.2s;
+        font-weight: 500;
+      }
+      .mock-nav .mock-tab:hover {
+        background: var(--bulma-scheme-main-bis);
+        color: var(--bulma-text);
+      }
+      .mock-nav .mock-tab.active {
+        background: var(--bulma-primary);
+        color: var(--bulma-primary-invert);
+        border-color: var(--bulma-primary);
+      }
+      .mock-section {
+        display: none;
+      }
+      .mock-section.active {
+        display: block;
+      }
+      .mock-nav-separator {
+        width: 1px;
+        height: 1.5rem;
+        background: var(--bulma-border);
+        margin: 0 0.5rem;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <!-- MOCK NAVIGATION BAR -->
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <div class="mock-nav no-print">
+      <strong style="font-size: 0.85rem; margin-right: 0.5rem">🎨 Design Test</strong>
+      <button class="mock-tab active" onclick="showSection('login')">Login</button>
+      <button class="mock-tab" onclick="showSection('layout')">Layout</button>
+      <button class="mock-tab" onclick="showSection('dashboard')">Dashboard</button>
+      <button class="mock-tab" onclick="showSection('properties')">Properties</button>
+      <button class="mock-tab" onclick="showSection('inspection')">Inspection</button>
+      <div class="mock-nav-separator"></div>
+      <button class="mock-tab" onclick="showSection('monthly')">Monthly</button>
+      <button class="mock-tab" onclick="showSection('annual')">Annual</button>
+      <button class="mock-tab" onclick="showSection('maintenance')">Maintenance</button>
+      <div class="mock-nav-separator"></div>
+      <button class="mock-tab" onclick="showSection('toasts')">Toasts</button>
+      <div style="flex: 1"></div>
+      <button class="theme-toggle-btn" onclick="toggleTheme()" id="global-theme-btn">🌙</button>
+      <button class="button is-small is-info is-light" onclick="window.print()">🖨️ Print</button>
+    </div>
+
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <!-- A) LOGIN / AUTH SCREEN -->
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <div id="section-login" class="mock-section active">
+      <section class="hero is-fullheight" style="position: relative">
+        <div style="position: absolute; top: 1rem; right: 1rem">
+          <button class="theme-toggle-btn" aria-label="テーマ切替" onclick="toggleTheme()">
+            🌙
+          </button>
+        </div>
+        <div class="hero-body">
+          <div class="container has-text-centered" style="max-width: 400px">
+            <div class="box">
+              <h1 class="title is-4">水道検針 管理画面</h1>
+              <p class="subtitle is-6 has-text-grey-light">管理パスワードを入力してください</p>
+
+              <div class="field">
+                <div class="control">
+                  <input
+                    class="input"
+                    type="password"
+                    id="admin-password"
+                    placeholder="管理パスワード"
+                  />
+                </div>
+              </div>
+
+              <button class="button is-primary is-fullwidth">ログイン</button>
+
+              <p class="mt-4 is-size-7 has-text-grey-light">
+                ※ ローカル開発時は「test-token」を入力
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <!-- B) MAIN LAYOUT + C) DASHBOARD -->
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <div id="section-layout" class="mock-section">
+      <div class="columns is-gapless">
+        <!-- Sidebar -->
+        <div class="column is-2 sidebar">
+          <div class="admin-header mb-4">
+            <strong class="has-text-primary-invert">🚰 水道検針 管理</strong>
+          </div>
+          <nav class="menu sidebar-menu" aria-label="管理メニュー">
+            <p class="menu-label">メニュー</p>
+            <ul class="menu-list">
+              <li><a class="is-active" aria-current="page">📊 ダッシュボード</a></li>
+              <li><a>🏠 物件管理</a></li>
+              <li><a>🔍 検針データ</a></li>
+              <li><a>📅 月次処理</a></li>
+              <li><a>📈 年間レポート</a></li>
+              <li><a>🔧 データ管理</a></li>
+            </ul>
+          </nav>
+          <div class="mt-6">
+            <button class="button is-small is-light">ログアウト</button>
+          </div>
+        </div>
+
+        <!-- Content Area -->
+        <div class="column">
+          <div class="admin-header is-flex is-justify-content-space-between is-align-items-center">
+            <div class="is-flex is-align-items-center">
+              <strong class="has-text-primary-invert">🚰 水道検針 管理</strong>
+              <span class="has-text-primary-invert" style="opacity: 0.7"> / ダッシュボード</span>
+            </div>
+            <button class="theme-toggle-btn" aria-label="テーマ切替" onclick="toggleTheme()">
+              🌙
+            </button>
+          </div>
+          <div class="main-content">
+            <p class="heading mb-3">ダッシュボード</p>
+            <div class="columns is-multiline">
+              <div class="column is-3">
+                <div class="box has-text-centered">
+                  <p class="heading">物件数</p>
+                  <p class="title has-text-primary">3</p>
+                </div>
+              </div>
+              <div class="column is-3">
+                <div class="box has-text-centered">
+                  <p class="heading">総部屋数</p>
+                  <p class="title">12</p>
+                </div>
+              </div>
+              <div class="column is-3">
+                <div class="box has-text-centered">
+                  <p class="heading">検針済み</p>
+                  <p class="title has-text-success">9</p>
+                </div>
+              </div>
+              <div class="column is-3">
+                <div class="box has-text-centered">
+                  <p class="heading">完了率</p>
+                  <p class="title has-text-success">75%</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="box mb-4">
+              <p class="heading">スプレッドシート</p>
+              <p>水道検針_管理_2026</p>
+              <a href="#" class="is-size-7">シートを開く</a>
+            </div>
+
+            <p class="heading mb-3">物件一覧</p>
+            <table class="table is-fullwidth is-hoverable">
+              <thead>
+                <tr>
+                  <th>物件名</th>
+                  <th>部屋数</th>
+                  <th>検針済み</th>
+                  <th>状態</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>日光ハイツ</td>
+                  <td>6</td>
+                  <td>5</td>
+                  <td><span class="tag is-success">検針中</span></td>
+                  <td><button class="button is-small is-info">管理</button></td>
+                </tr>
+                <tr>
+                  <td>緑ヶ丘マンション</td>
+                  <td>4</td>
+                  <td>4</td>
+                  <td><span class="tag is-primary">完了</span></td>
+                  <td><button class="button is-small is-info">管理</button></td>
+                </tr>
+                <tr>
+                  <td>山手台アパート</td>
+                  <td>2</td>
+                  <td>0</td>
+                  <td><span class="tag is-light">未着手</span></td>
+                  <td><button class="button is-small is-info">管理</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <!-- C) DASHBOARD VIEW (standalone) -->
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <div id="section-dashboard" class="mock-section">
+      <div style="padding: 2rem">
+        <div class="is-flex is-justify-content-space-between is-align-items-center mb-3">
+          <p class="heading mb-0">ダッシュボード</p>
+          <button class="button is-small is-light">🔄 更新</button>
+        </div>
+        <div class="summary-bar">
+          <div class="summary-card">
+            <p class="num has-text-primary">3</p>
+            <p class="lbl">総物件数</p>
+          </div>
+          <div class="summary-card">
+            <p class="num">12</p>
+            <p class="lbl">総部屋数</p>
+          </div>
+          <div class="summary-card">
+            <p class="num has-text-success">9</p>
+            <p class="lbl">検針完了</p>
+          </div>
+          <div class="summary-card">
+            <p class="num has-text-warning">3</p>
+            <p class="lbl">未検針</p>
+          </div>
+        </div>
+        <div class="summary-bar">
+          <div class="summary-card">
+            <p class="num has-text-primary">5</p>
+            <p class="lbl">総部屋数</p>
+          </div>
+          <div class="summary-card">
+            <p class="num has-text-success">3</p>
+            <p class="lbl">検針済み</p>
+          </div>
+          <div class="summary-card">
+            <p class="num has-text-grey-light">1</p>
+            <p class="lbl">未検針</p>
+          </div>
+          <div class="summary-card">
+            <p class="num has-text-warning">1</p>
+            <p class="lbl">警告</p>
+          </div>
+          <div class="summary-card">
+            <p class="num has-text-info">75%</p>
+            <p class="lbl">完了率</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <!-- D) PROPERTY MANAGEMENT VIEW -->
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <div id="section-properties" class="mock-section">
+      <div style="padding: 2rem">
+        <div class="is-flex is-justify-content-space-between is-align-items-center mb-1">
+          <div>
+            <p class="title is-4 mb-1">🏠 物件管理</p>
+            <p class="heading has-text-grey mb-0">日光ハイツ (P000001) の部屋一覧</p>
+          </div>
+          <div class="field is-grouped">
+            <div class="control">
+              <div class="select is-small">
+                <select>
+                  <option value="">— 物件を選択 —</option>
+                  <option selected>日光ハイツ (P000001)</option>
+                  <option>緑ヶ丘マンション (P000002)</option>
+                  <option>山手台アパート (P000003)</option>
+                </select>
+              </div>
+            </div>
+            <div class="control">
+              <button class="button is-primary is-small">+ 物件を追加</button>
+            </div>
+            <div class="control">
+              <button class="button is-info is-light is-small">📥 一括物件登録</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="box mt-4">
+          <div class="is-flex is-justify-content-space-between is-align-items-center mb-3">
+            <p class="heading mb-0">日光ハイツ — 部屋一覧</p>
+            <div class="field is-grouped">
+              <button class="button is-small is-danger is-light">物件削除</button>
+              <button class="button is-small is-primary">+ 部屋を追加</button>
+            </div>
+          </div>
+
+          <!-- Summary Cards -->
+          <div class="summary-bar">
+            <div class="summary-card">
+              <p class="num has-text-primary">6</p>
+              <p class="lbl">総部屋数</p>
+            </div>
+            <div class="summary-card">
+              <p class="num has-text-success">5</p>
+              <p class="lbl">検針済み</p>
+            </div>
+            <div class="summary-card">
+              <p class="num has-text-grey-light">0</p>
+              <p class="lbl">未検針</p>
+            </div>
+            <div class="summary-card">
+              <p class="num has-text-warning">1</p>
+              <p class="lbl">警告</p>
+            </div>
+            <div class="summary-card">
+              <p class="num has-text-info">83%</p>
+              <p class="lbl">完了率</p>
+            </div>
+          </div>
+
+          <div class="is-flex is-justify-content-space-between is-align-items-center mb-2">
+            <div></div>
+            <button class="button is-info is-light is-small">📥 一括部屋登録</button>
+          </div>
+
+          <!-- Property table with sort headers -->
+          <div class="content-scroll">
+            <table class="table is-fullwidth is-hoverable is-bordered" style="min-width: 600px">
+              <thead>
+                <tr>
+                  <th class="sort-th">物件名<span class="sort-icon asc"></span></th>
+                  <th class="sort-th">部屋数<span class="sort-icon neutral"></span></th>
+                  <th class="sort-th">完了数<span class="sort-icon desc"></span></th>
+                  <th>状態</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>日光ハイツ</td>
+                  <td>6</td>
+                  <td>5</td>
+                  <td><span class="tag is-success is-light is-rounded is-small">検針中</span></td>
+                  <td>
+                    <button class="button is-small is-light">編集</button>
+                    <button class="button is-small is-danger is-light">削除</button>
+                  </td>
+                </tr>
+                <tr>
+                  <td>緑ヶ丘マンション</td>
+                  <td>4</td>
+                  <td>4</td>
+                  <td><span class="tag is-primary is-light is-rounded is-small">完了</span></td>
+                  <td>
+                    <button class="button is-small is-light">編集</button>
+                    <button class="button is-small is-danger is-light">削除</button>
+                  </td>
+                </tr>
+                <tr>
+                  <td>山手台アパート</td>
+                  <td>2</td>
+                  <td>0</td>
+                  <td><span class="tag is-light is-rounded is-small">未着手</span></td>
+                  <td>
+                    <button class="button is-small is-light">編集</button>
+                    <button class="button is-small is-danger is-light">削除</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <!-- E) INSPECTION DATA VIEW -->
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <div id="section-inspection" class="mock-section">
+      <div style="padding: 2rem">
+        <p class="title is-4 mb-1">🔍 検針データ</p>
+        <p class="heading has-text-grey mb-4">日光ハイツ</p>
+
+        <!-- View Toggle -->
+        <div class="view-toggle">
+          <button class="toggle-btn active">📋 一覧表示</button>
+          <button class="toggle-btn">📊 一括登録</button>
+        </div>
+
+        <!-- Inspection Table -->
+        <div class="content-scroll">
+          <table
+            class="table is-hoverable is-bordered inspection-table"
+            style="width: 100%; min-width: 1000px"
+          >
+            <colgroup>
+              <col style="width: 40px" />
+              <col style="width: 150px" />
+              <col style="width: 100px" />
+              <col style="width: 100px" />
+              <col style="width: 100px" />
+              <col style="width: 100px" />
+              <col style="width: 120px" />
+              <col style="width: 100px" />
+              <col style="width: 160px" />
+            </colgroup>
+            <thead>
+              <tr>
+                <th></th>
+                <th class="sort-th">部屋名<span class="sort-icon asc"></span></th>
+                <th class="sort-th">検針実績<span class="sort-icon neutral"></span></th>
+                <th class="sort-th">検針日<span class="sort-icon neutral"></span></th>
+                <th class="sort-th">今回<span class="sort-icon neutral"></span></th>
+                <th class="sort-th">前回<span class="sort-icon neutral"></span></th>
+                <th class="sort-th">使用量<span class="sort-icon neutral"></span></th>
+                <th class="sort-th">平均<span class="sort-icon neutral"></span></th>
+                <th>操作</th>
+              </tr>
+            </thead>
+
+            <!-- Room 101 — normal, expanded -->
+            <tbody>
+              <tr class="room-row">
+                <td style="text-align: center"><span class="chevron open">▶</span></td>
+                <td style="text-align: center">101</td>
+                <td style="text-align: center">
+                  <span class="tag is-success is-light is-small">完了</span>
+                </td>
+                <td style="text-align: center">2026/04/15</td>
+                <td style="text-align: center" class="highlight-col">1,234</td>
+                <td style="text-align: center">1,200</td>
+                <td style="text-align: center">34</td>
+                <td style="text-align: center">28</td>
+                <td>
+                  <button class="button is-small is-light">編集</button>
+                  <button class="button is-small is-danger is-light">削除</button>
+                </td>
+              </tr>
+              <tr class="inspection-expand">
+                <td colspan="9" style="padding: 0.75rem 1rem">
+                  <table class="detail-table table is-narrow is-borderless mb-0">
+                    <thead>
+                      <tr>
+                        <th>検針日</th>
+                        <th>今回</th>
+                        <th>前回</th>
+                        <th>前々回</th>
+                        <th>3回前</th>
+                        <th>使用量</th>
+                        <th>標準偏差</th>
+                        <th>警告</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>2026/04/15</td>
+                        <td>1,234</td>
+                        <td>1,200</td>
+                        <td>1,165</td>
+                        <td>1,130</td>
+                        <td>34</td>
+                        <td>28</td>
+                        <td>
+                          <span class="tag is-success is-light is-rounded is-small">なし</span>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                  <div class="usage-section">
+                    <span class="usage-label">使用量推移</span>
+                    <span class="usage-item"
+                      ><span class="usage-bar-fixed"></span> 今月 <strong>34</strong></span
+                    >
+                    <span class="usage-item"
+                      ><span class="usage-bar-fixed prev"></span> 先月 <span>35</span></span
+                    >
+                    <span class="usage-item"
+                      ><span class="usage-bar-fixed prev"></span> 先々月 <span>32</span></span
+                    >
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+
+            <!-- Room 102 — warning, expanded with warn-border -->
+            <tbody>
+              <tr class="room-row stripe-even">
+                <td style="text-align: center"><span class="chevron open">▶</span></td>
+                <td style="text-align: center">102</td>
+                <td style="text-align: center">
+                  <span class="tag is-warning is-light is-small">警告</span>
+                </td>
+                <td style="text-align: center">2026/04/15</td>
+                <td style="text-align: center" class="highlight-col">2,500</td>
+                <td style="text-align: center">1,800</td>
+                <td style="text-align: center has-text-danger">700 ⚠️</td>
+                <td style="text-align: center">45</td>
+                <td>
+                  <button class="button is-small is-light">編集</button>
+                  <button class="button is-small is-danger is-light">削除</button>
+                </td>
+              </tr>
+              <tr class="inspection-expand warn-border">
+                <td colspan="9" style="padding: 0.75rem 1rem">
+                  <div class="notification is-warning is-light py-2 px-3 mb-2">
+                    <p class="is-size-7">
+                      <strong>⚠️ 使用量警告:</strong>
+                      今回の使用量が平均の15.5倍を超過。漏水の可能性があります。
+                    </p>
+                  </div>
+                  <table class="detail-table table is-narrow is-borderless mb-0">
+                    <thead>
+                      <tr>
+                        <th>検針日</th>
+                        <th>今回</th>
+                        <th>前回</th>
+                        <th>前々回</th>
+                        <th>3回前</th>
+                        <th>使用量</th>
+                        <th>標準偏差</th>
+                        <th>警告</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>2026/04/15</td>
+                        <td>2,500</td>
+                        <td>1,800</td>
+                        <td>1,760</td>
+                        <td>1,720</td>
+                        <td class="has-text-danger">700</td>
+                        <td>45</td>
+                        <td><span class="tag is-warning is-rounded is-small">使用量超過</span></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                  <div class="usage-section">
+                    <span class="usage-label">使用量推移</span>
+                    <span class="usage-item"
+                      ><span class="usage-bar-fixed warn"></span> 今月
+                      <strong class="has-text-danger">700</strong></span
+                    >
+                    <span class="usage-item"
+                      ><span class="usage-bar-fixed prev"></span> 先月 <span>40</span></span
+                    >
+                    <span class="usage-item"
+                      ><span class="usage-bar-fixed prev"></span> 先々月 <span>38</span></span
+                    >
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+
+            <!-- Room 201 — collapsed, normal -->
+            <tbody>
+              <tr class="room-row">
+                <td style="text-align: center"><span class="chevron">▶</span></td>
+                <td style="text-align: center">201</td>
+                <td style="text-align: center">
+                  <span class="tag is-success is-light is-small">完了</span>
+                </td>
+                <td style="text-align: center">2026/04/14</td>
+                <td style="text-align: center" class="highlight-col">980</td>
+                <td style="text-align: center">950</td>
+                <td style="text-align: center">30</td>
+                <td style="text-align: center">25</td>
+                <td>
+                  <button class="button is-small is-light">編集</button>
+                  <button class="button is-small is-danger is-light">削除</button>
+                </td>
+              </tr>
+            </tbody>
+
+            <!-- Room 202 — collapsed, pending -->
+            <tbody>
+              <tr class="room-row stripe-even">
+                <td style="text-align: center"><span class="chevron">▶</span></td>
+                <td style="text-align: center">202</td>
+                <td style="text-align: center">
+                  <span class="tag is-light is-small">未検針</span>
+                </td>
+                <td style="text-align: center">—</td>
+                <td style="text-align: center">—</td>
+                <td style="text-align: center">—</td>
+                <td style="text-align: center">—</td>
+                <td style="text-align: center">—</td>
+                <td>
+                  <button class="button is-small is-light">編集</button>
+                  <button class="button is-small is-danger is-light">削除</button>
+                </td>
+              </tr>
+            </tbody>
+
+            <!-- Room 301 — skip -->
+            <tbody>
+              <tr class="room-row">
+                <td style="text-align: center"><span class="chevron">▶</span></td>
+                <td style="text-align: center">301</td>
+                <td style="text-align: center">
+                  <span class="tag tag-skip is-small">検針不要</span>
+                </td>
+                <td style="text-align: center">—</td>
+                <td style="text-align: center">—</td>
+                <td style="text-align: center">—</td>
+                <td style="text-align: center">—</td>
+                <td style="text-align: center">—</td>
+                <td>
+                  <button class="button is-small is-light">編集</button>
+                  <button class="button is-small is-danger is-light">削除</button>
+                </td>
+              </tr>
+            </tbody>
+
+            <!-- Room 302 — collapsed, normal -->
+            <tbody>
+              <tr class="room-row stripe-even">
+                <td style="text-align: center"><span class="chevron">▶</span></td>
+                <td style="text-align: center">302</td>
+                <td style="text-align: center">
+                  <span class="tag is-success is-light is-small">完了</span>
+                </td>
+                <td style="text-align: center">2026/04/14</td>
+                <td style="text-align: center" class="highlight-col">1,450</td>
+                <td style="text-align: center">1,410</td>
+                <td style="text-align: center">40</td>
+                <td style="text-align: center">35</td>
+                <td>
+                  <button class="button is-small is-light">編集</button>
+                  <button class="button is-small is-danger is-light">削除</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <!-- F) MONTHLY PROCESS VIEW -->
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <div id="section-monthly" class="mock-section">
+      <div style="padding: 2rem">
+        <div class="box">
+          <p class="title is-4">📅 月次処理</p>
+          <p class="mb-4">
+            先月までの検針データを保存し、今月分の新しいデータを準備します。実行前に確認を行ってください。
+          </p>
+          <div class="field mb-4">
+            <label class="label is-small">保存対象月</label>
+            <div class="field has-addons">
+              <div class="control">
+                <div class="select">
+                  <select>
+                    <option>2024年</option>
+                    <option>2025年</option>
+                    <option selected>2026年</option>
+                    <option>2027年</option>
+                    <option>2028年</option>
+                  </select>
+                </div>
+              </div>
+              <div class="control">
+                <div class="select">
+                  <select>
+                    <option>1月</option>
+                    <option>2月</option>
+                    <option>3月</option>
+                    <option selected>4月</option>
+                    <option>5月</option>
+                    <option>6月</option>
+                    <option>7月</option>
+                    <option>8月</option>
+                    <option>9月</option>
+                    <option>10月</option>
+                    <option>11月</option>
+                    <option>12月</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <p class="help is-size-7">
+              保存する年月を選択してください。未選択時は現在の年月が使用されます。
+            </p>
+          </div>
+          <button class="button is-primary">実行前に確認する</button>
+
+          <hr />
+
+          <!-- Simulated pre-check results -->
+          <p class="title is-4">📋 確認結果</p>
+          <div class="mb-4">
+            <div class="notification is-success is-light mb-2">
+              <span>✅</span>
+              <strong>データ整合性</strong>
+              <span class="is-size-7">（正常）</span>
+              <p class="is-size-7 mt-1">全データが正常に保存されています</p>
+            </div>
+            <div class="notification is-warning is-light mb-2">
+              <span>⚠️</span>
+              <strong>未検針部屋</strong>
+              <span class="is-size-7">（警告）</span>
+              <p class="is-size-7 mt-1">1件の未検針部屋があります（202号室）</p>
+            </div>
+            <div class="notification is-success is-light mb-2">
+              <span>✅</span>
+              <strong>シート構造</strong>
+              <span class="is-size-7">（正常）</span>
+              <p class="is-size-7 mt-1">シート構造は正常です</p>
+            </div>
+            <div class="notification is-danger is-light mb-2">
+              <span>❌</span>
+              <strong>重複データ</strong>
+              <span class="is-size-7">（エラー）</span>
+              <p class="is-size-7 mt-1">2件の重複データが検出されました</p>
+            </div>
+          </div>
+
+          <div class="notification is-danger mb-3">
+            <strong>1件のエラーが見つかりました。エラーを修正してからやり直してください。</strong>
+          </div>
+
+          <div class="field is-grouped">
+            <button class="button is-primary" disabled>月次処理を実行</button>
+            <button class="button is-light">戻る</button>
+            <button class="button is-info">ダッシュボードを確認</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <!-- G) ANNUAL REPORT VIEW -->
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <div id="section-annual" class="mock-section">
+      <div style="padding: 2rem" class="annual-report-container">
+        <div class="is-flex is-align-items-center is-justify-content-space-between mb-3 no-print">
+          <div class="is-flex is-align-items-center" style="gap: 0.5rem">
+            <label class="label is-small mb-0">年:</label>
+            <div class="select is-small">
+              <select>
+                <option selected>2026年</option>
+                <option>2025年</option>
+                <option>2024年</option>
+              </select>
+            </div>
+            <button class="button is-small is-light">🔄</button>
+          </div>
+          <button class="button is-small is-info is-light" onclick="window.print()">🖨️ 印刷</button>
+        </div>
+
+        <!-- Summary chips -->
+        <div
+          class="no-print"
+          style="display: flex; gap: 0.75rem; margin-bottom: 1rem; flex-wrap: wrap"
+        >
+          <div
+            style="
+              padding: 0.35rem 0.75rem;
+              border-radius: 6px;
+              font-size: 0.75rem;
+              background: var(--bulma-scheme-main-ter);
+              border: 1px solid var(--bulma-border);
+            "
+          >
+            対象: <strong>日光ハイツ</strong>
+          </div>
+          <div
+            style="
+              padding: 0.35rem 0.75rem;
+              border-radius: 6px;
+              font-size: 0.75rem;
+              background: var(--bulma-scheme-main-ter);
+              border: 1px solid var(--bulma-border);
+            "
+          >
+            総部屋数: <strong>6</strong>
+          </div>
+        </div>
+
+        <div class="legend no-print" style="margin-bottom: 0.75rem">
+          <div class="legend-item">
+            <span class="legend-dot" style="background: #1a6db5"></span> 正常
+          </div>
+          <div class="legend-item">
+            <span class="legend-dot" style="background: #e74c3c"></span> 異常（要確認）
+          </div>
+          <div class="legend-item">
+            <span class="legend-dot" style="background: #f5f5f5; border: 1px solid #bbb"></span>
+            0㎥（不在疑い）
+          </div>
+          <div class="legend-item">
+            <span class="legend-dot" style="background: #e3f2e8; border: 1px solid #a8d5b8"></span>
+            オーナー使用中
+          </div>
+          <div class="legend-item">
+            <span
+              class="legend-dot"
+              style="
+                background: repeating-linear-gradient(
+                  45deg,
+                  #f5f5f5,
+                  #f5f5f5 3px,
+                  #eee 3px,
+                  #eee 6px
+                );
+                border: 1px solid #ddd;
+              "
+            ></span>
+            検針不要
+          </div>
+          <div class="legend-item">
+            <span class="legend-dot" style="background: #fff; border: 1px solid #ccc"></span> 未検針
+          </div>
+        </div>
+
+        <div class="content-scroll">
+          <table class="annual-table">
+            <colgroup>
+              <col style="width: 3.5rem" />
+              <col style="width: 5.5rem" />
+              <col style="width: 5.5rem" />
+              <col style="width: 5.5rem" />
+              <col style="width: 5.5rem" />
+              <col style="width: 5.5rem" />
+              <col style="width: 5.5rem" />
+              <col style="width: 5.5rem" />
+              <col style="width: 5.5rem" />
+              <col style="width: 5.5rem" />
+              <col style="width: 5.5rem" />
+              <col style="width: 5.5rem" />
+              <col style="width: 5.5rem" />
+            </colgroup>
+            <thead>
+              <tr>
+                <th>部屋</th>
+                <th>1月</th>
+                <th>2月</th>
+                <th>3月</th>
+                <th>4月</th>
+                <th>5月</th>
+                <th>6月</th>
+                <th>7月</th>
+                <th>8月</th>
+                <th>9月</th>
+                <th>10月</th>
+                <th>11月</th>
+                <th>12月</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- 101 — normal -->
+              <tr>
+                <td style="font-weight: 500">101</td>
+                <td>
+                  <span style="display: block; color: #666; font-size: 0.7rem">1,130</span
+                  ><span class="val-normal">35㎥</span>
+                </td>
+                <td>
+                  <span style="display: block; color: #666; font-size: 0.7rem">1,165</span
+                  ><span class="val-normal">35㎥</span>
+                </td>
+                <td>
+                  <span style="display: block; color: #666; font-size: 0.7rem">1,200</span
+                  ><span class="val-normal">35㎥</span>
+                </td>
+                <td>
+                  <span style="display: block; color: #666; font-size: 0.7rem">1,234</span
+                  ><span class="val-normal">34㎥</span>
+                </td>
+                <td style="color: #ccc">—</td>
+                <td style="color: #ccc">—</td>
+                <td style="color: #ccc">—</td>
+                <td style="color: #ccc">—</td>
+                <td style="color: #ccc">—</td>
+                <td style="color: #ccc">—</td>
+                <td style="color: #ccc">—</td>
+                <td style="color: #ccc">—</td>
+              </tr>
+              <!-- 102 — abnormal in Apr -->
+              <tr>
+                <td style="font-weight: 500">102</td>
+                <td>
+                  <span style="display: block; color: #666; font-size: 0.7rem">1,720</span
+                  ><span class="val-normal">40㎥</span>
+                </td>
+                <td>
+                  <span style="display: block; color: #666; font-size: 0.7rem">1,760</span
+                  ><span class="val-normal">40㎥</span>
+                </td>
+                <td>
+                  <span style="display: block; color: #666; font-size: 0.7rem">1,800</span
+                  ><span class="val-normal">40㎥</span>
+                </td>
+                <td>
+                  <span style="display: block; color: #666; font-size: 0.7rem">2,500</span
+                  ><span class="val-abnormal">700㎥</span>
+                </td>
+                <td style="color: #ccc">—</td>
+                <td style="color: #ccc">—</td>
+                <td style="color: #ccc">—</td>
+                <td style="color: #ccc">—</td>
+                <td style="color: #ccc">—</td>
+                <td style="color: #ccc">—</td>
+                <td style="color: #ccc">—</td>
+                <td style="color: #ccc">—</td>
+              </tr>
+              <!-- 201 — normal -->
+              <tr>
+                <td style="font-weight: 500">201</td>
+                <td>
+                  <span style="display: block; color: #666; font-size: 0.7rem">920</span
+                  ><span class="val-normal">30㎥</span>
+                </td>
+                <td>
+                  <span style="display: block; color: #666; font-size: 0.7rem">950</span
+                  ><span class="val-normal">30㎥</span>
+                </td>
+                <td>
+                  <span style="display: block; color: #666; font-size: 0.7rem">980</span
+                  ><span class="val-normal">30㎥</span>
+                </td>
+                <td>
+                  <span style="display: block; color: #666; font-size: 0.7rem">1,010</span
+                  ><span class="val-normal">30㎥</span>
+                </td>
+                <td style="color: #ccc">—</td>
+                <td style="color: #ccc">—</td>
+                <td style="color: #ccc">—</td>
+                <td style="color: #ccc">—</td>
+                <td style="color: #ccc">—</td>
+                <td style="color: #ccc">—</td>
+                <td style="color: #ccc">—</td>
+                <td style="color: #ccc">—</td>
+              </tr>
+              <!-- 202 — zero usage in Feb -->
+              <tr>
+                <td style="font-weight: 500">202</td>
+                <td>
+                  <span style="display: block; color: #666; font-size: 0.7rem">1,400</span
+                  ><span class="val-normal">40㎥</span>
+                </td>
+                <td class="cell-zero">
+                  <span style="display: block; color: #666; font-size: 0.7rem">1,400</span
+                  ><span class="val-zero">0㎥</span>
+                </td>
+                <td>
+                  <span style="display: block; color: #666; font-size: 0.7rem">1,450</span
+                  ><span class="val-normal">50㎥</span>
+                </td>
+                <td style="color: #ccc">—</td>
+                <td style="color: #ccc">—</td>
+                <td style="color: #ccc">—</td>
+                <td style="color: #ccc">—</td>
+                <td style="color: #ccc">—</td>
+                <td style="color: #ccc">—</td>
+                <td style="color: #ccc">—</td>
+                <td style="color: #ccc">—</td>
+                <td style="color: #ccc">—</td>
+              </tr>
+              <!-- 301 — skip (no inspection needed) -->
+              <tr>
+                <td style="font-weight: 500">301</td>
+                <td>
+                  <span style="color: #bbb; font-style: italic; font-size: 0.75rem">不要</span>
+                </td>
+                <td>
+                  <span style="color: #bbb; font-style: italic; font-size: 0.75rem">不要</span>
+                </td>
+                <td>
+                  <span style="color: #bbb; font-style: italic; font-size: 0.75rem">不要</span>
+                </td>
+                <td>
+                  <span style="color: #bbb; font-style: italic; font-size: 0.75rem">不要</span>
+                </td>
+                <td>
+                  <span style="color: #bbb; font-style: italic; font-size: 0.75rem">不要</span>
+                </td>
+                <td>
+                  <span style="color: #bbb; font-style: italic; font-size: 0.75rem">不要</span>
+                </td>
+                <td>
+                  <span style="color: #bbb; font-style: italic; font-size: 0.75rem">不要</span>
+                </td>
+                <td>
+                  <span style="color: #bbb; font-style: italic; font-size: 0.75rem">不要</span>
+                </td>
+                <td>
+                  <span style="color: #bbb; font-style: italic; font-size: 0.75rem">不要</span>
+                </td>
+                <td>
+                  <span style="color: #bbb; font-style: italic; font-size: 0.75rem">不要</span>
+                </td>
+                <td>
+                  <span style="color: #bbb; font-style: italic; font-size: 0.75rem">不要</span>
+                </td>
+                <td>
+                  <span style="color: #bbb; font-style: italic; font-size: 0.75rem">不要</span>
+                </td>
+              </tr>
+              <!-- 302 — normal -->
+              <tr>
+                <td style="font-weight: 500">302</td>
+                <td>
+                  <span style="display: block; color: #666; font-size: 0.7rem">1,370</span
+                  ><span class="val-normal">35㎥</span>
+                </td>
+                <td>
+                  <span style="display: block; color: #666; font-size: 0.7rem">1,410</span
+                  ><span class="val-normal">40㎥</span>
+                </td>
+                <td>
+                  <span style="display: block; color: #666; font-size: 0.7rem">1,450</span
+                  ><span class="val-normal">40㎥</span>
+                </td>
+                <td>
+                  <span style="display: block; color: #666; font-size: 0.7rem">1,485</span
+                  ><span class="val-normal">35㎥</span>
+                </td>
+                <td style="color: #ccc">—</td>
+                <td style="color: #ccc">—</td>
+                <td style="color: #ccc">—</td>
+                <td style="color: #ccc">—</td>
+                <td style="color: #ccc">—</td>
+                <td style="color: #ccc">—</td>
+                <td style="color: #ccc">—</td>
+                <td style="color: #ccc">—</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <!-- H) DATA MAINTENANCE VIEW -->
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <div id="section-maintenance" class="mock-section">
+      <div style="padding: 2rem">
+        <p class="title is-4">🔧 データ管理</p>
+
+        <!-- Diagnostics -->
+        <div class="box mb-5">
+          <div class="is-flex is-justify-content-space-between is-align-items-center mb-4">
+            <div>
+              <p class="title is-5 mb-1">🔍 動作診断</p>
+              <p class="is-size-7 has-text-grey">システム全体の健康状態を確認します</p>
+            </div>
+            <button class="button is-info is-small">診断を実行</button>
+          </div>
+          <!-- Simulated results -->
+          <div>
+            <div class="mb-3">
+              <span class="tag is-success is-light">正常</span>
+              <span class="is-size-7 ml-2">2026/04/19 14:30:00</span>
+            </div>
+            <table class="table is-fullwidth is-hoverable is-narrow">
+              <thead>
+                <tr>
+                  <th>シート名</th>
+                  <th>状態</th>
+                  <th>行数</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="is-size-7">properties</td>
+                  <td><span class="tag is-small is-success">正常</span></td>
+                  <td class="is-size-7">3</td>
+                </tr>
+                <tr>
+                  <td class="is-size-7">rooms_P000001</td>
+                  <td><span class="tag is-small is-success">正常</span></td>
+                  <td class="is-size-7">6</td>
+                </tr>
+                <tr>
+                  <td class="is-size-7">monthly_P000001</td>
+                  <td><span class="tag is-small is-danger">異常</span></td>
+                  <td class="is-size-7">12</td>
+                </tr>
+              </tbody>
+            </table>
+            <div>
+              <div class="notification mb-2 py-2 px-3 is-warning is-light">
+                <span class="is-size-7">⚠️ monthly_P000001 に重複エントリが見つかりました</span>
+              </div>
+              <div class="notification mb-2 py-2 px-3 is-info is-light">
+                <span class="is-size-7">ℹ️ 次回月次処理は4月分として予定されています</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Data Tools -->
+        <p class="heading mb-3">データメンテナンス</p>
+        <div class="columns is-multiline">
+          <!-- Tool 1 — Normal state -->
+          <div class="column is-6">
+            <div class="box">
+              <p class="title is-5">🔍 データの確認</p>
+              <p class="subtitle is-6 has-text-grey-light">全データの整合性を確認します</p>
+              <button class="button is-info">実行</button>
+            </div>
+          </div>
+
+          <!-- Tool 2 — Confirm-pending state -->
+          <div class="column is-6">
+            <div class="box">
+              <p class="title is-5">📦 月次→年アーカイブ移行</p>
+              <p class="subtitle is-6 has-text-grey-light">
+                月次データを年間アーカイブに移行します
+              </p>
+              <div class="notification is-warning is-light">
+                <p>月次→年アーカイブ移行を実行します。この操作は取り消せません。</p>
+                <div class="field is-grouped mt-2">
+                  <button class="button is-danger">実行する</button>
+                  <button class="button is-light">キャンセル</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tool 3 — Loading state -->
+          <div class="column is-6">
+            <div class="box">
+              <p class="title is-5">🗑️ 重複データの削除</p>
+              <p class="subtitle is-6 has-text-grey-light">重複する検針データを検出・削除します</p>
+              <div class="has-text-centered">
+                <button class="button is-loading is-static is-large"></button>
+                <p class="is-size-7 mt-2 has-text-grey-light">処理中...</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tool 4 — Success state -->
+          <div class="column is-6">
+            <div class="box">
+              <p class="title is-5">🧹 不要データの削除</p>
+              <p class="subtitle is-6 has-text-grey-light">不要な古いデータを削除します</p>
+              <div class="notification is-success is-light">
+                <p>不要データ 3件を正常に削除しました</p>
+                <button class="button is-small is-light mt-2">再実行</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tool 5 — Error state -->
+          <div class="column is-6">
+            <div class="box">
+              <p class="title is-5">⚠️ エラー状態サンプル</p>
+              <p class="subtitle is-6 has-text-grey-light">エラー発生時の表示確認用</p>
+              <div class="notification is-danger is-light" role="alert">
+                <p>処理に失敗しました: スプレッドシートへのアクセス権限がありません</p>
+                <button class="button is-small is-light mt-2">再試行</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <!-- I) TOAST NOTIFICATIONS -->
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <div id="section-toasts" class="mock-section">
+      <div style="padding: 2rem">
+        <p class="title is-4">🔔 Toast Notifications</p>
+        <p class="mb-4 has-text-grey">
+          トースト通知のデザイン確認。下のボタンでトーストを表示できます。
+        </p>
+
+        <div class="field is-grouped mb-5">
+          <button
+            class="button is-success"
+            onclick="showToast('success', 'データが正常に保存されました')"
+          >
+            Success Toast
+          </button>
+          <button
+            class="button is-warning"
+            onclick="showToast('warning', '未検針の部屋が1件あります')"
+          >
+            Warning Toast
+          </button>
+          <button class="button is-danger" onclick="showToast('error', '通信エラーが発生しました')">
+            Error Toast
+          </button>
+          <button class="button is-info" onclick="showToast('info', '月次処理が完了しました')">
+            Info Toast
+          </button>
+        </div>
+
+        <!-- Static examples -->
+        <p class="heading mb-3">Static Examples</p>
+        <div style="position: relative; max-width: 400px">
+          <div class="toast-item is-success">
+            <span>データが正常に保存されました</span>
+            <button class="toast-dismiss" aria-label="通知を閉じる">✕</button>
+          </div>
+          <div class="toast-item is-warning">
+            <span>未検針の部屋が1件あります</span>
+            <button class="toast-dismiss" aria-label="通知を閉じる">✕</button>
+          </div>
+          <div class="toast-item is-error">
+            <span>通信エラーが発生しました</span>
+            <button class="toast-dismiss" aria-label="通知を閉じる">✕</button>
+          </div>
+          <div class="toast-item is-info">
+            <span>月次処理が完了しました</span>
+            <button class="toast-dismiss" aria-label="通知を閉じる">✕</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <!-- LIVE TOAST CONTAINER -->
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <div
+      class="toast-container"
+      id="live-toast-container"
+      aria-live="polite"
+      aria-atomic="false"
+    ></div>
+
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <!-- JAVASCRIPT -->
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <script>
+      // ── Theme Toggle ──
+      function toggleTheme() {
+        var html = document.documentElement;
+        var current = html.getAttribute('data-theme');
+        var next = current === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        // Update all theme buttons
+        var btns = document.querySelectorAll('.theme-toggle-btn');
+        btns.forEach(function (btn) {
+          btn.textContent = next === 'dark' ? '☀️' : '🌙';
+        });
+      }
+
+      // ── Section Tab Switching ──
+      function showSection(id) {
+        // Hide all sections
+        document.querySelectorAll('.mock-section').forEach(function (el) {
+          el.classList.remove('active');
+        });
+        // Show target
+        var target = document.getElementById('section-' + id);
+        if (target) target.classList.add('active');
+        // Update nav tabs
+        document.querySelectorAll('.mock-nav .mock-tab').forEach(function (tab) {
+          tab.classList.remove('active');
+          if (tab.getAttribute('onclick') === "showSection('" + id + "')") {
+            tab.classList.add('active');
+          }
+        });
+      }
+
+      // ── Toast Notifications ──
+      var toastCounter = 0;
+      function showToast(type, message) {
+        var container = document.getElementById('live-toast-container');
+        var id = 'toast-' + ++toastCounter;
+        var el = document.createElement('div');
+        el.className = 'toast-item is-' + type;
+        el.id = id;
+        el.innerHTML =
+          '<span>' +
+          message +
+          '</span>' +
+          '<button class="toast-dismiss" aria-label="通知を閉じる" onclick="dismissToast(\'' +
+          id +
+          '\')">✕</button>';
+        container.appendChild(el);
+        // Auto-dismiss after 5s
+        setTimeout(function () {
+          dismissToast(id);
+        }, 5000);
+      }
+
+      function dismissToast(id) {
+        var el = document.getElementById(id);
+        if (el) el.parentNode.removeChild(el);
+      }
+    </script>
+  </body>
+</html>
