@@ -969,44 +969,54 @@ document.addEventListener('alpine:init', function () {
           alert('ポップアップがブロックされています。印刷用ウィンドウを許可してください。');
           return;
         }
-        printWindow.document.open();
-        printWindow.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8">');
-        printWindow.document.write('<title>' + title + '</title>');
-        printWindow.document.write(
-          '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.4/css/bulma.min.css">'
-        );
+
+        var htmlParts = [];
+        htmlParts.push('<!DOCTYPE html><html><head><meta charset="UTF-8">');
+        htmlParts.push('<title>' + title + '</title>');
+        htmlParts.push('<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.4/css/bulma.min.css">');
+
         var styles = document.querySelectorAll('style');
         for (var i = 0; i < styles.length; i++) {
-          var styleEl = printWindow.document.createElement('style');
-          styleEl.textContent = styles[i].textContent;
-          printWindow.document.head.appendChild(styleEl);
+          htmlParts.push('<style>' + styles[i].textContent + '</style>');
         }
-        printWindow.document.write(
+
+        htmlParts.push(
           '<style>' +
+          '*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}' +
           '.no-print{display:none!important}' +
           '.print-header{display:block!important}' +
           '@page{size:landscape;margin:10mm}' +
-          '*{-webkit-print-color-adjust:exact;print-color-adjust:exact}' +
           '.print-actions{position:sticky;top:0;z-index:100;background:#fff;padding:12px 16px;border-bottom:1px solid #dbdbdb;display:flex;align-items:center;gap:12px}' +
           '@media print{.print-actions{display:none!important}}' +
+          '.val-abnormal{color:#c00!important;font-weight:700!important}' +
+          '.cell-zero{background:#f0f0f0!important}' +
+          '.val-normal{color:#333!important}' +
           '</style>'
         );
-        printWindow.document.write('</head><body>');
-        printWindow.document.write(
+        htmlParts.push('</head><body>');
+        htmlParts.push(
           '<div class="print-actions no-print">' +
           '<strong style="font-size:1.1em">' + title + '</strong>' +
-          '<button onclick="doPrint()" style="padding:6px 16px;font-size:0.9em;cursor:pointer;border:1px solid #3273dc;background:#3273dc;color:#fff;border-radius:4px">🖨️ 印刷する</button>' +
+          '<button id="printBtn" style="padding:6px 16px;font-size:0.9em;cursor:pointer;border:1px solid #3273dc;background:#3273dc;color:#fff;border-radius:4px">🖨️ 印刷する</button>' +
           '<span style="font-size:0.8em;color:#666">内容を確認してから印刷ボタンを押してください</span>' +
           '</div>'
         );
-        printWindow.document.write('</body></html>');
+        htmlParts.push('</body></html>');
+
+        printWindow.document.open();
+        printWindow.document.write(htmlParts.join(''));
         printWindow.document.close();
+
         var cloned = container.cloneNode(true);
         printWindow.document.body.appendChild(cloned);
         printWindow.document.title = title;
-        printWindow.doPrint = function () {
-          printWindow.print();
-        };
+
+        var printBtn = printWindow.document.getElementById('printBtn');
+        if (printBtn) {
+          printBtn.addEventListener('click', function () {
+            printWindow.print();
+          });
+        }
         printWindow.addEventListener('afterprint', function () {
           printWindow.close();
         });
