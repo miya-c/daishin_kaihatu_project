@@ -970,29 +970,34 @@ document.addEventListener('alpine:init', function () {
           return;
         }
 
+        var printStyles = [
+          '* { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; box-sizing: border-box; }',
+          'body { font-family: sans-serif; margin: 0; padding: 16px; color: #333; }',
+          'table { border-collapse: collapse; width: 100%; font-size: 0.8rem; }',
+          'th, td { border: 1px solid #dbdbdb; padding: 0.4rem 0.6rem; text-align: center; white-space: nowrap; }',
+          'thead th { background: #f0f0f0; font-weight: 600; border-bottom: 2px solid #dbdbdb; position: sticky; top: 0; }',
+          '.room-col { text-align: left; font-weight: 500; min-width: 80px; }',
+          '.val-normal { color: #1a6db5; font-weight: 500; }',
+          '.val-abnormal { color: #e74c3c; font-weight: 700; }',
+          '.val-zero { color: #999; }',
+          '.cell-zero { background: #f5f5f5; }',
+          '.legend { display: flex; gap: 1.5rem; font-size: 0.8rem; color: #666; margin-bottom: 1rem; }',
+          '.legend-item { display: flex; align-items: center; gap: 0.5rem; }',
+          '.legend-dot { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }',
+          '.print-header { margin-bottom: 1.5rem; }',
+          '.print-header h2 { margin: 0 0 0.25rem; font-size: 1.2rem; }',
+          '.print-header p { margin: 0; font-size: 0.8rem; color: #666; }',
+          '.no-print { display: none !important; }',
+          '.print-actions { position: sticky; top: 0; z-index: 100; background: #fff; padding: 12px 16px; border-bottom: 1px solid #dbdbdb; display: flex; align-items: center; gap: 12px; }',
+          'tr, .summary-card { page-break-inside: avoid; break-inside: avoid; }',
+          '@page { size: landscape; margin: 10mm; }',
+          '@media print { .print-actions { display: none !important; } }',
+        ].join('\n');
+
         var htmlParts = [];
         htmlParts.push('<!DOCTYPE html><html><head><meta charset="UTF-8">');
         htmlParts.push('<title>' + title + '</title>');
-        htmlParts.push('<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.4/css/bulma.min.css">');
-
-        var styles = document.querySelectorAll('style');
-        for (var i = 0; i < styles.length; i++) {
-          htmlParts.push('<style>' + styles[i].textContent + '</style>');
-        }
-
-        htmlParts.push(
-          '<style>' +
-          '*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}' +
-          '.no-print{display:none!important}' +
-          '.print-header{display:block!important}' +
-          '@page{size:landscape;margin:10mm}' +
-          '.print-actions{position:sticky;top:0;z-index:100;background:#fff;padding:12px 16px;border-bottom:1px solid #dbdbdb;display:flex;align-items:center;gap:12px}' +
-          '@media print{.print-actions{display:none!important}}' +
-          '.val-abnormal{color:#c00!important;font-weight:700!important}' +
-          '.cell-zero{background:#f0f0f0!important}' +
-          '.val-normal{color:#333!important}' +
-          '</style>'
-        );
+        htmlParts.push('<style>' + printStyles + '</style>');
         htmlParts.push('</head><body>');
         htmlParts.push(
           '<div class="print-actions no-print">' +
