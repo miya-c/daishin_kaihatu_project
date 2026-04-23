@@ -805,10 +805,14 @@
           --bulma-text-weak-l: 42% !important;
           --bulma-border: #dbdbdb !important;
         }
-        body { background-color: #fff !important; color: #000 !important; }
-        * { color: #000 !important; text-shadow: none !important; box-shadow: none !important; }
+        body { background-color: #fff !important; }
+        * { text-shadow: none !important; box-shadow: none !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         .no-print { display: none !important; }
         .print-header { display: block !important; margin-bottom: 1.5rem; }
+        .val-abnormal { color: #c00 !important; font-weight: 700 !important; }
+        .val-normal { color: #333 !important; }
+        .cell-zero { background: #f0f0f0 !important; }
+        .legend-dot { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
         .content-scroll {
           overflow: visible !important;
           max-width: none !important;

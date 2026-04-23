@@ -971,7 +971,7 @@ document.addEventListener('alpine:init', function () {
         }
         printWindow.document.open();
         printWindow.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8">');
-        printWindow.document.write('<title></title>');
+        printWindow.document.write('<title>' + title + '</title>');
         printWindow.document.write(
           '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.4/css/bulma.min.css">'
         );
@@ -982,22 +982,34 @@ document.addEventListener('alpine:init', function () {
           printWindow.document.head.appendChild(styleEl);
         }
         printWindow.document.write(
-          '<style>.no-print{display:none!important}.print-header{display:block!important}@page{size:landscape;margin:10mm}</style>'
+          '<style>' +
+          '.no-print{display:none!important}' +
+          '.print-header{display:block!important}' +
+          '@page{size:landscape;margin:10mm}' +
+          '*{-webkit-print-color-adjust:exact;print-color-adjust:exact}' +
+          '.print-actions{position:sticky;top:0;z-index:100;background:#fff;padding:12px 16px;border-bottom:1px solid #dbdbdb;display:flex;align-items:center;gap:12px}' +
+          '@media print{.print-actions{display:none!important}}' +
+          '</style>'
         );
         printWindow.document.write('</head><body>');
+        printWindow.document.write(
+          '<div class="print-actions no-print">' +
+          '<strong style="font-size:1.1em">' + title + '</strong>' +
+          '<button onclick="doPrint()" style="padding:6px 16px;font-size:0.9em;cursor:pointer;border:1px solid #3273dc;background:#3273dc;color:#fff;border-radius:4px">🖨️ 印刷する</button>' +
+          '<span style="font-size:0.8em;color:#666">内容を確認してから印刷ボタンを押してください</span>' +
+          '</div>'
+        );
         printWindow.document.write('</body></html>');
         printWindow.document.close();
         var cloned = container.cloneNode(true);
         printWindow.document.body.appendChild(cloned);
         printWindow.document.title = title;
-        printWindow.onload = function () {
-          setTimeout(function () {
-            printWindow.addEventListener('afterprint', function () {
-              printWindow.close();
-            });
-            printWindow.print();
-          }, 600);
+        printWindow.doPrint = function () {
+          printWindow.print();
         };
+        printWindow.addEventListener('afterprint', function () {
+          printWindow.close();
+        });
       },
 
       setAnnualReportYear: function (e) {
