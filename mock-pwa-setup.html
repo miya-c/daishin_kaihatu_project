@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>水道検針PWA - セットアップデモ</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+  <style>
+    body { background: #f5f7fa; min-height: 100vh; }
+    .setup-container { max-width: 480px; margin: 0 auto; padding: 2rem 1rem; }
+    .logo-area { text-align: center; margin-bottom: 2rem; }
+    .logo-area h1 { font-size: 1.5rem; font-weight: 700; color: #363636; }
+    .logo-area p { color: #7a7a7a; font-size: 0.9rem; margin-top: 0.5rem; }
+    .config-display { font-family: monospace; font-size: 0.8rem; word-break: break-all; background: #f0f0f0; padding: 0.75rem; border-radius: 4px; margin-top: 0.5rem; }
+    .step-indicator { display: flex; justify-content: center; gap: 0.5rem; margin-bottom: 2rem; }
+    .step-dot { width: 10px; height: 10px; border-radius: 50%; background: #dbdbdb; }
+    .step-dot.active { background: #3273dc; }
+    .step-dot.done { background: #48c774; }
+    .result-box { background: #f0fff0; border: 1px solid #48c774; border-radius: 6px; padding: 1rem; margin-top: 1rem; }
+    .error-box { background: #fff5f5; border: 1px solid #f14668; border-radius: 6px; padding: 1rem; margin-top: 1rem; }
+    .toolbar { background: #fff; border-bottom: 1px solid #dbdbdb; padding: 0.5rem 1rem; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; }
+    .toolbar-title { font-weight: 600; font-size: 1rem; }
+    .property-card { background: #fff; border-radius: 8px; padding: 1rem; margin-bottom: 0.75rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); cursor: pointer; transition: box-shadow 0.2s; }
+    .property-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+    .property-name { font-weight: 600; font-size: 1rem; }
+    .property-count { font-size: 0.8rem; color: #7a7a7a; }
+    .hidden { display: none !important; }
+    .sim-input { background: #fffbeb; border-color: #f0c36d; }
+    .sim-label { font-size: 0.75rem; color: #b8860b; margin-bottom: 0.25rem; }
+    .demo-banner { background: #3273dc; color: #fff; padding: 0.5rem 1rem; font-size: 0.8rem; text-align: center; }
+    .demo-banner a { color: #fff; text-decoration: underline; }
+    .link-sample { background: #eef3fc; border: 1px solid #3273dc; border-radius: 6px; padding: 0.75rem; font-family: monospace; font-size: 0.75rem; word-break: break-all; margin: 0.5rem 0; }
+    .nav-menu { display: flex; align-items: center; gap: 1rem; }
+    .nav-menu button { background: none; border: none; cursor: pointer; font-size: 1.2rem; padding: 0.25rem; }
+    .settings-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; display: flex; align-items: center; justify-content: center; }
+    .settings-modal { background: #fff; border-radius: 8px; padding: 1.5rem; width: 90%; max-width: 400px; }
+  </style>
+</head>
+<body>
+
+  <!-- DEMO BANNER -->
+  <div class="demo-banner" id="demoBanner">
+    🎯 デモモード — 設定リンクの動作を体験できます。下部の「デモ操作」から各パターンをお試しください。
+  </div>
+
+  <!-- ==================== SCREEN 1: Setup Screen (no config) ==================== -->
+  <div id="screenSetup" class="setup-container">
+    <div class="step-indicator">
+      <div class="step-dot active"></div>
+      <div class="step-dot"></div>
+    </div>
+
+    <div class="logo-area">
+      <p style="font-size: 2.5rem; margin-bottom: 0.5rem;">💧</p>
+      <h1>水道検針アプリ</h1>
+      <p>初期設定を行います</p>
+    </div>
+
+    <div class="box">
+      <div class="field">
+        <label class="label is-small">GAS Web App URL</label>
+        <div class="control has-icons-left">
+          <input class="input is-small" id="inputUrl" type="url" placeholder="https://script.google.com/macros/s/.../exec">
+          <span class="icon is-small is-left">🔗</span>
+        </div>
+        <p class="help">管理画面のURLと同じです。設定リンクから自動入力されます。</p>
+      </div>
+
+      <div class="field">
+        <label class="label is-small">APIキー</label>
+        <div class="control has-icons-left">
+          <input class="input is-small" id="inputKey" type="text" placeholder="sk-xxxxxxxx">
+          <span class="icon is-small is-left">🔑</span>
+        </div>
+        <p class="help">スクリプトプロパティに設定したAPI_KEYです。</p>
+      </div>
+
+      <div class="field">
+        <button class="button is-primary is-fullwidth" id="btnSaveConfig" onclick="saveConfig()">
+          設定して開始
+        </button>
+      </div>
+
+      <div id="setupError" class="error-box hidden">
+        <p class="is-size-7 has-text-danger">⚠️ <span id="setupErrorMsg"></span></p>
+      </div>
+    </div>
+
+    <div class="has-text-centered mt-4">
+      <p class="is-size-7 has-text-grey">設定リンクを開いた場合は自動的に入力されます</p>
+    </div>
+  </div>
+
+  <!-- ==================== SCREEN 2: App (configured) ==================== -->
+  <div id="screenApp" class="hidden">
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <span class="toolbar-title">💧 水道検針</span>
+      <div class="nav-menu">
+        <button onclick="showSettings()" title="設定">⚙️</button>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div style="max-width: 480px; margin: 0 auto; padding: 1rem;">
+      <p class="title is-5 mb-3">物件を選択</p>
+
+      <div class="property-card" onclick="alert('（本番では物件選択 → 部屋選択 → 検針入力の画面に遷移します）')">
+        <div class="property-name">🏢 Aマンション</div>
+        <div class="property-count">15部屋 ・ 12室検針済み</div>
+      </div>
+
+      <div class="property-card" onclick="alert('（本番では物件選択 → 部屋選択 → 検針入力の画面に遷移します）')">
+        <div class="property-name">🏠 Bハイツ</div>
+        <div class="property-count">6部屋 ・ 3室検針済み</div>
+      </div>
+
+      <div class="property-card" onclick="alert('（本番では物件選択 → 部屋選択 → 検針入力の画面に遷移します）')">
+        <div class="property-name">🏬 Cビル</div>
+        <div class="property-count">35部屋 ・ 0室検針済み</div>
+      </div>
+
+      <!-- Connection Info -->
+      <div class="box mt-4" style="background: #f9f9f9;">
+        <p class="heading is-size-7">接続先</p>
+        <p class="is-size-7 has-text-grey" id="connectedUrl"></p>
+        <p class="is-size-7 mt-1">状態: <span class="has-text-success">✅ 接続済み</span></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== Settings Modal ==================== -->
+  <div id="settingsModal" class="settings-modal-overlay hidden" onclick="closeSettings(event)">
+    <div class="settings-modal" onclick="event.stopPropagation()">
+      <p class="title is-5 mb-3">⚙️ 設定</p>
+
+      <div class="field">
+        <label class="label is-small">GAS Web App URL</label>
+        <div class="control">
+          <input class="input is-small" id="settingsUrl" type="url">
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="label is-small">APIキー</label>
+        <div class="control">
+          <input class="input is-small" id="settingsKey" type="text">
+        </div>
+      </div>
+
+      <div class="field is-grouped">
+        <div class="control">
+          <button class="button is-primary is-small" onclick="updateConfig()">保存</button>
+        </div>
+        <div class="control">
+          <button class="button is-danger is-small is-light" onclick="clearConfig()">設定をクリア</button>
+        </div>
+        <div class="control">
+          <button class="button is-small" onclick="hideSettings()">閉じる</button>
+        </div>
+      </div>
+
+      <div id="settingsResult" class="hidden"></div>
+    </div>
+  </div>
+
+  <!-- ==================== DEMO CONTROLS ==================== -->
+  <div style="position: fixed; bottom: 0; left: 0; right: 0; background: #1a1a2e; color: #fff; padding: 1rem; z-index: 50;">
+    <p class="is-size-7 has-text-weight-bold mb-2">🎯 デモ操作:</p>
+    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+      <button class="button is-small is-info" onclick="demoAutoConfig()">
+        📱 設定リンクをシミュレート
+      </button>
+      <button class="button is-small is-warning" onclick="demoManualInput()">
+        ✏️ 手動入力をシミュレート
+      </button>
+      <button class="button is-small is-danger" onclick="demoClearConfig()">
+        🗑️ 設定クリア（初回に戻す）
+      </button>
+      <button class="button is-small is-light" onclick="showSettings()">
+        ⚙️ 設定画面を開く
+      </button>
+    </div>
+    <div style="margin-top: 0.5rem;">
+      <p class="is-size-7" style="color: #aaa;">
+        設定リンクの例:<br>
+        <span class="link-sample" id="demoLink"></span>
+      </p>
+    </div>
+  </div>
+
+  <div style="height: 180px;"></div>
+
+  <script>
+    // ========== Config Manager ==========
+    var STORAGE_URL_KEY = 'gasWebAppUrl';
+    var STORAGE_KEY_KEY = 'gasApiKey';
+
+    function getConfig() {
+      try {
+        return {
+          url: localStorage.getItem(STORAGE_URL_KEY) || '',
+          key: localStorage.getItem(STORAGE_KEY_KEY) || ''
+        };
+      } catch (e) {
+        return { url: '', key: '' };
+      }
+    }
+
+    function setConfig(url, key) {
+      try {
+        localStorage.setItem(STORAGE_URL_KEY, url);
+        localStorage.setItem(STORAGE_KEY_KEY, key);
+        return true;
+      } catch (e) {
+        return false;
+      }
+    }
+
+    function removeConfig() {
+      try {
+        localStorage.removeItem(STORAGE_URL_KEY);
+        localStorage.removeItem(STORAGE_KEY_KEY);
+      } catch (e) {}
+    }
+
+    // ========== URL Hash Parsing ==========
+    function parseHashConfig() {
+      var hash = window.location.hash;
+      if (!hash || hash.length < 2) return null;
+
+      var params = new URLSearchParams(hash.substring(1));
+      var url = params.get('url') || params.get('gas_url') || '';
+      var key = params.get('key') || params.get('api_key') || '';
+
+      if (url) {
+        return { url: decodeURIComponent(url), key: decodeURIComponent(key) };
+      }
+      return null;
+    }
+
+    function applyHashConfig() {
+      var config = parseHashConfig();
+      if (config) {
+        document.getElementById('inputUrl').value = config.url;
+        document.getElementById('inputKey').value = config.key;
+
+        if (config.url && config.key) {
+          setConfig(config.url, config.key);
+          showApp();
+          return true;
+        }
+      }
+      return false;
+    }
+
+    // ========== Screen Management ==========
+    function showSetup() {
+      document.getElementById('screenSetup').classList.remove('hidden');
+      document.getElementById('screenApp').classList.add('hidden');
+    }
+
+    function showApp() {
+      document.getElementById('screenSetup').classList.add('hidden');
+      document.getElementById('screenApp').classList.remove('hidden');
+
+      var config = getConfig();
+      var displayUrl = config.url || '（未設定）';
+      if (displayUrl.length > 50) displayUrl = displayUrl.substring(0, 50) + '...';
+      document.getElementById('connectedUrl').textContent = displayUrl;
+    }
+
+    function render() {
+      var config = getConfig();
+
+      if (config.url && config.key) {
+        showApp();
+      } else {
+        showSetup();
+        if (!applyHashConfig()) {
+          // Stay on setup, no hash config found
+        }
+      }
+    }
+
+    // ========== User Actions ==========
+    function saveConfig() {
+      var url = document.getElementById('inputUrl').value.trim();
+      var key = document.getElementById('inputKey').value.trim();
+
+      if (!url) {
+        showError('GAS Web App URLを入力してください');
+        return;
+      }
+      if (!key) {
+        showError('APIキーを入力してください');
+        return;
+      }
+      if (!url.startsWith('https://script.google.com/')) {
+        showError('URLが正しくありません（https://script.google.com/... の形式）');
+        return;
+      }
+
+      if (setConfig(url, key)) {
+        hideError();
+        showApp();
+      } else {
+        showError('設定の保存に失敗しました');
+      }
+    }
+
+    function clearConfig() {
+      removeConfig();
+      document.getElementById('inputUrl').value = '';
+      document.getElementById('inputKey').value = '';
+      hideSettings();
+      render();
+    }
+
+    function updateConfig() {
+      var url = document.getElementById('settingsUrl').value.trim();
+      var key = document.getElementById('settingsKey').value.trim();
+
+      if (url && key) {
+        setConfig(url, key);
+        var result = document.getElementById('settingsResult');
+        result.innerHTML = '<div class="result-box"><p class="is-size-7 has-text-success">✅ 設定を保存しました</p></div>';
+        result.classList.remove('hidden');
+        setTimeout(function () {
+          hideSettings();
+          render();
+        }, 800);
+      }
+    }
+
+    // ========== Settings Modal ==========
+    function showSettings() {
+      var config = getConfig();
+      document.getElementById('settingsUrl').value = config.url;
+      document.getElementById('settingsKey').value = config.key;
+      document.getElementById('settingsResult').classList.add('hidden');
+      document.getElementById('settingsModal').classList.remove('hidden');
+    }
+
+    function hideSettings() {
+      document.getElementById('settingsModal').classList.add('hidden');
+    }
+
+    function closeSettings(e) {
+      if (e.target === document.getElementById('settingsModal')) {
+        hideSettings();
+      }
+    }
+
+    // ========== Error Display ==========
+    function showError(msg) {
+      document.getElementById('setupErrorMsg').textContent = msg;
+      document.getElementById('setupError').classList.remove('hidden');
+    }
+
+    function hideError() {
+      document.getElementById('setupError').classList.add('hidden');
+    }
+
+    // ========== Demo Helpers ==========
+    var DEMO_URL = 'https://script.google.com/macros/s/1iSR_dY3jWIN3rXRXMeYKyulOggtmM2LDhkzlFqM9MccWCupqEwquE04-/exec';
+    var DEMO_KEY = 'sk-demo-a1b2c3d4e5f6g7h8';
+
+    function generateDemoLink() {
+      var link = window.location.origin + window.location.pathname + '#url=' + encodeURIComponent(DEMO_URL) + '&key=' + encodeURIComponent(DEMO_KEY);
+      document.getElementById('demoLink').textContent = link;
+      return link;
+    }
+
+    function demoAutoConfig() {
+      window.location.hash = 'url=' + encodeURIComponent(DEMO_URL) + '&key=' + encodeURIComponent(DEMO_KEY);
+      applyHashConfig();
+    }
+
+    function demoManualInput() {
+      removeConfig();
+      showSetup();
+      document.getElementById('inputUrl').value = DEMO_URL;
+      document.getElementById('inputKey').value = DEMO_KEY;
+    }
+
+    function demoClearConfig() {
+      removeConfig();
+      window.location.hash = '';
+      showSetup();
+      document.getElementById('inputUrl').value = '';
+      document.getElementById('inputKey').value = '';
+    }
+
+    // ========== Init ==========
+    generateDemoLink();
+    render();
+  </script>
+</body>
+</html>

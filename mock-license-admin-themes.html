@@ -1,0 +1,1882 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ライセンス管理 管理画面</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.4/css/bulma.min.css" />
+    <script>
+      // Apply theme immediately to prevent FOUC
+      (function() {
+        var saved = localStorage.getItem('admin-theme') || 'blue';
+        document.documentElement.setAttribute('data-theme', saved);
+      })();
+    </script>
+    <style>
+      /* ══════════════════════════════════════════════ */
+      /* THEME: Blue (default)                          */
+      /* ══════════════════════════════════════════════ */
+      :root {
+        --bulma-scheme-h: 220;
+        --bulma-scheme-s: 14%;
+        --bulma-scheme-main-l: 97%;
+        --bulma-scheme-main-bis-l: 98%;
+        --bulma-scheme-main-ter-l: 96%;
+        --bulma-scheme-invert-l: 8%;
+        --bulma-background-l: 96%;
+        --bulma-border-l: 90%;
+        --bulma-border-weak-l: 93%;
+        --bulma-text-l: 12%;
+        --bulma-text-weak-l: 42%;
+        --bulma-text-strong-l: 12%;
+        --bulma-text-title-l: 12%;
+        --bulma-soft-l: 90%;
+        --bulma-bold-l: 20%;
+        --bulma-primary-h: 217;
+        --bulma-primary-s: 91%;
+        --bulma-primary-l: 60%;
+        --bulma-primary-invert-l: 100%;
+        --bulma-link-h: 217;
+        --bulma-link-s: 91%;
+        --bulma-link-l: 60%;
+        --bulma-link-invert-l: 100%;
+        --bulma-box-background-color: #ffffff;
+        --bulma-box-radius: 8px;
+
+        /* Backgrounds */
+        --bg-base: hsl(220, 14%, 97%);
+        --bg-sidebar: #ffffff;
+        --bg-header: hsl(217, 91%, 60%);
+        --bg-card: #ffffff;
+        --bg-elevated: #fafafa;
+        --bg-input: #ffffff;
+        --bg-table-head: transparent;
+        --bg-table-even: hsl(220, 14%, 98%);
+        --bg-table-hover: hsl(220, 14%, 96%);
+
+        /* Borders */
+        --border-base: hsl(0, 0%, 93%);
+        --border-subtle: hsl(0, 0%, 93%);
+        --border-input: hsl(0, 0%, 90%);
+        --border-modal: hsl(0, 0%, 93%);
+
+        /* Text */
+        --text-primary: hsl(220, 14%, 12%);
+        --text-secondary: hsl(220, 14%, 42%);
+        --text-weak: hsl(220, 14%, 60%);
+        --text-faint: hsl(220, 14%, 75%);
+        --text-invert: #ffffff;
+        --text-title: hsl(220, 14%, 12%);
+
+        /* Header text */
+        --header-text: #ffffff;
+        --header-text-muted: rgba(255, 255, 255, 0.7);
+
+        /* Accent */
+        --accent: hsl(217, 91%, 60%);
+        --accent-hover: hsl(217, 91%, 50%);
+        --accent-text: hsl(217, 91%, 60%);
+        --accent-bg: hsl(217, 91%, 60%);
+        --accent-bg-text: #ffffff;
+
+        /* Sidebar active */
+        --sidebar-active-bg: hsl(217, 91%, 60%);
+        --sidebar-active-text: #ffffff;
+        --sidebar-hover-bg: hsl(220, 14%, 96%);
+
+        /* Status colors */
+        --status-active: hsl(153, 53%, 45%);
+        --status-active-bg: hsl(153, 53%, 45%);
+        --status-active-text: #ffffff;
+        --status-expiring: hsl(42, 100%, 45%);
+        --status-expiring-bg: hsl(42, 100%, 50%);
+        --status-expiring-text: #1a1a1a;
+        --status-revoked: hsl(0, 84%, 60%);
+        --status-revoked-bg: hsl(0, 84%, 60%);
+        --status-revoked-text: #ffffff;
+
+        /* Shadows */
+        --shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        --shadow-modal: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        --shadow-focus: 0 0 0 0.125em hsla(217, 91%, 60%, 0.25);
+
+        /* Code */
+        --code-bg: hsl(220, 14%, 96%);
+        --code-text: hsl(220, 14%, 20%);
+
+        /* Modal overlay */
+        --modal-overlay: rgba(0, 0, 0, 0.4);
+
+        /* Buttons */
+        --btn-primary-bg: hsl(217, 91%, 60%);
+        --btn-primary-text: #ffffff;
+        --btn-primary-hover: hsl(217, 91%, 50%);
+        --btn-default-bg: #ffffff;
+        --btn-default-text: hsl(220, 14%, 42%);
+        --btn-default-border: hsl(0, 0%, 90%);
+        --btn-default-hover-bg: hsl(220, 14%, 96%);
+        --btn-info-bg: var(--bg-card);
+        --btn-info-text: #aaaaaa;
+        --btn-info-border: var(--border-input);
+        --btn-info-hover-bg: #222222;
+        --btn-danger-bg: var(--bg-card);
+        --btn-danger-text: #cc6666;
+        --btn-danger-border: #443333;
+        --btn-delete-bg: hsl(0, 84%, 60%);
+        --btn-delete-text: #ffffff;
+
+        /* Radius */
+        --radius: 8px;
+
+        /* Toast */
+        --toast-success: hsl(153, 53%, 45%);
+        --toast-warning: hsl(42, 100%, 50%);
+        --toast-error: hsl(0, 84%, 60%);
+
+        /* Copy button */
+        --copy-border: hsl(0, 0%, 86%);
+        --copy-text: hsl(220, 14%, 42%);
+        --copy-hover-bg: hsl(220, 14%, 96%);
+        --copy-hover-border: var(--accent);
+        --copy-hover-text: var(--accent);
+
+        /* Login box */
+        --login-bg: #ffffff;
+        --login-title: hsl(220, 14%, 12%);
+        --login-subtitle: hsl(220, 14%, 60%);
+        --login-border: hsl(0, 0%, 93%);
+
+        /* Notification danger */
+        --notif-danger-bg: #fff5f5;
+        --notif-danger-text: #cc4444;
+        --notif-danger-border: #e8cccc;
+
+        /* Delete button in modal header */
+        --modal-delete-bg: #aaaaaa;
+
+        /* Table body text */
+        --table-body-text: var(--text-primary);
+        --table-body-border: var(--border-subtle);
+      }
+
+      /* ══════════════════════════════════════════════ */
+      /* THEME: Mono Dark                               */
+      /* ══════════════════════════════════════════════ */
+      [data-theme="mono-dark"] {
+        --bulma-scheme-h: 0;
+        --bulma-scheme-s: 0%;
+        --bulma-scheme-main-l: 5%;
+        --bulma-scheme-main-bis-l: 7%;
+        --bulma-scheme-main-ter-l: 4%;
+        --bulma-scheme-invert-l: 90%;
+        --bulma-background-l: 10%;
+        --bulma-border-l: 16%;
+        --bulma-border-weak-l: 13%;
+        --bulma-text-l: 90%;
+        --bulma-text-weak-l: 53%;
+        --bulma-text-strong-l: 90%;
+        --bulma-text-title-l: 90%;
+        --bulma-soft-l: 16%;
+        --bulma-bold-l: 80%;
+        --bulma-primary-h: 0;
+        --bulma-primary-s: 0%;
+        --bulma-primary-l: 100%;
+        --bulma-primary-invert-l: 0%;
+        --bulma-link-h: 0;
+        --bulma-link-s: 0%;
+        --bulma-link-l: 100%;
+        --bulma-link-invert-l: 0%;
+        --bulma-box-background-color: #1a1a1a;
+
+        --bg-base: #0d0d0d;
+        --bg-sidebar: #111111;
+        --bg-header: #111111;
+        --bg-card: #1a1a1a;
+        --bg-elevated: #1e1e1e;
+        --bg-input: #1a1a1a;
+        --bg-table-head: #151515;
+        --bg-table-even: #141414;
+        --bg-table-hover: #1a1a1a;
+
+        --border-base: #2a2a2a;
+        --border-subtle: #222222;
+        --border-input: #333333;
+        --border-modal: #2a2a2a;
+
+        --text-primary: #e8e8e8;
+        --text-secondary: #888888;
+        --text-weak: #666666;
+        --text-faint: #555555;
+        --text-invert: #e8e8e8;
+        --text-title: #ffffff;
+
+        --header-text: #e8e8e8;
+        --header-text-muted: rgba(232, 232, 232, 0.7);
+
+        --accent: #ffffff;
+        --accent-hover: #cccccc;
+        --accent-text: #ffffff;
+        --accent-bg: #ffffff;
+        --accent-bg-text: #000000;
+
+        --sidebar-active-bg: #ffffff;
+        --sidebar-active-text: #000000;
+        --sidebar-hover-bg: #1a1a1a;
+
+        --status-active: #a0a0a0;
+        --status-active-bg: #333333;
+        --status-active-text: #cccccc;
+        --status-expiring: #c0b080;
+        --status-expiring-bg: #3a3520;
+        --status-expiring-text: #c0b080;
+        --status-revoked: #cc6666;
+        --status-revoked-bg: #3a2020;
+        --status-revoked-text: #cc6666;
+
+        --shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+        --shadow-modal: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
+        --shadow-focus: 0 0 0 0.125em rgba(255, 255, 255, 0.15);
+
+        --code-bg: #222222;
+        --code-text: #cccccc;
+
+        --modal-overlay: rgba(0, 0, 0, 0.7);
+
+        --btn-primary-bg: #ffffff;
+        --btn-primary-text: #000000;
+        --btn-primary-hover: #e0e0e0;
+        --btn-default-bg: #1a1a1a;
+        --btn-default-text: #888888;
+        --btn-default-border: #333333;
+        --btn-default-hover-bg: #222222;
+        --btn-info-bg: #1a1a1a;
+        --btn-info-text: #aaaaaa;
+        --btn-info-border: #333333;
+        --btn-info-hover-bg: #222222;
+        --btn-danger-bg: #1a1a1a;
+        --btn-danger-text: #cc6666;
+        --btn-danger-border: #443333;
+        --btn-delete-bg: #cc4444;
+        --btn-delete-text: #ffffff;
+
+        --toast-success: #888888;
+        --toast-warning: #b0a080;
+        --toast-error: #cc6666;
+
+        --copy-border: #333333;
+        --copy-text: #888888;
+        --copy-hover-bg: #222222;
+        --copy-hover-border: #ffffff;
+        --copy-hover-text: #ffffff;
+
+        --login-bg: #1a1a1a;
+        --login-title: #ffffff;
+        --login-subtitle: #666666;
+        --login-border: #2a2a2a;
+
+        --notif-danger-bg: #2a1a1a;
+        --notif-danger-text: #cc6666;
+        --notif-danger-border: #443333;
+
+        --modal-delete-bg: #444444;
+
+        --table-body-text: #cccccc;
+        --table-body-border: #222222;
+      }
+
+      /* ══════════════════════════════════════════════ */
+      /* THEME: Mono Light                              */
+      /* ══════════════════════════════════════════════ */
+      [data-theme="mono-light"] {
+        --bulma-scheme-h: 0;
+        --bulma-scheme-s: 0%;
+        --bulma-scheme-main-l: 97%;
+        --bulma-scheme-main-bis-l: 98%;
+        --bulma-scheme-main-ter-l: 95%;
+        --bulma-scheme-invert-l: 10%;
+        --bulma-background-l: 96%;
+        --bulma-border-l: 90%;
+        --bulma-border-weak-l: 93%;
+        --bulma-text-l: 12%;
+        --bulma-text-weak-l: 45%;
+        --bulma-text-strong-l: 10%;
+        --bulma-text-title-l: 10%;
+        --bulma-soft-l: 92%;
+        --bulma-bold-l: 20%;
+        --bulma-primary-h: 0;
+        --bulma-primary-s: 0%;
+        --bulma-primary-l: 10%;
+        --bulma-primary-invert-l: 100%;
+        --bulma-link-h: 0;
+        --bulma-link-s: 0%;
+        --bulma-link-l: 10%;
+        --bulma-link-invert-l: 100%;
+        --bulma-box-background-color: #ffffff;
+
+        --bg-base: #f5f5f5;
+        --bg-sidebar: #ffffff;
+        --bg-header: #ffffff;
+        --bg-card: #ffffff;
+        --bg-elevated: #fafafa;
+        --bg-input: #ffffff;
+        --bg-table-head: #fafafa;
+        --bg-table-even: #fafafa;
+        --bg-table-hover: #f5f5f5;
+
+        --border-base: #e0e0e0;
+        --border-subtle: #ebebeb;
+        --border-input: #d0d0d0;
+        --border-modal: #e0e0e0;
+
+        --text-primary: #1a1a1a;
+        --text-secondary: #666666;
+        --text-weak: #999999;
+        --text-faint: #bbbbbb;
+        --text-invert: #1a1a1a;
+        --text-title: #1a1a1a;
+
+        --header-text: #1a1a1a;
+        --header-text-muted: rgba(26, 26, 26, 0.5);
+
+        --accent: #1a1a1a;
+        --accent-hover: #333333;
+        --accent-text: #1a1a1a;
+        --accent-bg: #1a1a1a;
+        --accent-bg-text: #ffffff;
+
+        --sidebar-active-bg: #1a1a1a;
+        --sidebar-active-text: #ffffff;
+        --sidebar-hover-bg: #ffffff;
+
+        --status-active: #555555;
+        --status-active-bg: #e0e0e0;
+        --status-active-text: #333333;
+        --status-expiring: #8a7a40;
+        --status-expiring-bg: #f0ead0;
+        --status-expiring-text: #8a7a40;
+        --status-revoked: #aa4444;
+        --status-revoked-bg: #f0d8d8;
+        --status-revoked-text: #aa4444;
+
+        --shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.06);
+        --shadow-modal: 0 10px 25px -5px rgba(0, 0, 0, 0.08);
+        --shadow-focus: 0 0 0 0.125em rgba(0, 0, 0, 0.1);
+
+        --code-bg: #f0f0f0;
+        --code-text: #333333;
+
+        --modal-overlay: rgba(0, 0, 0, 0.3);
+
+        --btn-primary-bg: #1a1a1a;
+        --btn-primary-text: #ffffff;
+        --btn-primary-hover: #333333;
+        --btn-default-bg: #ffffff;
+        --btn-default-text: #666666;
+        --btn-default-border: #d0d0d0;
+        --btn-default-hover-bg: #f5f5f5;
+        --btn-info-bg: #f5f5f5;
+        --btn-info-text: #666666;
+        --btn-info-border: #d0d0d0;
+        --btn-info-hover-bg: #eeeeee;
+        --btn-danger-bg: #fff5f5;
+        --btn-danger-text: #cc4444;
+        --btn-danger-border: #e8cccc;
+        --btn-delete-bg: #cc4444;
+        --btn-delete-text: #ffffff;
+
+        --toast-success: #aaaaaa;
+        --toast-warning: #c0b080;
+        --toast-error: #cc6666;
+
+        --copy-border: #d0d0d0;
+        --copy-text: #666666;
+        --copy-hover-bg: #f5f5f5;
+        --copy-hover-border: #1a1a1a;
+        --copy-hover-text: #1a1a1a;
+
+        --login-bg: #ffffff;
+        --login-title: #1a1a1a;
+        --login-subtitle: #999999;
+        --login-border: #e0e0e0;
+
+        --notif-danger-bg: #fff5f5;
+        --notif-danger-text: #cc4444;
+        --notif-danger-border: #e8cccc;
+
+        --modal-delete-bg: #cccccc;
+
+        --table-body-text: #444444;
+        --table-body-border: #f0f0f0;
+      }
+
+      /* ══════════════════════════════════════════════ */
+      /* SHARED CSS (uses variables for theming)        */
+      /* ══════════════════════════════════════════════ */
+
+      body {
+        background-color: var(--bg-base);
+        color: var(--text-primary);
+      }
+
+      /* ── Layout ── */
+      .sidebar {
+        min-height: 100vh;
+        background: var(--bg-sidebar);
+        padding: 1rem;
+        border-right: 1px solid var(--border-subtle);
+        transition: transform 0.3s ease;
+      }
+      .sidebar-menu {
+        padding-top: 1rem;
+      }
+      .sidebar-menu .menu-label {
+        font-size: 0.75rem;
+        letter-spacing: 0.05em;
+        color: var(--text-weak);
+      }
+      .sidebar-menu .menu-list a {
+        padding: 0.5em 0.75em;
+        border-radius: 8px;
+        transition: background 0.2s, color 0.2s;
+        color: var(--text-secondary);
+      }
+      .sidebar-menu .menu-list a.is-active {
+        background: var(--sidebar-active-bg);
+        color: var(--sidebar-active-text);
+        font-weight: 600;
+      }
+      .sidebar-menu .menu-list a:hover:not(.is-active) {
+        background: var(--sidebar-hover-bg);
+        color: var(--text-primary);
+      }
+      .main-content {
+        padding: 2rem;
+      }
+      .admin-header {
+        background: var(--bg-header);
+        color: var(--header-text);
+        padding: 0.75rem 1.5rem;
+        border-bottom: 1px solid var(--border-subtle);
+      }
+      .admin-header .navbar-item,
+      .admin-header strong,
+      .admin-header span,
+      .admin-header button {
+        color: var(--header-text);
+      }
+
+      /* ── Box / Cards ── */
+      .box {
+        background: var(--bg-card);
+        border: 1px solid var(--border-base);
+        border-radius: 8px;
+        box-shadow: var(--shadow-card);
+        color: var(--text-primary);
+      }
+
+      /* ── Summary Cards ── */
+      .summary-bar {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+      }
+      .summary-card {
+        background: var(--bg-card);
+        border-radius: 8px;
+        padding: 1rem 1.5rem;
+        border: 1px solid var(--border-base);
+        box-shadow: var(--shadow-card);
+        flex: 1;
+        min-width: 180px;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.25rem;
+      }
+      .summary-card .lbl {
+        font-size: 0.85rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-secondary);
+      }
+      .summary-card .num {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: var(--text-primary);
+      }
+
+      /* ── Status color classes (replaces inline styles) ── */
+      .status-active-color { color: var(--status-active) !important; }
+      .status-expiring-color { color: var(--status-expiring) !important; }
+      .status-revoked-color { color: var(--status-revoked) !important; }
+
+      /* ── Header text classes ── */
+      .header-text { color: var(--header-text) !important; }
+      .header-text-muted { color: var(--header-text-muted) !important; }
+
+      /* ── Inputs ── */
+      .input, .select select, .textarea {
+        background-color: var(--bg-input);
+        color: var(--text-primary);
+        border-color: var(--border-input);
+        border-radius: 8px;
+      }
+      .input::placeholder, .textarea::placeholder {
+        color: var(--text-faint);
+      }
+      .input:focus, .select select:focus, .textarea:focus {
+        border-color: var(--accent);
+        box-shadow: var(--shadow-focus);
+        background-color: var(--bg-input);
+        color: var(--text-primary);
+      }
+
+      /* ── Select dropdown styling ── */
+      .select select {
+        background-color: var(--bg-input);
+        color: var(--text-primary);
+      }
+      .select select option {
+        background: var(--bg-card);
+        color: var(--text-primary);
+      }
+
+      /* ── Tables ── */
+      .table {
+        background-color: var(--bg-card);
+        color: var(--text-primary);
+      }
+      .table thead th {
+        background: var(--bg-table-head);
+        color: var(--text-secondary);
+        border-bottom: 1px solid var(--border-base);
+      }
+      .table tbody td {
+        color: var(--table-body-text);
+        border-bottom: 1px solid var(--table-body-border);
+      }
+      .table tbody tr:nth-child(even) {
+        background: var(--bg-table-even);
+      }
+      .table tbody tr:hover,
+      .table.is-hoverable tbody tr:hover {
+        background: var(--bg-table-hover);
+      }
+      .content-scroll {
+        overflow-x: auto;
+        border-radius: 8px;
+        border: 1px solid var(--border-base);
+      }
+      .columns.is-gapless > .column:not(.sidebar) {
+        min-width: 0;
+      }
+
+      /* ── Toast ── */
+      .toast-container {
+        position: fixed;
+        top: 1.5rem;
+        right: 1.5rem;
+        z-index: 9999;
+        max-width: 400px;
+      }
+      .toast-item {
+        padding: 0.75rem 1.25rem;
+        margin-bottom: 0.75rem;
+        border-radius: 8px;
+        box-shadow: var(--shadow-modal);
+        background-color: var(--bg-card);
+        color: var(--text-primary);
+        border: none;
+        border-left: 4px solid var(--accent);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        animation: toast-in 0.3s ease-out;
+      }
+      .toast-item.is-success { border-left-color: var(--toast-success); }
+      .toast-item.is-warning { border-left-color: var(--toast-warning); }
+      .toast-item.is-error { border-left-color: var(--toast-error); }
+      @keyframes toast-in {
+        from { opacity: 0; transform: translateX(100%); }
+        to { opacity: 1; transform: translateX(0); }
+      }
+
+      /* ── Copy Button ── */
+      .copy-btn {
+        background: none;
+        border: 1px solid var(--copy-border);
+        border-radius: 4px;
+        padding: 0.15rem 0.4rem;
+        font-size: 0.7rem;
+        cursor: pointer;
+        color: var(--copy-text);
+        transition: background 0.2s, border-color 0.2s;
+        vertical-align: middle;
+        margin-left: 0.35rem;
+      }
+      .copy-btn:hover {
+        background: var(--copy-hover-bg);
+        border-color: var(--copy-hover-border);
+        color: var(--copy-hover-text);
+      }
+
+      /* ── Script ID Display ── */
+      .script-id-cell {
+        font-family: monospace;
+        font-size: 0.82rem;
+        white-space: nowrap;
+      }
+      .script-id-truncated {
+        display: inline-block;
+        max-width: 140px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: middle;
+      }
+
+      /* ── Mobile Responsive ── */
+      @media (max-width: 768px) {
+        .sidebar {
+          position: fixed;
+          top: 0;
+          left: 0;
+          bottom: 0;
+          width: 260px;
+          z-index: 100;
+          transform: translateX(-100%);
+        }
+        .sidebar.is-open {
+          transform: translateX(0);
+        }
+        .sidebar-overlay {
+          display: none;
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: var(--modal-overlay);
+          z-index: 99;
+        }
+        .sidebar-overlay.is-active {
+          display: block;
+        }
+        .sidebar-header-desktop {
+          display: none;
+        }
+        .hamburger-btn {
+          display: inline-flex !important;
+        }
+      }
+      @media (min-width: 769px) {
+        .hamburger-btn {
+          display: inline-flex !important;
+        }
+        .sidebar-overlay {
+          display: none !important;
+        }
+      }
+
+      /* ── Status Tag Colors ── */
+      .tag.is-active-tag {
+        background-color: var(--status-active-bg);
+        color: var(--status-active-text);
+      }
+      .tag.is-expiring-tag {
+        background-color: var(--status-expiring-bg);
+        color: var(--status-expiring-text);
+      }
+      .tag.is-revoked-tag {
+        background-color: var(--status-revoked-bg);
+        color: var(--status-revoked-text);
+      }
+
+      /* ── Filter Bar ── */
+      .filter-bar {
+        display: flex;
+        gap: 0.75rem;
+        align-items: center;
+        flex-wrap: wrap;
+        margin-bottom: 1rem;
+      }
+
+      /* ── App Icon ── */
+      .app-icon {
+        display: inline-block;
+        margin-right: 0.35rem;
+      }
+
+      /* ── Action Buttons ── */
+      .action-btn-group {
+        display: flex;
+        gap: 0.35rem;
+      }
+
+      /* ── Titles ── */
+      .title, .modal-card-title {
+        color: var(--text-title);
+      }
+      .subtitle {
+        color: var(--text-weak);
+      }
+      .heading {
+        color: var(--text-secondary);
+        letter-spacing: 0.05em;
+      }
+
+      /* ── Labels ── */
+      .label {
+        color: var(--text-secondary);
+      }
+
+      /* ── Help text ── */
+      .help {
+        color: var(--text-weak);
+      }
+
+      /* ── Code element ── */
+      code {
+        background: var(--code-bg);
+        color: var(--code-text);
+        padding: 0.1em 0.4em;
+        border-radius: 3px;
+      }
+
+      /* ── Buttons - Primary ── */
+      .button.is-primary {
+        background-color: var(--btn-primary-bg);
+        color: var(--btn-primary-text);
+        border: none;
+      }
+      .button.is-primary:hover {
+        background-color: var(--btn-primary-hover);
+      }
+
+      /* ── Buttons - Info Light ── */
+      .button.is-info.is-light {
+        background-color: var(--btn-info-bg);
+        color: var(--btn-info-text);
+        border: 1px solid var(--btn-info-border);
+      }
+      .button.is-info.is-light:hover {
+        background-color: var(--btn-info-hover-bg);
+        color: var(--accent-text);
+        border-color: var(--accent);
+      }
+
+      /* ── Buttons - Danger Light ── */
+      .button.is-danger.is-light {
+        background-color: var(--btn-danger-bg);
+        color: var(--btn-danger-text);
+        border: 1px solid var(--btn-danger-border);
+      }
+      .button.is-danger.is-light:hover {
+        background-color: var(--btn-danger-bg);
+        color: var(--btn-danger-text);
+        border-color: var(--btn-danger-text);
+      }
+
+      /* ── Buttons - Danger ── */
+      .button.is-danger {
+        background-color: var(--btn-delete-bg);
+        color: var(--btn-delete-text);
+        border: none;
+      }
+      .button.is-danger:hover {
+        background-color: var(--btn-delete-bg);
+        opacity: 0.9;
+      }
+
+      /* ── Buttons - Default ── */
+      .button {
+        background-color: var(--btn-default-bg);
+        color: var(--btn-default-text);
+        border: 1px solid var(--btn-default-border);
+      }
+      .button:hover {
+        background-color: var(--btn-default-hover-bg);
+        color: var(--text-primary);
+        border-color: var(--btn-default-border);
+      }
+
+      /* ── Buttons - Ghost ── */
+      .button.is-ghost {
+        color: var(--header-text);
+        background: transparent;
+        border: none;
+      }
+      .button.is-ghost:hover {
+        color: var(--accent-text);
+        background: rgba(128, 128, 128, 0.05);
+      }
+
+      /* ── Buttons - Small Light ── */
+      .button.is-small.is-light {
+        background: transparent;
+        color: var(--text-secondary);
+        border: 1px solid var(--border-input);
+      }
+      .button.is-small.is-light:hover {
+        background: var(--bg-card);
+        color: var(--text-primary);
+      }
+
+      /* ── Modal ── */
+      .modal-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-modal);
+        border-radius: 8px;
+        overflow: hidden;
+      }
+      .modal-card-head {
+        background: var(--bg-elevated);
+        border-bottom: 1px solid var(--border-base);
+        border-radius: 0;
+      }
+      .modal-card-title {
+        color: var(--text-title);
+      }
+      .modal-card-body {
+        background: var(--bg-card);
+        color: var(--text-primary);
+      }
+      .modal-card-foot {
+        background: var(--bg-elevated);
+        border-top: 1px solid var(--border-base);
+        border-radius: 0;
+      }
+      .modal-background {
+        background-color: var(--modal-overlay);
+      }
+      .modal-card-head .delete {
+        background-color: var(--modal-delete-bg);
+      }
+      .modal-card-head .delete::before,
+      .modal-card-head .delete::after {
+        background-color: var(--text-primary);
+      }
+
+      /* ── Notification ── */
+      .notification {
+        background: var(--bg-card);
+        color: var(--text-primary);
+      }
+      .notification.is-danger.is-light {
+        background: var(--notif-danger-bg);
+        color: var(--notif-danger-text);
+        border: 1px solid var(--notif-danger-border);
+      }
+
+      /* ── Login screen hero ── */
+      .hero {
+        background-color: var(--bg-base);
+      }
+      .hero-body {
+        background-color: var(--bg-base);
+      }
+      .hero .box {
+        background: var(--login-bg);
+        border: 1px solid var(--login-border);
+      }
+      .hero .title {
+        color: var(--login-title);
+      }
+      .hero .subtitle {
+        color: var(--login-subtitle);
+      }
+      .hero .has-text-grey-light {
+        color: var(--text-weak) !important;
+      }
+
+      /* ── Grey utility overrides ── */
+      .has-text-grey {
+        color: var(--text-weak) !important;
+      }
+      .has-text-grey-light {
+        color: var(--text-faint) !important;
+      }
+      .has-text-weight-semibold {
+        color: var(--text-primary);
+      }
+      .has-text-primary {
+        color: var(--accent-text) !important;
+      }
+
+      /* ── Hamburger button style ── */
+      .hamburger-btn {
+        color: var(--header-text) !important;
+      }
+
+      /* ══════════════════════════════════════════════ */
+      /* Theme Switcher                                 */
+      /* ══════════════════════════════════════════════ */
+      .theme-switcher {
+        display: flex;
+        gap: 4px;
+        align-items: center;
+      }
+      .theme-btn {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        background: transparent;
+        cursor: pointer;
+        font-size: 0.85rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: border-color 0.2s, transform 0.2s;
+        padding: 0;
+        line-height: 1;
+      }
+      .theme-btn:hover {
+        transform: scale(1.15);
+        border-color: rgba(255, 255, 255, 0.7);
+      }
+      .theme-btn.is-active {
+        border-color: rgba(255, 255, 255, 0.9);
+        transform: scale(1.1);
+      }
+
+      /* For mono-light theme, theme btn border uses dark color */
+      [data-theme="mono-light"] .theme-btn {
+        border-color: rgba(0, 0, 0, 0.2);
+      }
+      [data-theme="mono-light"] .theme-btn:hover {
+        border-color: rgba(0, 0, 0, 0.5);
+      }
+      [data-theme="mono-light"] .theme-btn.is-active {
+        border-color: rgba(0, 0, 0, 0.7);
+      }
+
+      /* Theme switcher on login screen */
+      .theme-switcher-login {
+        position: fixed;
+        top: 1rem;
+        right: 1rem;
+        z-index: 100;
+        display: flex;
+        gap: 4px;
+        background: var(--bg-card);
+        padding: 4px 8px;
+        border-radius: 20px;
+        border: 1px solid var(--border-base);
+        box-shadow: var(--shadow-card);
+      }
+      .theme-switcher-login .theme-btn {
+        border-color: var(--border-input);
+      }
+      .theme-switcher-login .theme-btn:hover {
+        border-color: var(--accent);
+      }
+      .theme-switcher-login .theme-btn.is-active {
+        border-color: var(--accent);
+      }
+    </style>
+  </head>
+  <body>
+    <div x-data="licenseApp">
+      <!-- Toast Container -->
+      <div class="toast-container">
+        <template x-for="t in toasts" :key="t.id">
+          <div class="toast-item" x-bind:class="'is-' + t.type" x-text="t.message" x-show="t.visible"></div>
+        </template>
+      </div>
+
+      <!-- ═══════════════════════════════════════════ -->
+      <!-- LOGIN SCREEN -->
+      <!-- ═══════════════════════════════════════════ -->
+      <template x-if="!loggedIn">
+        <section class="hero is-fullheight">
+          <!-- Theme switcher on login screen -->
+          <div class="theme-switcher-login">
+            <button class="theme-btn" x-bind:class="{ 'is-active': currentTheme === 'blue' }" x-on:click="switchTheme('blue')" title="Blue">🎨</button>
+            <button class="theme-btn" x-bind:class="{ 'is-active': currentTheme === 'mono-dark' }" x-on:click="switchTheme('mono-dark')" title="Dark">🌑</button>
+            <button class="theme-btn" x-bind:class="{ 'is-active': currentTheme === 'mono-light' }" x-on:click="switchTheme('mono-light')" title="Light">⚪</button>
+          </div>
+          <div class="hero-body">
+            <div class="container has-text-centered" style="max-width: 400px">
+              <div class="box">
+                <h1 class="title is-4">ライセンス管理</h1>
+                <p class="subtitle is-6 has-text-grey-light">管理トークンを入力してください</p>
+                <div class="field">
+                  <div class="control">
+                    <input
+                      class="input"
+                      type="password"
+                      placeholder="ADMIN_TOKEN"
+                      x-model="loginToken"
+                      x-on:keydown.enter="doLogin"
+                    />
+                  </div>
+                </div>
+                <div x-show="loginError" class="notification is-danger is-light mb-3" style="font-size: 0.85rem" x-text="loginError"></div>
+                <button class="button is-primary is-fullwidth" x-on:click="doLogin">ログイン</button>
+                <p class="mt-4 is-size-7 has-text-grey-light">※ 任意の文字列でログインできます（モック）</p>
+              </div>
+            </div>
+          </div>
+        </section>
+      </template>
+
+      <!-- ═══════════════════════════════════════════ -->
+      <!-- MAIN APP -->
+      <!-- ═══════════════════════════════════════════ -->
+      <template x-if="loggedIn">
+        <div>
+          <!-- Sidebar Overlay (mobile) -->
+          <div
+            class="sidebar-overlay"
+            x-bind:class="{ 'is-active': sidebarOpen }"
+            x-on:click="sidebarOpen = false"
+          ></div>
+
+          <div class="columns is-gapless">
+            <!-- Sidebar -->
+            <div class="column is-2 sidebar" x-bind:class="{ 'is-open': sidebarOpen }">
+              <div class="admin-header mb-4 sidebar-header-desktop">
+                <strong>ライセンス管理</strong>
+              </div>
+              <nav class="menu sidebar-menu" aria-label="管理メニュー">
+                <p class="menu-label">メニュー</p>
+                <ul class="menu-list">
+                  <li>
+                    <a
+                      x-bind:class="{ 'is-active': activeTab === 'dashboard' }"
+                      x-on:click="switchTab('dashboard')"
+                    >📊 ダッシュボード</a>
+                  </li>
+                  <li>
+                    <a
+                      x-bind:class="{ 'is-active': activeTab === 'licenses' }"
+                      x-on:click="switchTab('licenses')"
+                    >📋 ライセンス一覧</a>
+                  </li>
+                  <li>
+                    <a
+                      x-bind:class="{ 'is-active': activeTab === 'apps' }"
+                      x-on:click="switchTab('apps')"
+                    >📱 アプリ管理</a>
+                  </li>
+                </ul>
+              </nav>
+              <div class="mt-6">
+                <button class="button is-small is-light" x-on:click="loggedIn = false">ログアウト</button>
+              </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="column">
+              <!-- Header Bar -->
+              <div class="admin-header is-flex is-justify-content-space-between is-align-items-center">
+                <div class="is-flex is-align-items-center">
+                  <button
+                    class="hamburger-btn button is-small is-ghost mr-2"
+                    x-on:click="sidebarOpen = !sidebarOpen"
+                  >☰</button>
+                  <strong class="is-hidden-desktop header-text">ライセンス管理</strong>
+                  <span class="header-text-muted" x-text="activeTab === 'dashboard' ? '/ ダッシュボード' : activeTab === 'licenses' ? '/ ライセンス一覧' : '/ アプリ管理'"></span>
+                </div>
+                <div class="theme-switcher">
+                  <button class="theme-btn" x-bind:class="{ 'is-active': currentTheme === 'blue' }" x-on:click="switchTheme('blue')" title="Blue">🎨</button>
+                  <button class="theme-btn" x-bind:class="{ 'is-active': currentTheme === 'mono-dark' }" x-on:click="switchTheme('mono-dark')" title="Dark">🌑</button>
+                  <button class="theme-btn" x-bind:class="{ 'is-active': currentTheme === 'mono-light' }" x-on:click="switchTheme('mono-light')" title="Light">⚪</button>
+                </div>
+              </div>
+
+              <div class="main-content">
+                <!-- ═══════════════════════════════════ -->
+                <!-- DASHBOARD TAB -->
+                <!-- ═══════════════════════════════════ -->
+                <div x-show="activeTab === 'dashboard'">
+                  <p class="title is-4 mb-4">ダッシュボード</p>
+
+                  <!-- Summary Cards -->
+                  <div class="summary-bar">
+                    <div class="summary-card">
+                      <p class="num has-text-primary" x-text="companies.length"></p>
+                      <p class="lbl">総契約数</p>
+                    </div>
+                    <div class="summary-card">
+                      <p class="num status-active-color" x-text="countByStatus('active')"></p>
+                      <p class="lbl">アクティブ</p>
+                    </div>
+                    <div class="summary-card">
+                      <p class="num status-expiring-color" x-text="countByStatus('expiring')"></p>
+                      <p class="lbl">猶予期間中</p>
+                    </div>
+                    <div class="summary-card">
+                      <p class="num status-revoked-color" x-text="countByStatus('revoked')"></p>
+                      <p class="lbl">利用停止</p>
+                    </div>
+                  </div>
+
+                  <!-- Per-App Breakdown Table -->
+                  <p class="heading mb-3">アプリ別内訳</p>
+                  <div class="content-scroll">
+                    <table class="table is-fullwidth is-hoverable" style="min-width: 500px">
+                      <thead>
+                        <tr>
+                          <th>アプリ</th>
+                          <th class="has-text-centered">総数</th>
+                          <th class="has-text-centered">アクティブ</th>
+                          <th class="has-text-centered">猶予期間中</th>
+                          <th class="has-text-centered">利用停止</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <template x-for="app in appBreakdown" :key="app.appId">
+                          <tr>
+                            <td x-text="app.icon + ' ' + app.appName"></td>
+                            <td class="has-text-centered has-text-weight-semibold" x-text="app.total"></td>
+                            <td class="has-text-centered status-active-color" x-text="app.active"></td>
+                            <td class="has-text-centered status-expiring-color" x-text="app.expiring"></td>
+                            <td class="has-text-centered status-revoked-color" x-text="app.revoked"></td>
+                          </tr>
+                        </template>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <!-- ═══════════════════════════════════ -->
+                <!-- LICENSE LIST TAB -->
+                <!-- ═══════════════════════════════════ -->
+                <div x-show="activeTab === 'licenses'">
+                  <p class="title is-4 mb-4">ライセンス一覧</p>
+
+                  <!-- Filter Bar -->
+                  <div class="filter-bar">
+                    <div class="field">
+                      <div class="control">
+                        <div class="select is-small">
+                          <select x-model="filterApp">
+                            <option value="">全アプリ</option>
+                            <template x-for="app in apps" :key="app.appId">
+                              <option :value="app.appId" x-text="app.appName"></option>
+                            </template>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="field">
+                      <div class="control">
+                        <div class="select is-small">
+                          <select x-model="filterStatus">
+                            <option value="">全ステータス</option>
+                            <option value="active">active</option>
+                            <option value="expiring">expiring</option>
+                            <option value="revoked">revoked</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="field">
+                      <div class="control">
+                        <input class="input is-small" type="text" placeholder="会社名で検索" x-model="filterSearch" />
+                      </div>
+                    </div>
+                    <div class="field">
+                      <div class="control">
+                        <button class="button is-primary is-small" x-on:click="openAddModal">＋ 新規登録</button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- License Table -->
+                  <div class="content-scroll">
+                    <table class="table is-fullwidth is-hoverable" style="min-width: 900px">
+                      <thead>
+                        <tr>
+                          <th>アプリ</th>
+                          <th>会社名</th>
+                          <th>スクリプトID</th>
+                          <th>ステータス</th>
+                          <th>有効期限</th>
+                          <th>備考</th>
+                          <th>操作</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <template x-for="c in filteredCompanies" :key="c.id">
+                          <tr>
+                            <td>
+                              <span class="app-icon" x-text="getAppIcon(c.appId)"></span>
+                              <span x-text="c.appName"></span>
+                            </td>
+                            <td x-text="c.companyName"></td>
+                            <td>
+                              <span class="script-id-cell">
+                                <span class="script-id-truncated" x-text="c.scriptId.substring(0, 12) + '…'" x-bind:title="c.scriptId"></span>
+                                <button class="copy-btn" x-on:click="copyScriptId(c.scriptId)">コピー</button>
+                              </span>
+                            </td>
+                            <td>
+                              <span class="tag is-small" x-bind:class="statusTagClass(c.status)" x-text="c.status"></span>
+                            </td>
+                            <td x-text="c.expiryDate || '—'"></td>
+                            <td x-text="c.notes || '—'"></td>
+                            <td>
+                              <div class="action-btn-group">
+                                <button class="button is-small is-info is-light" x-on:click="openStatusModal(c)">編集</button>
+                                <button class="button is-small is-danger is-light" x-on:click="openDeleteModal(c)">削除</button>
+                              </div>
+                            </td>
+                          </tr>
+                        </template>
+                        <tr x-show="filteredCompanies.length === 0">
+                          <td colspan="7" class="has-text-centered has-text-grey-light py-5">該当するライセンスがありません</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <!-- ═══════════════════════════════════ -->
+                <!-- APP MANAGEMENT TAB -->
+                <!-- ═══════════════════════════════════ -->
+                <div x-show="activeTab === 'apps'">
+                  <div class="is-flex is-justify-content-space-between is-align-items-center mb-4">
+                    <p class="title is-4 mb-0">アプリ管理</p>
+                    <button class="button is-primary is-small" x-on:click="openAddAppModal">＋ アプリ追加</button>
+                  </div>
+
+                  <p class="mb-3 has-text-grey is-size-7">アプリを追加すると、ライセンス一覧のアプリ選択肢に自動的に反映されます。</p>
+
+                  <div class="content-scroll">
+                    <table class="table is-fullwidth is-hoverable" style="min-width: 600px">
+                      <thead>
+                        <tr>
+                          <th>アイコン</th>
+                          <th>アプリID</th>
+                          <th>アプリ名</th>
+                          <th class="has-text-centered">ライセンス数</th>
+                          <th>操作</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <template x-for="app in apps" :key="app.appId">
+                          <tr>
+                            <td><span class="is-size-4" x-text="app.icon"></span></td>
+                            <td><code x-text="app.appId"></code></td>
+                            <td x-text="app.appName"></td>
+                            <td class="has-text-centered" x-text="companies.filter(function(c) { return c.appId === app.appId; }).length"></td>
+                            <td>
+                              <div class="action-btn-group">
+                                <button class="button is-small is-info is-light" x-on:click="openEditAppModal(app)">編集</button>
+                                <button class="button is-small is-danger is-light" x-on:click="openDeleteAppModal(app)">削除</button>
+                              </div>
+                            </td>
+                          </tr>
+                        </template>
+                        <tr x-show="apps.length === 0">
+                          <td colspan="5" class="has-text-centered has-text-grey-light py-5">アプリが登録されていません</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ═══════════════════════════════════════════ -->
+          <!-- ADD COMPANY MODAL -->
+          <!-- ═══════════════════════════════════════════ -->
+          <div class="modal" x-bind:class="{ 'is-active': showAddModal }">
+            <div class="modal-background" x-on:click="showAddModal = false"></div>
+            <div class="modal-card">
+              <header class="modal-card-head">
+                <p class="modal-card-title">新規ライセンス登録</p>
+                <button class="delete" aria-label="close" x-on:click="showAddModal = false"></button>
+              </header>
+              <section class="modal-card-body">
+                <div class="field">
+                  <label class="label is-small">アプリ選択</label>
+                  <div class="control">
+                    <div class="select is-fullwidth">
+                      <select x-model="addForm.appId">
+                        <template x-for="app in apps" :key="app.appId">
+                          <option :value="app.appId" x-text="app.icon + ' ' + app.appName"></option>
+                        </template>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+                <div class="field">
+                  <label class="label is-small">会社名</label>
+                  <div class="control">
+                    <input class="input" type="text" placeholder="会社名を入力" x-model="addForm.companyName" />
+                  </div>
+                </div>
+                <div class="field">
+                  <label class="label is-small">スクリプトID</label>
+                  <div class="control">
+                    <input class="input" type="text" placeholder="スクリプトIDを入力" x-model="addForm.scriptId" />
+                  </div>
+                </div>
+                <div class="field">
+                  <label class="label is-small">ステータス</label>
+                  <div class="control">
+                    <div class="select is-fullwidth">
+                      <select x-model="addForm.status">
+                        <option value="active">active</option>
+                        <option value="expiring">expiring</option>
+                        <option value="revoked">revoked</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+                <div class="field" x-show="addForm.status === 'expiring'">
+                  <label class="label is-small">有効期限</label>
+                  <div class="control">
+                    <input class="input" type="date" x-model="addForm.expiryDate" />
+                  </div>
+                </div>
+                <div class="field">
+                  <label class="label is-small">備考</label>
+                  <div class="control">
+                    <textarea class="textarea" placeholder="備考（任意）" x-model="addForm.notes"></textarea>
+                  </div>
+                </div>
+              </section>
+              <footer class="modal-card-foot">
+                <button class="button is-primary" x-on:click="doAddCompany">登録</button>
+                <button class="button" x-on:click="showAddModal = false">キャンセル</button>
+              </footer>
+            </div>
+          </div>
+
+          <!-- ═══════════════════════════════════════════ -->
+          <!-- STATUS CHANGE MODAL -->
+          <!-- ═══════════════════════════════════════════ -->
+          <div class="modal" x-bind:class="{ 'is-active': showStatusModal }">
+            <div class="modal-background" x-on:click="showStatusModal = false"></div>
+            <div class="modal-card">
+              <header class="modal-card-head">
+                <p class="modal-card-title">ライセンス編集</p>
+                <button class="delete" aria-label="close" x-on:click="showStatusModal = false"></button>
+              </header>
+              <section class="modal-card-body">
+                <div class="field">
+                  <label class="label is-small">会社名</label>
+                  <div class="control">
+                    <input class="input" type="text" x-model="editCompanyName" />
+                  </div>
+                </div>
+                <div class="field">
+                  <label class="label is-small">スクリプトID</label>
+                  <div class="control">
+                    <input class="input" type="text" x-model="editScriptId" />
+                  </div>
+                </div>
+                <div class="field">
+                  <label class="label is-small">ステータス</label>
+                  <div class="control">
+                    <div class="select is-fullwidth">
+                      <select x-model="newStatus">
+                        <option value="active">active</option>
+                        <option value="expiring">expiring</option>
+                        <option value="revoked">revoked</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+                <div class="field" x-show="newStatus === 'expiring'">
+                  <label class="label is-small">有効期限（30日後を自動設定）</label>
+                  <div class="control">
+                    <input class="input" type="date" x-model="newExpiryDate" />
+                  </div>
+                </div>
+                <div class="field">
+                  <label class="label is-small">備考</label>
+                  <div class="control">
+                    <textarea class="textarea" x-model="editNotes"></textarea>
+                  </div>
+                </div>
+              </section>
+              <footer class="modal-card-foot">
+                <button class="button is-primary" x-on:click="doChangeStatus">保存</button>
+                <button class="button" x-on:click="showStatusModal = false">キャンセル</button>
+              </footer>
+            </div>
+          </div>
+
+          <!-- ═══════════════════════════════════════════ -->
+          <!-- DELETE CONFIRMATION MODAL -->
+          <!-- ═══════════════════════════════════════════ -->
+          <div class="modal" x-bind:class="{ 'is-active': showDeleteModal }">
+            <div class="modal-background" x-on:click="showDeleteModal = false"></div>
+            <div class="modal-card">
+              <header class="modal-card-head">
+                <p class="modal-card-title">削除確認</p>
+                <button class="delete" aria-label="close" x-on:click="showDeleteModal = false"></button>
+              </header>
+              <section class="modal-card-body">
+                <p class="mb-3">
+                  <strong x-text="deleteTarget ? deleteTarget.companyName : ''"></strong>
+                </p>
+                <p class="has-text-grey">このライセンスを削除しますか？</p>
+                <p class="is-size-7 has-text-grey-light mt-2">この操作は取り消せません。</p>
+              </section>
+              <footer class="modal-card-foot">
+                <button class="button is-danger" x-on:click="doDelete">削除</button>
+                <button class="button" x-on:click="showDeleteModal = false">キャンセル</button>
+              </footer>
+            </div>
+          </div>
+
+          <!-- ADD APP MODAL -->
+          <div class="modal" x-bind:class="{ 'is-active': showAddAppModal }">
+            <div class="modal-background" x-on:click="showAddAppModal = false"></div>
+            <div class="modal-card">
+              <header class="modal-card-head">
+                <p class="modal-card-title">アプリ追加</p>
+                <button class="delete" aria-label="close" x-on:click="showAddAppModal = false"></button>
+              </header>
+              <section class="modal-card-body">
+                <div class="field">
+                  <label class="label is-small">アプリID <span class="has-text-danger">*</span></label>
+                  <div class="control">
+                    <input class="input" type="text" placeholder="例: suido, gas, denki" x-model="appForm.appId" />
+                  </div>
+                  <p class="help has-text-grey">半角英数字で入力。後から変更できません。</p>
+                </div>
+                <div class="field">
+                  <label class="label is-small">アプリ名 <span class="has-text-danger">*</span></label>
+                  <div class="control">
+                    <input class="input" type="text" placeholder="例: 水道検針" x-model="appForm.appName" />
+                  </div>
+                </div>
+                <div class="field">
+                  <label class="label is-small">アイコン</label>
+                  <div class="control">
+                    <input class="input" type="text" placeholder="例: 💧 🔥 ⚡ 🏠" x-model="appForm.icon" style="max-width: 100px" />
+                  </div>
+                  <p class="help has-text-grey">絵文字を1つ入力してください。</p>
+                </div>
+              </section>
+              <footer class="modal-card-foot">
+                <button class="button is-primary" x-on:click="doAddApp">追加</button>
+                <button class="button" x-on:click="showAddAppModal = false">キャンセル</button>
+              </footer>
+            </div>
+          </div>
+
+          <!-- EDIT APP MODAL -->
+          <div class="modal" x-bind:class="{ 'is-active': showEditAppModal }">
+            <div class="modal-background" x-on:click="showEditAppModal = false"></div>
+            <div class="modal-card">
+              <header class="modal-card-head">
+                <p class="modal-card-title">アプリ編集</p>
+                <button class="delete" aria-label="close" x-on:click="showEditAppModal = false"></button>
+              </header>
+              <section class="modal-card-body">
+                <div class="field">
+                  <label class="label is-small">アプリID</label>
+                  <p class="has-text-weight-semibold" x-text="editAppTarget ? editAppTarget.appId : ''"></p>
+                  <p class="help has-text-grey">アプリIDは変更できません。</p>
+                </div>
+                <div class="field">
+                  <label class="label is-small">アプリ名 <span class="has-text-danger">*</span></label>
+                  <div class="control">
+                    <input class="input" type="text" x-model="appForm.appName" />
+                  </div>
+                </div>
+                <div class="field">
+                  <label class="label is-small">アイコン</label>
+                  <div class="control">
+                    <input class="input" type="text" x-model="appForm.icon" style="max-width: 100px" />
+                  </div>
+                </div>
+              </section>
+              <footer class="modal-card-foot">
+                <button class="button is-primary" x-on:click="doEditApp">保存</button>
+                <button class="button" x-on:click="showEditAppModal = false">キャンセル</button>
+              </footer>
+            </div>
+          </div>
+
+          <!-- DELETE APP MODAL -->
+          <div class="modal" x-bind:class="{ 'is-active': showDeleteAppModal }">
+            <div class="modal-background" x-on:click="showDeleteAppModal = false"></div>
+            <div class="modal-card">
+              <header class="modal-card-head">
+                <p class="modal-card-title">アプリ削除</p>
+                <button class="delete" aria-label="close" x-on:click="showDeleteAppModal = false"></button>
+              </header>
+              <section class="modal-card-body">
+                <p class="mb-3">
+                  <span x-text="deleteAppTarget ? deleteAppTarget.icon : ''"></span>
+                  <strong x-text="deleteAppTarget ? deleteAppTarget.appName : ''"></strong>
+                </p>
+                <p class="has-text-grey">このアプリを削除しますか？</p>
+                <p class="is-size-7 has-text-grey-light mt-2">この操作は取り消せません。</p>
+              </section>
+              <footer class="modal-card-foot">
+                <button class="button is-danger" x-on:click="doDeleteApp">削除</button>
+                <button class="button" x-on:click="showDeleteAppModal = false">キャンセル</button>
+              </footer>
+            </div>
+          </div>
+        </div>
+      </template>
+    </div>
+
+    <script>
+      function licenseApp() {
+        return {
+          loggedIn: false,
+          loginToken: '',
+          loginError: '',
+          activeTab: 'dashboard',
+          sidebarOpen: false,
+
+          // Theme
+          currentTheme: localStorage.getItem('admin-theme') || 'blue',
+
+          switchTheme: function(theme) {
+            this.currentTheme = theme;
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('admin-theme', theme);
+          },
+
+          // Mock data
+          companies: [
+            { id: 1, appId: 'suido', appName: '水道検針', scriptId: '1iSR_dY3jWIN3rXRXMeYKyulOggtmM2LDhkzlFqM9MccWCupqEwquE04-', companyName: '〇〇水道管理', status: 'active', expiryDate: '', notes: '2024年4月契約開始' },
+            { id: 2, appId: 'suido', appName: '水道検針', scriptId: '1aBcDeFgHiJkLmNoPqRsTuVwXyZ0123456789_-AAAAAAAAA', companyName: '△△不動産', status: 'expiring', expiryDate: '2026-05-26', notes: '更新確認中' },
+            { id: 3, appId: 'suido', appName: '水道検針', scriptId: '1zYxWvUtSrQpOnMlKjIhGfEdCbA9876543210_-BBBBBBBBB', companyName: '□□市水道局', status: 'revoked', expiryDate: '2026-03-15', notes: '契約終了' },
+            { id: 4, appId: 'gas', appName: 'ガス検針', scriptId: '1cBaDcFeGhIjKlMnOpQrStUvWxYz0987654321_-CCCCCCCCC', companyName: '〇〇水道管理', status: 'active', expiryDate: '', notes: 'ガス検針追加契約' },
+            { id: 5, appId: 'gas', appName: 'ガス検針', scriptId: '1fGeHiJkLmNoPqRsTuVwXyZaBcDeFgH012345_-DDDDDDDDD', companyName: 'XX公社', status: 'active', expiryDate: '', notes: '' },
+            { id: 6, appId: 'gas', appName: 'ガス検針', scriptId: '1iJkLmNoPqRsTuVwXyZaBcDeFgHiJkLmN01234_-EEEEEEEEE', companyName: '△△不動産', status: 'expiring', expiryDate: '2026-06-30', notes: '月末日で期限切れ' }
+          ],
+
+          // Apps registry (dynamic, was hardcoded)
+          apps: [
+            { appId: 'suido', appName: '水道検針', icon: '💧' },
+            { appId: 'gas', appName: 'ガス検針', icon: '🔥' }
+          ],
+
+          // App management modals
+          showAddAppModal: false,
+          showEditAppModal: false,
+          showDeleteAppModal: false,
+
+          // App form (for add/edit)
+          appForm: {
+            appId: '',
+            appName: '',
+            icon: ''
+          },
+
+          // Edit/delete target
+          editAppTarget: null,
+          deleteAppTarget: null,
+
+          // Filters
+          filterApp: '',
+          filterStatus: '',
+          filterSearch: '',
+
+          // Modals
+          showAddModal: false,
+          showStatusModal: false,
+          showDeleteModal: false,
+
+          // Add form
+          addForm: {
+            appId: 'suido',
+            companyName: '',
+            scriptId: '',
+            status: 'active',
+            expiryDate: '',
+            notes: ''
+          },
+
+          // Status change
+          statusTarget: null,
+          newStatus: 'active',
+          newExpiryDate: '',
+          editCompanyName: '',
+          editScriptId: '',
+          editNotes: '',
+
+          // Delete
+          deleteTarget: null,
+
+          // Toasts
+          toasts: [],
+          toastIdCounter: 0,
+
+          // Login
+          switchTab: function (tab) {
+            this.activeTab = tab;
+            this.sidebarOpen = false;
+          },
+
+          doLogin: function () {
+            var self = this;
+            if (self.loginToken.trim() === '') {
+              self.loginError = 'トークンを入力してください';
+              return;
+            }
+            self.loggedIn = true;
+            self.loginError = '';
+          },
+
+          // Computed: filtered companies
+          get filteredCompanies() {
+            var self = this;
+            var result = self.companies.filter(function (c) {
+              if (self.filterApp !== '' && c.appId !== self.filterApp) return false;
+              if (self.filterStatus !== '' && c.status !== self.filterStatus) return false;
+              if (self.filterSearch !== '' && c.companyName.indexOf(self.filterSearch) === -1) return false;
+              return true;
+            });
+            return result;
+          },
+
+          // Computed: app breakdown
+          get appBreakdown() {
+            var self = this;
+            return self.apps.map(function (app) {
+              var items = self.companies.filter(function (c) { return c.appId === app.appId; });
+              return {
+                appId: app.appId,
+                appName: app.appName,
+                icon: app.icon,
+                total: items.length,
+                active: items.filter(function (c) { return c.status === 'active'; }).length,
+                expiring: items.filter(function (c) { return c.status === 'expiring'; }).length,
+                revoked: items.filter(function (c) { return c.status === 'revoked'; }).length
+              };
+            });
+          },
+
+          // Helpers
+          countByStatus: function (status) {
+            return this.companies.filter(function (c) { return c.status === status; }).length;
+          },
+
+          statusTagClass: function (status) {
+            if (status === 'active') return 'is-active-tag';
+            if (status === 'expiring') return 'is-expiring-tag';
+            if (status === 'revoked') return 'is-revoked-tag';
+            return '';
+          },
+
+          // Copy to clipboard
+          copyScriptId: function (scriptId) {
+            var self = this;
+            if (navigator.clipboard) {
+              navigator.clipboard.writeText(scriptId).then(function () {
+                self.showToast('コピーしました', 'success');
+              });
+            } else {
+              // Fallback for older browsers
+              var ta = document.createElement('textarea');
+              ta.value = scriptId;
+              ta.style.position = 'fixed';
+              ta.style.left = '-9999px';
+              document.body.appendChild(ta);
+              ta.select();
+              document.execCommand('copy');
+              document.body.removeChild(ta);
+              self.showToast('コピーしました', 'success');
+            }
+          },
+
+          // Toast notifications
+          showToast: function (message, type) {
+            var self = this;
+            var id = self.toastIdCounter++;
+            var toast = { id: id, message: message, type: type || 'info', visible: true };
+            self.toasts.push(toast);
+            setTimeout(function () {
+              toast.visible = false;
+              self.toasts = self.toasts.filter(function (t) { return t.visible; });
+            }, 2500);
+          },
+
+          // Add modal
+          openAddModal: function () {
+            this.addForm = {
+              appId: this.apps.length > 0 ? this.apps[0].appId : '',
+              companyName: '',
+              scriptId: '',
+              status: 'active',
+              expiryDate: '',
+              notes: ''
+            };
+            this.showAddModal = true;
+          },
+
+          doAddCompany: function () {
+            var self = this;
+            if (self.addForm.companyName.trim() === '' || self.addForm.scriptId.trim() === '') {
+              self.showToast('会社名とスクリプトIDは必須です', 'error');
+              return;
+            }
+            var maxId = 0;
+            self.companies.forEach(function (c) { if (c.id > maxId) maxId = c.id; });
+            var appName = self.getAppName(self.addForm.appId);
+            self.companies.push({
+              id: maxId + 1,
+              appId: self.addForm.appId,
+              appName: appName,
+              scriptId: self.addForm.scriptId,
+              companyName: self.addForm.companyName,
+              status: self.addForm.status,
+              expiryDate: self.addForm.status === 'expiring' ? self.addForm.expiryDate : '',
+              notes: self.addForm.notes
+            });
+            self.showAddModal = false;
+            self.showToast('ライセンスを登録しました', 'success');
+          },
+
+          // Status change modal
+          openStatusModal: function (company) {
+            this.statusTarget = company;
+            this.newStatus = company.status;
+            this.newExpiryDate = this.get30DaysLater();
+            this.editCompanyName = company.companyName;
+            this.editScriptId = company.scriptId;
+            this.editNotes = company.notes || '';
+            this.showStatusModal = true;
+          },
+
+          doChangeStatus: function () {
+            var self = this;
+            if (self.statusTarget) {
+              self.statusTarget.companyName = self.editCompanyName.trim();
+              self.statusTarget.scriptId = self.editScriptId.trim();
+              self.statusTarget.status = self.newStatus;
+              self.statusTarget.notes = self.editNotes;
+              if (self.newStatus === 'expiring') {
+                self.statusTarget.expiryDate = self.newExpiryDate;
+              } else if (self.newStatus === 'active') {
+                self.statusTarget.expiryDate = '';
+              }
+              self.showToast('ライセンスを更新しました', 'success');
+            }
+            self.showStatusModal = false;
+          },
+
+          // Delete modal
+          openDeleteModal: function (company) {
+            this.deleteTarget = company;
+            this.showDeleteModal = true;
+          },
+
+          doDelete: function () {
+            var self = this;
+            if (self.deleteTarget) {
+              var targetId = self.deleteTarget.id;
+              self.companies = self.companies.filter(function (c) { return c.id !== targetId; });
+              self.showToast('ライセンスを削除しました', 'success');
+            }
+            self.showDeleteModal = false;
+          },
+
+          // Date helper: 30 days from now
+          get30DaysLater: function () {
+            var d = new Date();
+            d.setDate(d.getDate() + 30);
+            var yyyy = d.getFullYear();
+            var mm = String(d.getMonth() + 1).padStart(2, '0');
+            var dd = String(d.getDate()).padStart(2, '0');
+            return yyyy + '-' + mm + '-' + dd;
+          },
+
+          // Helper: get app name from appId
+          getAppName: function(appId) {
+            var app = this.apps.find(function(a) { return a.appId === appId; });
+            return app ? app.appName : appId;
+          },
+
+          // Helper: get app icon from appId
+          getAppIcon: function(appId) {
+            var app = this.apps.find(function(a) { return a.appId === appId; });
+            return app ? app.icon : '📱';
+          },
+
+          // App CRUD
+          openAddAppModal: function() {
+            this.appForm = { appId: '', appName: '', icon: '' };
+            this.showAddAppModal = true;
+          },
+
+          doAddApp: function() {
+            var self = this;
+            if (self.appForm.appId.trim() === '' || self.appForm.appName.trim() === '') {
+              self.showToast('アプリIDとアプリ名は必須です', 'error');
+              return;
+            }
+            var exists = self.apps.find(function(a) { return a.appId === self.appForm.appId; });
+            if (exists) {
+              self.showToast('同じアプリIDが既に存在します', 'error');
+              return;
+            }
+            self.apps.push({
+              appId: self.appForm.appId.trim(),
+              appName: self.appForm.appName.trim(),
+              icon: self.appForm.icon || '📱'
+            });
+            self.showAddAppModal = false;
+            self.showToast('アプリを追加しました', 'success');
+          },
+
+          openEditAppModal: function(app) {
+            this.editAppTarget = app;
+            this.appForm = { appId: app.appId, appName: app.appName, icon: app.icon };
+            this.showEditAppModal = true;
+          },
+
+          doEditApp: function() {
+            var self = this;
+            if (self.appForm.appName.trim() === '') {
+              self.showToast('アプリ名は必須です', 'error');
+              return;
+            }
+            if (self.editAppTarget) {
+              self.editAppTarget.appName = self.appForm.appName.trim();
+              self.editAppTarget.icon = self.appForm.icon || '📱';
+              // Update all licenses using this app
+              self.companies.forEach(function(c) {
+                if (c.appId === self.editAppTarget.appId) {
+                  c.appName = self.appForm.appName.trim();
+                }
+              });
+              self.showToast('アプリを更新しました', 'success');
+            }
+            self.showEditAppModal = false;
+          },
+
+          openDeleteAppModal: function(app) {
+            // Check if any companies use this app
+            var count = this.companies.filter(function(c) { return c.appId === app.appId; }).length;
+            if (count > 0) {
+              this.showToast('このアプリには' + count + '件のライセンスが紐づいています。先にライセンスを削除してください。', 'error');
+              return;
+            }
+            this.deleteAppTarget = app;
+            this.showDeleteAppModal = true;
+          },
+
+          doDeleteApp: function() {
+            var self = this;
+            if (self.deleteAppTarget) {
+              self.apps = self.apps.filter(function(a) { return a.appId !== self.deleteAppTarget.appId; });
+              self.showToast('アプリを削除しました', 'success');
+            }
+            self.showDeleteAppModal = false;
+          }
+        };
+      }
+    </script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x/dist/cdn.min.js"></script>
+  </body>
+</html>
