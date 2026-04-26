@@ -38,6 +38,7 @@ export default defineConfig({
         property: resolve(pagesRoot, 'property/index.html'),
         room: resolve(pagesRoot, 'room/index.html'),
         reading: resolve(pagesRoot, 'reading/index.html'),
+        settings: resolve(pagesRoot, 'settings/index.html'),
       },
       output: {
         compact: true,

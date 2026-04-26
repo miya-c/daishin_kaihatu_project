@@ -14,4 +14,10 @@
   >
     アプリを開始
   </a>
+  <a
+    href="/settings/"
+    style="margin-left: 12px; padding: 8px 16px; color: #666; text-decoration: none; font-size: 14px;"
+  >
+    ⚙️ 設定
+  </a>
 </div>
