@@ -12,6 +12,7 @@ export const CACHE_STALE_THRESHOLD_MS = 60000;
 
 const STORAGE_URL_KEY = 'gasWebAppUrl';
 const STORAGE_KEY_KEY = 'gasApiKey';
+const STORAGE_SETUP_URL_KEY = 'setupUrl';
 
 export const parseHashConfig = (): boolean => {
   const hash = window.location.hash.slice(1);
@@ -24,6 +25,10 @@ export const parseHashConfig = (): boolean => {
   if (url && key && url.startsWith('https://script.google.com/')) {
     localStorage.setItem(STORAGE_URL_KEY, url);
     localStorage.setItem(STORAGE_KEY_KEY, key);
+    const setupUrl = params.get('setupUrl');
+    if (setupUrl) {
+      localStorage.setItem(STORAGE_SETUP_URL_KEY, setupUrl);
+    }
     window.location.hash = '';
     return true;
   }
@@ -58,6 +63,15 @@ export const saveConfig = (url: string, key: string): void => {
 export const clearConfig = (): void => {
   localStorage.removeItem(STORAGE_URL_KEY);
   localStorage.removeItem(STORAGE_KEY_KEY);
+  localStorage.removeItem(STORAGE_SETUP_URL_KEY);
+};
+
+export const getSetupUrl = (): string => {
+  try {
+    return localStorage.getItem(STORAGE_SETUP_URL_KEY) || '';
+  } catch {
+    return '';
+  }
 };
 
 export const generateSetupLink = (baseUrl: string): string => {

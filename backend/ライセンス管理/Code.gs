@@ -683,7 +683,8 @@ function handleSetupToken(token) {
   var pwaBaseUrl = PropertiesService.getScriptProperties().getProperty('PWA_BASE_URL') || '';
   var webAppUrl = result.webAppUrl;
   var apiKey = result.apiKey;
-  var redirectUrl = pwaBaseUrl + '/#url=' + encodeURIComponent(webAppUrl) + '&key=' + encodeURIComponent(apiKey);
+  var setupUrl = ScriptApp.getService().getUrl().split('?')[0] + '?action=setup&token=' + token;
+  var redirectUrl = pwaBaseUrl + '/#url=' + encodeURIComponent(webAppUrl) + '&key=' + encodeURIComponent(apiKey) + '&setupUrl=' + encodeURIComponent(setupUrl);
 
   var html = '<!DOCTYPE html><html><head><meta charset="UTF-8">' +
     '<meta name="viewport" content="width=device-width,initial-scale=1">' +

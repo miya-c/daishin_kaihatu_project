@@ -1,44 +1,32 @@
 <script>
-  import { getConfig, saveConfig, clearConfig, generateSetupLink } from '../../utils/config';
+  import { getConfig, getSetupUrl, clearConfig } from '../../utils/config';
+  import qrcode from 'qrcode-generator';
 
   let config = $state(getConfig());
-  let url = $state(config.url);
-  let key = $state(config.key);
-  let saved = $state(false);
+  let setupUrl = $state(getSetupUrl());
+  let showQr = $state(false);
+  let qrSvg = $state('');
   let cleared = $state(false);
-  let showLink = $state(false);
-  let setupLink = $state('');
 
-  const handleSave = () => {
-    if (!url.trim() || !key.trim()) return;
-    saveConfig(url.trim(), key.trim());
-    saved = true;
-    cleared = false;
-    setTimeout(() => {
-      saved = false;
-    }, 2000);
+  const generateQr = () => {
+    if (!setupUrl) return;
+    const qr = qrcode(0, 'M');
+    qr.addData(setupUrl);
+    qr.make();
+    qrSvg = qr.createSvgTag({ cellSize: 4, margin: 2 });
+    showQr = true;
+  };
+
+  const handleCopyUrl = () => {
+    navigator.clipboard.writeText(setupUrl);
   };
 
   const handleClear = () => {
     clearConfig();
-    url = '';
-    key = '';
     cleared = true;
-    saved = false;
-    showLink = false;
     setTimeout(() => {
       window.location.href = '/';
     }, 1000);
-  };
-
-  const handleGenerateLink = () => {
-    const base = window.location.origin;
-    setupLink = generateSetupLink(base);
-    showLink = true;
-  };
-
-  const handleCopyLink = () => {
-    navigator.clipboard.writeText(setupLink);
   };
 </script>
 
@@ -49,48 +37,41 @@
   </div>
 
   <div class="settings-card">
-    <div class="section">
-      <h2>接続設定</h2>
+    {#if setupUrl}
+      <div class="section">
+        <h2>📱 インストールQRコード</h2>
+        <p class="hint">このQRコードを他の端末でスキャンすると、アプリをインストールできます。7日間有効です。</p>
+        <button onclick={generateQr} class="btn btn-primary">
+          QRコードを表示
+        </button>
 
-      <div class="field">
-        <label for="gas-url">GAS Web App URL</label>
-        <input
-          id="gas-url"
-          type="url"
-          bind:value={url}
-          placeholder="https://script.google.com/macros/s/..."
-        />
+        {#if showQr}
+          <div class="qr-container">
+            <div class="qr-wrapper">
+              {@html qrSvg}
+            </div>
+            <p class="qr-note">📱 カメラでスキャンしてください</p>
+          </div>
+          <div class="link-box">
+            <input type="text" readonly value={setupUrl} class="link-input" />
+            <button onclick={handleCopyUrl} class="btn btn-small">コピー</button>
+          </div>
+        {/if}
       </div>
 
-      <div class="field">
-        <label for="api-key">APIキー</label>
-        <input id="api-key" type="text" bind:value={key} placeholder="APIキーを入力" />
-      </div>
-
-      <button onclick={handleSave} disabled={!url.trim() || !key.trim()} class="btn btn-primary">
-        {saved ? '✓ 保存しました' : '保存'}
-      </button>
-    </div>
-
-    <div class="divider"></div>
+      <div class="divider"></div>
+    {/if}
 
     <div class="section">
-      <h2>セットアップリンク</h2>
-      <p class="hint">設定情報を含めたURLを生成して、他の端末と共有できます。</p>
-      <button
-        onclick={handleGenerateLink}
-        disabled={!url.trim() || !key.trim()}
-        class="btn btn-secondary"
-      >
-        リンクを生成
-      </button>
-
-      {#if showLink}
-        <div class="link-box">
-          <input type="text" readonly value={setupLink} class="link-input" />
-          <button onclick={handleCopyLink} class="btn btn-small">コピー</button>
-        </div>
-      {/if}
+      <h2>接続情報</h2>
+      <div class="info-row">
+        <span class="info-label">URL</span>
+        <span class="info-value">{config.url || '未設定'}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">APIキー</span>
+        <span class="info-value">{config.key ? '••••••••' : '未設定'}</span>
+      </div>
     </div>
 
     <div class="divider"></div>
@@ -166,33 +147,6 @@
     color: #888;
   }
 
-  .field {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-
-  .field label {
-    font-size: 0.85rem;
-    font-weight: 500;
-    color: #555;
-  }
-
-  .field input {
-    padding: 10px 12px;
-    border: 2px solid #e0e0e0;
-    border-radius: 8px;
-    font-size: 0.95rem;
-    outline: none;
-    background: #fafafa;
-    transition: border-color 0.2s;
-  }
-
-  .field input:focus {
-    border-color: #1976d2;
-    background: white;
-  }
-
   .divider {
     height: 1px;
     background: #eee;
@@ -225,15 +179,6 @@
     background: #1565c0;
   }
 
-  .btn-secondary {
-    background: #e3f2fd;
-    color: #1976d2;
-  }
-
-  .btn-secondary:hover:not(:disabled) {
-    background: #bbdefb;
-  }
-
   .btn-danger {
     background: #ffebee;
     color: #d32f2f;
@@ -250,6 +195,32 @@
     color: white;
   }
 
+  .qr-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 16px;
+    background: #f8f9fa;
+    border-radius: 12px;
+  }
+
+  .qr-wrapper {
+    background: white;
+    padding: 12px;
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  }
+
+  .qr-wrapper :global(svg) {
+    display: block;
+  }
+
+  .qr-note {
+    margin: 12px 0 0;
+    font-size: 0.8rem;
+    color: #666;
+  }
+
   .link-box {
     display: flex;
     gap: 8px;
@@ -261,9 +232,29 @@
     padding: 8px 10px;
     border: 1px solid #e0e0e0;
     border-radius: 6px;
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     background: #fafafa;
     color: #333;
     min-width: 0;
+  }
+
+  .info-row {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .info-label {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  .info-value {
+    font-size: 0.85rem;
+    color: #333;
+    word-break: break-all;
   }
 </style>
