@@ -14,7 +14,9 @@
     saveConfig(url.trim(), key.trim());
     saved = true;
     cleared = false;
-    setTimeout(() => { saved = false; }, 2000);
+    setTimeout(() => {
+      saved = false;
+    }, 2000);
   };
 
   const handleClear = () => {
@@ -24,7 +26,9 @@
     cleared = true;
     saved = false;
     showLink = false;
-    setTimeout(() => { window.location.href = '/'; }, 1000);
+    setTimeout(() => {
+      window.location.href = '/';
+    }, 1000);
   };
 
   const handleGenerateLink = () => {
@@ -60,19 +64,10 @@
 
       <div class="field">
         <label for="api-key">APIキー</label>
-        <input
-          id="api-key"
-          type="text"
-          bind:value={key}
-          placeholder="APIキーを入力"
-        />
+        <input id="api-key" type="text" bind:value={key} placeholder="APIキーを入力" />
       </div>
 
-      <button
-        onclick={handleSave}
-        disabled={!url.trim() || !key.trim()}
-        class="btn btn-primary"
-      >
+      <button onclick={handleSave} disabled={!url.trim() || !key.trim()} class="btn btn-primary">
         {saved ? '✓ 保存しました' : '保存'}
       </button>
     </div>
@@ -82,7 +77,11 @@
     <div class="section">
       <h2>セットアップリンク</h2>
       <p class="hint">設定情報を含めたURLを生成して、他の端末と共有できます。</p>
-      <button onclick={handleGenerateLink} disabled={!url.trim() || !key.trim()} class="btn btn-secondary">
+      <button
+        onclick={handleGenerateLink}
+        disabled={!url.trim() || !key.trim()}
+        class="btn btn-secondary"
+      >
         リンクを生成
       </button>
 
@@ -206,7 +205,9 @@
     font-size: 0.95rem;
     font-weight: 500;
     cursor: pointer;
-    transition: background 0.2s, opacity 0.2s;
+    transition:
+      background 0.2s,
+      opacity 0.2s;
     align-self: flex-start;
   }
 

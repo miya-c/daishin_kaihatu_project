@@ -21,7 +21,13 @@
       <p>GAS Web Appの接続情報を入力してください</p>
     </div>
 
-    <form onsubmit={(e) => { e.preventDefault(); handleSave(); }} class="setup-form">
+    <form
+      onsubmit={(e) => {
+        e.preventDefault();
+        handleSave();
+      }}
+      class="setup-form"
+    >
       <div class="field">
         <label for="gas-url">GAS Web App URL</label>
         <input
@@ -35,13 +41,7 @@
 
       <div class="field">
         <label for="api-key">APIキー</label>
-        <input
-          id="api-key"
-          type="text"
-          bind:value={key}
-          placeholder="APIキーを入力"
-          required
-        />
+        <input id="api-key" type="text" bind:value={key} placeholder="APIキーを入力" required />
       </div>
 
       <button type="submit" disabled={!url.trim() || !key.trim() || saving} class="btn-primary">
@@ -137,7 +137,9 @@
     font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
-    transition: background 0.2s, opacity 0.2s;
+    transition:
+      background 0.2s,
+      opacity 0.2s;
     margin-top: 4px;
   }
 
