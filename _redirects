@@ -23,7 +23,7 @@
 /meter_reading          /reading/index.html         301
 
 # 🚫 Legacy path cleanup (old html_files structure)
-/html_files/main_app/*  /property/index.html        301
+# Removed: wrangler treats wildcard as infinite loop
 
 # ✨ Benefits:
 # - Resolves ERR_FAILED by using proper directory structure
