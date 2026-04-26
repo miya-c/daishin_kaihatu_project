@@ -40,10 +40,10 @@
     {#if setupUrl}
       <div class="section">
         <h2>📱 インストールQRコード</h2>
-        <p class="hint">このQRコードを他の端末でスキャンすると、アプリをインストールできます。7日間有効です。</p>
-        <button onclick={generateQr} class="btn btn-primary">
-          QRコードを表示
-        </button>
+        <p class="hint">
+          このQRコードを他の端末でスキャンすると、アプリをインストールできます。7日間有効です。
+        </p>
+        <button onclick={generateQr} class="btn btn-primary"> QRコードを表示 </button>
 
         {#if showQr}
           <div class="qr-container">
