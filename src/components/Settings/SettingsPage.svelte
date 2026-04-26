@@ -5,7 +5,7 @@
   let config = $state(getConfig());
   let setupUrl = $state(getSetupUrl());
   let showQr = $state(false);
-  let qrSvg = $state('');
+  let qrDataUrl = $state('');
   let cleared = $state(false);
 
   const generateQr = () => {
@@ -13,7 +13,7 @@
     const qr = qrcode(0, 'M');
     qr.addData(setupUrl);
     qr.make();
-    qrSvg = qr.createSvgTag({ cellSize: 4, margin: 2 });
+    qrDataUrl = qr.createDataURL(4, 2);
     showQr = true;
   };
 
@@ -48,7 +48,7 @@
         {#if showQr}
           <div class="qr-container">
             <div class="qr-wrapper">
-              {@html qrSvg}
+              <img src={qrDataUrl} alt="セットアップQRコード" />
             </div>
             <p class="qr-note">📱 カメラでスキャンしてください</p>
           </div>
