@@ -982,6 +982,29 @@
         border-color: rgba(0, 0, 0, 0.7);
       }
 
+      /* ── Setup URL Modal ── */
+      .setup-url-info {
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+        margin-bottom: 16px;
+        line-height: 1.5;
+      }
+      .setup-url-box {
+        display: flex;
+        gap: 8px;
+      }
+      .setup-url-input {
+        flex: 1;
+        font-family: monospace;
+        font-size: 0.875rem;
+        background: var(--bg-elevated);
+      }
+      .setup-url-loading {
+        text-align: center;
+        padding: 32px;
+        color: var(--text-secondary);
+      }
+
       /* Theme switcher on login screen */
       .theme-switcher-login {
         position: fixed;
@@ -1258,6 +1281,7 @@
                             <td x-text="c.notes || '—'"></td>
                             <td>
                               <div class="action-btn-group">
+                                <button class="button is-small is-info is-light" x-on:click="openSetupUrlModal(c)">🔗</button>
                                 <button class="button is-small is-info is-light" x-on:click="openEditModal(c)">編集</button>
                                 <button class="button is-small is-danger is-light" x-on:click="openDeleteModal(c)">削除</button>
                               </div>
@@ -1330,6 +1354,18 @@
                             <textarea class="textarea" placeholder="備考（任意）" x-model="addFormNotes"></textarea>
                           </div>
                         </div>
+                        <div class="field">
+                          <label class="label is-small">GAS Web App URL</label>
+                          <div class="control">
+                            <input class="input" type="url" placeholder="https://script.google.com/macros/s/..." x-model="addFormWebAppUrl" />
+                          </div>
+                        </div>
+                        <div class="field">
+                          <label class="label is-small">APIキー</label>
+                          <div class="control">
+                            <input class="input" type="text" placeholder="APIキーを入力" x-model="addFormApiKey" />
+                          </div>
+                        </div>
                       </section>
                       <footer class="modal-card-foot">
                         <button class="button is-primary" x-on:click="doAdd">登録</button>
@@ -1385,6 +1421,18 @@
                             <textarea class="textarea" x-model="editNotes"></textarea>
                           </div>
                         </div>
+                        <div class="field">
+                          <label class="label is-small">GAS Web App URL</label>
+                          <div class="control">
+                            <input class="input" type="url" placeholder="https://script.google.com/macros/s/..." x-model="editWebAppUrl" />
+                          </div>
+                        </div>
+                        <div class="field">
+                          <label class="label is-small">APIキー</label>
+                          <div class="control">
+                            <input class="input" type="text" placeholder="APIキーを入力" x-model="editApiKey" />
+                          </div>
+                        </div>
                       </section>
                       <footer class="modal-card-foot">
                         <button class="button is-primary" x-on:click="doUpdate">保存</button>
@@ -1413,6 +1461,38 @@
                       <footer class="modal-card-foot">
                         <button class="button is-danger" x-on:click="doDelete">削除</button>
                         <button class="button" x-on:click="showDeleteModal = false">キャンセル</button>
+                      </footer>
+                    </div>
+                  </div>
+
+                  <!-- ═══════════════════════════════════════════ -->
+                  <!-- SETUP URL MODAL -->
+                  <!-- ═══════════════════════════════════════════ -->
+                  <div class="modal" x-bind:class="{ 'is-active': showSetupUrlModal }">
+                    <div class="modal-background" x-on:click="closeSetupUrlModal"></div>
+                    <div class="modal-card" style="max-width: 560px">
+                      <header class="modal-card-head">
+                        <p class="modal-card-title">セットアップURL</p>
+                        <button class="delete" aria-label="close" x-on:click="closeSetupUrlModal"></button>
+                      </header>
+                      <section class="modal-card-body">
+                        <template x-if="!setupUrl">
+                          <div class="setup-url-loading">
+                            <p>URLを生成中...</p>
+                          </div>
+                        </template>
+                        <template x-if="setupUrl">
+                          <div class="setup-url-result">
+                            <p class="setup-url-info">このURLを顧客に送付してください。リンクは1回のみ有効で、24時間後に失効します。</p>
+                            <div class="setup-url-box">
+                              <input type="text" x-model="setupUrl" readonly class="input setup-url-input" />
+                              <button class="button is-primary" x-on:click="copySetupUrl">コピー</button>
+                            </div>
+                          </div>
+                        </template>
+                      </section>
+                      <footer class="modal-card-foot">
+                        <button class="button" x-on:click="closeSetupUrlModal">閉じる</button>
                       </footer>
                     </div>
                   </div>

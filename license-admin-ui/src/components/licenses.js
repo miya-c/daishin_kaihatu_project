@@ -22,6 +22,8 @@ document.addEventListener('alpine:init', function () {
       addFormStatus: 'active',
       addFormExpiryDate: '',
       addFormNotes: '',
+      addFormWebAppUrl: '',
+      addFormApiKey: '',
 
       editTarget: null,
       editCompanyName: '',
@@ -29,8 +31,14 @@ document.addEventListener('alpine:init', function () {
       editStatus: 'active',
       editExpiryDate: '',
       editNotes: '',
+      editWebAppUrl: '',
+      editApiKey: '',
 
       deleteTarget: null,
+
+      showSetupUrlModal: false,
+      setupUrl: '',
+      setupUrlLicense: null,
 
       init: function () {
         var self = this;
@@ -130,6 +138,8 @@ document.addEventListener('alpine:init', function () {
         this.addFormStatus = 'active';
         this.addFormExpiryDate = '';
         this.addFormNotes = '';
+        this.addFormWebAppUrl = '';
+        this.addFormApiKey = '';
         this.showAddModal = true;
       },
 
@@ -147,6 +157,8 @@ document.addEventListener('alpine:init', function () {
           status: self.addFormStatus,
           expiryDate: self.addFormStatus === 'expiring' ? self.addFormExpiryDate : '',
           notes: self.addFormNotes,
+          webAppUrl: self.addFormWebAppUrl,
+          apiKey: self.addFormApiKey,
         })
           .then(function (result) {
             if (result && result.success) {
@@ -172,6 +184,8 @@ document.addEventListener('alpine:init', function () {
         this.editStatus = license.status;
         this.editExpiryDate = this.get30DaysLater();
         this.editNotes = license.notes || '';
+        this.editWebAppUrl = license.webAppUrl || '';
+        this.editApiKey = license.apiKey || '';
         this.showEditModal = true;
       },
 
@@ -186,6 +200,8 @@ document.addEventListener('alpine:init', function () {
           status: self.editStatus,
           expiryDate: self.editStatus === 'expiring' ? self.editExpiryDate : '',
           notes: self.editNotes,
+          webAppUrl: self.editWebAppUrl,
+          apiKey: self.editApiKey,
         })
           .then(function (result) {
             if (result && result.success) {
@@ -229,6 +245,49 @@ document.addEventListener('alpine:init', function () {
           .finally(function () {
             self.loading = false;
           });
+      },
+
+      openSetupUrlModal: function (license) {
+        var self = this;
+        self.setupUrlLicense = license;
+        self.setupUrl = '';
+        self.showSetupUrlModal = true;
+        callAdminAPI('generateSetupToken', { id: license.id }).then(function (result) {
+          if (result && result.success) {
+            self.setupUrl = result.setupUrl;
+          } else {
+            Alpine.store('toast').error(result && result.message ? result.message : 'URL生成に失敗しました');
+            self.showSetupUrlModal = false;
+          }
+        }).catch(function () {
+          Alpine.store('toast').error('通信エラーが発生しました');
+          self.showSetupUrlModal = false;
+        });
+      },
+
+      copySetupUrl: function () {
+        var self = this;
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(self.setupUrl).then(function () {
+            Alpine.store('toast').success('コピーしました');
+          });
+        } else {
+          var ta = document.createElement('textarea');
+          ta.value = self.setupUrl;
+          ta.style.position = 'fixed';
+          ta.style.left = '-9999px';
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand('copy');
+          document.body.removeChild(ta);
+          Alpine.store('toast').success('コピーしました');
+        }
+      },
+
+      closeSetupUrlModal: function () {
+        this.showSetupUrlModal = false;
+        this.setupUrl = '';
+        this.setupUrlLicense = null;
       },
     };
   });

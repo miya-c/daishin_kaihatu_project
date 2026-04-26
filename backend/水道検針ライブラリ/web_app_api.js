@@ -8,7 +8,7 @@
 const API_VERSION = 'v3.0.0-library';
 const LAST_UPDATED = '2025-06-26 JST';
 
-var LICENSE_API_URL = '%%LICENSE_API_URL%%';
+var LICENSE_API_URL = 'https://script.google.com/macros/s/AKfycbxKqSaPECUyOpWyhN67yztcdQgVBH2cRdzq7MOzpbFpFyAIjHpDzvdNWVRTxP0npe2d/exec';
 var LICENSE_APP_ID = 'suido';
 var LICENSE_CACHE_HOURS = 24;
 

@@ -5,6 +5,16 @@
 var LICENSE_SHEET_NAME = 'licenses';
 var APP_SHEET_NAME = 'apps';
 
+// スプレッドシートID（setupSheets()で自動作成・設定されます）
+var SPREADSHEET_ID = PropertiesService.getScriptProperties().getProperty('SPREADSHEET_ID') || '';
+
+function getSpreadsheet() {
+  if (SPREADSHEET_ID) {
+    return SpreadsheetApp.openById(SPREADSHEET_ID);
+  }
+  return SpreadsheetApp.getActiveSpreadsheet();
+}
+
 var LICENSE_COL = {
   APP_ID: 1,
   SCRIPT_ID: 2,
@@ -12,6 +22,15 @@ var LICENSE_COL = {
   STATUS: 4,
   EXPIRY: 5,
   NOTES: 6,
+  WEB_APP_URL: 7,
+  API_KEY: 8,
+};
+
+var TOKEN_COL = {
+  TOKEN: 1,
+  LICENSE_ID: 2,
+  EXPIRES_AT: 3,
+  USED: 4,
 };
 
 var APP_COL = {
@@ -27,6 +46,12 @@ var APP_COL = {
 function doGet(e) {
   var action = (e && e.parameter && e.parameter.action) || '';
   var scriptId = (e && e.parameter && e.parameter.scriptId) || '';
+
+  // Setup token exchange (public, no admin auth)
+  if (action === 'setup') {
+    var token = (e && e.parameter && e.parameter.token) || '';
+    return handleSetupToken(token);
+  }
 
   // License check: explicit action=check OR legacy ?scriptId=xxx (backward compatible)
   if (action === 'check' || (!action && scriptId)) {
@@ -47,7 +72,7 @@ function doGet(e) {
 // ============================================================
 
 function checkLicense(scriptId, appId) {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = getSpreadsheet();
   var sheet = ss.getSheetByName(LICENSE_SHEET_NAME);
 
   if (!sheet) {
@@ -134,6 +159,8 @@ function adminAction(action, params) {
       return updateApp(params);
     case 'deleteApp':
       return deleteApp(params);
+    case 'generateSetupToken':
+      return generateSetupToken(params);
     default:
       return { success: false, message: 'Unknown action' };
   }
@@ -144,7 +171,7 @@ function adminAction(action, params) {
 // ============================================================
 
 function getDashboard() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = getSpreadsheet();
 
   // Read apps
   var appSheet = ss.getSheetByName(APP_SHEET_NAME);
@@ -231,7 +258,7 @@ function getDashboard() {
 // ============================================================
 
 function listLicenses() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = getSpreadsheet();
   var licSheet = ss.getSheetByName(LICENSE_SHEET_NAME);
   if (!licSheet) {
     return { success: true, licenses: [] };
@@ -266,6 +293,8 @@ function listLicenses() {
       status: String(row[LICENSE_COL.STATUS - 1]).trim(),
       expiryDate: expiryStr,
       notes: String(row[LICENSE_COL.NOTES - 1]).trim(),
+      webAppUrl: String(row[LICENSE_COL.WEB_APP_URL - 1]).trim(),
+      apiKey: String(row[LICENSE_COL.API_KEY - 1]).trim(),
     });
   }
 
@@ -278,7 +307,7 @@ function addLicense(params) {
     return { success: false, message: 'appId, scriptId, companyName are required' };
   }
 
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = getSpreadsheet();
   var licSheet = ss.getSheetByName(LICENSE_SHEET_NAME);
   if (!licSheet) {
     return { success: false, message: 'Licenses sheet not found' };
@@ -304,6 +333,8 @@ function addLicense(params) {
     String(params.status || 'active').trim(),
     expiryValue,
     String(params.notes || '').trim(),
+    String(params.webAppUrl || '').trim(),
+    String(params.apiKey || '').trim(),
   ]);
 
   return { success: true };
@@ -314,7 +345,7 @@ function updateLicense(params) {
     return { success: false, message: 'id (row number) is required' };
   }
 
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = getSpreadsheet();
   var licSheet = ss.getSheetByName(LICENSE_SHEET_NAME);
   if (!licSheet) {
     return { success: false, message: 'Licenses sheet not found' };
@@ -341,6 +372,12 @@ function updateLicense(params) {
   }
   if (params.notes !== undefined) {
     licSheet.getRange(rowNumber, LICENSE_COL.NOTES).setValue(String(params.notes).trim());
+  }
+  if (params.webAppUrl !== undefined) {
+    licSheet.getRange(rowNumber, LICENSE_COL.WEB_APP_URL).setValue(String(params.webAppUrl).trim());
+  }
+  if (params.apiKey !== undefined) {
+    licSheet.getRange(rowNumber, LICENSE_COL.API_KEY).setValue(String(params.apiKey).trim());
   }
 
   // Handle expiry based on status change
@@ -376,7 +413,7 @@ function deleteLicense(params) {
     return { success: false, message: 'id (row number) is required' };
   }
 
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = getSpreadsheet();
   var licSheet = ss.getSheetByName(LICENSE_SHEET_NAME);
   if (!licSheet) {
     return { success: false, message: 'Licenses sheet not found' };
@@ -397,7 +434,7 @@ function deleteLicense(params) {
 // ============================================================
 
 function listApps() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = getSpreadsheet();
   var appSheet = ss.getSheetByName(APP_SHEET_NAME);
   if (!appSheet) {
     return { success: true, apps: [] };
@@ -435,7 +472,7 @@ function addApp(params) {
     return { success: false, message: 'appId and appName are required' };
   }
 
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = getSpreadsheet();
   var appSheet = ss.getSheetByName(APP_SHEET_NAME);
   if (!appSheet) {
     return { success: false, message: 'Apps sheet not found' };
@@ -463,7 +500,7 @@ function updateApp(params) {
     return { success: false, message: 'appId is required' };
   }
 
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = getSpreadsheet();
   var appSheet = ss.getSheetByName(APP_SHEET_NAME);
   if (!appSheet) {
     return { success: false, message: 'Apps sheet not found' };
@@ -498,7 +535,7 @@ function deleteApp(params) {
     return { success: false, message: 'appId is required' };
   }
 
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = getSpreadsheet();
 
   // Check if any licenses reference this appId
   var licSheet = ss.getSheetByName(LICENSE_SHEET_NAME);
@@ -558,7 +595,18 @@ function onEdit(e) {
 // ============================================================
 
 function setupSheets() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var props = PropertiesService.getScriptProperties();
+  var ssId = props.getProperty('SPREADSHEET_ID');
+  var ss;
+
+  if (ssId) {
+    ss = SpreadsheetApp.openById(ssId);
+  } else {
+    ss = SpreadsheetApp.create('ライセンス管理');
+    props.setProperty('SPREADSHEET_ID', ss.getId());
+    // Update SPREADSHEET_ID for current execution
+    SPREADSHEET_ID = ss.getId();
+  }
 
   // Create apps sheet if not exists
   if (!ss.getSheetByName(APP_SHEET_NAME)) {
@@ -571,22 +619,19 @@ function setupSheets() {
   // Create or migrate licenses sheet
   if (!ss.getSheetByName(LICENSE_SHEET_NAME)) {
     var lSheet = ss.insertSheet(LICENSE_SHEET_NAME);
-    lSheet.appendRow(['APP_ID', 'SCRIPT_ID', 'COMPANY_NAME', 'STATUS', 'EXPIRY', 'NOTES']);
-  } else {
-    // Check if APP_ID column exists (migration from old format)
-    var lSheet = ss.getSheetByName(LICENSE_SHEET_NAME);
-    var header = lSheet.getRange(1, 1).getValue();
-    if (header !== 'APP_ID') {
-      // Old format: insert APP_ID column before existing columns
-      lSheet.insertColumnBefore(1);
-      lSheet.getRange(1, 1).setValue('APP_ID');
-      // Fill APP_ID with 'suido' for existing rows (default)
-      var lastRow = lSheet.getLastRow();
-      if (lastRow > 1) {
-        var range = lSheet.getRange(2, 1, lastRow - 1, 1);
-        range.setValue('suido');
-      }
-    }
+    lSheet.appendRow(['APP_ID', 'SCRIPT_ID', 'COMPANY_NAME', 'STATUS', 'EXPIRY', 'NOTES', 'WEB_APP_URL', 'API_KEY']);
+  }
+
+  // Create setup_tokens sheet if not exists
+  if (!ss.getSheetByName('setup_tokens')) {
+    var tSheet = ss.insertSheet('setup_tokens');
+    tSheet.appendRow(['TOKEN', 'LICENSE_ID', 'EXPIRES_AT', 'USED']);
+  }
+
+  // Delete default "シート1" sheet AFTER creating our sheets
+  var defaultSheet = ss.getSheetByName('シート1');
+  if (defaultSheet) {
+    ss.deleteSheet(defaultSheet);
   }
 
   // Delete old sheet if exists (from previous version)
@@ -595,10 +640,11 @@ function setupSheets() {
     ss.deleteSheet(oldSheet);
   }
 
-  setupInstallableTrigger();
+  setupInstallableTrigger(ss);
+  Logger.log('セットアップ完了: https://docs.google.com/spreadsheets/d/' + ss.getId());
 }
 
-function setupInstallableTrigger() {
+function setupInstallableTrigger(ss) {
   var triggers = ScriptApp.getProjectTriggers();
   for (var i = 0; i < triggers.length; i++) {
     if (triggers[i].getHandlerFunction() === 'onEdit') {
@@ -606,9 +652,123 @@ function setupInstallableTrigger() {
     }
   }
   ScriptApp.newTrigger('onEdit')
-    .forSpreadsheet(SpreadsheetApp.getActive())
+    .forSpreadsheet(ss)
     .onEdit()
     .create();
+}
+
+// ============================================================
+// Setup Token Management
+// ============================================================
+
+function handleSetupToken(token) {
+  if (!token) {
+    return HtmlService.createHtmlOutput(
+      '<html><body style="font-family:sans-serif;text-align:center;padding:40px;">' +
+      '<h2>エラー</h2><p>トークンが指定されていません。</p>' +
+      '</body></html>'
+    ).setTitle('セットアップエラー');
+  }
+
+  var result = exchangeSetupToken(token);
+
+  if (!result.success) {
+    return HtmlService.createHtmlOutput(
+      '<html><body style="font-family:sans-serif;text-align:center;padding:40px;">' +
+      '<h2>エラー</h2><p>' + result.message + '</p>' +
+      '</body></html>'
+    ).setTitle('セットアップエラー');
+  }
+
+  var pwaBaseUrl = PropertiesService.getScriptProperties().getProperty('PWA_BASE_URL') || '';
+  var webAppUrl = result.webAppUrl;
+  var apiKey = result.apiKey;
+  var redirectUrl = pwaBaseUrl + '/#url=' + encodeURIComponent(webAppUrl) + '&key=' + encodeURIComponent(apiKey);
+
+  var html = '<!DOCTYPE html><html><head><meta charset="UTF-8">' +
+    '<meta name="viewport" content="width=device-width,initial-scale=1">' +
+    '<title>セットアップ</title>' +
+    '<style>body{font-family:sans-serif;text-align:center;padding:40px;} .spinner{margin:20px auto;width:40px;height:40px;border:4px solid #e0e0e0;border-top:4px solid #1976d2;border-radius:50%;animation:spin 1s linear infinite} @keyframes spin{to{transform:rotate(360deg)}}</style>' +
+    '</head><body>' +
+    '<div class="spinner"></div>' +
+    '<h2>設定を読み込んでいます...</h2>' +
+    '<p>しばらくお待ちください。</p>' +
+    '<noscript><p>JavaScriptが無効です。<a href="' + redirectUrl + '">ここをクリック</a>して続行してください。</p></noscript>' +
+    '<script>document.addEventListener("DOMContentLoaded", function() { window.location.replace("' + redirectUrl + '"); });</script>' +
+    '</body></html>';
+
+  return HtmlService.createHtmlOutput(html).setTitle('セットアップ');
+}
+
+function generateSetupToken(params) {
+  if (!params.id) {
+    return { success: false, message: 'id (row number) is required' };
+  }
+
+  var ss = getSpreadsheet();
+  var licSheet = ss.getSheetByName(LICENSE_SHEET_NAME);
+  if (!licSheet) {
+    return { success: false, message: 'Licenses sheet not found' };
+  }
+
+  var rowNumber = Number(params.id);
+  var lastRow = licSheet.getLastRow();
+  if (rowNumber < 2 || rowNumber > lastRow) {
+    return { success: false, message: 'Invalid row id' };
+  }
+
+  var licenseRow = licSheet.getRange(rowNumber, 1, 1, 8).getValues()[0];
+  var webAppUrl = String(licenseRow[LICENSE_COL.WEB_APP_URL - 1]).trim();
+  var apiKey = String(licenseRow[LICENSE_COL.API_KEY - 1]).trim();
+
+  if (!webAppUrl || !apiKey) {
+    return { success: false, message: 'License must have webAppUrl and apiKey configured' };
+  }
+
+  var token = Utilities.getUuid();
+  var expiresAt = new Date();
+  expiresAt.setHours(expiresAt.getHours() + 24);
+
+  var tSheet = ss.getSheetByName('setup_tokens');
+  if (!tSheet) {
+    return { success: false, message: 'Setup tokens sheet not found. Run setupSheets() first.' };
+  }
+
+  tSheet.appendRow([token, String(rowNumber), expiresAt, false]);
+
+  var baseUrl = ScriptApp.getService().getUrl().split('?')[0];
+  var setupUrl = baseUrl + '?action=setup&token=' + token;
+
+  return { success: true, token: token, setupUrl: setupUrl };
+}
+
+function exchangeSetupToken(token) {
+  var ss = getSpreadsheet();
+  var sheet = ss.getSheetByName('setup_tokens');
+  if (!sheet) return { success: false, message: 'Setup tokens sheet not found' };
+
+  var data = sheet.getDataRange().getValues();
+  for (var i = 1; i < data.length; i++) {
+    if (data[i][TOKEN_COL.TOKEN - 1] === token) {
+      if (data[i][TOKEN_COL.USED - 1] === true) {
+        return { success: false, message: 'Token already used' };
+      }
+      var expiresAt = new Date(data[i][TOKEN_COL.EXPIRES_AT - 1]);
+      if (new Date() > expiresAt) {
+        return { success: false, message: 'Token expired' };
+      }
+      sheet.getRange(i + 1, TOKEN_COL.USED).setValue(true);
+      var licenseId = data[i][TOKEN_COL.LICENSE_ID - 1];
+      var lSheet = ss.getSheetByName(LICENSE_SHEET_NAME);
+      var licenseRow = lSheet.getRange(parseInt(licenseId), 1, 1, 8).getValues()[0];
+      return {
+        success: true,
+        webAppUrl: licenseRow[LICENSE_COL.WEB_APP_URL - 1] || '',
+        apiKey: licenseRow[LICENSE_COL.API_KEY - 1] || ''
+      };
+    }
+  }
+  return { success: false, message: 'Invalid token' };
 }
 
 // ============================================================
