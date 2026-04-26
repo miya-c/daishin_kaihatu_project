@@ -101,6 +101,7 @@ export default [
     },
     rules: {
       'no-undef': 'off',
+      'svelte/no-inner-declarations': 'off',
     },
   },
 ];
