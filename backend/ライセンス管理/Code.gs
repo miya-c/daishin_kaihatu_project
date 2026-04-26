@@ -688,13 +688,22 @@ function handleSetupToken(token) {
   var html = '<!DOCTYPE html><html><head><meta charset="UTF-8">' +
     '<meta name="viewport" content="width=device-width,initial-scale=1">' +
     '<title>セットアップ</title>' +
-    '<style>body{font-family:sans-serif;text-align:center;padding:40px;} .spinner{margin:20px auto;width:40px;height:40px;border:4px solid #e0e0e0;border-top:4px solid #1976d2;border-radius:50%;animation:spin 1s linear infinite} @keyframes spin{to{transform:rotate(360deg)}}</style>' +
+    '<style>' +
+    'body{font-family:sans-serif;text-align:center;padding:40px;background:#f5f5f5}' +
+    '.card{background:#fff;border-radius:16px;padding:40px 24px;max-width:400px;margin:0 auto;box-shadow:0 4px 24px rgba(0,0,0,0.08)}' +
+    '.icon{font-size:2.5rem;margin-bottom:8px}' +
+    'h2{margin:0 0 8px;color:#333}' +
+    'p{color:#666;font-size:0.875rem;margin:0 0 24px;line-height:1.5}' +
+    '.btn{display:inline-block;padding:14px 32px;background:#1976d2;color:#fff;border:none;border-radius:10px;font-size:1rem;font-weight:600;text-decoration:none;cursor:pointer}' +
+    '.btn:hover{background:#1565c0}' +
+    '</style>' +
     '</head><body>' +
-    '<div class="spinner"></div>' +
-    '<h2>設定を読み込んでいます...</h2>' +
-    '<p>しばらくお待ちください。</p>' +
-    '<noscript><p>JavaScriptが無効です。<a href="' + redirectUrl + '">ここをクリック</a>して続行してください。</p></noscript>' +
-    '<script>document.addEventListener("DOMContentLoaded", function() { window.location.replace("' + redirectUrl + '"); });</script>' +
+    '<div class="card">' +
+    '<div class="icon">✅</div>' +
+    '<h2>セットアップ準備完了</h2>' +
+    '<p>下のボタンをタップして設定を完了してください。</p>' +
+    '<a class="btn" href="' + redirectUrl + '" target="_top">アプリを開く</a>' +
+    '</div>' +
     '</body></html>';
 
   return HtmlService.createHtmlOutput(html).setTitle('セットアップ');
@@ -727,7 +736,7 @@ function generateSetupToken(params) {
 
   var token = Utilities.getUuid();
   var expiresAt = new Date();
-  expiresAt.setHours(expiresAt.getHours() + 24);
+  expiresAt.setDate(expiresAt.getDate() + 7);
 
   var tSheet = ss.getSheetByName('setup_tokens');
   if (!tSheet) {
@@ -750,14 +759,10 @@ function exchangeSetupToken(token) {
   var data = sheet.getDataRange().getValues();
   for (var i = 1; i < data.length; i++) {
     if (data[i][TOKEN_COL.TOKEN - 1] === token) {
-      if (data[i][TOKEN_COL.USED - 1] === true) {
-        return { success: false, message: 'Token already used' };
-      }
       var expiresAt = new Date(data[i][TOKEN_COL.EXPIRES_AT - 1]);
       if (new Date() > expiresAt) {
         return { success: false, message: 'Token expired' };
       }
-      sheet.getRange(i + 1, TOKEN_COL.USED).setValue(true);
       var licenseId = data[i][TOKEN_COL.LICENSE_ID - 1];
       var lSheet = ss.getSheetByName(LICENSE_SHEET_NAME);
       var licenseRow = lSheet.getRange(parseInt(licenseId), 1, 1, 8).getValues()[0];
