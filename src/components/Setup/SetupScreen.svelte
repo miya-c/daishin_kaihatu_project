@@ -1,53 +1,35 @@
-<script>
-  import { saveConfig } from '../../utils/config';
-
-  let url = $state('');
-  let key = $state('');
-  let saving = $state(false);
-
-  const handleSave = () => {
-    if (!url.trim() || !key.trim()) return;
-    saving = true;
-    saveConfig(url.trim(), key.trim());
-    window.location.href = '/property/';
-  };
-</script>
-
 <div class="setup-container">
   <div class="setup-card">
     <div class="setup-header">
-      <div class="setup-icon">🔧</div>
-      <h1>初期設定</h1>
-      <p>GAS Web Appの接続情報を入力してください</p>
+      <div class="setup-icon">💧</div>
+      <h1>水道検針アプリ</h1>
+      <p>初期設定が必要です</p>
     </div>
 
-    <form
-      onsubmit={(e) => {
-        e.preventDefault();
-        handleSave();
-      }}
-      class="setup-form"
-    >
-      <div class="field">
-        <label for="gas-url">GAS Web App URL</label>
-        <input
-          id="gas-url"
-          type="url"
-          bind:value={url}
-          placeholder="https://script.google.com/macros/s/..."
-          required
-        />
+    <div class="setup-body">
+      <p>このアプリを利用するには、管理者からのセットアップURLが必要です。</p>
+
+      <div class="steps">
+        <h3>セットアップ手順</h3>
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-text">管理者から送付されたURLを受信する</div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-text">URLをタップしてアプリを開く</div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-text">設定が自動的に完了します</div>
+        </div>
       </div>
 
-      <div class="field">
-        <label for="api-key">APIキー</label>
-        <input id="api-key" type="text" bind:value={key} placeholder="APIキーを入力" required />
+      <div class="contact-box">
+        <div class="contact-label">お問い合わせ</div>
+        <p>セットアップURLをお持ちでない場合は、管理者にお問い合わせください。</p>
       </div>
-
-      <button type="submit" disabled={!url.trim() || !key.trim() || saving} class="btn-primary">
-        {saving ? '保存中...' : '設定して開始'}
-      </button>
-    </form>
+    </div>
   </div>
 </div>
 
@@ -94,61 +76,83 @@
     font-size: 0.875rem;
   }
 
-  .setup-form {
+  .setup-body {
     padding: 24px;
+    text-align: center;
+  }
+
+  .setup-body > p {
+    color: #555;
+    font-size: 0.95rem;
+    line-height: 1.7;
+    margin-bottom: 16px;
+  }
+
+  .steps {
+    text-align: left;
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+  }
+
+  .steps h3 {
+    font-size: 0.85rem;
+    color: #1976d2;
+    margin: 0 0 12px;
+    text-align: center;
+  }
+
+  .step {
     display: flex;
-    flex-direction: column;
-    gap: 20px;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 12px;
   }
 
-  .field {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
+  .step:last-child {
+    margin-bottom: 0;
   }
 
-  .field label {
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: #333;
-  }
-
-  .field input {
-    padding: 12px 14px;
-    border: 2px solid #e0e0e0;
-    border-radius: 10px;
-    font-size: 1rem;
-    transition: border-color 0.2s;
-    outline: none;
-    background: #fafafa;
-  }
-
-  .field input:focus {
-    border-color: #1976d2;
-    background: white;
-  }
-
-  .btn-primary {
-    padding: 14px;
+  .step-num {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
     background: #1976d2;
     color: white;
-    border: none;
-    border-radius: 10px;
-    font-size: 1rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
     font-weight: 600;
-    cursor: pointer;
-    transition:
-      background 0.2s,
-      opacity 0.2s;
-    margin-top: 4px;
   }
 
-  .btn-primary:hover:not(:disabled) {
-    background: #1565c0;
+  .step-text {
+    font-size: 0.85rem;
+    color: #444;
+    line-height: 1.5;
+    padding-top: 2px;
   }
 
-  .btn-primary:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+  .contact-box {
+    background: #e3f2fd;
+    border-radius: 10px;
+    padding: 16px;
+  }
+
+  .contact-label {
+    font-weight: 600;
+    font-size: 0.75rem;
+    color: #1976d2;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .contact-box p {
+    font-size: 0.8rem;
+    color: #1565c0;
+    margin: 0;
   }
 </style>
