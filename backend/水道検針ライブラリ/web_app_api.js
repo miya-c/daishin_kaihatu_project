@@ -8,6 +8,54 @@
 const API_VERSION = 'v3.0.0-library';
 const LAST_UPDATED = '2025-06-26 JST';
 
+var LICENSE_API_URL = '%%LICENSE_API_URL%%';
+var LICENSE_APP_ID = 'suido';
+var LICENSE_CACHE_HOURS = 24;
+
+function validateLicense() {
+  try {
+    var props = PropertiesService.getScriptProperties();
+    var cached = props.getProperty('_license_cache');
+    var cacheTime = props.getProperty('_license_cache_time');
+
+    if (cached && cacheTime) {
+      var elapsed = (Date.now() - Number(cacheTime)) / (1000 * 60 * 60);
+      if (elapsed < LICENSE_CACHE_HOURS) {
+        return cached === 'true';
+      }
+    }
+
+    if (!LICENSE_API_URL || LICENSE_API_URL.indexOf('%%') !== -1) {
+      return true;
+    }
+
+    var scriptId = ScriptApp.getScriptId();
+    var url = LICENSE_API_URL + '?action=check&scriptId=' + encodeURIComponent(scriptId) + '&appId=' + encodeURIComponent(LICENSE_APP_ID);
+
+    var response = UrlFetchApp.fetch(url, {
+      muteHttpExceptions: true,
+      method: 'get',
+    });
+
+    var result = JSON.parse(response.getContentText());
+    var authorized = result.authorized === true;
+
+    props.setProperty('_license_cache', authorized ? 'true' : 'false');
+    props.setProperty('_license_cache_time', String(Date.now()));
+
+    return authorized;
+  } catch (error) {
+    Logger.log('[validateLicense] error: ' + error.message);
+    var props = PropertiesService.getScriptProperties();
+    var cached = props.getProperty('_license_cache');
+    if (cached === 'true') {
+      props.setProperty('_license_cache_time', String(Date.now()));
+      return true;
+    }
+    return true;
+  }
+}
+
 // Per-request caches (GAS re-initializes globals on each invocation)
 let _cachedApiKey = null;
 let _apiKeyFetched = false;
@@ -131,9 +179,22 @@ function doGet(e) {
   try {
     const action = e?.parameter?.action;
     if (!action) {
+      if (!validateLicense()) {
+        return HtmlService.createHtmlOutput(
+          '<p style="text-align:center;padding:2rem;color:#666;">利用期間が終了しました。管理者にお問い合わせください。</p>'
+        ).setTitle('水道検針');
+      }
       return HtmlService.createHtmlOutputFromFile('admin')
         .setTitle('水道検針 管理画面')
         .addMetaTag('viewport', 'width=device-width, initial-scale=1');
+    }
+
+    if (action !== 'test' && !validateLicense()) {
+      return createCorsJsonResponse({
+        success: false,
+        error: '利用期間が終了しました。管理者にお問い合わせください。',
+        code: 'LICENSE_EXPIRED',
+      });
     }
 
     // API処理
@@ -492,8 +553,15 @@ function doGet(e) {
 
 function doPost(e) {
   try {
-    // パラメータ抽出（複数の形式に対応）
-    let params = {};
+    if (!validateLicense()) {
+      return createCorsJsonResponse({
+        success: false,
+        error: '利用期間が終了しました。管理者にお問い合わせください。',
+        code: 'LICENSE_EXPIRED',
+      });
+    }
+
+    var params = {};
 
     // URLエンコードされたフォームデータの場合
     if (e.parameter) {

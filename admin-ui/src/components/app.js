@@ -19,6 +19,7 @@ document.addEventListener('alpine:init', function () {
       ],
 
       sidebarOpen: false,
+      sidebarClosed: false,
 
       init: function () {
         var self = this;
@@ -68,8 +69,12 @@ document.addEventListener('alpine:init', function () {
         });
 
         this._keyHandler = function (e) {
-          if (e.key === 'Escape' && self.sidebarOpen) {
-            self.sidebarOpen = false;
+          if (e.key === 'Escape') {
+            if (self.sidebarOpen) {
+              self.sidebarOpen = false;
+            } else if (self.sidebarClosed) {
+              self.sidebarClosed = false;
+            }
           }
         };
         document.addEventListener('keydown', this._keyHandler);
@@ -120,7 +125,12 @@ document.addEventListener('alpine:init', function () {
       },
 
       toggleSidebar: function () {
-        this.sidebarOpen = !this.sidebarOpen;
+        var isMobile = window.innerWidth <= 768;
+        if (isMobile) {
+          this.sidebarOpen = !this.sidebarOpen;
+        } else {
+          this.sidebarClosed = !this.sidebarClosed;
+        }
       },
 
       closeSidebar: function () {

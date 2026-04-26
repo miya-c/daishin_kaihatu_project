@@ -291,10 +291,20 @@
       }
       @media (min-width: 769px) {
         .hamburger-btn {
-          display: none;
+          display: inline-flex;
         }
         .sidebar-overlay {
           display: none !important;
+        }
+        .sidebar {
+          transition: width 0.3s ease, padding 0.3s ease, opacity 0.3s ease;
+          overflow: hidden;
+        }
+        .sidebar.is-closed {
+          width: 0 !important;
+          padding: 0 !important;
+          border-right: none !important;
+          opacity: 0;
         }
       }
 
@@ -531,6 +541,43 @@
         white-space: nowrap;
       }
 
+      /* ── UX Improvements ── */
+      .tag-done { background: #3273dc; color: white; }
+      .tag-warn-status { background: #e74c3c; color: white; }
+      .tag-pending { background: #b5b5b5; color: white; }
+      [data-theme='dark'] .tag-done { background: #5b8def; }
+      [data-theme='dark'] .tag-warn-status { background: #ff6b6b; }
+      [data-theme='dark'] .tag-pending { background: #7a7a7a; }
+
+      .table.inspection-table td.num-col,
+      .table.bulk-table td.num-col { text-align: right !important; font-variant-numeric: tabular-nums; }
+      .table.inspection-table th.num-col,
+      .table.bulk-table th.num-col { text-align: center !important; }
+      .table.inspection-table td.sd-col,
+      .table.bulk-table td.sd-col { text-align: center !important; }
+
+      .table.inspection-table .room-row.warn-row { background: #fff8f0; }
+      .table.bulk-table .warn-row { background: #fff8f0; }
+      .table.inspection-table .room-row.warn-row.stripe-even { background: #fff8f0; }
+      .table.bulk-table .warn-row.stripe-even { background: #fff8f0; }
+      [data-theme='dark'] .table.inspection-table .room-row.warn-row,
+      [data-theme='dark'] .table.bulk-table .warn-row { background: rgba(255, 107, 107, 0.1); }
+      [data-theme='dark'] .table.inspection-table .room-row.warn-row.stripe-even,
+      [data-theme='dark'] .table.bulk-table .warn-row.stripe-even { background: rgba(255, 107, 107, 0.1); }
+
+      .stripe-even { background: #f9fafb !important; }
+      [data-theme='dark'] .stripe-even { background: var(--bulma-scheme-main-bis) !important; }
+      .table.inspection-table .room-row.warn-row.stripe-even { background: #fff8f0 !important; }
+      .table.bulk-table .warn-row.stripe-even { background: #fff8f0 !important; }
+
+      .usage-bar-fixed { width: 15px; }
+
+      .table.bulk-table td.usage-trend { white-space: nowrap; }
+      .table.bulk-table td.usage-trend .trend-inner { display: flex; justify-content: space-evenly; align-items: center; }
+      .table.bulk-table td.usage-trend .usage-item { display: inline-flex; align-items: center; gap: 0.25rem; font-size: 0.75rem; width: 3.5rem; }
+      .table.bulk-table td.usage-trend .usage-item strong { flex-shrink: 0; }
+      .table.bulk-table td.usage-trend .usage-item span.usage-bar-fixed { flex-shrink: 0; }
+
       /* ── Modals & Preview ── */
       .format-tabs {
         display: flex;
@@ -685,8 +732,11 @@
       .content-scroll {
         overflow-x: auto;
         border-radius: var(--bulma-box-radius);
-        max-width: 100%;
         border: 1px solid var(--bulma-border);
+      }
+      /* Flexbox column needs min-width:0 to allow inner overflow scrolling */
+      .columns.is-gapless > .column:not(.sidebar) {
+        min-width: 0;
       }
       .loading-overlay {
         position: relative;
@@ -912,7 +962,7 @@
           ></div>
           <div class="columns is-gapless">
             <!-- Sidebar -->
-            <div class="column is-2 sidebar" x-bind:class="{ 'is-open': sidebarOpen }">
+            <div class="column is-2 sidebar" x-bind:class="{ 'is-open': sidebarOpen, 'is-closed': sidebarClosed }">
               <div class="admin-header mb-4 sidebar-header-desktop">
                 <strong class="has-text-primary-invert">🚰 水道検針 管理</strong>
               </div>
@@ -946,8 +996,8 @@
                 <div class="is-flex is-align-items-center">
                   <button
                     class="hamburger-btn button is-small is-ghost has-text-primary-invert mr-2"
-                    aria-label="メニューを開く"
-                    x-bind:aria-expanded="sidebarOpen"
+                    x-bind:aria-label="sidebarClosed ? 'メニューを開く' : 'メニューを閉じる'"
+                    x-bind:aria-expanded="!sidebarClosed"
                     x-on:click="toggleSidebar"
                   >
                     ☰
@@ -1095,7 +1145,7 @@
                 <div
                   x-show="activeTab === 'properties'"
                   x-data="propertyManagement"
-                  style="overflow: hidden"
+                  style="overflow: visible"
                 >
                   <div class="is-flex is-justify-content-space-between is-align-items-center mb-1">
                     <div>
@@ -1201,7 +1251,7 @@
                               <p class="lbl">総部屋数</p>
                             </div>
                             <div class="summary-card">
-                              <p class="num has-text-success" x-text="getSummaryCards().done"></p>
+                              <p class="num" style="color: #3273dc" x-text="getSummaryCards().done"></p>
                               <p class="lbl">検針済み</p>
                             </div>
                             <div class="summary-card">
@@ -1213,7 +1263,7 @@
                             </div>
                             <div class="summary-card">
                               <p
-                                class="num has-text-warning"
+                                class="num" style="color: #e74c3c"
                                 x-text="getSummaryCards().warning"
                               ></p>
                               <p class="lbl">警告</p>
@@ -1229,9 +1279,22 @@
 
                           <div class="is-flex is-justify-content-space-between is-align-items-center">
                             <div></div>
-                            <button class="button is-info is-light is-small" x-on:click="openBulkAddRoom()">
-                              📥 一括部屋登録
-                            </button>
+                            <div class="field is-grouped">
+                              <div class="control">
+                                <button
+                                  class="button is-info is-light is-small"
+                                  x-bind:disabled="!selectedProperty"
+                                  x-on:click="openEditProperty()"
+                                >
+                                  ✏️ 編集
+                                </button>
+                              </div>
+                              <div class="control">
+                                <button class="button is-info is-light is-small" x-on:click="openBulkAddRoom()">
+                                  📥 一括部屋登録
+                                </button>
+                              </div>
+                            </div>
                           </div>
 
                           <!-- View Toggle -->
@@ -1256,6 +1319,12 @@
                               x-on:click="switchToAnnualReport()"
                             >
                               📅 年間レポート
+                            </button>
+                          </div>
+
+                          <div x-show="selectedProperty" style="margin-top: 0.5rem;">
+                            <button class="button is-small is-info is-light" x-on:click="openAccessCopyModal()">
+                              📋 Access用コピー
                             </button>
                           </div>
 
@@ -1316,7 +1385,7 @@
                                     ></span>
                                   </th>
                                   <th class="sort-th" x-on:click="sortBy('standardDeviation')">
-                                    平均<span
+                                    標準偏差<span
                                       class="sort-icon"
                                       x-bind:class="getSortIcon('standardDeviation')"
                                     ></span>
@@ -1329,7 +1398,7 @@
                                   <tr
                                     class="room-row"
                                     x-on:click="toggleRoomExpand(room.roomId)"
-                                    x-bind:class="{'stripe-even': idx % 2 === 1}"
+                                    x-bind:class="{'stripe-even': idx % 2 === 1, 'warn-row': getRoomStatusTag(room) === 'warning'}"
                                   >
                                     <td style="text-align: center">
                                       <span
@@ -1351,21 +1420,20 @@
                                       x-text="getReadingDate(room)"
                                     ></td>
                                     <td
-                                      style="text-align: center"
-                                      class="highlight-col"
+                                      class="highlight-col num-col"
                                       x-text="formatNumber(room.currentReading)"
                                     ></td>
                                     <td
-                                      style="text-align: center"
+                                      class="num-col"
                                       x-text="formatNumber(room.previousReading)"
                                     ></td>
                                     <td
-                                      style="text-align: center"
+                                      class="num-col"
                                       x-bind:class="getUsageDisplayClass(room)"
                                       x-text="getUsageDisplay(room)"
                                     ></td>
                                     <td
-                                      style="text-align: center"
+                                      class="sd-col"
                                       x-text="formatNumber(room.standardDeviation)"
                                     ></td>
                                     <td x-on:click.stop>
@@ -1514,6 +1582,19 @@
                               class="bulk-table table is-hoverable is-bordered"
                               style="width: 100%; min-width: 1100px"
                             >
+                              <colgroup>
+                                <col style="width: 80px" />
+                                <col style="width: 80px" />
+                                <col style="width: 80px" />
+                                <col style="width: 75px" />
+                                <col style="width: 75px" />
+                                <col style="width: 75px" />
+                                <col style="width: 75px" />
+                                <col style="width: 90px" />
+                                <col style="width: 80px" />
+                                <col style="width: 200px" />
+                                <col style="width: 90px" />
+                              </colgroup>
                               <thead>
                                 <tr>
                                   <th>部屋名</th>
@@ -1547,20 +1628,21 @@
                                     </td>
                                     <td x-text="getReadingDate(room)"></td>
                                     <td
-                                      class="highlight-col"
+                                      class="highlight-col num-col"
                                       x-text="formatNumber(room.currentReading)"
                                     ></td>
-                                    <td x-text="formatNumber(room.previousReading)"></td>
-                                    <td x-text="formatNumber(room.previousReading2)"></td>
-                                    <td x-text="formatNumber(room.previousReading3)"></td>
+                                    <td class="num-col" x-text="formatNumber(room.previousReading)"></td>
+                                    <td class="num-col" x-text="formatNumber(room.previousReading2)"></td>
+                                    <td class="num-col" x-text="formatNumber(room.previousReading3)"></td>
                                     <td
+                                      class="num-col"
                                       x-bind:class="getUsageDisplayClass(room)"
                                       x-text="getUsageDisplay(room)"
                                     ></td>
-                                    <td x-text="formatNumber(room.standardDeviation)"></td>
+                                    <td class="sd-col" x-text="formatNumber(room.standardDeviation)"></td>
                                     <td class="usage-trend">
                                       <template x-if="getUsageTrend(room) !== null">
-                                        <span>
+                                        <div class="trend-inner">
                                           <span class="usage-item">
                                             <span
                                               class="usage-bar-fixed"
@@ -1579,7 +1661,7 @@
                                             <span class="usage-bar-fixed prev"></span>
                                             <span x-text="getUsageTrend(room).prev2"></span>
                                           </span>
-                                        </span>
+                                        </div>
                                       </template>
                                     </td>
                                     <td>
@@ -1838,6 +1920,72 @@
                       <footer class="modal-card-foot">
                         <button class="button is-primary" x-bind:class="{ 'is-loading': submitting }" x-bind:disabled="submitting" x-on:click="submitAddProperty()">
                           登録する
+                        </button>
+                        <button class="button" x-on:click="closeModal()">キャンセル</button>
+                      </footer>
+                    </div>
+                  </div>
+
+                  <div
+                    class="modal"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="modal-editProperty-title"
+                    x-bind:class="{ 'is-active': activeModal === 'editProperty' }"
+                  >
+                    <div class="modal-background" x-on:click="closeModal()"></div>
+                    <div class="modal-card">
+                      <header class="modal-card-head">
+                        <p class="modal-card-title" id="modal-editProperty-title">物件を編集</p>
+                        <button
+                          class="delete"
+                          aria-label="閉じる"
+                          x-on:click="closeModal()"
+                        ></button>
+                      </header>
+                      <section class="modal-card-body">
+                        <div
+                          x-show="error"
+                          class="notification is-danger is-light mb-3"
+                          role="alert"
+                        >
+                          <p x-text="error"></p>
+                        </div>
+                        <div class="field">
+                          <label class="label">物件名 <span class="has-text-danger">*</span></label>
+                          <div class="control">
+                            <input
+                              class="input"
+                              placeholder="物件名を入力"
+                              x-bind:value="editPropertyForm.name"
+                              x-on:input="setFormProp('editPropertyForm', 'name', $event.target.value)"
+                            />
+                          </div>
+                        </div>
+                        <div class="field">
+                          <label class="label">物件番号</label>
+                          <p class="help">
+                            現在: <strong x-text="editPropertyForm.currentPropertyId"></strong>
+                          </p>
+                          <div class="control">
+                            <input
+                              class="input"
+                              placeholder="数字を入力（例: 5 → P000005）"
+                              inputmode="numeric"
+                              x-on:input="onEditPropertyIdInput($event)"
+                              x-bind:value="editPropertyForm.manualId"
+                            />
+                          </div>
+                          <p class="help" x-text="getDisplayEditPropertyId()"></p>
+                        </div>
+                        <div class="notification is-light is-size-7">
+                          <p>⚠️ 物件番号を変更すると、関連する全データに反映されます。</p>
+                          <p>※月次バックアップがある場合、物件番号の変更はできません。物件名のみ変更可能です。</p>
+                        </div>
+                      </section>
+                      <footer class="modal-card-foot">
+                        <button class="button is-primary" x-bind:class="{ 'is-loading': submitting }" x-bind:disabled="submitting" x-on:click="submitEditProperty()">
+                          更新する
                         </button>
                         <button class="button" x-on:click="closeModal()">キャンセル</button>
                       </footer>
@@ -2396,6 +2544,60 @@
                       </footer>
                     </div>
                   </div>
+
+                <!-- Access Copy Modal -->
+                <div
+                  class="modal"
+                  role="dialog"
+                  aria-labelledby="modal-accessCopy-title"
+                  x-bind:class="{ 'is-active': activeModal === 'accessCopy' }"
+                >
+                  <div class="modal-background" x-on:click="closeModal()"></div>
+                  <div class="modal-card">
+                    <header class="modal-card-head">
+                      <p class="modal-card-title" id="modal-accessCopy-title">📋 Access用コピー</p>
+                      <button class="delete" aria-label="閉じる" x-on:click="closeModal()"></button>
+                    </header>
+                    <section class="modal-card-body">
+                      <div x-show="accessCopyLoading" class="has-text-centered py-4">
+                        <span class="button is-loading is-static">読み込み中</span>
+                      </div>
+                      <template x-if="accessCopyData">
+                        <div>
+                          <p class="mb-3">
+                            <strong x-text="accessCopyData.propertyName"></strong>
+                            <span class="has-text-grey is-size-7 ml-2">
+                              全<span x-text="accessCopyData.totalCount"></span>件
+                              （検針済 <span x-text="accessCopyData.inspectedCount"></span>件）
+                            </span>
+                          </p>
+                          <div class="box is-size-7" style="max-height: 200px; overflow-y: auto; font-family: monospace; white-space: pre; background: #f9f9f9;">
+                            <template x-for="(reading, idx) in accessCopyData.readings" :key="idx">
+                              <div x-text="(idx + 1) + ': ' + (reading === '' ? '（空）' : reading)"></div>
+                            </template>
+                          </div>
+                          <p class="is-size-7 has-text-grey mt-2">
+                            今回指示数のみをコピーします。空欄は未検針・検針不要の部屋です。
+                          </p>
+                        </div>
+                      </template>
+                      <template x-if="!accessCopyLoading && !accessCopyData">
+                        <p class="has-text-grey py-4">データがありません</p>
+                      </template>
+                    </section>
+                    <footer class="modal-card-foot">
+                      <button
+                        class="button is-primary"
+                        x-bind:class="{ 'is-loading': false }"
+                        x-bind:disabled="!accessCopyData"
+                        x-on:click="executeAccessCopy()"
+                      >
+                        📋 コピーする
+                      </button>
+                      <button class="button" x-on:click="closeModal()">閉じる</button>
+                    </footer>
+                  </div>
+                </div>
                 </div>
 
                 <!-- Monthly Process -->

@@ -38,6 +38,7 @@ document.addEventListener('alpine:init', function () {
         roomNotes: '',
         hasInspectionData: false,
       },
+      editPropertyForm: { currentPropertyId: '', manualId: '', name: '' },
 
       bulkPropertyFormat: 'oneline',
       bulkPropertyText: '',
@@ -53,6 +54,9 @@ document.addEventListener('alpine:init', function () {
       annualReportYear: new Date().getFullYear(),
       annualReportLoading: false,
       annualAvailableYears: [],
+
+      accessCopyData: null,
+      accessCopyLoading: false,
 
       init: function () {
         var self = this;
@@ -205,6 +209,70 @@ document.addEventListener('alpine:init', function () {
         this.addPropertyForm = { name: '', idMode: 'auto', manualId: '' };
         this.error = '';
         this.activeModal = 'addProperty';
+      },
+
+      openEditProperty: function () {
+        if (!this.selectedProperty) return;
+        var currentId = this.getPropId(this.selectedProperty);
+        this.editPropertyForm = {
+          currentPropertyId: currentId,
+          manualId: currentId.replace('P', ''),
+          name: this.getPropName(this.selectedProperty),
+        };
+        this.error = '';
+        this.activeModal = 'editProperty';
+      },
+
+      onEditPropertyIdInput: function (e) {
+        e.target.value = e.target.value.replace(/[^0-9]/g, '');
+        this.editPropertyForm.manualId = e.target.value;
+      },
+
+      getDisplayEditPropertyId: function () {
+        var digits = (this.editPropertyForm.manualId || '').replace(/[^0-9]/g, '');
+        if (!digits) return 'P______';
+        return 'P' + ('000000' + parseInt(digits, 10)).slice(-6);
+      },
+
+      submitEditProperty: function () {
+        var self = this;
+        var newName = self.editPropertyForm.name.trim();
+        if (!newName) {
+          self.error = '物件名を入力してください';
+          return;
+        }
+        var digits = (self.editPropertyForm.manualId || '').replace(/[^0-9]/g, '');
+        if (!digits) {
+          self.error = '物件番号を入力してください';
+          return;
+        }
+        self.submitting = true;
+        self.error = '';
+        var newId = 'P' + ('000000' + parseInt(digits, 10)).slice(-6);
+        var params = {
+          propertyId: self.editPropertyForm.currentPropertyId,
+          newPropertyId: newId,
+          newPropertyName: newName,
+        };
+        callAdminAPI('updateProperty', params)
+          .then(function (result) {
+            if (result && result.success) {
+              self._pendingPropertyId = result.data.newPropertyId;
+              self.closeModal();
+              self.loadProperties();
+              if (window.Alpine && Alpine.store('toast')) {
+                Alpine.store('toast').success('物件情報を更新しました');
+              }
+            } else {
+              self.error = (result && result.error) || '更新に失敗しました';
+            }
+          })
+          .catch(function (err) {
+            self.error = '更新に失敗しました: ' + (err.message || err);
+          })
+          .finally(function () {
+            self.submitting = false;
+          });
       },
 
       openAddRoom: function () {
@@ -469,10 +537,10 @@ document.addEventListener('alpine:init', function () {
 
       getRoomStatusClass: function (room) {
         var status = this.getRoomStatusTag(room);
-        if (status === 'skip') return 'is-light';
-        if (status === 'warning') return 'is-warning is-light';
-        if (status === 'done') return 'is-success is-light';
-        return 'is-light';
+        if (status === 'skip') return 'tag-skip';
+        if (status === 'warning') return 'tag-warn-status';
+        if (status === 'done') return 'tag-done';
+        return 'tag-pending';
       },
 
       getReadingDate: function (room) {
@@ -1034,6 +1102,73 @@ document.addEventListener('alpine:init', function () {
 
       switchToAnnualReport: function () {
         this.viewMode = 'annual';
+      },
+
+      openAccessCopyModal: function () {
+        var self = this;
+        if (!self.selectedProperty) return;
+        self.accessCopyData = null;
+        self.accessCopyLoading = true;
+        self.error = '';
+        self.activeModal = 'accessCopy';
+
+        callAdminAPI('getAccessCopyData', {
+          propertyId: self.getPropId(self.selectedProperty),
+        })
+          .then(function (result) {
+            self.accessCopyLoading = false;
+            if (result && result.success) {
+              self.accessCopyData = result.data;
+            } else {
+              self.error = (result && result.error) || 'データの取得に失敗しました';
+            }
+          })
+          .catch(function (err) {
+            self.accessCopyLoading = false;
+            self.error = 'データの取得に失敗しました: ' + (err.message || err);
+          });
+      },
+
+      executeAccessCopy: function () {
+        var self = this;
+        if (!self.accessCopyData || !self.accessCopyData.readings) return;
+
+        var text = self.accessCopyData.readings.join('\n');
+        if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard
+            .writeText(text)
+            .then(function () {
+              self.closeModal();
+              Alpine.store('toast').success(
+                self.accessCopyData.totalCount + '件をコピーしました'
+              );
+            })
+            .catch(function () {
+              self._fallbackCopy(text);
+            });
+        } else {
+          self._fallbackCopy(text);
+        }
+      },
+
+      _fallbackCopy: function (text) {
+        var self = this;
+        var ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.select();
+        try {
+          document.execCommand('copy');
+          self.closeModal();
+          Alpine.store('toast').success(
+            self.accessCopyData.totalCount + '件をコピーしました'
+          );
+        } catch (e) {
+          self.error = 'コピーに失敗しました。手動でコピーしてください';
+        }
+        document.body.removeChild(ta);
       },
     };
   });

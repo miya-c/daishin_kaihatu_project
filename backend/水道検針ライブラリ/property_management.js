@@ -663,6 +663,154 @@ function deleteRoom(params) {
 }
 
 /**
+ * Update a property's ID and/or name
+ * Updates property_master (first), room_master, and inspection_data
+ * Idempotent: safe to re-run if partially completed
+ * @param {Object} params - { propertyId, newPropertyId?, newPropertyName }
+ * @returns {Object} { success, data?, error? }
+ */
+function updateProperty(params) {
+  try {
+    var lock = LockService.getScriptLock();
+    lock.waitLock(30000);
+  } catch (lockErr) {
+    return {
+      success: false,
+      error: '別の処理（月次処理など）が実行中です。しばらく待ってから再試行してください。',
+    };
+  }
+
+  try {
+    // ── Validation ──
+    if (!params.propertyId) {
+      return { success: false, error: '物件IDは必須です' };
+    }
+    var oldId = String(params.propertyId).trim();
+
+    var newName = params.newPropertyName ? String(params.newPropertyName).trim() : '';
+    if (!newName) {
+      return { success: false, error: '物件名は必須です' };
+    }
+    newName = sanitizeSpreadsheetInput(newName);
+
+    var newId;
+    try {
+      var normalized = normalizePropertyId(params.newPropertyId);
+      newId = normalized || oldId;
+    } catch (e) {
+      return { success: false, error: e.message };
+    }
+
+    var idChanged = oldId !== newId;
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+
+    // ── Monthly backup guard (ID change only) ──
+    if (idChanged) {
+      var backupSheet = ss.getSheetByName('_monthly_backup');
+      if (backupSheet) {
+        return {
+          success: false,
+          error:
+            '月次処理の取り消しデータが存在します。取り消し完了後に物件IDの変更が可能です。物件名のみの変更は可能です。',
+          code: 'BACKUP_EXISTS',
+        };
+      }
+    }
+
+    // ── Property master: existence + duplicate check ──
+    var propSheet = ss.getSheetByName(CONFIG.SHEET_NAMES.PROPERTY_MASTER);
+    if (!propSheet) {
+      return { success: false, error: '物件マスタシートが見つかりません' };
+    }
+    var propData = propSheet.getDataRange().getValues();
+    var propRow = -1;
+    for (var i = 1; i < propData.length; i++) {
+      var rowId = String(propData[i][0]).trim();
+      var rowName = String(propData[i][1]).trim();
+      if (rowId === oldId) {
+        propRow = i + 1;
+      }
+      if (rowId !== oldId && idChanged && rowId === newId) {
+        return { success: false, error: '物件ID「' + newId + '」は既に使用されています' };
+      }
+      if (rowId !== oldId && rowName === newName) {
+        return { success: false, error: '物件名「' + newName + '」は既に登録されています' };
+      }
+    }
+    if (propRow === -1) {
+      return {
+        success: false,
+        error: '物件ID「' + oldId + '」が見つかりません。別の管理者によって削除された可能性があります。',
+      };
+    }
+
+    // ── STEP 1: Update property_master (source of truth FIRST) ──
+    propSheet.getRange(propRow, 2).setValue(newName);
+    if (idChanged) {
+      propSheet.getRange(propRow, 1).setValue(newId);
+    }
+    Logger.log('updateProperty step1: property_master row=' + propRow);
+
+    // ── STEP 2: Update room_master (ID change only) ──
+    if (idChanged) {
+      var roomSheet = ss.getSheetByName(CONFIG.SHEET_NAMES.ROOM_MASTER);
+      if (roomSheet && roomSheet.getLastRow() > 1) {
+        var roomData = roomSheet.getDataRange().getValues();
+        var roomCount = 0;
+        for (var r = 1; r < roomData.length; r++) {
+          if (String(roomData[r][0]).trim() === oldId) {
+            roomSheet.getRange(r + 1, 1).setValue(newId);
+            roomCount++;
+          }
+        }
+        Logger.log('updateProperty step2: room_master ' + roomCount + ' rows');
+      }
+    }
+
+    // ── STEP 3: Update inspection_data ──
+    var inspSheet = ss.getSheetByName(CONFIG.SHEET_NAMES.INSPECTION_DATA);
+    if (inspSheet && inspSheet.getLastRow() > 1) {
+      var inspHeaders = inspSheet.getRange(1, 1, 1, inspSheet.getLastColumn()).getValues()[0];
+      var inspPropIdCol = inspHeaders.indexOf('物件ID');
+      var inspPropNameCol = inspHeaders.indexOf('物件名');
+
+      var inspData = inspSheet.getDataRange().getValues();
+      var inspCount = 0;
+      for (var j = 1; j < inspData.length; j++) {
+        if (String(inspData[j][inspPropIdCol]).trim() === oldId) {
+          if (idChanged && inspPropIdCol !== -1) {
+            inspSheet.getRange(j + 1, inspPropIdCol + 1).setValue(newId);
+          }
+          if (inspPropNameCol !== -1) {
+            inspSheet.getRange(j + 1, inspPropNameCol + 1).setValue(newName);
+          }
+          inspCount++;
+        }
+      }
+      Logger.log('updateProperty step3: inspection_data ' + inspCount + ' rows');
+    }
+
+    Logger.log(
+      'updateProperty complete: ' + oldId + (idChanged ? ' → ' + newId : '') + ' name="' + newName + '"'
+    );
+    return {
+      success: true,
+      data: {
+        oldPropertyId: oldId,
+        newPropertyId: newId,
+        newPropertyName: newName,
+        idChanged: idChanged,
+      },
+    };
+  } catch (error) {
+    Logger.log('updateProperty error: ' + error.message);
+    return { success: false, error: error.message };
+  } finally {
+    LockService.getScriptLock().releaseLock();
+  }
+}
+
+/**
  * Delete a property and all its rooms from all sheets
  * Checks for inspection results first
  * @param {Object} params - { propertyId: string, force?: boolean }

@@ -996,6 +996,7 @@ function getSpreadsheetInfo() {
     return {
       success: true,
       name: ss.getName(),
+      url: ss.getUrl(),
       sheets: sheets,
     };
   } catch (error) {
