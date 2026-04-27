@@ -1,24 +1,26 @@
 <script>
-  import { getConfig, getSetupUrl, clearConfig } from '../../utils/config';
+  import { getConfig, generateSetupLink, clearConfig } from '../../utils/config';
   import qrcode from 'qrcode-generator';
 
   let config = $state(getConfig());
-  let setupUrl = $state(getSetupUrl());
   let showQr = $state(false);
   let qrDataUrl = $state('');
+  let shareLink = $state('');
   let cleared = $state(false);
 
   const generateQr = () => {
-    if (!setupUrl) return;
+    const link = generateSetupLink(window.location.origin);
+    if (!link || link.includes('url=') === false) return;
+    shareLink = link;
     const qr = qrcode(0, 'M');
-    qr.addData(setupUrl);
+    qr.addData(link);
     qr.make();
     qrDataUrl = qr.createDataURL(4, 2);
     showQr = true;
   };
 
   const handleCopyUrl = () => {
-    navigator.clipboard.writeText(setupUrl);
+    navigator.clipboard.writeText(shareLink);
   };
 
   const handleClear = () => {
@@ -37,12 +39,10 @@
   </div>
 
   <div class="settings-card">
-    {#if setupUrl}
+    {#if config.url}
       <div class="section">
         <h2>📱 インストールQRコード</h2>
-        <p class="hint">
-          このQRコードを他の端末でスキャンすると、アプリをインストールできます。7日間有効です。
-        </p>
+        <p class="hint">このQRコードを他の端末でスキャンすると、アプリをインストールできます。</p>
         <button onclick={generateQr} class="btn btn-primary"> QRコードを表示 </button>
 
         {#if showQr}
@@ -53,7 +53,7 @@
             <p class="qr-note">📱 カメラでスキャンしてください</p>
           </div>
           <div class="link-box">
-            <input type="text" readonly value={setupUrl} class="link-input" />
+            <input type="text" readonly value={shareLink} class="link-input" />
             <button onclick={handleCopyUrl} class="btn btn-small">コピー</button>
           </div>
         {/if}
@@ -209,10 +209,6 @@
     padding: 12px;
     border-radius: 8px;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
-  }
-
-  .qr-wrapper :global(svg) {
-    display: block;
   }
 
   .qr-note {
