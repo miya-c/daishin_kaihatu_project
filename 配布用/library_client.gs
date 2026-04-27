@@ -369,6 +369,9 @@ function doGet(e) {
       delete e.parameter._storedApiKey;
     }
     
+    // Inject client's script ID for license validation
+    e.parameter._clientScriptId = ScriptApp.getScriptId();
+    
     // ライブラリのdoGet関数を呼び出し
     return cmlibrary.doGet(e);
     
@@ -391,8 +394,8 @@ function doGet(e) {
  * @param {Object} e - イベントオブジェクト
  * @returns {ContentService} JSONレスポンス
  */
- function doPost(e) {
-  try {
+  function doPost(e) {
+   try {
     // Inject client's API_KEY from script properties (always override to prevent URL injection)
     const clientStoredKey = PropertiesService.getScriptProperties().getProperty('API_KEY');
     if (clientStoredKey) {
@@ -400,6 +403,8 @@ function doGet(e) {
     } else {
       delete e.parameter._storedApiKey;
     }
+    // Inject client's script ID for license validation
+    e.parameter._clientScriptId = ScriptApp.getScriptId();
     return cmlibrary.doPost(e);
   } catch (error) {
     console.error('doPost エラー:', error);

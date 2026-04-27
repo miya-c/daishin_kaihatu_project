@@ -12,11 +12,21 @@ var LICENSE_API_URL = 'https://script.google.com/macros/s/AKfycbxKqSaPECUyOpWyhN
 var LICENSE_APP_ID = 'suido';
 var LICENSE_CACHE_HOURS = 24;
 
+// Per-request caches (GAS re-initializes globals on each invocation)
+var _clientScriptId = '';
+let _cachedApiKey = null;
+let _apiKeyFetched = false;
+let _cachedFeatureFlags = null;
+
 function validateLicense() {
   try {
+    var scriptId = _clientScriptId || ScriptApp.getScriptId();
+    var cacheKey = '_license_cache_' + scriptId;
+    var cacheTimeKey = '_license_cache_time_' + scriptId;
+
     var props = PropertiesService.getScriptProperties();
-    var cached = props.getProperty('_license_cache');
-    var cacheTime = props.getProperty('_license_cache_time');
+    var cached = props.getProperty(cacheKey);
+    var cacheTime = props.getProperty(cacheTimeKey);
 
     if (cached && cacheTime) {
       var elapsed = (Date.now() - Number(cacheTime)) / (1000 * 60 * 60);
@@ -29,7 +39,6 @@ function validateLicense() {
       return true;
     }
 
-    var scriptId = ScriptApp.getScriptId();
     var url = LICENSE_API_URL + '?action=check&scriptId=' + encodeURIComponent(scriptId) + '&appId=' + encodeURIComponent(LICENSE_APP_ID);
 
     var response = UrlFetchApp.fetch(url, {
@@ -41,30 +50,19 @@ function validateLicense() {
     var authorized = result.authorized === true;
 
     if (authorized) {
-      props.setProperty('_license_cache', 'true');
-      props.setProperty('_license_cache_time', String(Date.now()));
+      props.setProperty(cacheKey, 'true');
+      props.setProperty(cacheTimeKey, String(Date.now()));
     } else {
-      props.deleteProperty('_license_cache');
-      props.deleteProperty('_license_cache_time');
+      props.deleteProperty(cacheKey);
+      props.deleteProperty(cacheTimeKey);
     }
 
     return authorized;
   } catch (error) {
     Logger.log('[validateLicense] error: ' + error.message);
-    var props = PropertiesService.getScriptProperties();
-    var cached = props.getProperty('_license_cache');
-    if (cached === 'true') {
-      props.setProperty('_license_cache_time', String(Date.now()));
-      return true;
-    }
     return true;
   }
 }
-
-// Per-request caches (GAS re-initializes globals on each invocation)
-let _cachedApiKey = null;
-let _apiKeyFetched = false;
-let _cachedFeatureFlags = null;
 
 function constantTimeCompare(a, b) {
   if (typeof a !== 'string' || typeof b !== 'string') return false;
@@ -182,6 +180,10 @@ function createCorsJsonResponse(data) {
 function doGet(e) {
   const startTime = new Date();
   try {
+    // Store injected client script ID for license validation
+    if (e && e.parameter && e.parameter._clientScriptId) {
+      _clientScriptId = e.parameter._clientScriptId;
+    }
     const action = e?.parameter?.action;
     if (!action) {
       if (!validateLicense()) {
@@ -558,6 +560,10 @@ function doGet(e) {
 
 function doPost(e) {
   try {
+    // Store injected client script ID for license validation
+    if (e && e.parameter && e.parameter._clientScriptId) {
+      _clientScriptId = e.parameter._clientScriptId;
+    }
     if (!validateLicense()) {
       return createCorsJsonResponse({
         success: false,
