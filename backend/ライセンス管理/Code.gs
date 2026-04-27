@@ -161,6 +161,8 @@ function adminAction(action, params) {
       return deleteApp(params);
     case 'generateSetupToken':
       return generateSetupToken(params);
+    case 'listSetupTokens':
+      return listSetupTokens(params);
     default:
       return { success: false, message: 'Unknown action' };
   }
@@ -758,23 +760,78 @@ function exchangeSetupToken(token) {
   if (!sheet) return { success: false, message: 'Setup tokens sheet not found' };
 
   var data = sheet.getDataRange().getValues();
+  var result = { success: false, message: 'Invalid token' };
+
+  // Find and validate the token
   for (var i = 1; i < data.length; i++) {
     if (data[i][TOKEN_COL.TOKEN - 1] === token) {
       var expiresAt = new Date(data[i][TOKEN_COL.EXPIRES_AT - 1]);
       if (new Date() > expiresAt) {
-        return { success: false, message: 'Token expired' };
+        result = { success: false, message: 'Token expired' };
+      } else {
+        var licenseId = data[i][TOKEN_COL.LICENSE_ID - 1];
+        var lSheet = ss.getSheetByName(LICENSE_SHEET_NAME);
+        var licenseRow = lSheet.getRange(parseInt(licenseId), 1, 1, 8).getValues()[0];
+        result = {
+          success: true,
+          webAppUrl: licenseRow[LICENSE_COL.WEB_APP_URL - 1] || '',
+          apiKey: licenseRow[LICENSE_COL.API_KEY - 1] || ''
+        };
       }
-      var licenseId = data[i][TOKEN_COL.LICENSE_ID - 1];
-      var lSheet = ss.getSheetByName(LICENSE_SHEET_NAME);
-      var licenseRow = lSheet.getRange(parseInt(licenseId), 1, 1, 8).getValues()[0];
-      return {
-        success: true,
-        webAppUrl: licenseRow[LICENSE_COL.WEB_APP_URL - 1] || '',
-        apiKey: licenseRow[LICENSE_COL.API_KEY - 1] || ''
-      };
+      break;
     }
   }
-  return { success: false, message: 'Invalid token' };
+
+  // Cleanup expired tokens (delete rows in reverse order to preserve indices)
+  var now = new Date();
+  var rowsToDelete = [];
+  for (var j = data.length - 1; j >= 1; j--) {
+    var exp = new Date(data[j][TOKEN_COL.EXPIRES_AT - 1]);
+    if (now > exp) {
+      rowsToDelete.push(j + 1); // 1-indexed row number
+    }
+  }
+  for (var k = 0; k < rowsToDelete.length; k++) {
+    sheet.deleteRow(rowsToDelete[k]);
+  }
+
+  return result;
+}
+
+function listSetupTokens(params) {
+  if (!params.id) {
+    return { success: false, message: 'id (row number) is required' };
+  }
+
+  var ss = getSpreadsheet();
+  var sheet = ss.getSheetByName('setup_tokens');
+  if (!sheet) return { success: true, tokens: [] };
+
+  var licenseId = String(params.id);
+  var now = new Date();
+  var data = sheet.getDataRange().getValues();
+  var tokens = [];
+  var baseUrl = ScriptApp.getService().getUrl().split('?')[0];
+
+  for (var i = 1; i < data.length; i++) {
+    var rowLicenseId = String(data[i][TOKEN_COL.LICENSE_ID - 1]).trim();
+    if (rowLicenseId !== licenseId) continue;
+
+    var expiresAt = new Date(data[i][TOKEN_COL.EXPIRES_AT - 1]);
+    if (now > expiresAt) continue;
+
+    var tokenValue = String(data[i][TOKEN_COL.TOKEN - 1]).trim();
+    var daysLeft = Math.ceil((expiresAt - now) / (1000 * 60 * 60 * 24));
+
+    tokens.push({
+      token: tokenValue,
+      setupUrl: baseUrl + '?action=setup&token=' + tokenValue,
+      expiresAt: _formatDate(expiresAt),
+      daysLeft: daysLeft
+    });
+  }
+
+  return { success: true, tokens: tokens };
 }
 
 // ============================================================

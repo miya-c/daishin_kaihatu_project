@@ -1004,6 +1004,46 @@
         padding: 32px;
         color: var(--text-secondary);
       }
+      .setup-tokens-list {
+        margin-top: 16px;
+        border-top: 1px solid var(--border-base);
+        padding-top: 12px;
+      }
+      .setup-tokens-list h4 {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        margin-bottom: 8px;
+      }
+      .setup-token-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 0;
+        font-size: 0.8rem;
+        border-bottom: 1px solid var(--border-subtle);
+      }
+      .setup-token-item:last-child {
+        border-bottom: none;
+      }
+      .setup-token-url {
+        flex: 1;
+        font-family: monospace;
+        font-size: 0.75rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        color: var(--text-primary);
+        background: var(--bg-elevated);
+        padding: 4px 8px;
+        border-radius: 4px;
+      }
+      .setup-token-days {
+        font-size: 0.75rem;
+        color: var(--status-active);
+        white-space: nowrap;
+        font-weight: 500;
+      }
 
       /* Theme switcher on login screen */
       .theme-switcher-login {
@@ -1487,6 +1527,16 @@
                             <div class="setup-url-box">
                               <input type="text" x-model="setupUrl" readonly class="input setup-url-input" />
                               <button class="button is-primary" x-on:click="copySetupUrl">コピー</button>
+                            </div>
+                            <div class="setup-tokens-list" x-show="activeSetupTokens.length > 0">
+                              <h4>有効な発行済みURL</h4>
+                              <template x-for="t in activeSetupTokens" :key="t.token">
+                                <div class="setup-token-item">
+                                  <span class="setup-token-url" x-text="t.setupUrl" x-bind:title="t.setupUrl"></span>
+                                  <span class="setup-token-days" x-text="t.daysLeft + '日'"></span>
+                                  <button class="copy-btn" x-on:click="copyExistingUrl(t.setupUrl)">コピー</button>
+                                </div>
+                              </template>
                             </div>
                           </div>
                         </template>

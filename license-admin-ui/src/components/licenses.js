@@ -39,6 +39,8 @@ document.addEventListener('alpine:init', function () {
       showSetupUrlModal: false,
       setupUrl: '',
       setupUrlLicense: null,
+      activeSetupTokens: [],
+      activeTokensLoading: false,
 
       init: function () {
         var self = this;
@@ -251,6 +253,8 @@ document.addEventListener('alpine:init', function () {
         var self = this;
         self.setupUrlLicense = license;
         self.setupUrl = '';
+        self.activeSetupTokens = [];
+        self.activeTokensLoading = true;
         self.showSetupUrlModal = true;
         callAdminAPI('generateSetupToken', { id: license.id }).then(function (result) {
           if (result && result.success) {
@@ -262,6 +266,13 @@ document.addEventListener('alpine:init', function () {
         }).catch(function () {
           Alpine.store('toast').error('通信エラーが発生しました');
           self.showSetupUrlModal = false;
+        });
+        callAdminAPI('listSetupTokens', { id: license.id }).then(function (result) {
+          if (result && result.success) {
+            self.activeSetupTokens = result.tokens || [];
+          }
+        }).catch(function () {}).finally(function () {
+          self.activeTokensLoading = false;
         });
       },
 
@@ -288,6 +299,25 @@ document.addEventListener('alpine:init', function () {
         this.showSetupUrlModal = false;
         this.setupUrl = '';
         this.setupUrlLicense = null;
+        this.activeSetupTokens = [];
+      },
+
+      copyExistingUrl: function (url) {
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(url).then(function () {
+            Alpine.store('toast').success('コピーしました');
+          });
+        } else {
+          var ta = document.createElement('textarea');
+          ta.value = url;
+          ta.style.position = 'fixed';
+          ta.style.left = '-9999px';
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand('copy');
+          document.body.removeChild(ta);
+          Alpine.store('toast').success('コピーしました');
+        }
       },
     };
   });

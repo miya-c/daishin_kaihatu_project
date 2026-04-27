@@ -40,8 +40,13 @@ function validateLicense() {
     var result = JSON.parse(response.getContentText());
     var authorized = result.authorized === true;
 
-    props.setProperty('_license_cache', authorized ? 'true' : 'false');
-    props.setProperty('_license_cache_time', String(Date.now()));
+    if (authorized) {
+      props.setProperty('_license_cache', 'true');
+      props.setProperty('_license_cache_time', String(Date.now()));
+    } else {
+      props.deleteProperty('_license_cache');
+      props.deleteProperty('_license_cache_time');
+    }
 
     return authorized;
   } catch (error) {
