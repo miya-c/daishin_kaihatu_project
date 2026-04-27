@@ -42,6 +42,10 @@ document.addEventListener('alpine:init', function () {
       activeSetupTokens: [],
       activeTokensLoading: false,
 
+      showViewUrlModal: false,
+      viewUrlLicense: null,
+      viewTokensLoading: false,
+
       init: function () {
         var self = this;
         self.load();
@@ -247,6 +251,29 @@ document.addEventListener('alpine:init', function () {
           .finally(function () {
             self.loading = false;
           });
+      },
+
+      openViewUrlModal: function (license) {
+        var self = this;
+        self.viewUrlLicense = license;
+        self.activeSetupTokens = [];
+        self.viewTokensLoading = true;
+        self.showViewUrlModal = true;
+        callAdminAPI('listSetupTokens', { id: license.id }).then(function (result) {
+          if (result && result.success) {
+            self.activeSetupTokens = result.tokens || [];
+          }
+        }).catch(function () {
+          Alpine.store('toast').error('通信エラーが発生しました');
+        }).finally(function () {
+          self.viewTokensLoading = false;
+        });
+      },
+
+      closeViewUrlModal: function () {
+        this.showViewUrlModal = false;
+        this.viewUrlLicense = null;
+        this.activeSetupTokens = [];
       },
 
       openSetupUrlModal: function (license) {

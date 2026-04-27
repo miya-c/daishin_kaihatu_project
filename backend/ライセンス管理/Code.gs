@@ -746,6 +746,14 @@ function generateSetupToken(params) {
     return { success: false, message: 'Setup tokens sheet not found. Run setupSheets() first.' };
   }
 
+  // Delete existing tokens for this license (one active token per license)
+  var existingData = tSheet.getDataRange().getValues();
+  for (var j = existingData.length - 1; j >= 1; j--) {
+    if (String(existingData[j][TOKEN_COL.LICENSE_ID - 1]).trim() === String(rowNumber)) {
+      tSheet.deleteRow(j + 1);
+    }
+  }
+
   tSheet.appendRow([token, String(rowNumber), expiresAt, false]);
 
   var baseUrl = ScriptApp.getService().getUrl().split('?')[0];

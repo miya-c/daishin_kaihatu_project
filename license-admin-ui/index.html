@@ -1321,7 +1321,8 @@
                             <td x-text="c.notes || '—'"></td>
                             <td>
                               <div class="action-btn-group">
-                                <button class="button is-small is-info is-light" x-on:click="openSetupUrlModal(c)">🔗</button>
+                                <button class="button is-small is-info is-light" x-on:click="openViewUrlModal(c)">確認</button>
+                                <button class="button is-small is-primary is-light" x-on:click="openSetupUrlModal(c)">発行</button>
                                 <button class="button is-small is-info is-light" x-on:click="openEditModal(c)">編集</button>
                                 <button class="button is-small is-danger is-light" x-on:click="openDeleteModal(c)">削除</button>
                               </div>
@@ -1501,6 +1502,44 @@
                       <footer class="modal-card-foot">
                         <button class="button is-danger" x-on:click="doDelete">削除</button>
                         <button class="button" x-on:click="showDeleteModal = false">キャンセル</button>
+                      </footer>
+                    </div>
+                  </div>
+
+                  <!-- ═══════════════════════════════════════════ -->
+                  <!-- VIEW URL MODAL -->
+                  <!-- ═══════════════════════════════════════════ -->
+                  <div class="modal" x-bind:class="{ 'is-active': showViewUrlModal }">
+                    <div class="modal-background" x-on:click="closeViewUrlModal"></div>
+                    <div class="modal-card" style="max-width: 560px">
+                      <header class="modal-card-head">
+                        <p class="modal-card-title">セットアップURL確認</p>
+                        <button class="delete" aria-label="close" x-on:click="closeViewUrlModal"></button>
+                      </header>
+                      <section class="modal-card-body">
+                        <div x-show="viewTokensLoading" class="setup-url-loading">
+                          <p>読み込み中...</p>
+                        </div>
+                        <div x-show="!viewTokensLoading">
+                          <template x-if="activeSetupTokens.length > 0">
+                            <div class="setup-tokens-list" style="margin-top:0;border-top:none;padding-top:0">
+                              <p class="setup-url-info">以下のURLが有効です。</p>
+                              <template x-for="t in activeSetupTokens" :key="t.token">
+                                <div class="setup-token-item">
+                                  <span class="setup-token-url" x-text="t.setupUrl" x-bind:title="t.setupUrl"></span>
+                                  <span class="setup-token-days" x-text="t.daysLeft + '日'"></span>
+                                  <button class="copy-btn" x-on:click="copyExistingUrl(t.setupUrl)">コピー</button>
+                                </div>
+                              </template>
+                            </div>
+                          </template>
+                          <template x-if="activeSetupTokens.length === 0">
+                            <p class="setup-url-info">発行済みのURLはありません。「発行」ボタンから新規発行してください。</p>
+                          </template>
+                        </div>
+                      </section>
+                      <footer class="modal-card-foot">
+                        <button class="button" x-on:click="closeViewUrlModal">閉じる</button>
                       </footer>
                     </div>
                   </div>
