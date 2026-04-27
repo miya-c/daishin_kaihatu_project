@@ -5,3 +5,4 @@
 .vite/
 dist/
 node_modules/
+admin-ui/

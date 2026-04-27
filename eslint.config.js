@@ -13,7 +13,6 @@ export default [
       'node_modules/',
       'backend/',
       'admin-ui/',
-      'license-admin-ui/',
       'vite.config.js',
       'vitest.config.js',
       'vitest-setup.js',
