@@ -622,6 +622,34 @@ function runUsageExample() {
   }
 }
 
+// =====================================================
+// ライブラリメニュー関数ラッパー
+// ライブラリ側のonOpen()が作成するメニュー項目から呼ばれる
+// GASの仕様上、メニューの関数名はクライアント側スクリプト内で解決されるため
+// ラッパー経由でライブラリの関数を呼び出す
+// =====================================================
+
+/** 🚰 検針管理システム メニュー */
+function showRoomsDialog() { return cmlibrary.showRoomsDialog(); }
+function openMeterReadingInput() { return cmlibrary.openMeterReadingInput(); }
+function runDataValidation() { return cmlibrary.runDataValidation(); }
+function runDataCleanup() { return cmlibrary.runDataCleanup(); }
+function displayPreCheckResults() { return cmlibrary.displayPreCheckResults(); }
+function showUsageGuide() { return cmlibrary.showUsageGuide(); }
+
+/** 🚀 システム導入 メニュー */
+function startSampleExperienceWizard() { return cmlibrary.startSampleExperienceWizard(); }
+function startProductionTemplateWizard() { return cmlibrary.startProductionTemplateWizard(); }
+function startProductionSetupCompleteWizard() { return cmlibrary.startProductionSetupCompleteWizard(); }
+function startSystemSetupWizardFromMenu() { return cmlibrary.startSystemSetupWizardFromMenu(); }
+function runSystemDiagnosticsFromMenu() { return cmlibrary.runSystemDiagnosticsFromMenu(); }
+function createMasterSheetTemplatesFromMenu() { return cmlibrary.createMasterSheetTemplatesFromMenu(); }
+function formatAllPropertyIdsFromMenu() { return cmlibrary.formatAllPropertyIdsFromMenu(); }
+function generateRoomIdsFromMenu() { return cmlibrary.generateRoomIdsFromMenu(); }
+function createInitialInspectionDataFromMenu() { return cmlibrary.createInitialInspectionDataFromMenu(); }
+function validateSystemSetupFromMenu() { return cmlibrary.validateSystemSetupFromMenu(); }
+function showSystemSetupGuide() { return cmlibrary.showSystemSetupGuide(); }
+
 /**
  * HTMLファイルを読み込む関数
  * @param {string} filename - 読み込むHTMLファイル名

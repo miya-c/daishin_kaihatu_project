@@ -43,7 +43,9 @@ function createSystemSetupMenu() {
     const ui = SpreadsheetApp.getUi();
 
     ui.createMenu('🚀 システム導入')
-      .addItem('🎯 導入ウィザード開始', 'startSystemSetupWizardFromMenu')
+      .addItem('🎯 サンプル体験（5分で完了）', 'startSampleExperienceWizard')
+      .addItem('📝 本番テンプレート作成', 'startProductionTemplateWizard')
+      .addItem('🚀 本番セットアップ完了（データ入力後）', 'startProductionSetupCompleteWizard')
       .addSeparator()
       .addItem('🔍 システム診断実行', 'runSystemDiagnosticsFromMenu')
       .addItem('📝 マスタシートテンプレート作成', 'createMasterSheetTemplatesFromMenu')
@@ -943,6 +945,322 @@ function startSystemSetupWizardFromMenu() {
       error: error.message,
       message: `導入ウィザードの開始に失敗しました: ${error.message}`,
     };
+  }
+}
+
+/**
+ * マスタシートに既存データがあるかチェック
+ * @returns {Object} { hasData: boolean, propertyCount: number, roomCount: number, propertyNames: string[], roomNames: string[] }
+ */
+function hasExistingData() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var result = { hasData: false, propertyCount: 0, roomCount: 0, propertyNames: [], roomNames: [] };
+
+  // Check 物件マスタ
+  var propSheet = ss.getSheetByName('物件マスタ');
+  if (propSheet && propSheet.getLastRow() > 1) {
+    result.hasData = true;
+    result.propertyCount = propSheet.getLastRow() - 1;
+    var propData = propSheet.getRange(2, 1, Math.min(result.propertyCount, 10), 2).getValues();
+    result.propertyNames = propData.map(function(row) { return row[1] || ''; }).filter(function(n) { return n !== ''; });
+  }
+
+  // Check 部屋マスタ
+  var roomSheet = ss.getSheetByName('部屋マスタ');
+  if (roomSheet && roomSheet.getLastRow() > 1) {
+    result.hasData = true;
+    result.roomCount = roomSheet.getLastRow() - 1;
+    var roomData = roomSheet.getRange(2, 1, Math.min(result.roomCount, 10), 3).getValues();
+    result.roomNames = roomData.map(function(row) { return row[2] || ''; }).filter(function(n) { return n !== ''; });
+  }
+
+  return result;
+}
+
+/**
+ * マスタデータを全てクリア（ヘッダー行は保持）
+ * クリア対象: 物件マスタ, 部屋マスタ, inspection_data のデータ行
+ */
+function clearAllMasterData() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheetsToClear = ['物件マスタ', '部屋マスタ', 'inspection_data'];
+
+  sheetsToClear.forEach(function(sheetName) {
+    var sheet = ss.getSheetByName(sheetName);
+    if (sheet && sheet.getLastRow() > 1) {
+      sheet.deleteRows(2, sheet.getLastRow() - 1);
+    }
+  });
+}
+
+/**
+ * 🎯 サンプル体験ウィザード（5分で完了）
+ * 診断 → テンプレート → サンプルデータ → ID割り当て → 検針データ → 最終確認
+ */
+function startSampleExperienceWizard() {
+  try {
+    logWithLevel('INFO', 'startSampleExperienceWizard開始', 'サンプル体験ウィザード');
+    var ui = SpreadsheetApp.getUi();
+
+    // 既存データチェック
+    var dataStatus = hasExistingData();
+    if (dataStatus.hasData) {
+      var confirmMsg = '⚠️ データが存在します。\n\n';
+      confirmMsg += '物件マスタ: ' + dataStatus.propertyCount + '件\n';
+      if (dataStatus.propertyNames.length > 0) {
+        confirmMsg += '  (' + dataStatus.propertyNames.slice(0, 5).join(', ');
+        if (dataStatus.propertyNames.length > 5) confirmMsg += '...';
+        confirmMsg += ')\n';
+      }
+      confirmMsg += '部屋マスタ: ' + dataStatus.roomCount + '件\n\n';
+      confirmMsg += 'サンプルデータで上書きしますか？';
+
+      var response = ui.alert('🎯 サンプル体験', confirmMsg, ui.ButtonSet.YES_NO);
+      if (response !== ui.Button.YES) {
+        safeAlert('キャンセル', 'サンプル体験をキャンセルしました。');
+        return { success: false, cancelled: true };
+      }
+      clearAllMasterData();
+      logWithLevel('INFO', 'startSampleExperienceWizard', '既存データをクリアしました');
+    }
+
+    // ステップ実行
+    var startTime = new Date();
+    var errors = [];
+
+    // Step 1: システム診断
+    ui.alert('🎯 サンプル体験', 'ステップ 1/5: システム診断を実行します...', ui.ButtonSet.OK);
+    var diagResult = executeSystemDiagnosis();
+    if (!diagResult.success) {
+      errors.push('システム診断: ' + (diagResult.error || diagResult.message));
+    }
+
+    // Step 2: テンプレート作成
+    ui.alert('🎯 サンプル体験', 'ステップ 2/5: マスタテンプレートを作成します...', ui.ButtonSet.OK);
+    var tplResult = executeTemplateCreation();
+    if (!tplResult.success) {
+      errors.push('テンプレート作成: ' + (tplResult.error || tplResult.message));
+      safeAlert('エラー', 'テンプレート作成に失敗しました:\n' + (tplResult.error || tplResult.message));
+      return { success: false, errors: errors };
+    }
+
+    // Step 3: サンプルデータ投入
+    ui.alert('🎯 サンプル体験', 'ステップ 3/5: サンプルデータを投入します...', ui.ButtonSet.OK);
+    var sampleResult = executeSampleDataCreation();
+    if (!sampleResult.success) {
+      errors.push('サンプルデータ: ' + (sampleResult.error || sampleResult.message));
+      safeAlert('エラー', 'サンプルデータ投入に失敗しました:\n' + (sampleResult.error || sampleResult.message));
+      return { success: false, errors: errors };
+    }
+
+    // Step 4: ID割り当て + 検針データ作成
+    ui.alert('🎯 サンプル体験', 'ステップ 4/5: 物件ID・部屋IDを自動生成し、検針データを作成します...', ui.ButtonSet.OK);
+    var propIdResult = executePropertyIdAssignment();
+    if (!propIdResult.success) {
+      errors.push('物件ID割り当て: ' + (propIdResult.error || propIdResult.message));
+    }
+    var roomIdResult = executeRoomIdGeneration();
+    if (!roomIdResult.success) {
+      errors.push('部屋ID生成: ' + (roomIdResult.error || roomIdResult.message));
+    }
+    var inspResult = executeInspectionDataCreation();
+    if (!inspResult.success) {
+      errors.push('検針データ作成: ' + (inspResult.error || inspResult.message));
+    }
+
+    // Step 5: 最終確認
+    ui.alert('🎯 サンプル体験', 'ステップ 5/5: 最終確認を実行します...', ui.ButtonSet.OK);
+    var validationResult = executeFinalValidation();
+
+    // 完了メッセージ
+    var duration = Math.round((new Date() - startTime) / 1000);
+    var completeMsg = '🎉 サンプル体験が完了しました！\n\n';
+    completeMsg += '⏱️ 所要時間: ' + Math.floor(duration / 60) + '分' + (duration % 60) + '秒\n';
+    if (errors.length > 0) {
+      completeMsg += '⚠️ エラー: ' + errors.length + '件\n';
+      errors.forEach(function(e) { completeMsg += '  • ' + e + '\n'; });
+      completeMsg += '\n';
+    }
+    completeMsg += '🚀 次のステップ:\n';
+    completeMsg += '1. 「📋 物件一覧を表示」でサンプルデータを確認\n';
+    completeMsg += '2. 「📊 検針データ入力」で検針を体験\n';
+    completeMsg += '3. 本番運用時は「📝 本番テンプレート作成」から開始';
+
+    safeAlert('🎯 サンプル体験完了', completeMsg);
+    logWithLevel('INFO', 'startSampleExperienceWizard完了', '所要時間: ' + duration + '秒');
+    return { success: true, errors: errors };
+  } catch (error) {
+    logWithLevel('ERROR', 'startSampleExperienceWizard エラー', error.message);
+    safeAlert('エラー', 'サンプル体験ウィザードでエラーが発生しました:\n' + error.message);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * 📝 本番テンプレート作成ウィザード
+ * 診断 → テンプレート作成（ユーザーがデータ入力）
+ */
+function startProductionTemplateWizard() {
+  try {
+    logWithLevel('INFO', 'startProductionTemplateWizard開始', '本番テンプレート作成ウィザード');
+    var ui = SpreadsheetApp.getUi();
+
+    // 既存データチェック
+    var dataStatus = hasExistingData();
+    if (dataStatus.hasData) {
+      var confirmMsg = '⚠️ データが存在します。\n\n';
+      confirmMsg += '物件マスタ: ' + dataStatus.propertyCount + '件\n';
+      if (dataStatus.propertyNames.length > 0) {
+        confirmMsg += '  (' + dataStatus.propertyNames.join(', ') + ')\n';
+      }
+      confirmMsg += '部屋マスタ: ' + dataStatus.roomCount + '件\n';
+      if (dataStatus.roomNames.length > 0) {
+        var displayNames = dataStatus.roomNames.slice(0, 5).join(', ');
+        if (dataStatus.roomNames.length > 5) displayNames += '...';
+        confirmMsg += '  (' + displayNames + ')\n';
+      }
+      confirmMsg += '\nクリアしてテンプレートを作成しますか？';
+
+      var response = ui.alert('📝 本番テンプレート作成', confirmMsg, ui.ButtonSet.YES_NO);
+      if (response !== ui.Button.YES) {
+        safeAlert('キャンセル', 'テンプレート作成をキャンセルしました。');
+        return { success: false, cancelled: true };
+      }
+      clearAllMasterData();
+      logWithLevel('INFO', 'startProductionTemplateWizard', '既存データをクリアしました');
+    }
+
+    // ステップ実行
+    var errors = [];
+
+    // Step 1: システム診断
+    var diagResult = executeSystemDiagnosis();
+    if (!diagResult.success) {
+      errors.push('システム診断: ' + (diagResult.error || diagResult.message));
+    }
+
+    // Step 2: テンプレート作成
+    var tplResult = executeTemplateCreation();
+    if (!tplResult.success) {
+      safeAlert('エラー', 'テンプレート作成に失敗しました:\n' + (tplResult.error || tplResult.message));
+      return { success: false, errors: errors };
+    }
+
+    // データ入力ガイド表示
+    var guideMsg = '✅ マスタテンプレートを作成しました。\n\n';
+    guideMsg += '📝 次のデータを入力してください：\n\n';
+    guideMsg += '■ 物件マスタシート\n';
+    guideMsg += '  → 物件名を入力してください\n\n';
+    guideMsg += '■ 部屋マスタシート\n';
+    guideMsg += '  → 物件名と部屋名を入力してください\n';
+    guideMsg += '  （物件ID・部屋IDは自動生成されます）\n\n';
+    guideMsg += '📊 データ入力後、メニューから\n';
+    guideMsg += '「🚀 本番セットアップ完了（データ入力後）」\n';
+    guideMsg += 'を実行してください。';
+
+    safeAlert('📝 データ入力ガイド', guideMsg);
+    logWithLevel('INFO', 'startProductionTemplateWizard完了', 'テンプレート作成済み、データ入力待ち');
+    return { success: true, errors: errors };
+  } catch (error) {
+    logWithLevel('ERROR', 'startProductionTemplateWizard エラー', error.message);
+    safeAlert('エラー', '本番テンプレート作成ウィザードでエラーが発生しました:\n' + error.message);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * 🚀 本番セットアップ完了ウィザード（データ入力後）
+ * ID割り当て → 検針データ作成 → 最終確認
+ */
+function startProductionSetupCompleteWizard() {
+  try {
+    logWithLevel('INFO', 'startProductionSetupCompleteWizard開始', '本番セットアップ完了ウィザード');
+    var ui = SpreadsheetApp.getUi();
+
+    // データ存在チェック
+    var dataStatus = hasExistingData();
+    if (!dataStatus.hasData) {
+      safeAlert('⚠️ データ未入力', '物件マスタ・部屋マスタにデータが入力されていません。\n\n先にデータを入力してください。\n「📝 本番テンプレート作成」からテンプレートを作成できます。');
+      return { success: false, message: 'データ未入力' };
+    }
+
+    // データ確認
+    var confirmMsg = '📋 現在のデータ:\n\n';
+    confirmMsg += '物件マスタ: ' + dataStatus.propertyCount + '件\n';
+    if (dataStatus.propertyNames.length > 0) {
+      confirmMsg += '  (' + dataStatus.propertyNames.join(', ') + ')\n';
+    }
+    confirmMsg += '部屋マスタ: ' + dataStatus.roomCount + '件\n';
+    if (dataStatus.roomNames.length > 0) {
+      var displayNames = dataStatus.roomNames.slice(0, 5).join(', ');
+      if (dataStatus.roomNames.length > 5) displayNames += '...';
+      confirmMsg += '  (' + displayNames + ')\n';
+    }
+    confirmMsg += '\nこのデータでセットアップしますか？';
+
+    var response = ui.alert('🚀 本番セットアップ完了', confirmMsg, ui.ButtonSet.YES_NO);
+    if (response !== ui.Button.YES) {
+      safeAlert('キャンセル', 'セットアップをキャンセルしました。');
+      return { success: false, cancelled: true };
+    }
+
+    // ステップ実行
+    var startTime = new Date();
+    var errors = [];
+
+    // Step 1: 物件ID自動割り当て
+    ui.alert('🚀 本番セットアップ', 'ステップ 1/4: 物件IDを自動割り当てします...', ui.ButtonSet.OK);
+    var propIdResult = executePropertyIdAssignment();
+    if (!propIdResult.success) {
+      errors.push('物件ID割り当て: ' + (propIdResult.error || propIdResult.message));
+      safeAlert('エラー', '物件ID自動割り当てに失敗しました:\n' + (propIdResult.error || propIdResult.message));
+      return { success: false, errors: errors };
+    }
+
+    // Step 2: 部屋ID自動生成
+    ui.alert('🚀 本番セットアップ', 'ステップ 2/4: 部屋IDを自動生成します...', ui.ButtonSet.OK);
+    var roomIdResult = executeRoomIdGeneration();
+    if (!roomIdResult.success) {
+      errors.push('部屋ID生成: ' + (roomIdResult.error || roomIdResult.message));
+      safeAlert('エラー', '部屋ID自動生成に失敗しました:\n' + (roomIdResult.error || roomIdResult.message));
+      return { success: false, errors: errors };
+    }
+
+    // Step 3: 検針データシート作成
+    ui.alert('🚀 本番セットアップ', 'ステップ 3/4: 検針データシートを作成します...', ui.ButtonSet.OK);
+    var inspResult = executeInspectionDataCreation();
+    if (!inspResult.success) {
+      errors.push('検針データ作成: ' + (inspResult.error || inspResult.message));
+      safeAlert('エラー', '検針データシート作成に失敗しました:\n' + (inspResult.error || inspResult.message));
+      return { success: false, errors: errors };
+    }
+
+    // Step 4: 最終確認
+    ui.alert('🚀 本番セットアップ', 'ステップ 4/4: 最終確認を実行します...', ui.ButtonSet.OK);
+    var validationResult = executeFinalValidation();
+
+    // 完了メッセージ
+    var duration = Math.round((new Date() - startTime) / 1000);
+    var completeMsg = '🎉 本番セットアップが完了しました！\n\n';
+    completeMsg += '⏱️ 所要時間: ' + Math.floor(duration / 60) + '分' + (duration % 60) + '秒\n';
+    completeMsg += '🏢 物件数: ' + dataStatus.propertyCount + '件\n';
+    completeMsg += '🏠 部屋数: ' + dataStatus.roomCount + '件\n';
+    if (errors.length > 0) {
+      completeMsg += '⚠️ エラー: ' + errors.length + '件\n';
+      errors.forEach(function(e) { completeMsg += '  • ' + e + '\n'; });
+      completeMsg += '\n';
+    }
+    completeMsg += '🚀 次のステップ:\n';
+    completeMsg += '1. 「📋 物件一覧を表示」でデータを確認\n';
+    completeMsg += '2. 「📊 検針データ入力」で検針を開始';
+
+    safeAlert('🚀 本番セットアップ完了', completeMsg);
+    logWithLevel('INFO', 'startProductionSetupCompleteWizard完了', '所要時間: ' + duration + '秒');
+    return { success: true, errors: errors };
+  } catch (error) {
+    logWithLevel('ERROR', 'startProductionSetupCompleteWizard エラー', error.message);
+    safeAlert('エラー', '本番セットアップ完了ウィザードでエラーが発生しました:\n' + error.message);
+    return { success: false, error: error.message };
   }
 }
 
