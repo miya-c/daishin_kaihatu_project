@@ -640,13 +640,13 @@ function showUsageGuide() { return cmlibrary.showUsageGuide(); }
 /** 🚀 システム導入 メニュー */
 function startSampleExperienceWizard() { return cmlibrary.startSampleExperienceWizard(); }
 function startProductionTemplateWizard() { return cmlibrary.startProductionTemplateWizard(); }
-function startProductionSetupCompleteWizard() { return cmlibrary.startProductionSetupCompleteWizard(); }
 function startSystemSetupWizardFromMenu() { return cmlibrary.startSystemSetupWizardFromMenu(); }
 function runSystemDiagnosticsFromMenu() { return cmlibrary.runSystemDiagnosticsFromMenu(); }
 function createMasterSheetTemplatesFromMenu() { return cmlibrary.createMasterSheetTemplatesFromMenu(); }
 function formatAllPropertyIdsFromMenu() { return cmlibrary.formatAllPropertyIdsFromMenu(); }
 function generateRoomIdsFromMenu() { return cmlibrary.generateRoomIdsFromMenu(); }
 function createInitialInspectionDataFromMenu() { return cmlibrary.createInitialInspectionDataFromMenu(); }
+function ensureInspectionDataFormulasFromMenu() { return cmlibrary.ensureInspectionDataFormulasFromMenu(); }
 function validateSystemSetupFromMenu() { return cmlibrary.validateSystemSetupFromMenu(); }
 function showSystemSetupGuide() { return cmlibrary.showSystemSetupGuide(); }
 

@@ -45,7 +45,6 @@ function createSystemSetupMenu() {
     ui.createMenu('🚀 システム導入')
       .addItem('🎯 サンプル体験（5分で完了）', 'startSampleExperienceWizard')
       .addItem('📝 本番テンプレート作成', 'startProductionTemplateWizard')
-      .addItem('🚀 本番セットアップ完了（データ入力後）', 'startProductionSetupCompleteWizard')
       .addSeparator()
       .addItem('🔍 システム診断実行', 'runSystemDiagnosticsFromMenu')
       .addItem('📝 マスタシートテンプレート作成', 'createMasterSheetTemplatesFromMenu')
@@ -53,6 +52,7 @@ function createSystemSetupMenu() {
       .addItem('🆔 物件ID自動割り当て', 'formatAllPropertyIdsFromMenu')
       .addItem('🏢 部屋ID自動生成', 'generateRoomIdsFromMenu')
       .addItem('📊 検針データシート作成', 'createInitialInspectionDataFromMenu')
+      .addItem('🔧 検針データ数式補完', 'ensureInspectionDataFormulasFromMenu')
       .addSeparator()
       .addItem('✅ 導入完了確認', 'validateSystemSetupFromMenu')
       .addItem('📖 導入ガイド表示', 'showSystemSetupGuide')
@@ -849,6 +849,44 @@ function createInitialInspectionDataFromMenu() {
 }
 
 /**
+ * 検針データ数式補完（メニュー呼び出し用）
+ */
+function ensureInspectionDataFormulasFromMenu() {
+  try {
+    logWithLevel('INFO', 'ensureInspectionDataFormulasFromMenu開始', 'メニューから呼び出し');
+
+    const ui = SpreadsheetApp.getUi();
+    let confirmMessage = '🔧 検針データの数式を補完します。\n\n';
+    confirmMessage += '以下の処理が実行されます：\n';
+    confirmMessage += '• inspection_dataの記録ID（空欄）にUUIDを補完\n';
+    confirmMessage += '• 標準偏差（STDEV.S）数式を補完\n';
+    confirmMessage += '• 使用量計算数式を補完\n\n';
+    confirmMessage += '既存の値は上書きされません。\n\n';
+    confirmMessage += '数式補完を実行しますか？';
+
+    const response = ui.alert('検針データ数式補完', confirmMessage, ui.ButtonSet.YES_NO);
+
+    if (response !== ui.Button.YES) {
+      return { success: false, message: 'ユーザーによりキャンセルされました', cancelled: true };
+    }
+
+    const result = ensureInspectionDataFormulas();
+
+    if (result.success) {
+      safeAlert('完了', result.message || '検針データの数式補完が完了しました。');
+    } else {
+      safeAlert('エラー', '数式補完に失敗しました:\n' + (result.error || result.message));
+    }
+
+    return result;
+  } catch (error) {
+    logWithLevel('ERROR', 'ensureInspectionDataFormulasFromMenu エラー', error.message);
+    safeAlert('エラー', '検針データ数式補完に失敗しました:\n' + error.message);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
  * 導入完了確認（メニュー呼び出し用）
  */
 function validateSystemSetupFromMenu() {
@@ -1155,8 +1193,7 @@ function startProductionTemplateWizard() {
     guideMsg += '3. 物件を選択し、「部屋追加」で部屋を登録します\n';
     guideMsg += '   （部屋IDは自動生成されます）\n\n';
     guideMsg += '📊 データ入力後、メニューから\n';
-    guideMsg += '「🚀 本番セットアップ完了（データ入力後）」\n';
-    guideMsg += 'を実行してください。';
+    guideMsg += '「✅ 導入完了確認」でデータを確認してください。';
 
     safeAlert('📝 データ入力ガイド', guideMsg);
     logWithLevel('INFO', 'startProductionTemplateWizard完了', 'テンプレート作成済み、データ入力待ち');
@@ -1164,82 +1201,6 @@ function startProductionTemplateWizard() {
   } catch (error) {
     logWithLevel('ERROR', 'startProductionTemplateWizard エラー', error.message);
     safeAlert('エラー', '本番テンプレート作成ウィザードでエラーが発生しました:\n' + error.message);
-    return { success: false, error: error.message };
-  }
-}
-
-/**
- * 🚀 本番セットアップ完了ウィザード（データ入力後）
- * 数式補完 → 最終確認
- */
-function startProductionSetupCompleteWizard() {
-  try {
-    logWithLevel('INFO', 'startProductionSetupCompleteWizard開始', '本番セットアップ完了ウィザード');
-    var ui = SpreadsheetApp.getUi();
-
-    // データ存在チェック
-    var dataStatus = hasExistingData();
-    if (!dataStatus.hasData) {
-      safeAlert('⚠️ データ未入力', '物件マスタ・部屋マスタにデータが入力されていません。\n\n先にデータを入力してください。\n「📝 本番テンプレート作成」からテンプレートを作成できます。');
-      return { success: false, message: 'データ未入力' };
-    }
-
-    // データ確認
-    var confirmMsg = '📋 現在のデータ:\n\n';
-    confirmMsg += '物件マスタ: ' + dataStatus.propertyCount + '件\n';
-    if (dataStatus.propertyNames.length > 0) {
-      confirmMsg += '  (' + dataStatus.propertyNames.join(', ') + ')\n';
-    }
-    confirmMsg += '部屋マスタ: ' + dataStatus.roomCount + '件\n';
-    if (dataStatus.roomNames.length > 0) {
-      var displayNames = dataStatus.roomNames.slice(0, 5).join(', ');
-      if (dataStatus.roomNames.length > 5) displayNames += '...';
-      confirmMsg += '  (' + displayNames + ')\n';
-    }
-    confirmMsg += '\nこのデータでセットアップしますか？';
-
-    var response = ui.alert('🚀 本番セットアップ完了', confirmMsg, ui.ButtonSet.YES_NO);
-    if (response !== ui.Button.YES) {
-      safeAlert('キャンセル', 'セットアップをキャンセルしました。');
-      return { success: false, cancelled: true };
-    }
-
-    // ステップ実行
-    var startTime = new Date();
-    var errors = [];
-
-    // Step 1: 数式補完
-    ui.alert('🚀 本番セットアップ', 'ステップ 1/2: 検針データの数式を補完します...', ui.ButtonSet.OK);
-    var formulaResult = ensureInspectionDataFormulas();
-    if (!formulaResult.success) {
-      errors.push('数式補完: ' + (formulaResult.error || formulaResult.message));
-    }
-
-    // Step 2: 最終確認
-    ui.alert('🚀 本番セットアップ', 'ステップ 2/2: 最終確認を実行します...', ui.ButtonSet.OK);
-    var validationResult = executeFinalValidation();
-
-    // 完了メッセージ
-    var duration = Math.round((new Date() - startTime) / 1000);
-    var completeMsg = '🎉 本番セットアップが完了しました！\n\n';
-    completeMsg += '⏱️ 所要時間: ' + Math.floor(duration / 60) + '分' + (duration % 60) + '秒\n';
-    completeMsg += '🏢 物件数: ' + dataStatus.propertyCount + '件\n';
-    completeMsg += '🏠 部屋数: ' + dataStatus.roomCount + '件\n';
-    if (errors.length > 0) {
-      completeMsg += '⚠️ エラー: ' + errors.length + '件\n';
-      errors.forEach(function(e) { completeMsg += '  • ' + e + '\n'; });
-      completeMsg += '\n';
-    }
-    completeMsg += '🚀 次のステップ:\n';
-    completeMsg += '1. 「📋 物件一覧を表示」でデータを確認\n';
-    completeMsg += '2. 「📊 検針データ入力」で検針を開始';
-
-    safeAlert('🚀 本番セットアップ完了', completeMsg);
-    logWithLevel('INFO', 'startProductionSetupCompleteWizard完了', '所要時間: ' + duration + '秒');
-    return { success: true, errors: errors };
-  } catch (error) {
-    logWithLevel('ERROR', 'startProductionSetupCompleteWizard エラー', error.message);
-    safeAlert('エラー', '本番セットアップ完了ウィザードでエラーが発生しました:\n' + error.message);
     return { success: false, error: error.message };
   }
 }

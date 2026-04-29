@@ -888,7 +888,7 @@
 `),n=[],i=0;i<r.length;i++){var s=r[i].trim();if(s)if(t==="csv"){var o=s.split(","),a=(o[0]||"").trim(),u=(o[1]||"").trim();a&&n.push({name:a,id:u})}else n.push({name:s,id:""})}return n},getBulkPropertyCount:function(){return this.getBulkPropertyItems().length},getBulkPropertyPreview:function(){var e=this.getBulkPropertyItems();if(e.length===0)return[];for(var t=this.getAutoPropertyId(),r=parseInt(t.replace("P",""),10),n=[],i=0;i<e.length;i++){var s=e[i],o;if(s.id){var a=s.id.replace(/[^0-9]/g,"");a?o="P"+("000000"+parseInt(a,10)).slice(-6):o="P"+("000000"+(r+i)).slice(-6)}else o="P"+("000000"+(r+i)).slice(-6);n.push({name:s.name,id:o,hasManualId:!!s.id})}return n},submitBulkAddProperty:function(){var e=this,t=e.getBulkPropertyItems();if(t.length===0){e.error="物件名を入力してください";return}e.bulkPropertySubmitting=!0,e.error="",y("bulkAddProperties",{items:t}).then(function(r){r&&r.success?(e.bulkPropertyResults=r.data,e.bulkPropertySubmitting=!1,e.loadProperties()):(e.error=r&&r.error||"一括登録に失敗しました",e.bulkPropertySubmitting=!1)}).catch(function(r){e.error="一括登録に失敗しました: "+(r.message||r),e.bulkPropertySubmitting=!1})},closeBulkPropertyModal:function(){this.activeModal="",this.bulkPropertyResults=null,this.bulkPropertyText="",this.error=""},openBulkAddRoom:function(){this.selectedProperty&&(this.bulkRoomFormat="oneline",this.bulkRoomText="",this.bulkRoomResults=null,this.bulkRoomSubmitting=!1,this.error="",this.activeModal="bulkAddRoom")},getBulkRoomItems:function(){for(var e=this.bulkRoomText||"",t=e.split(`
 `),r=[],n=0;n<t.length;n++){var i=t[n].trim();i&&r.push({name:i})}return r},getBulkRoomCount:function(){return this.getBulkRoomItems().length},getBulkRoomPreview:function(){var e=this.getBulkRoomItems();if(e.length===0)return[];for(var t=1,r=0;r<this.rooms.length;r++){var n=this.rooms[r].roomId||"",i=n.match(/^R(\d{3})$/);if(i){var s=parseInt(i[1],10);s>=t&&(t=s+1)}}for(var o=[],a=0;a<e.length;a++)o.push({name:e[a].name,id:"R"+("000"+(t+a)).slice(-3)});return o},submitBulkAddRoom:function(){var e=this,t=e.getBulkRoomItems();if(t.length===0){e.error="部屋名を入力してください";return}e.bulkRoomSubmitting=!0,e.error="",y("bulkAddRooms",{propertyId:e.getPropId(e.selectedProperty),items:t}).then(function(r){r&&r.success?(e.bulkRoomResults=r.data,e.bulkRoomSubmitting=!1,e.reloadRooms()):(e.error=r&&r.error||"一括登録に失敗しました",e.bulkRoomSubmitting=!1)}).catch(function(r){e.error="一括登録に失敗しました: "+(r.message||r),e.bulkRoomSubmitting=!1})},closeBulkRoomModal:function(){this.activeModal="",this.bulkRoomResults=null,this.bulkRoomText="",this.error=""},loadAnnualReport:function(){var e=this;e.selectedProperty&&(e.annualReportLoading=!0,e.annualReport=null,y("getAnnualReport",{propertyId:e.getPropId(e.selectedProperty),year:e.annualReportYear}).then(function(t){t&&t.success?e.annualReport=t.data:e.error=t&&t.error||"年間レポートの取得に失敗しました",e.annualReportLoading=!1}).catch(function(t){e.error=t.message||"年間レポートでエラーが発生しました",e.annualReportLoading=!1}))},loadAvailableYears:function(){var e=this;y("getAvailableYears").then(function(t){t&&t.success&&t.years&&t.years.length>0&&(e.annualAvailableYears=t.years,e.annualReportYear=t.years[0])}).catch(function(){})},getCellStyle:function(e){var t=e.roomStatus||"normal";return t==="skip"?"background: repeating-linear-gradient(45deg, #f5f5f5, #f5f5f5 10px, #e0e0e0 10px, #e0e0e0 20px);":t==="owner"?"background-color: #e3f2e8;":t==="fixed"?"background-color: #fef9e7;":t==="vacant"&&!e.usage&&e.usage!==0?"background-color: #f5f5f5;":""},getCellClass:function(e){return e.usage===0?"cell-zero":""},getUsageClass:function(e){return e.warningFlag==="要確認"?"val-abnormal":e.usage===0?"val-zero":"val-normal"},getPrintDate:function(){var e=new Date;return e.getFullYear()+"/"+(e.getMonth()+1)+"/"+e.getDate()},printAnnualReport:function(){var e=document.querySelector(".annual-report-container");if(e){var t=this.getPropName(this.selectedProperty)||"",r=t+"_"+this.annualReportYear+"年_検針レポート",n=window.open("","_blank");if(!n){alert("ポップアップがブロックされています。印刷用ウィンドウを許可してください。");return}var i=["* { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; box-sizing: border-box; }","body { font-family: sans-serif; margin: 0; padding: 16px; color: #333; }","table { border-collapse: collapse; width: 100%; font-size: 0.8rem; }","th, td { border: 1px solid #dbdbdb; padding: 0.4rem 0.6rem; text-align: center; white-space: nowrap; }","thead th { background: #f0f0f0; font-weight: 600; border-bottom: 2px solid #dbdbdb; position: sticky; top: 0; }",".room-col { text-align: left; font-weight: 500; min-width: 80px; }",".val-normal { color: #1a6db5; font-weight: 500; }",".val-abnormal { color: #e74c3c; font-weight: 700; }",".val-zero { color: #999; }",".cell-zero { background: #f5f5f5; }",".legend { display: flex; gap: 1.5rem; font-size: 0.8rem; color: #666; margin-bottom: 1rem; }",".legend-item { display: flex; align-items: center; gap: 0.5rem; }",".legend-dot { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }",".print-header { margin-bottom: 1.5rem; }",".print-header h2 { margin: 0 0 0.25rem; font-size: 1.2rem; }",".print-header p { margin: 0; font-size: 0.8rem; color: #666; }",".no-print { display: none !important; }",".print-actions { position: sticky; top: 0; z-index: 100; background: #fff; padding: 12px 16px; border-bottom: 1px solid #dbdbdb; display: flex; align-items: center; gap: 12px; }","tr, .summary-card { page-break-inside: avoid; break-inside: avoid; }","@page { size: landscape; margin: 10mm; }","@media print { .print-actions { display: none !important; } }"].join(`
 `),s=[];s.push('<!DOCTYPE html><html><head><meta charset="UTF-8">'),s.push("<title>"+r+"</title>"),s.push("<style>"+i+"</style>"),s.push("</head><body>"),s.push('<div class="print-actions no-print"><strong style="font-size:1.1em">'+r+'</strong><button id="printBtn" style="padding:6px 16px;font-size:0.9em;cursor:pointer;border:1px solid #3273dc;background:#3273dc;color:#fff;border-radius:4px">🖨️ 印刷する</button><span style="font-size:0.8em;color:#666">内容を確認してから印刷ボタンを押してください</span></div>'),s.push("</body></html>"),n.document.open(),n.document.write(s.join("")),n.document.close();var o=e.cloneNode(!0);n.document.body.appendChild(o),n.document.title=r;var a=n.document.getElementById("printBtn");a&&a.addEventListener("click",function(){n.print()}),n.addEventListener("afterprint",function(){n.close()})}},setAnnualReportYear:function(e){this.annualReportYear=Number(e.target.value),this.loadAnnualReport()},switchToAnnualReport:function(){this.viewMode="annual"},openAccessCopyModal:function(){var e=this;e.selectedProperty&&(e.accessCopyData=null,e.accessCopyLoading=!0,e.error="",e.activeModal="accessCopy",y("getAccessCopyData",{propertyId:e.getPropId(e.selectedProperty)}).then(function(t){e.accessCopyLoading=!1,t&&t.success?e.accessCopyData=t.data:e.error=t&&t.error||"データの取得に失敗しました"}).catch(function(t){e.accessCopyLoading=!1,e.error="データの取得に失敗しました: "+(t.message||t)}))},executeAccessCopy:function(){var e=this;if(!(!e.accessCopyData||!e.accessCopyData.readings)){var t=e.accessCopyData.readings.join(`
-`);navigator&&navigator.clipboard&&navigator.clipboard.writeText?navigator.clipboard.writeText(t).then(function(){e.closeModal(),Alpine.store("toast").success(e.accessCopyData.totalCount+"件をコピーしました")}).catch(function(){e._fallbackCopy(t)}):e._fallbackCopy(t)}},_fallbackCopy:function(e){var t=this,r=document.createElement("textarea");r.value=e,r.style.position="fixed",r.style.left="-9999px",document.body.appendChild(r),r.select();try{document.execCommand("copy"),t.closeModal(),Alpine.store("toast").success(t.accessCopyData.totalCount+"件をコピーしました")}catch{t.error="コピーに失敗しました。手動でコピーしてください"}document.body.removeChild(r)}}})}),document.addEventListener("alpine:init",function(){Alpine.data("setupWizard",function(){return{currentStep:0,steps:[{id:"validate",label:"システムの状態確認",action:"validateSystemSetup",icon:"🔍",description:"スプレッドシートの構成を確認します"},{id:"templates",label:"テンプレート作成",action:"createMasterSheetTemplates",icon:"📋",description:"データ入力用のひな形シートを作成します"},{id:"propertyIds",label:"物件番号の設定",action:"formatAllPropertyIds",icon:"🏷️",description:"物件ごとの管理番号を整えます"},{id:"roomIds",label:"部屋番号の設定",action:"generateRoomIds",icon:"🔢",description:"部屋ごとの管理番号を自動で割り当てます"},{id:"initialData",label:"検針台帳の作成",action:"createInitialInspectionData",icon:"📊",description:"検針データを記録する台帳を作成します"},{id:"populate",label:"マスタデータの登録",action:"populateInspectionDataFromMasters",icon:"📤",description:"物件・部屋のマスタデータを台帳に反映します"},{id:"finalCheck",label:"最終確認",action:"validateSystemSetup",icon:"✅",description:"すべての設定が正しく完了しているか確認します"}],results:{},loading:!1,error:"",confirmReset:!1,allComplete:!1,executeCurrentStep:function(){var e=this,t=e.steps[e.currentStep];e.loading=!0,e.error="",y(t.action).then(function(r){e.results[t.id]={success:r&&r.success,data:r,timestamp:new Date().toISOString()},(!r||!r.success)&&(e.error=r&&r.error||"実行に失敗しました")}).catch(function(r){e.results[t.id]={success:!1,error:r.message||r,timestamp:new Date().toISOString()},e.error="エラーが発生しました: "+(r.message||r)}).finally(function(){e.loading=!1,e.allComplete=e.steps.length>0&&e.steps.every(function(r){var n=e.results[r.id];return n&&n.success})})},goToStep:function(e){e>=0&&e<this.steps.length&&(this.currentStep=e,this.error="")},nextStep:function(){this.isLastStep()||(this.currentStep++,this.error="")},prevStep:function(){this.isFirstStep()||(this.currentStep--,this.error="")},isFirstStep:function(){return this.currentStep===0},isLastStep:function(){return this.currentStep===this.steps.length-1},getStepResult:function(e){return this.results[e]||null},isStepCompleted:function(e){var t=this.results[e];return t&&t.success},getCurrentStepResult:function(){var e=this.steps[this.currentStep];return e&&this.results[e.id]||null},getCurrentStepResultClass:function(){var e=this.getCurrentStepResult();return e&&e.success?"is-success is-light":"is-danger is-light"},getCurrentStepLabel:function(){var e=this.steps[this.currentStep];return e?e.icon+" "+e.label:""},getCurrentStepDescription:function(){var e=this.steps[this.currentStep];return e?e.description:""},getStepStatus:function(e){if(this.loading){var t=this.steps[this.currentStep];if(t&&t.id===e)return"running"}var r=this.results[e];return r?r.success?"success":"error":"pending"},getStatusIcon:function(e){switch(e){case"running":return"⏳";case"success":return"✅";case"error":return"❌";default:return"⏳"}},formatStepResult:function(e){var t=this.results[e];if(!t)return"";if(t.success){var r=t.data;if(!r)return"完了しました";if(r.message)return r.message;var n=[];return r.created&&n.push("作成: "+r.created),r.updated&&n.push("更新: "+r.updated),r.total&&n.push("合計: "+r.total),r.valid!==void 0&&n.push("有効: "+r.valid),r.errors!==void 0&&r.errors>0&&n.push("エラー: "+r.errors),n.length>0?n.join(" / "):"完了しました"}return t.error||"エラーが発生しました"},reset:function(){if(Object.keys(this.results).length>0){this.confirmReset=!0;return}this.results={},this.currentStep=0,this.loading=!1,this.error="",this.confirmReset=!1},confirmResetAction:function(){this.results={},this.currentStep=0,this.loading=!1,this.error="",this.confirmReset=!1},cancelReset:function(){this.confirmReset=!1}}})}),document.addEventListener("alpine:init",function(){Alpine.data("diagnostics",function(){return{loading:!1,data:null,error:"",runDiagnostics:function(){var e=this;e.loading=!0,e.error="",y("runSystemDiagnostics").then(function(t){t&&t.success?e.data=t.data:e.error="確認の実行に失敗しました"}).catch(function(t){e.error="確認の実行に失敗しました: "+(t.message||t)}).finally(function(){e.loading=!1})},getOverallStatus:function(){return this.data&&this.data.overall||"UNKNOWN"},getStatusClass:function(e){switch(e){case"HEALTHY":case"OK":return"is-success";case"WARNING":return"is-warning";case"ERROR":case"CRITICAL":return"is-danger";default:return"is-info"}},getStatusLabel:function(e){switch(e){case"HEALTHY":case"OK":return"正常";case"WARNING":return"警告";case"ERROR":return"エラー";case"CRITICAL":return"重大エラー";default:return"不明"}},getSeverityIcon:function(e){switch(e){case"error":return"🔴";case"warning":return"🟡";case"info":return"🔵";default:return"⚪"}},hasSheets:function(){return this.data&&this.data.sheets&&this.data.sheets.length>0},getSheetList:function(){return this.data&&this.data.sheets?this.data.sheets:[]},hasIssues:function(){return this.data&&this.data.issues&&this.data.issues.length>0},getIssueList:function(){return this.data&&this.data.issues?this.data.issues:[]},getTimestamp:function(){return this.data?"実行時刻: "+(this.data.timestamp||""):""}}})});var Ie=!1,Pe=!1,M=[],Re=-1,ke=!1;function Yr(e){qr(e)}function Wr(){ke=!0}function Vr(){ke=!1,gt()}function qr(e){M.includes(e)||M.push(e),gt()}function Jr(e){let t=M.indexOf(e);t!==-1&&t>Re&&M.splice(t,1)}function gt(){if(!Pe&&!Ie){if(ke)return;Ie=!0,queueMicrotask(Gr)}}function Gr(){Ie=!1,Pe=!0;for(let e=0;e<M.length;e++)M[e](),Re=e;M.length=0,Re=-1,Pe=!1}var K,L,Y,mt,Se=!0;function Zr(e){Se=!1,e(),Se=!0}function Xr(e){K=e.reactive,Y=e.release,L=t=>e.effect(t,{scheduler:r=>{Se?Yr(r):r()}}),mt=e.raw}function yt(e){L=e}function Qr(e){let t=()=>{};return[n=>{let i=L(n);return e._x_effects||(e._x_effects=new Set,e._x_runEffects=()=>{e._x_effects.forEach(s=>s())}),e._x_effects.add(i),t=()=>{i!==void 0&&(e._x_effects.delete(i),Y(i))},i},()=>{t()}]}function vt(e,t){let r=!0,n,i,s=L(()=>{let o=e(),a=JSON.stringify(o);if(!r&&(typeof o=="object"||o!==n)){let u=typeof n=="object"?JSON.parse(i):n;queueMicrotask(()=>{t(o,u)})}n=o,i=a,r=!1});return()=>Y(s)}async function en(e){Wr();try{await e(),await Promise.resolve()}finally{Vr()}}var _t=[],bt=[],xt=[];function tn(e){xt.push(e)}function Te(e,t){typeof t=="function"?(e._x_cleanups||(e._x_cleanups=[]),e._x_cleanups.push(t)):(t=e,bt.push(t))}function wt(e){_t.push(e)}function At(e,t,r){e._x_attributeCleanups||(e._x_attributeCleanups={}),e._x_attributeCleanups[t]||(e._x_attributeCleanups[t]=[]),e._x_attributeCleanups[t].push(r)}function Et(e,t){e._x_attributeCleanups&&Object.entries(e._x_attributeCleanups).forEach(([r,n])=>{(t===void 0||t.includes(r))&&(n.forEach(i=>i()),delete e._x_attributeCleanups[r])})}function rn(e){var t,r;for((t=e._x_effects)==null||t.forEach(Jr);(r=e._x_cleanups)!=null&&r.length;)e._x_cleanups.pop()()}var Oe=new MutationObserver(Le),Ce=!1;function Ne(){Oe.observe(document,{subtree:!0,childList:!0,attributes:!0,attributeOldValue:!0}),Ce=!0}function It(){nn(),Oe.disconnect(),Ce=!1}var Q=[];function nn(){let e=Oe.takeRecords();Q.push(()=>e.length>0&&Le(e));let t=Q.length;queueMicrotask(()=>{if(Q.length===t)for(;Q.length>0;)Q.shift()()})}function v(e){if(!Ce)return e();It();let t=e();return Ne(),t}var Me=!1,oe=[];function sn(){Me=!0}function on(){Me=!1,Le(oe),oe=[]}function Le(e){if(Me){oe=oe.concat(e);return}let t=[],r=new Set,n=new Map,i=new Map;for(let s=0;s<e.length;s++)if(!e[s].target._x_ignoreMutationObserver&&(e[s].type==="childList"&&(e[s].removedNodes.forEach(o=>{o.nodeType===1&&o._x_marker&&r.add(o)}),e[s].addedNodes.forEach(o=>{if(o.nodeType===1){if(r.has(o)){r.delete(o);return}o._x_marker||t.push(o)}})),e[s].type==="attributes")){let o=e[s].target,a=e[s].attributeName,u=e[s].oldValue,l=()=>{n.has(o)||n.set(o,[]),n.get(o).push({name:a,value:o.getAttribute(a)})},f=()=>{i.has(o)||i.set(o,[]),i.get(o).push(a)};o.hasAttribute(a)&&u===null?l():o.hasAttribute(a)?(f(),l()):f()}i.forEach((s,o)=>{Et(o,s)}),n.forEach((s,o)=>{_t.forEach(a=>a(o,s))});for(let s of r)t.some(o=>o.contains(s))||bt.forEach(o=>o(s));for(let s of t)s.isConnected&&xt.forEach(o=>o(s));t=null,r=null,n=null,i=null}function Pt(e){return D(W(e))}function ee(e,t,r){return e._x_dataStack=[t,...W(r||e)],()=>{e._x_dataStack=e._x_dataStack.filter(n=>n!==t)}}function W(e){return e._x_dataStack?e._x_dataStack:typeof ShadowRoot=="function"&&e instanceof ShadowRoot?W(e.host):e.parentNode?W(e.parentNode):[]}function D(e){return new Proxy({objects:e},an)}function Rt(e,t){return e===null||e===Object.prototype?null:Object.prototype.hasOwnProperty.call(e,t)?e:Rt(Object.getPrototypeOf(e),t)}var an={ownKeys({objects:e}){return Array.from(new Set(e.flatMap(t=>Object.keys(t))))},has({objects:e},t){return t==Symbol.unscopables?!1:e.some(r=>Object.prototype.hasOwnProperty.call(r,t)||Reflect.has(r,t))},get({objects:e},t,r){return t=="toJSON"?un:Reflect.get(e.find(n=>Reflect.has(n,t))||{},t,r)},set({objects:e},t,r,n){let i;for(const o of e)if(i=Rt(o,t),i)break;i||(i=e[e.length-1]);const s=Object.getOwnPropertyDescriptor(i,t);return s!=null&&s.set&&(s!=null&&s.get)?s.set.call(n,r)||!0:Reflect.set(i,t,r)}};function un(){return Reflect.ownKeys(this).reduce((t,r)=>(t[r]=Reflect.get(this,r),t),{})}function De(e){let t=n=>typeof n=="object"&&!Array.isArray(n)&&n!==null,r=(n,i="")=>{Object.entries(Object.getOwnPropertyDescriptors(n)).forEach(([s,{value:o,enumerable:a}])=>{if(a===!1||o===void 0||typeof o=="object"&&o!==null&&o.__v_skip)return;let u=i===""?s:`${i}.${s}`;typeof o=="object"&&o!==null&&o._x_interceptor?n[s]=o.initialize(e,u,s):t(o)&&o!==n&&!(o instanceof Element)&&r(o,u)})};return r(e)}function kt(e,t=()=>{}){let r={initialValue:void 0,_x_interceptor:!0,initialize(n,i,s){return e(this.initialValue,()=>ln(n,i),o=>Ue(n,i,o),i,s)}};return t(r),n=>{if(typeof n=="object"&&n!==null&&n._x_interceptor){let i=r.initialize.bind(r);r.initialize=(s,o,a)=>{let u=n.initialize(s,o,a);return r.initialValue=u,i(s,o,a)}}else r.initialValue=n;return r}}function ln(e,t){return t.split(".").reduce((r,n)=>r[n],e)}function Ue(e,t,r){if(typeof t=="string"&&(t=t.split(".")),t.length===1)e[t[0]]=r;else{if(t.length===0)throw error;return e[t[0]]||(e[t[0]]={}),Ue(e[t[0]],t.slice(1),r)}}var St={};function E(e,t){St[e]=t}function ae(e,t){let r=cn(t);return Object.entries(St).forEach(([n,i])=>{Object.defineProperty(e,`$${n}`,{get(){return i(t,r)},enumerable:!1})}),e}function cn(e){let[t,r]=Dt(e),n={interceptor:kt,...t};return Te(e,r),n}function fn(e,t,r,...n){try{return r(...n)}catch(i){$e(i,e,t)}}function $e(...e){return Tt(...e)}var Tt=pn;function dn(e){Tt=e}function pn(e,t,r=void 0){e=Object.assign(e??{message:"No error message given."},{el:t,expression:r}),console.warn(`Alpine Expression Error: ${e.message}
+`);navigator&&navigator.clipboard&&navigator.clipboard.writeText?navigator.clipboard.writeText(t).then(function(){e.closeModal(),Alpine.store("toast").success(e.accessCopyData.totalCount+"件をコピーしました")}).catch(function(){e._fallbackCopy(t)}):e._fallbackCopy(t)}},_fallbackCopy:function(e){var t=this,r=document.createElement("textarea");r.value=e,r.style.position="fixed",r.style.left="-9999px",document.body.appendChild(r),r.select();try{document.execCommand("copy"),t.closeModal(),Alpine.store("toast").success(t.accessCopyData.totalCount+"件をコピーしました")}catch{t.error="コピーに失敗しました。手動でコピーしてください"}document.body.removeChild(r)}}})}),document.addEventListener("alpine:init",function(){Alpine.data("diagnostics",function(){return{data:null,loading:!1,error:"",runDiagnostics:function(){var e=this;e.loading=!0,e.error="",y("runSystemDiagnostics").then(function(t){e.data=t,e.loading=!1}).catch(function(t){e.error=t.message||"診断に失敗しました",e.loading=!1})}}})})
 
 ${r?'Expression: "'+r+`"
 
@@ -934,7 +934,7 @@ ${r?'Expression: "'+r+`"
     }
 
     document.addEventListener("alpine:init", function() {
-      Alpine.data("threeButtonWizard", function() {
+      Alpine.data("setupWizard", function() {
         return {
           mode: "",
           running: false,
@@ -950,31 +950,17 @@ ${r?'Expression: "'+r+`"
 
           checkDataAndStart: function(mode) {
             var self = this;
-            if (mode === "production") {
-              // production: データがあるのが正常。クリアしない
-              _callAdmin("hasExistingData", {}).then(function(result) {
-                if (result && result.success && result.data && result.data.hasData) {
-                  self.startWizard(mode);
-                } else {
-                  self.error = "物件・部屋データが入力されていません。管理画面の「物件管理」タブからデータを登録してください。";
-                }
-              }).catch(function(err) {
-                self.error = "データ確認に失敗しました: " + (err.message || err);
-              });
-            } else {
-              // sample/template: 従来通り（クリア確認）
-              self.pendingMode = mode;
-              _callAdmin("hasExistingData", {}).then(function(result) {
-                if (result && result.success && result.data && result.data.hasData) {
-                  self.existingData = result.data;
-                  self.showConfirmModal = true;
-                } else {
-                  self.startWizard(mode);
-                }
-              }).catch(function(err) {
-                self.error = "データ確認に失敗しました: " + (err.message || err);
-              });
-            }
+            self.pendingMode = mode;
+            _callAdmin("hasExistingData", {}).then(function(result) {
+              if (result && result.success && result.data && result.data.hasData) {
+                self.existingData = result.data;
+                self.showConfirmModal = true;
+              } else {
+                self.startWizard(mode);
+              }
+            }).catch(function(err) {
+              self.error = "データ確認に失敗しました: " + (err.message || err);
+            });
           },
 
           confirmAndStart: function() {
@@ -1009,11 +995,6 @@ ${r?'Expression: "'+r+`"
               steps = [
                 { id: "diagnostics", label: "システム診断", action: "runSystemDiagnostics" },
                 { id: "templates", label: "テンプレート作成", action: "createMasterSheetTemplates" }
-              ];
-            } else {
-              steps = [
-                { id: "formulas", label: "数式補完", action: "ensureInspectionDataFormulas" },
-                { id: "validation", label: "最終確認", action: "validateSystemSetup" }
               ];
             }
             this.mode = mode;
@@ -1081,10 +1062,6 @@ ${r?'Expression: "'+r+`"
 
           isTemplateComplete: function() {
             return this.complete && this.mode === "template";
-          },
-
-          isProductionComplete: function() {
-            return this.complete && this.mode === "production";
           },
 
           hasError: function() {
@@ -3101,42 +3078,35 @@ ${r?'Expression: "'+r+`"
                   </div>
                 </div>
 
-                <div x-show="activeTab === 'setup'" x-data="threeButtonWizard">
+                <div x-show="activeTab === 'setup'" x-data="setupWizard">
                   <div class="box">
                     <p class="title is-4">⚙️ 初期設定</p>
                     <p class="mb-4 has-text-grey-light is-size-6">
                       用途に合わせてセットアップ方法を選択してください。
                     </p>
 
-                    <!-- 3 Buttons (idle state) -->
+                    <!-- 2 Buttons (idle state) -->
                     <div x-show="isIdle()">
                       <div class="columns">
-                        <div class="column is-4">
+                        <div class="column is-6">
                           <div class="box has-text-centered" style="cursor:pointer" x-on:click="checkDataAndStart('sample')">
                             <p class="title is-5">🎯 サンプル体験</p>
                             <p class="is-size-7 has-text-grey">5分で完了</p>
                             <p class="mt-3 is-size-7">サンプルデータでシステムを体験します</p>
                           </div>
                         </div>
-                        <div class="column is-4">
+                        <div class="column is-6">
                           <div class="box has-text-centered" style="cursor:pointer" x-on:click="checkDataAndStart('template')">
                             <p class="title is-5">📝 本番テンプレート作成</p>
                             <p class="is-size-7 has-text-grey">データ入力用シート作成</p>
                             <p class="mt-3 is-size-7">実際の物件データを入力するシートを作成します</p>
                           </div>
                         </div>
-                        <div class="column is-4">
-                          <div class="box has-text-centered" style="cursor:pointer" x-on:click="checkDataAndStart('production')">
-                            <p class="title is-5">🚀 本番セットアップ完了</p>
-                            <p class="is-size-7 has-text-grey">データ入力後に実行</p>
-                            <p class="mt-3 is-size-7">ID生成と検針データ初期化を行います</p>
-                          </div>
-                        </div>
                       </div>
                     </div>
 
                     <!-- Confirmation Modal -->
-                    <div x-show="showConfirmModal" class="modal is-active">
+                    <div x-show="showConfirmModal" class="modal" x-bind:class="{ 'is-active': showConfirmModal }">
                       <div class="modal-background"></div>
                       <div class="modal-card">
                         <header class="modal-card-head">
@@ -3189,13 +3159,6 @@ ${r?'Expression: "'+r+`"
                       <p class="subtitle is-6">物件管理タブで物件・部屋データを入力してください</p>
                       <button class="button is-primary" x-on:click="goToPropertyManagement()">物件管理に移動</button>
                       <button class="button is-light ml-2" x-on:click="resetWizard()">戻る</button>
-                    </div>
-
-                    <!-- Complete - Production -->
-                    <div x-show="isProductionComplete()" class="has-text-centered py-5">
-                      <p class="title is-4 has-text-success">🚀 本番セットアップが完了しました</p>
-                      <p class="subtitle is-6">検針業務を開始できます</p>
-                      <button class="button is-primary" x-on:click="goToDashboard()">ダッシュボードに移動</button>
                     </div>
 
                     <!-- Back button -->
