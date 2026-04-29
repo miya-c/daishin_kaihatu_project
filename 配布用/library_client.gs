@@ -369,8 +369,10 @@ function doGet(e) {
       delete e.parameter._storedApiKey;
     }
     
-    // Inject client's script ID for license validation
-    e.parameter._clientScriptId = ScriptApp.getScriptId();
+    // Inject client properties for library-side cache isolation
+    var currentProps = PropertiesService.getScriptProperties().getProperties();
+    currentProps._clientScriptId = ScriptApp.getScriptId();
+    cmlibrary._setInjectedProps(currentProps);
     
     // ライブラリのdoGet関数を呼び出し
     return cmlibrary.doGet(e);
@@ -403,8 +405,10 @@ function doGet(e) {
     } else {
       delete e.parameter._storedApiKey;
     }
-    // Inject client's script ID for license validation
-    e.parameter._clientScriptId = ScriptApp.getScriptId();
+    // Inject client properties for library-side cache isolation
+    var currentProps = PropertiesService.getScriptProperties().getProperties();
+    currentProps._clientScriptId = ScriptApp.getScriptId();
+    cmlibrary._setInjectedProps(currentProps);
     return cmlibrary.doPost(e);
   } catch (error) {
     console.error('doPost エラー:', error);

@@ -10,7 +10,35 @@ const LAST_UPDATED = '2025-06-26 JST';
 
 var LICENSE_API_URL = 'https://script.google.com/macros/s/AKfycbxKqSaPECUyOpWyhN67yztcdQgVBH2cRdzq7MOzpbFpFyAIjHpDzvdNWVRTxP0npe2d/exec';
 var LICENSE_APP_ID = 'suido';
-var LICENSE_CACHE_HOURS = 24;
+var LICENSE_CACHE_HOURS = 0.25;
+var DEFAULT_CACHE_TTL_MS = 15 * 60 * 1000;
+
+// Injected properties pattern for library-side cache isolation
+var _injectedProps = {};
+
+function _setInjectedProps(props) {
+  _injectedProps = props || {};
+}
+
+function _getScriptProp(key) {
+  if (_injectedProps && _injectedProps[key] !== undefined) {
+    return _injectedProps[key];
+  }
+  try {
+    return PropertiesService.getScriptProperties().getProperty(key);
+  } catch (e) {
+    return null;
+  }
+}
+
+function _setScriptProp(key, value) {
+  if (_injectedProps && key in _injectedProps) {
+    _injectedProps[key] = String(value);
+  }
+  try {
+    PropertiesService.getScriptProperties().setProperty(key, String(value));
+  } catch (e) {}
+}
 
 // Per-request caches (GAS re-initializes globals on each invocation)
 var _clientScriptId = '';
@@ -20,23 +48,26 @@ let _cachedFeatureFlags = null;
 
 function validateLicense() {
   try {
-    var scriptId = _clientScriptId || ScriptApp.getScriptId();
+    var scriptId = _getScriptProp('_clientScriptId') || ScriptApp.getScriptId();
     var cacheKey = '_license_cache_' + scriptId;
     var cacheTimeKey = '_license_cache_time_' + scriptId;
+    var cacheTTLKey = '_license_cache_ttl_' + scriptId;
 
-    var props = PropertiesService.getScriptProperties();
-    var cached = props.getProperty(cacheKey);
-    var cacheTime = props.getProperty(cacheTimeKey);
+    var cached = _getScriptProp(cacheKey);
+    var cacheTime = _getScriptProp(cacheTimeKey);
+    var cachedTTL = _getScriptProp(cacheTTLKey);
 
     if (cached && cacheTime) {
-      var elapsed = (Date.now() - Number(cacheTime)) / (1000 * 60 * 60);
-      if (elapsed < LICENSE_CACHE_HOURS) {
+      var elapsed = Date.now() - Number(cacheTime);
+      var ttl = cachedTTL ? Number(cachedTTL) : DEFAULT_CACHE_TTL_MS;
+      if (elapsed < ttl) {
         return cached === 'true';
       }
     }
 
     if (!LICENSE_API_URL || LICENSE_API_URL.indexOf('%%') !== -1) {
-      return true;
+      Logger.log('[validateLicense] WARNING: LICENSE_API_URL contains placeholder or is empty');
+      return false;
     }
 
     var url = LICENSE_API_URL + '?action=check&scriptId=' + encodeURIComponent(scriptId) + '&appId=' + encodeURIComponent(LICENSE_APP_ID);
@@ -50,17 +81,20 @@ function validateLicense() {
     var authorized = result.authorized === true;
 
     if (authorized) {
-      props.setProperty(cacheKey, 'true');
-      props.setProperty(cacheTimeKey, String(Date.now()));
+      _setScriptProp(cacheKey, 'true');
+      _setScriptProp(cacheTimeKey, String(Date.now()));
+      var cacheTTL = result.cacheTTL || DEFAULT_CACHE_TTL_MS;
+      _setScriptProp(cacheTTLKey, String(cacheTTL));
     } else {
-      props.deleteProperty(cacheKey);
-      props.deleteProperty(cacheTimeKey);
+      _setScriptProp(cacheKey, '');
+      _setScriptProp(cacheTimeKey, '');
+      _setScriptProp(cacheTTLKey, '');
     }
 
     return authorized;
   } catch (error) {
     Logger.log('[validateLicense] error: ' + error.message);
-    return true;
+    return false;
   }
 }
 
@@ -180,10 +214,6 @@ function createCorsJsonResponse(data) {
 function doGet(e) {
   const startTime = new Date();
   try {
-    // Store injected client script ID for license validation
-    if (e && e.parameter && e.parameter._clientScriptId) {
-      _clientScriptId = e.parameter._clientScriptId;
-    }
     const action = e?.parameter?.action;
     if (!action) {
       if (!validateLicense()) {
@@ -207,6 +237,14 @@ function doGet(e) {
     // API処理
     switch (action) {
       case 'test':
+        var testSecret = _getScriptProp('TEST_SECRET');
+        if (!testSecret || e.parameter.testSecret !== testSecret) {
+          return createCorsJsonResponse({
+            success: false,
+            error: 'UNAUTHORIZED',
+            code: 'UNAUTHORIZED',
+          });
+        }
         return createCorsJsonResponse({
           success: true,
           message: 'ライブラリAPI正常動作',
@@ -560,10 +598,6 @@ function doGet(e) {
 
 function doPost(e) {
   try {
-    // Store injected client script ID for license validation
-    if (e && e.parameter && e.parameter._clientScriptId) {
-      _clientScriptId = e.parameter._clientScriptId;
-    }
     if (!validateLicense()) {
       return createCorsJsonResponse({
         success: false,

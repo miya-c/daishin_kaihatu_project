@@ -8,7 +8,7 @@ export default defineConfig({
   },
   test: {
     root: '.',
-    include: ['src/**/*.{test,spec}.{js,jsx}', 'src/**/*.svelte.{test,spec}.{js,jsx}'],
+    include: ['src/**/*.{test,spec}.{js,jsx}', 'src/**/*.svelte.{test,spec}.{js,jsx}', 'tests/**/*.{test,spec}.{js,jsx}'],
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./vitest-setup.js'],
