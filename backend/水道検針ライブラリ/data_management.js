@@ -211,6 +211,7 @@ function createInitialInspectionData(ss = null) {
         '前々々回指示数',
         '検針不要',
         '請求不要',
+        '部屋ステータス',
       ];
       inspectionDataSheet.getRange(1, 1, 1, headers.length).setValues([headers]);
 
