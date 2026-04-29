@@ -466,6 +466,7 @@ function addRoom(params) {
           .getRange(1, 1, 1, inspectionSheet.getLastColumn())
           .getValues()[0];
 
+        var newRowNumber = inspectionSheet.getLastRow() + 1;
         var newRow = new Array(headers.length).fill('');
         var propIdCol = headers.indexOf('物件ID');
         var propNameCol = headers.indexOf('物件名');
@@ -474,6 +475,9 @@ function addRoom(params) {
         var inspSkipCol = headers.indexOf('検針不要');
         var billSkipCol = headers.indexOf('請求不要');
         var roomStatusCol = headers.indexOf('部屋ステータス');
+        var recordIdCol = headers.indexOf('記録ID');
+        var stdDevCol = headers.indexOf('標準偏差値');
+        var usageCol = headers.indexOf('今回使用量');
 
         if (propIdCol !== -1) newRow[propIdCol] = propertyId;
         if (propNameCol !== -1) newRow[propNameCol] = propertyName;
@@ -485,6 +489,10 @@ function addRoom(params) {
         if (inspSkipCol !== -1) newRow[inspSkipCol] = flags.inspectionSkip;
         if (billSkipCol !== -1) newRow[billSkipCol] = flags.billingSkip;
         if (roomStatusCol !== -1) newRow[roomStatusCol] = status;
+
+        if (recordIdCol !== -1) newRow[recordIdCol] = Utilities.getUuid();
+        if (stdDevCol !== -1) newRow[stdDevCol] = '=IF(AND(K' + newRowNumber + '<>"",L' + newRowNumber + '<>"",M' + newRowNumber + '<>""),ROUND(STDEV.S(K' + newRowNumber + ':M' + newRowNumber + '),0),"")';
+        if (usageCol !== -1) newRow[usageCol] = '=IF(AND(J' + newRowNumber + '<>"",K' + newRowNumber + '<>""),J' + newRowNumber + '-K' + newRowNumber + ',"")';
 
         inspectionSheet.appendRow(newRow);
       }

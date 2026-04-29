@@ -594,6 +594,85 @@ function createInitialInspectionData(ss = null) {
 }
 
 /**
+ * inspection_dataの全行をスキャンし、欠落している記録ID・数式を補完する
+ * @returns {Object} 処理結果
+ */
+function ensureInspectionDataFormulas() {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    if (!ss) {
+      return { success: false, error: 'スプレッドシートが見つかりません' };
+    }
+
+    var sheet = ss.getSheetByName(CONFIG.SHEET_NAMES.INSPECTION_DATA);
+    if (!sheet) {
+      return { success: false, error: 'inspection_dataシートが見つかりません' };
+    }
+
+    var lastRow = sheet.getLastRow();
+    if (lastRow <= 1) {
+      return { success: true, updatedCount: 0, message: 'inspection_dataにデータがありません' };
+    }
+
+    var lastCol = sheet.getLastColumn();
+    var headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+    var data = sheet.getDataRange().getValues();
+
+    var recordIdCol = headers.indexOf('記録ID');
+    var stdDevCol = headers.indexOf('標準偏差値');
+    var usageCol = headers.indexOf('今回使用量');
+
+    var updatedCount = 0;
+
+    for (var i = 1; i < data.length; i++) {
+      var rowNumber = i + 1;
+      var changed = false;
+
+      // 記録IDが空の場合はUUID生成
+      if (recordIdCol !== -1) {
+        var currentRecordId = String(data[i][recordIdCol] || '').trim();
+        if (!currentRecordId) {
+          data[i][recordIdCol] = Utilities.getUuid();
+          changed = true;
+        }
+      }
+
+      // 標準偏差値が空の場合はSTDEV.S数式をセット
+      if (stdDevCol !== -1) {
+        var currentStdDev = String(data[i][stdDevCol] || '').trim();
+        if (!currentStdDev) {
+          data[i][stdDevCol] = '=IF(AND(K' + rowNumber + '<>"",L' + rowNumber + '<>"",M' + rowNumber + '<>""),ROUND(STDEV.S(K' + rowNumber + ':M' + rowNumber + '),0),"")';
+          changed = true;
+        }
+      }
+
+      // 今回使用量が空の場合は減算数式をセット
+      if (usageCol !== -1) {
+        var currentUsage = String(data[i][usageCol] || '').trim();
+        if (!currentUsage) {
+          data[i][usageCol] = '=IF(AND(J' + rowNumber + '<>"",K' + rowNumber + '<>""),J' + rowNumber + '-K' + rowNumber + ',"")';
+          changed = true;
+        }
+      }
+
+      if (changed) updatedCount++;
+    }
+
+    if (updatedCount > 0) {
+      sheet.getDataRange().setValues(data);
+    }
+
+    return {
+      success: true,
+      updatedCount: updatedCount,
+      message: updatedCount > 0 ? updatedCount + '行の数式・IDを補完しました' : '全ての行に数式・IDが設定されています',
+    };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+}
+
+/**
  * 月次検針データ処理
  * 現在のデータをアーカイブし、新しい月の検針に向けてデータをリセット
  * @param {Spreadsheet} ss - 対象スプレッドシート

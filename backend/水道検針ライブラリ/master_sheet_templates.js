@@ -2,7 +2,7 @@
  * master_sheet_templates.gs - マスタシートテンプレート機能
  *
  * システム導入時に必要な基本シートテンプレートを作成
- * 物件マスタ・部屋マスタの初期構造を提供
+ * 物件マスタ・部屋マスタ・検針データシートの初期構造を提供
  */
 
 /**
@@ -29,6 +29,7 @@ function createMasterSheetTemplates(ss = null, options = {}) {
     const results = {
       propertyMaster: null,
       roomMaster: null,
+      inspectionData: null,
       created: [],
       updated: [],
       skipped: [],
@@ -56,6 +57,18 @@ function createMasterSheetTemplates(ss = null, options = {}) {
       results.updated.push('部屋マスタ');
     } else if (roomMasterResult.skipped) {
       results.skipped.push('部屋マスタ');
+    }
+
+    // 検針データシートテンプレート作成
+    const inspectionResult = createInspectionDataTemplate(ss, options);
+    results.inspectionData = inspectionResult;
+
+    if (inspectionResult.created) {
+      results.created.push('inspection_data');
+    } else if (inspectionResult.updated) {
+      results.updated.push('inspection_data');
+    } else if (inspectionResult.skipped) {
+      results.skipped.push('inspection_data');
     }
 
     // 結果サマリー作成
@@ -313,6 +326,99 @@ function createRoomMasterTemplate(ss, options = {}) {
     };
   } catch (error) {
     console.error('部屋マスタテンプレート作成エラー:', error);
+    return {
+      success: false,
+      error: error.message,
+    };
+  }
+}
+
+/**
+ * 検針データシートテンプレートを作成
+ */
+function createInspectionDataTemplate(ss, options = {}) {
+  try {
+    const sheetName = CONFIG.SHEET_NAMES.INSPECTION_DATA;
+    let sheet = ss.getSheetByName(sheetName);
+    let created = false;
+    let updated = false;
+
+    if (!sheet) {
+      // 新規作成
+      sheet = ss.insertSheet(sheetName);
+      created = true;
+      console.log(`${sheetName}シートを新規作成しました`);
+    } else if (options.overwrite || sheet.getLastRow() <= 1) {
+      // 既存シートの更新
+      sheet.clear();
+      updated = true;
+      console.log(`${sheetName}シートを更新しました`);
+    } else {
+      // 既存データがある場合はスキップ
+      return {
+        success: true,
+        skipped: true,
+        message: `${sheetName}は既存データがあるためスキップしました`,
+      };
+    }
+
+    // ヘッダー行を設定
+    const headers = [
+      '記録ID',
+      '物件名',
+      '物件ID',
+      '部屋ID',
+      '部屋名',
+      '検針日時',
+      '警告フラグ',
+      '標準偏差値',
+      '今回使用量',
+      '今回の指示数',
+      '前回指示数',
+      '前々回指示数',
+      '前々々回指示数',
+      '検針不要',
+      '請求不要',
+      '部屋ステータス',
+    ];
+
+    // ヘッダーを設定
+    const headerRange = sheet.getRange(1, 1, 1, headers.length);
+    headerRange.setValues([headers]);
+
+    // ヘッダーのスタイル設定
+    headerRange
+      .setFontWeight('bold')
+      .setBackground('#e8f5e9')
+      .setHorizontalAlignment('center')
+      .setBorder(true, true, true, true, true, true);
+
+    // 列幅の自動調整
+    headers.forEach((header, index) => {
+      sheet.autoResizeColumn(index + 1);
+
+      // 最小幅設定
+      const currentWidth = sheet.getColumnWidth(index + 1);
+      if (currentWidth < 100) {
+        sheet.setColumnWidth(index + 1, 100);
+      }
+    });
+
+    // 固定行設定
+    sheet.setFrozenRows(1);
+
+    // ヘッダー行にフィルタを設定
+    headerRange.createFilter();
+
+    return {
+      success: true,
+      created: created,
+      updated: updated,
+      sheet: sheet,
+      message: `${sheetName}テンプレートを${created ? '作成' : '更新'}しました`,
+    };
+  } catch (error) {
+    console.error('検針データシートテンプレート作成エラー:', error);
     return {
       success: false,
       error: error.message,

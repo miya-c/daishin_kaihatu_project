@@ -1148,12 +1148,12 @@ function startProductionTemplateWizard() {
 
     // データ入力ガイド表示
     var guideMsg = '✅ マスタテンプレートを作成しました。\n\n';
-    guideMsg += '📝 次のデータを入力してください：\n\n';
-    guideMsg += '■ 物件マスタシート\n';
-    guideMsg += '  → 物件名を入力してください\n\n';
-    guideMsg += '■ 部屋マスタシート\n';
-    guideMsg += '  → 物件名と部屋名を入力してください\n';
-    guideMsg += '  （物件ID・部屋IDは自動生成されます）\n\n';
+    guideMsg += '📝 物件・部屋の追加は管理画面から行ってください：\n\n';
+    guideMsg += '1. 管理画面を開き、「物件管理」タブを開きます\n';
+    guideMsg += '2. 「物件追加」または「一括物件登録」で物件を登録します\n';
+    guideMsg += '   （物件IDは自動生成されます）\n';
+    guideMsg += '3. 物件を選択し、「部屋追加」で部屋を登録します\n';
+    guideMsg += '   （部屋IDは自動生成されます）\n\n';
     guideMsg += '📊 データ入力後、メニューから\n';
     guideMsg += '「🚀 本番セットアップ完了（データ入力後）」\n';
     guideMsg += 'を実行してください。';
@@ -1170,7 +1170,7 @@ function startProductionTemplateWizard() {
 
 /**
  * 🚀 本番セットアップ完了ウィザード（データ入力後）
- * ID割り当て → 検針データ作成 → 最終確認
+ * 数式補完 → 最終確認
  */
 function startProductionSetupCompleteWizard() {
   try {
@@ -1208,35 +1208,15 @@ function startProductionSetupCompleteWizard() {
     var startTime = new Date();
     var errors = [];
 
-    // Step 1: 物件ID自動割り当て
-    ui.alert('🚀 本番セットアップ', 'ステップ 1/4: 物件IDを自動割り当てします...', ui.ButtonSet.OK);
-    var propIdResult = executePropertyIdAssignment();
-    if (!propIdResult.success) {
-      errors.push('物件ID割り当て: ' + (propIdResult.error || propIdResult.message));
-      safeAlert('エラー', '物件ID自動割り当てに失敗しました:\n' + (propIdResult.error || propIdResult.message));
-      return { success: false, errors: errors };
+    // Step 1: 数式補完
+    ui.alert('🚀 本番セットアップ', 'ステップ 1/2: 検針データの数式を補完します...', ui.ButtonSet.OK);
+    var formulaResult = ensureInspectionDataFormulas();
+    if (!formulaResult.success) {
+      errors.push('数式補完: ' + (formulaResult.error || formulaResult.message));
     }
 
-    // Step 2: 部屋ID自動生成
-    ui.alert('🚀 本番セットアップ', 'ステップ 2/4: 部屋IDを自動生成します...', ui.ButtonSet.OK);
-    var roomIdResult = executeRoomIdGeneration();
-    if (!roomIdResult.success) {
-      errors.push('部屋ID生成: ' + (roomIdResult.error || roomIdResult.message));
-      safeAlert('エラー', '部屋ID自動生成に失敗しました:\n' + (roomIdResult.error || roomIdResult.message));
-      return { success: false, errors: errors };
-    }
-
-    // Step 3: 検針データシート作成
-    ui.alert('🚀 本番セットアップ', 'ステップ 3/4: 検針データシートを作成します...', ui.ButtonSet.OK);
-    var inspResult = executeInspectionDataCreation();
-    if (!inspResult.success) {
-      errors.push('検針データ作成: ' + (inspResult.error || inspResult.message));
-      safeAlert('エラー', '検針データシート作成に失敗しました:\n' + (inspResult.error || inspResult.message));
-      return { success: false, errors: errors };
-    }
-
-    // Step 4: 最終確認
-    ui.alert('🚀 本番セットアップ', 'ステップ 4/4: 最終確認を実行します...', ui.ButtonSet.OK);
+    // Step 2: 最終確認
+    ui.alert('🚀 本番セットアップ', 'ステップ 2/2: 最終確認を実行します...', ui.ButtonSet.OK);
     var validationResult = executeFinalValidation();
 
     // 完了メッセージ
@@ -1673,6 +1653,8 @@ function executeStep(stepNum, step) {
         return executeRoomIdGeneration();
       case 'executeInspectionDataCreation':
         return executeInspectionDataCreation();
+      case 'ensureInspectionDataFormulas':
+        return ensureInspectionDataFormulas();
       case 'executeFinalValidation':
         return executeFinalValidation();
       default:

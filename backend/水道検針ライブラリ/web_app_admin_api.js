@@ -102,6 +102,9 @@ function adminDispatch(action, params) {
       case 'createSampleData':
         return createSampleData();
 
+      case 'ensureInspectionDataFormulas':
+        return ensureInspectionDataFormulas();
+
       // ── Phase 6: Diagnostics ──
       case 'runSystemDiagnostics': {
         const diagResult = runSystemDiagnostics();

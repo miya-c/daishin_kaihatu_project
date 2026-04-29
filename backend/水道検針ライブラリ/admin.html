@@ -950,17 +950,31 @@ ${r?'Expression: "'+r+`"
 
           checkDataAndStart: function(mode) {
             var self = this;
-            self.pendingMode = mode;
-            _callAdmin("hasExistingData", {}).then(function(result) {
-              if (result && result.success && result.data && result.data.hasData) {
-                self.existingData = result.data;
-                self.showConfirmModal = true;
-              } else {
-                self.startWizard(mode);
-              }
-            }).catch(function(err) {
-              self.error = "データ確認に失敗しました: " + (err.message || err);
-            });
+            if (mode === "production") {
+              // production: データがあるのが正常。クリアしない
+              _callAdmin("hasExistingData", {}).then(function(result) {
+                if (result && result.success && result.data && result.data.hasData) {
+                  self.startWizard(mode);
+                } else {
+                  self.error = "物件・部屋データが入力されていません。管理画面の「物件管理」タブからデータを登録してください。";
+                }
+              }).catch(function(err) {
+                self.error = "データ確認に失敗しました: " + (err.message || err);
+              });
+            } else {
+              // sample/template: 従来通り（クリア確認）
+              self.pendingMode = mode;
+              _callAdmin("hasExistingData", {}).then(function(result) {
+                if (result && result.success && result.data && result.data.hasData) {
+                  self.existingData = result.data;
+                  self.showConfirmModal = true;
+                } else {
+                  self.startWizard(mode);
+                }
+              }).catch(function(err) {
+                self.error = "データ確認に失敗しました: " + (err.message || err);
+              });
+            }
           },
 
           confirmAndStart: function() {
@@ -998,9 +1012,7 @@ ${r?'Expression: "'+r+`"
               ];
             } else {
               steps = [
-                { id: "propertyIds", label: "物件ID割り当て", action: "formatAllPropertyIds" },
-                { id: "roomIds", label: "部屋ID生成", action: "generateRoomIds" },
-                { id: "inspectionData", label: "検針データ作成", action: "createInitialInspectionData" },
+                { id: "formulas", label: "数式補完", action: "ensureInspectionDataFormulas" },
                 { id: "validation", label: "最終確認", action: "validateSystemSetup" }
               ];
             }
