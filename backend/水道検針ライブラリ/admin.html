@@ -1435,15 +1435,28 @@ ${r?'Expression: "'+r+`"
                       <p class="heading mb-0" x-text="getSelectedPropHeading()"></p>
                       <div class="field is-grouped">
                         <button
+                          class="button is-small is-info is-light"
+                          x-bind:disabled="!selectedProperty"
+                          x-on:click="openEditProperty()"
+                        >
+                          ✏️ 編集
+                        </button>
+                        <button
                           class="button is-small is-danger is-light"
                           x-on:click="openDeletePropertyConfirm()"
                         >
-                          物件削除
-                        </button>
-                        <button class="button is-small is-primary" x-on:click="openAddRoom()">
-                          + 部屋を追加
+                          🗑️ 削除
                         </button>
                       </div>
+                    </div>
+
+                    <div class="field is-grouped mb-3">
+                      <button class="button is-small is-primary" x-on:click="openAddRoom()">
+                        + 部屋を追加
+                      </button>
+                      <button class="button is-small is-info is-light" x-on:click="openBulkAddRoom()">
+                        📥 一括部屋登録
+                      </button>
                     </div>
 
                     <!-- Loading -->
@@ -1500,26 +1513,6 @@ ${r?'Expression: "'+r+`"
                                 x-text="getSummaryCards().rate + '%'"
                               ></p>
                               <p class="lbl">完了率</p>
-                            </div>
-                          </div>
-
-                          <div class="is-flex is-justify-content-space-between is-align-items-center">
-                            <div></div>
-                            <div class="field is-grouped">
-                              <div class="control">
-                                <button
-                                  class="button is-info is-light is-small"
-                                  x-bind:disabled="!selectedProperty"
-                                  x-on:click="openEditProperty()"
-                                >
-                                  ✏️ 編集
-                                </button>
-                              </div>
-                              <div class="control">
-                                <button class="button is-info is-light is-small" x-on:click="openBulkAddRoom()">
-                                  📥 一括部屋登録
-                                </button>
-                              </div>
                             </div>
                           </div>
 
