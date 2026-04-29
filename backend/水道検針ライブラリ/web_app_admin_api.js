@@ -91,6 +91,17 @@ function adminDispatch(action, params) {
       case 'createInitialInspectionData':
         return createInitialInspectionData();
 
+      // ── Phase 5b: Setup Wizard (3-button) ──
+      case 'hasExistingData':
+        return { success: true, data: hasExistingData() };
+
+      case 'clearAllMasterData':
+        clearAllMasterData();
+        return { success: true, message: 'マスタデータをクリアしました' };
+
+      case 'createSampleData':
+        return createSampleData();
+
       // ── Phase 6: Diagnostics ──
       case 'runSystemDiagnostics': {
         const diagResult = runSystemDiagnostics();
