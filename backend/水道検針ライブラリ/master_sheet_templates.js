@@ -2,7 +2,7 @@
  * master_sheet_templates.gs - マスタシートテンプレート機能
  *
  * システム導入時に必要な基本シートテンプレートを作成
- * 物件マスタ・部屋マスタ・設定値シートの初期構造を提供
+ * 物件マスタ・部屋マスタの初期構造を提供
  */
 
 /**
@@ -29,7 +29,6 @@ function createMasterSheetTemplates(ss = null, options = {}) {
     const results = {
       propertyMaster: null,
       roomMaster: null,
-      configSheet: null,
       created: [],
       updated: [],
       skipped: [],
@@ -57,18 +56,6 @@ function createMasterSheetTemplates(ss = null, options = {}) {
       results.updated.push('部屋マスタ');
     } else if (roomMasterResult.skipped) {
       results.skipped.push('部屋マスタ');
-    }
-
-    // 設定値シートテンプレート作成
-    const configResult = createConfigSheetTemplate(ss, options);
-    results.configSheet = configResult;
-
-    if (configResult.created) {
-      results.created.push('設定値');
-    } else if (configResult.updated) {
-      results.updated.push('設定値');
-    } else if (configResult.skipped) {
-      results.skipped.push('設定値');
     }
 
     // 結果サマリー作成

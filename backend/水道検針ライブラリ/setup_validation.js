@@ -124,7 +124,6 @@ function validateSheetStructure(ss, options) {
       { name: CONFIG.SHEET_NAMES.PROPERTY_MASTER, required: true, score: 15 },
       { name: CONFIG.SHEET_NAMES.ROOM_MASTER, required: true, score: 15 },
       { name: CONFIG.SHEET_NAMES.INSPECTION_DATA, required: true, score: 20 },
-      { name: CONFIG.SHEET_NAMES.SETTINGS, required: false, score: 10 },
     ];
 
     requiredSheets.forEach((sheetDef) => {
@@ -704,7 +703,7 @@ function validateIdRelationships(ss) {
 function validateFunctionality(ss, options) {
   const validation = {
     score: 0,
-    maxScore: 60,
+    maxScore: 45,
     status: 'UNKNOWN',
     issues: [],
     details: {},
@@ -766,20 +765,6 @@ function validateFunctionality(ss, options) {
       });
       validation.score += 10; // 部分点
       validation.details.uiAvailable = false;
-    }
-
-    // システム設定の確認
-    const configSheet = ss.getSheetByName(CONFIG.SHEET_NAMES.SETTINGS);
-    if (configSheet && configSheet.getLastRow() > 1) {
-      validation.score += 15;
-      validation.details.configAvailable = true;
-    } else {
-      validation.issues.push({
-        type: 'warning',
-        message: 'システム設定が見つかりません',
-        category: 'missing_config',
-      });
-      validation.details.configAvailable = false;
     }
 
     // ステータス決定

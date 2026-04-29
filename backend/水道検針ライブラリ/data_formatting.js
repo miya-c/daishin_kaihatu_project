@@ -185,11 +185,8 @@ function formatPropertyIdsInInspectionData(ss = null, config = {}) {
   const sheet = ss.getSheetByName(sheetName);
 
   if (!sheet) {
-    const error = `${sheetName}シートが見つかりません。`;
-    if (typeof safeAlert === 'function') {
-      safeAlert('エラー', error);
-    }
-    return { success: false, error: error };
+    // ゼロ構築時などシートが存在しない場合はスキップ（正常）
+    return { success: true, updatedCount: 0, message: sheetName + 'シートが存在しないためスキップしました。' };
   }
 
   const dataRange = sheet.getDataRange();
@@ -432,11 +429,8 @@ function generateRoomIds(ss = null, config = {}) {
     const sheet = ss.getSheetByName(sheetName);
 
     if (!sheet) {
-      const error = `${sheetName}シートが見つかりません。`;
-      if (typeof safeAlert === 'function') {
-        safeAlert('エラー', error);
-      }
-      return { success: false, error: error };
+      // ゼロ構築時などシートが存在しない場合はスキップ（正常）
+      return { success: true, updatedCount: 0, message: sheetName + 'シートが存在しないためスキップしました。' };
     }
 
     const dataRange = sheet.getDataRange();
