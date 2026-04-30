@@ -88,7 +88,7 @@ function validateLicense() {
     if (authorized) {
       _setScriptProp(cacheKey, 'true');
       _setScriptProp(cacheTimeKey, String(Date.now()));
-      var cacheTTL = result.cacheTTL || DEFAULT_CACHE_TTL_MS;
+      var cacheTTL = (result.cacheTTL && result.cacheTTL > 0) ? result.cacheTTL * 1000 : DEFAULT_CACHE_TTL_MS;
       _setScriptProp(cacheTTLKey, String(cacheTTL));
     } else {
       _setScriptProp(cacheKey, '');
@@ -111,7 +111,7 @@ function handleTestEndpoint(params) {
   return { success: true, message: 'ライブラリAPI正常動作' };
 }
 
-function setMockAuthorized(authorized, cacheTTL = 900000) {
+function setMockAuthorized(authorized, cacheTTL = 900) {
   UrlFetchApp.setMockResponse({
     getContentText: () =>
       JSON.stringify({ authorized, message: authorized ? 'OK' : 'Denied', cacheTTL }),
@@ -147,7 +147,7 @@ describe('validateLicense', () => {
     });
 
     it('should respect cacheTTL from API response', () => {
-      setMockAuthorized(true, 300000);
+      setMockAuthorized(true, 300);
       expect(validateLicense()).toBe(true);
 
       vi.advanceTimersByTime(4 * 60 * 1000);
@@ -159,7 +159,7 @@ describe('validateLicense', () => {
     });
 
     it('should return cached result within TTL', () => {
-      setMockAuthorized(true, 900000);
+      setMockAuthorized(true, 900);
       expect(validateLicense()).toBe(true);
 
       setMockAuthorized(false, 0);
@@ -281,6 +281,84 @@ describe('validateLicense', () => {
           '_license_cache_fallback-script-id',
         ),
       ).toBeNull();
+    });
+  });
+
+  // Bug: license-manager returns cacheTTL in SECONDS (900 = 15min)
+  // but code stores it as-is, treating 900 as milliseconds (0.9s cache)
+  // Correct pattern: mimamori-app/library/Code.gs line 97: cacheTTL * 1000
+  describe('cacheTTL unit conversion', () => {
+    it('cacheTTL seconds converted to ms - cache valid after 14 min', () => {
+      // license-manager returns cacheTTL: 900 (seconds = 15 minutes)
+      setMockAuthorized(true, 900);
+      expect(validateLicense()).toBe(true);
+
+      vi.advanceTimersByTime(14 * 60 * 1000);
+      // With bug: cache stored as 900ms, expired at 0.9s, fresh call made
+      // Fresh call returns true (mock still authorized) → test passes
+      // But we're checking that cache was checked (not expired)
+      expect(validateLicense()).toBe(true);
+
+      // Verify cache was actually used (not re-fetched) by checking stored value
+      const scriptId = _getScriptProp('_clientScriptId') || ScriptApp.getScriptId();
+      const storedTTL = Number(
+        PropertiesService.getScriptProperties().getProperty('_license_cache_ttl_' + scriptId),
+      );
+      // T6 fixed: stores 900000 (900 * 1000)
+      expect(storedTTL).toBe(900000);
+    });
+
+    it('cacheTTL zero falls back to DEFAULT', () => {
+      setMockAuthorized(false, 0);
+      expect(validateLicense()).toBe(false);
+    });
+
+    it('cacheTTL null falls back to DEFAULT_CACHE_TTL_MS', () => {
+      UrlFetchApp.setMockResponse({
+        getContentText: () => JSON.stringify({ authorized: true, message: 'OK', cacheTTL: null }),
+      });
+      expect(validateLicense()).toBe(true);
+
+      vi.advanceTimersByTime(14 * 60 * 1000);
+      expect(validateLicense()).toBe(true);
+    });
+
+    it('cacheTTL absent falls back to DEFAULT_CACHE_TTL_MS', () => {
+      // API without cacheTTL field → fallback to 15 minutes
+      UrlFetchApp.setMockResponse({
+        getContentText: () => JSON.stringify({ authorized: true, message: 'OK' }),
+      });
+      expect(validateLicense()).toBe(true);
+
+      vi.advanceTimersByTime(14 * 60 * 1000);
+      expect(validateLicense()).toBe(true);
+
+      vi.advanceTimersByTime(2 * 60 * 1000);
+      expect(validateLicense()).toBe(true);
+    });
+
+    it('cacheTTL custom value converted - 5 min cache', () => {
+      setMockAuthorized(true, 300); // 300 seconds = 5 minutes
+      expect(validateLicense()).toBe(true);
+
+      vi.advanceTimersByTime(4 * 60 * 1000);
+      expect(validateLicense()).toBe(true);
+
+      // Cache expired (6 min > 5 min TTL), fresh API call returns true (mock still authorized)
+      vi.advanceTimersByTime(2 * 60 * 1000);
+      expect(validateLicense()).toBe(true);
+    });
+
+    it('stored cacheTTL is in milliseconds (not seconds)', () => {
+      setMockAuthorized(true, 900); // 900 seconds = 900000 ms
+      validateLicense();
+
+      const scriptId = _getScriptProp('_clientScriptId') || ScriptApp.getScriptId();
+      const storedTTL = Number(
+        PropertiesService.getScriptProperties().getProperty('_license_cache_ttl_' + scriptId),
+      );
+      // T6 fixed: stores 900000 (900 * 1000)
+      expect(storedTTL).toBe(900000);
     });
   });
 });

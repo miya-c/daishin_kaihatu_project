@@ -83,7 +83,7 @@ function validateLicense() {
     if (authorized) {
       _setScriptProp(cacheKey, 'true');
       _setScriptProp(cacheTimeKey, String(Date.now()));
-      var cacheTTL = result.cacheTTL || DEFAULT_CACHE_TTL_MS;
+      var cacheTTL = (result.cacheTTL && result.cacheTTL > 0) ? result.cacheTTL * 1000 : DEFAULT_CACHE_TTL_MS;
       _setScriptProp(cacheTTLKey, String(cacheTTL));
     } else {
       _setScriptProp(cacheKey, '');

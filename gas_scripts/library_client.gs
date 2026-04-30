@@ -54,6 +54,72 @@ function createWaterMeterMenu() {
 }
 
 // =====================================================
+// ライセンス検証
+// =====================================================
+
+/**
+ * ライセンス検証 — license-manager APIでライセンス状態を確認
+ * キャッシュはクライアント側のScriptPropertiesに保存
+ * @returns {boolean} true: ライセンス有効, false: 無効・エラー
+ */
+function validateLicense() {
+  try {
+    var scriptId = ScriptApp.getScriptId();
+    var props = PropertiesService.getScriptProperties();
+    var licenseUrl = props.getProperty('LICENSE_MANAGER_URL');
+
+    // URL未設定 → アクセス拒否（フェイルクローズ）
+    if (!licenseUrl) {
+      return false;
+    }
+
+    // キャッシュチェック
+    var cacheKey = '_license_cache_' + scriptId;
+    var cacheTimeKey = '_license_cache_time_' + scriptId;
+    var cached = props.getProperty(cacheKey);
+    var cacheTime = props.getProperty(cacheTimeKey);
+
+    if (cached && cacheTime) {
+      var elapsed = (Date.now() - Number(cacheTime)) / (1000 * 60);
+      var cachedTTL = props.getProperty(cacheKey + '_ttl');
+      var ttlMinutes = cachedTTL ? (Number(cachedTTL) / 1000 / 60) : 15;
+      if (elapsed < ttlMinutes) {
+        return cached === 'true';
+      }
+    }
+
+    // API呼び出し
+    var url = licenseUrl + '?action=check&scriptId=' + encodeURIComponent(scriptId) + '&appId=' + encodeURIComponent('suido');
+
+    var response = UrlFetchApp.fetch(url, {
+      muteHttpExceptions: true,
+      method: 'get',
+    });
+
+    var result = JSON.parse(response.getContentText());
+    var authorized = result.authorized === true;
+
+    // キャッシュ保存（cacheTTL尊重）
+    var cacheTTLms = (result.cacheTTL && result.cacheTTL > 0) ? result.cacheTTL * 1000 : 15 * 60 * 1000;
+
+    if (authorized) {
+      props.setProperty(cacheKey, 'true');
+      props.setProperty(cacheTimeKey, String(Date.now()));
+      props.setProperty(cacheKey + '_ttl', String(cacheTTLms));
+    } else {
+      props.setProperty(cacheKey, '');
+      props.setProperty(cacheTimeKey, '');
+      props.setProperty(cacheKey + '_ttl', '');
+    }
+
+    return authorized;
+  } catch (error) {
+    console.error('[validateLicense] error: ' + error.message);
+    return false; // フェイルクローズ
+  }
+}
+
+// =====================================================
 // UI機能（メニューから呼び出される関数）
 // =====================================================
 
@@ -361,6 +427,16 @@ function doGet(e) {
   try {
     console.log('doGet called with parameters:', e.parameter);
     
+    // License gate: block all actions except 'setup' and no-action (admin page)
+    var action = (e && e.parameter && e.parameter.action) || '';
+    if (action && action !== 'setup' && !validateLicense()) {
+      return ContentService.createTextOutput(JSON.stringify({
+        success: false,
+        error: '利用期間が終了しました。管理者にお問い合わせください。',
+        code: 'LICENSE_EXPIRED'
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+    
     // Inject client's API_KEY from script properties (always override to prevent URL injection)
     const clientStoredKey = PropertiesService.getScriptProperties().getProperty('API_KEY');
     if (clientStoredKey) {
@@ -398,6 +474,15 @@ function doGet(e) {
  */
   function doPost(e) {
    try {
+    // License gate: block all requests without valid license
+    if (!validateLicense()) {
+      return ContentService.createTextOutput(JSON.stringify({
+        success: false,
+        error: '利用期間が終了しました。管理者にお問い合わせください。',
+        code: 'LICENSE_EXPIRED'
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+    
     // Inject client's API_KEY from script properties (always override to prevent URL injection)
     const clientStoredKey = PropertiesService.getScriptProperties().getProperty('API_KEY');
     if (clientStoredKey) {
@@ -442,6 +527,11 @@ function constantTimeCompare(a, b) {
 }
 
 function adminAction(action, params) {
+  // License gate: block all admin actions without valid license
+  if (!validateLicense()) {
+    return { success: false, error: '利用期間が終了しました', code: 'LICENSE_EXPIRED' };
+  }
+  
   params = params || {};
   var storedToken = PropertiesService.getScriptProperties().getProperty('ADMIN_TOKEN');
   if (!params.adminToken || !storedToken || !constantTimeCompare(params.adminToken, storedToken)) {
