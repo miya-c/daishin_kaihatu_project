@@ -66,7 +66,7 @@ function validateLicense() {
   try {
     var scriptId = ScriptApp.getScriptId();
     var props = PropertiesService.getScriptProperties();
-    var licenseUrl = props.getProperty('LICENSE_MANAGER_URL');
+    var licenseUrl = props.getProperty('LICENSE_API_URL');
 
     // URL未設定 → アクセス拒否（フェイルクローズ）
     if (!licenseUrl) {
