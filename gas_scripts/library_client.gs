@@ -527,15 +527,15 @@ function constantTimeCompare(a, b) {
 }
 
 function adminAction(action, params) {
-  // License gate: block all admin actions without valid license
-  if (!validateLicense()) {
-    return { success: false, error: '利用期間が終了しました', code: 'LICENSE_EXPIRED' };
-  }
-  
   params = params || {};
   var storedToken = PropertiesService.getScriptProperties().getProperty('ADMIN_TOKEN');
   if (!params.adminToken || !storedToken || !constantTimeCompare(params.adminToken, storedToken)) {
     return { success: false, error: '管理者トークンが無効です', code: 'INVALID_TOKEN' };
+  }
+
+  // License gate: block data operations (after token verified, so admin can still log in)
+  if (!validateLicense()) {
+    return { success: false, error: '利用期間が終了しました', code: 'LICENSE_EXPIRED' };
   }
 
   // getProperties: ライブラリのgetProperties()を直接呼び出し
