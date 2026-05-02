@@ -8,7 +8,7 @@
 const API_VERSION = 'v3.0.0-library';
 const LAST_UPDATED = '2025-06-26 JST';
 
-var LICENSE_API_URL = 'https://script.google.com/macros/s/AKfycbxKqSaPECUyOpWyhN67yztcdQgVBH2cRdzq7MOzpbFpFyAIjHpDzvdNWVRTxP0npe2d/exec';
+var _LICENSE_API_URL_DEFAULT = 'https://script.google.com/macros/s/AKfycbxKqSaPECUyOpWyhN67yztcdQgVBH2cRdzq7MOzpbFpFyAIjHpDzvdNWVRTxP0npe2d/exec';
 var LICENSE_APP_ID = 'suido';
 var LICENSE_CACHE_HOURS = 0.25;
 var DEFAULT_CACHE_TTL_MS = 15 * 60 * 1000;
@@ -32,12 +32,9 @@ function _getScriptProp(key) {
 }
 
 function _setScriptProp(key, value) {
-  if (_injectedProps && key in _injectedProps) {
+  if (_injectedProps) {
     _injectedProps[key] = String(value);
   }
-  try {
-    PropertiesService.getScriptProperties().setProperty(key, String(value));
-  } catch (e) {}
 }
 
 // Per-request caches (GAS re-initializes globals on each invocation)
@@ -51,26 +48,28 @@ function validateLicense() {
     var scriptId = _getScriptProp('_clientScriptId') || ScriptApp.getScriptId();
     var cacheKey = '_license_cache_' + scriptId;
     var cacheTimeKey = '_license_cache_time_' + scriptId;
-    var cacheTTLKey = '_license_cache_ttl_' + scriptId;
+    var cacheTTLKey = cacheKey + '_ttl';
+    var propsToSave = {};
 
     var cached = _getScriptProp(cacheKey);
     var cacheTime = _getScriptProp(cacheTimeKey);
     var cachedTTL = _getScriptProp(cacheTTLKey);
 
     if (cached && cacheTime) {
-      var elapsed = Date.now() - Number(cacheTime);
-      var ttl = cachedTTL ? Number(cachedTTL) : DEFAULT_CACHE_TTL_MS;
-      if (elapsed < ttl) {
-        return cached === 'true';
+      var elapsed = (Date.now() - Number(cacheTime)) / (1000 * 60);
+      var ttlMinutes = cachedTTL ? (Number(cachedTTL) / 1000 / 60) : 15;
+      if (elapsed < ttlMinutes) {
+        return { authorized: cached === 'true' };
       }
     }
 
-    if (!LICENSE_API_URL || LICENSE_API_URL.indexOf('%%') !== -1) {
-      Logger.log('[validateLicense] WARNING: LICENSE_API_URL contains placeholder or is empty');
-      return false;
+    var licenseUrl = _getScriptProp('LICENSE_API_URL') || _LICENSE_API_URL_DEFAULT;
+    if (!licenseUrl) {
+      Logger.log('[validateLicense] WARNING: LICENSE_API_URL is empty');
+      return { authorized: false };
     }
 
-    var url = LICENSE_API_URL + '?action=check&scriptId=' + encodeURIComponent(scriptId) + '&appId=' + encodeURIComponent(LICENSE_APP_ID);
+    var url = licenseUrl + '?action=check&scriptId=' + encodeURIComponent(scriptId) + '&appId=' + encodeURIComponent(LICENSE_APP_ID);
 
     var response = UrlFetchApp.fetch(url, {
       muteHttpExceptions: true,
@@ -82,19 +81,25 @@ function validateLicense() {
 
     if (authorized) {
       _setScriptProp(cacheKey, 'true');
+      propsToSave[cacheKey] = 'true';
       _setScriptProp(cacheTimeKey, String(Date.now()));
+      propsToSave[cacheTimeKey] = String(Date.now());
       var cacheTTL = (result.cacheTTL && result.cacheTTL > 0) ? result.cacheTTL * 1000 : DEFAULT_CACHE_TTL_MS;
       _setScriptProp(cacheTTLKey, String(cacheTTL));
+      propsToSave[cacheTTLKey] = String(cacheTTL);
     } else {
       _setScriptProp(cacheKey, '');
+      propsToSave[cacheKey] = '';
       _setScriptProp(cacheTimeKey, '');
+      propsToSave[cacheTimeKey] = '';
       _setScriptProp(cacheTTLKey, '');
+      propsToSave[cacheTTLKey] = '';
     }
 
-    return authorized;
+    return { authorized: authorized, propsToSave: propsToSave };
   } catch (error) {
     Logger.log('[validateLicense] error: ' + error.message);
-    return false;
+    return { authorized: false };
   }
 }
 
@@ -216,7 +221,8 @@ function doGet(e) {
   try {
     const action = e?.parameter?.action;
     if (!action) {
-      if (!validateLicense()) {
+      var _vlResult = validateLicense();
+      if (!_vlResult || !_vlResult.authorized) {
         return HtmlService.createHtmlOutput(
           '<p style="text-align:center;padding:2rem;color:#666;">利用期間が終了しました。管理者にお問い合わせください。</p>'
         ).setTitle('水道検針');
@@ -226,12 +232,15 @@ function doGet(e) {
         .addMetaTag('viewport', 'width=device-width, initial-scale=1');
     }
 
-    if (action !== 'test' && !validateLicense()) {
-      return createCorsJsonResponse({
-        success: false,
-        error: '利用期間が終了しました。管理者にお問い合わせください。',
-        code: 'LICENSE_EXPIRED',
-      });
+    if (action !== 'test') {
+      var _vlResult2 = validateLicense();
+      if (!_vlResult2 || !_vlResult2.authorized) {
+        return createCorsJsonResponse({
+          success: false,
+          error: '利用期間が終了しました。管理者にお問い合わせください。',
+          code: 'LICENSE_EXPIRED',
+        });
+      }
     }
 
     // API処理
@@ -598,7 +607,8 @@ function doGet(e) {
 
 function doPost(e) {
   try {
-    if (!validateLicense()) {
+    var _vlResult3 = validateLicense();
+    if (!_vlResult3 || !_vlResult3.authorized) {
       return createCorsJsonResponse({
         success: false,
         error: '利用期間が終了しました。管理者にお問い合わせください。',

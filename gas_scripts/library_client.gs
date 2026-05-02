@@ -63,64 +63,48 @@ function createWaterMeterMenu() {
  * @returns {boolean} true: ライセンス有効, false: 無効・エラー
  */
 function validateLicense() {
-  try {
-    var scriptId = ScriptApp.getScriptId();
+  var currentProps = PropertiesService.getScriptProperties().getProperties();
+  currentProps._clientScriptId = ScriptApp.getScriptId();
+  cmlibrary._setInjectedProps(currentProps);
+  var result = cmlibrary.validateLicense();
+  if (result && result.propsToSave) {
     var props = PropertiesService.getScriptProperties();
-    var licenseUrl = props.getProperty('LICENSE_API_URL');
-
-    // URL未設定 → アクセス拒否（フェイルクローズ）
-    if (!licenseUrl) {
-      return false;
+    var keys = Object.keys(result.propsToSave);
+    for (var i = 0; i < keys.length; i++) {
+      props.setProperty(keys[i], result.propsToSave[keys[i]]);
     }
-
-    // キャッシュチェック
-    var cacheKey = '_license_cache_' + scriptId;
-    var cacheTimeKey = '_license_cache_time_' + scriptId;
-    var cached = props.getProperty(cacheKey);
-    var cacheTime = props.getProperty(cacheTimeKey);
-
-    if (cached && cacheTime) {
-      var elapsed = (Date.now() - Number(cacheTime)) / (1000 * 60);
-      var cachedTTL = props.getProperty(cacheKey + '_ttl');
-      var ttlMinutes = cachedTTL ? (Number(cachedTTL) / 1000 / 60) : 15;
-      if (elapsed < ttlMinutes) {
-        return cached === 'true';
-      }
-    }
-
-    // API呼び出し
-    var url = licenseUrl + '?action=check&scriptId=' + encodeURIComponent(scriptId) + '&appId=' + encodeURIComponent('suido');
-
-    var response = UrlFetchApp.fetch(url, {
-      muteHttpExceptions: true,
-      method: 'get',
-    });
-
-    var result = JSON.parse(response.getContentText());
-    var authorized = result.authorized === true;
-
-    // キャッシュ保存（cacheTTL尊重）
-    var cacheTTLms = (result.cacheTTL && result.cacheTTL > 0) ? result.cacheTTL * 1000 : 15 * 60 * 1000;
-
-    if (authorized) {
-      props.setProperty(cacheKey, 'true');
-      props.setProperty(cacheTimeKey, String(Date.now()));
-      props.setProperty(cacheKey + '_ttl', String(cacheTTLms));
-    } else {
-      props.setProperty(cacheKey, '');
-      props.setProperty(cacheTimeKey, '');
-      props.setProperty(cacheKey + '_ttl', '');
-    }
-
-    return authorized;
-  } catch (error) {
-    console.error('[validateLicense] error: ' + error.message);
-    return false; // フェイルクローズ
   }
+  return result ? result.authorized : false;
 }
 
 // =====================================================
 // UI機能（メニューから呼び出される関数）
+// =====================================================
+
+/**
+ * 初期セットアップ — ADMIN_TOKEN・API_KEYを自動生成
+ * 既に設定されている場合はスキップ
+ * @returns {Object} セットアップ結果
+ */
+function setupSheets() {
+  var props = PropertiesService.getScriptProperties();
+  var result = { success: true };
+
+  if (!props.getProperty('ADMIN_TOKEN')) {
+    var token = 'admin-' + Utilities.getUuid();
+    props.setProperty('ADMIN_TOKEN', token);
+    result.adminToken = token;
+  }
+
+  if (!props.getProperty('API_KEY')) {
+    var apiKey = 'sk-' + Utilities.getUuid();
+    props.setProperty('API_KEY', apiKey);
+    result.apiKey = apiKey;
+  }
+
+  return result;
+}
+
 // =====================================================
 
 /**
@@ -438,7 +422,7 @@ function doGet(e) {
     }
     
     // Inject client's API_KEY from script properties (always override to prevent URL injection)
-    const clientStoredKey = PropertiesService.getScriptProperties().getProperty('API_KEY');
+    const clientStoredKey = cmlibrary._getScriptProp('API_KEY');
     if (clientStoredKey) {
       e.parameter._storedApiKey = clientStoredKey;
     } else {
@@ -452,7 +436,6 @@ function doGet(e) {
     
     // ライブラリのdoGet関数を呼び出し
     return cmlibrary.doGet(e);
-    
   } catch (error) {
     console.error('doGet エラー:', error);
     // エラー時はJSONレスポンスを返す
@@ -484,7 +467,7 @@ function doGet(e) {
     }
     
     // Inject client's API_KEY from script properties (always override to prevent URL injection)
-    const clientStoredKey = PropertiesService.getScriptProperties().getProperty('API_KEY');
+    const clientStoredKey = cmlibrary._getScriptProp('API_KEY');
     if (clientStoredKey) {
       e.parameter._storedApiKey = clientStoredKey;
     } else {
@@ -528,7 +511,7 @@ function constantTimeCompare(a, b) {
 
 function adminAction(action, params) {
   params = params || {};
-  var storedToken = PropertiesService.getScriptProperties().getProperty('ADMIN_TOKEN');
+  var storedToken = cmlibrary._getScriptProp('ADMIN_TOKEN');
   if (!params.adminToken || !storedToken || !constantTimeCompare(params.adminToken, storedToken)) {
     return { success: false, error: '管理者トークンが無効です', code: 'INVALID_TOKEN' };
   }
