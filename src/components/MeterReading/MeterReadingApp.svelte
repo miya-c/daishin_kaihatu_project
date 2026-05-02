@@ -108,6 +108,8 @@
 
   $effect(() => {
     const handler = (e: BeforeUnloadEvent) => {
+      // Intentional navigation (back button) already saved data — skip dialog
+      if (navigation.isNavigating) return;
       if (!hasSaved) {
         const unsaved = collectReadingsFromState();
         if (unsaved.length > 0) {
