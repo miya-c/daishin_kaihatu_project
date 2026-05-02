@@ -411,6 +411,11 @@ function doGet(e) {
   try {
     console.log('doGet called with parameters:', e.parameter);
     
+    // Inject client properties FIRST (needed for all _getScriptProp calls)
+    var currentProps = PropertiesService.getScriptProperties().getProperties();
+    currentProps._clientScriptId = ScriptApp.getScriptId();
+    cmlibrary._setInjectedProps(currentProps);
+    
     // License gate: block all actions except 'setup' and no-action (admin page)
     var action = (e && e.parameter && e.parameter.action) || '';
     if (action && action !== 'setup' && !validateLicense()) {
@@ -428,11 +433,6 @@ function doGet(e) {
     } else {
       delete e.parameter._storedApiKey;
     }
-    
-    // Inject client properties for library-side cache isolation
-    var currentProps = PropertiesService.getScriptProperties().getProperties();
-    currentProps._clientScriptId = ScriptApp.getScriptId();
-    cmlibrary._setInjectedProps(currentProps);
     
     // ライブラリのdoGet関数を呼び出し
     return cmlibrary.doGet(e);
@@ -457,6 +457,11 @@ function doGet(e) {
  */
   function doPost(e) {
    try {
+    // Inject client properties FIRST (needed for all _getScriptProp calls)
+    var currentProps = PropertiesService.getScriptProperties().getProperties();
+    currentProps._clientScriptId = ScriptApp.getScriptId();
+    cmlibrary._setInjectedProps(currentProps);
+
     // License gate: block all requests without valid license
     if (!validateLicense()) {
       return ContentService.createTextOutput(JSON.stringify({
@@ -473,10 +478,6 @@ function doGet(e) {
     } else {
       delete e.parameter._storedApiKey;
     }
-    // Inject client properties for library-side cache isolation
-    var currentProps = PropertiesService.getScriptProperties().getProperties();
-    currentProps._clientScriptId = ScriptApp.getScriptId();
-    cmlibrary._setInjectedProps(currentProps);
     return cmlibrary.doPost(e);
   } catch (error) {
     console.error('doPost エラー:', error);
@@ -511,6 +512,11 @@ function constantTimeCompare(a, b) {
 
 function adminAction(action, params) {
   params = params || {};
+  // Inject props — adminAction is called via google.script.run (not through doGet/doPost),
+  // so _setInjectedProps must be called explicitly
+  var currentProps = PropertiesService.getScriptProperties().getProperties();
+  currentProps._clientScriptId = ScriptApp.getScriptId();
+  cmlibrary._setInjectedProps(currentProps);
   var storedToken = cmlibrary._getScriptProp('ADMIN_TOKEN');
   if (!params.adminToken || !storedToken || !constantTimeCompare(params.adminToken, storedToken)) {
     return { success: false, error: '管理者トークンが無効です', code: 'INVALID_TOKEN' };
