@@ -348,15 +348,17 @@ function _applyInspectionStatus(ss, propertyId, rooms) {
           let readingDateFormatted = null;
           if (inspDateIndex !== -1 && row[inspDateIndex]) {
             try {
-              const dateStr = String(row[inspDateIndex]).trim();
-              if (dateStr) {
-                const date = new Date(dateStr);
-                if (!isNaN(date.getTime())) {
-                  readingDateFormatted = `${date.getMonth() + 1}月${date.getDate()}日`;
+              var dateVal = row[inspDateIndex];
+              if (dateVal instanceof Date) {
+                readingDateFormatted = Utilities.formatDate(dateVal, 'Asia/Tokyo', 'M月d日');
+              } else {
+                var dateStr = String(dateVal).trim();
+                if (dateStr) {
+                  readingDateFormatted = dateStr.length >= 10 ? dateStr.substring(5, 10).replace(/-/g, '/') : dateStr;
                 }
               }
             } catch (e) {
-              Logger.log(`[getRooms] 日付変換エラー: ${e.message}`);
+              Logger.log('[getRooms] 日付変換エラー: ' + e.message);
             }
           }
 

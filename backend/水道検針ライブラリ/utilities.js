@@ -492,6 +492,6 @@ function withScriptLock(fn, timeoutMs) {
 // google.script.run cannot serialize Date objects (returns null silently).
 // Always use this when returning spreadsheet cell values to the frontend.
 function safeValue(val) {
-  if (val instanceof Date) return val.toISOString();
+  if (val instanceof Date) return Utilities.formatDate(val, 'Asia/Tokyo', 'yyyy-MM-dd');
   return val;
 }
